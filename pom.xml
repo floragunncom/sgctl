@@ -70,6 +70,18 @@
 			</snapshots>
 		</repository>
 	</repositories>
+	<distributionManagement>
+		<repository>
+			<id>release</id>
+			<name>Release repository</name>
+			<url>https://maven.search-guard.com:443/search-guard-suite-release</url>
+		</repository>
+		<snapshotRepository>
+			<id>snapshot</id>
+			<name>Snapshot repository</name>
+			<url>https://maven.search-guard.com:443/search-guard-suite-snapshot</url>
+		</snapshotRepository>
+	</distributionManagement>
 
 	<dependencies>
 
