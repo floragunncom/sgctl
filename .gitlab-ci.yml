@@ -1,0 +1,72 @@
+variables:
+  SG_JAVA_BUILD_VERSION: "11"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode"
+  DOCKER_DRIVER: overlay2
+
+image: maven:3.6-jdk-${SG_JAVA_BUILD_VERSION}
+
+
+stages:
+  - build
+  - package
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - when: always
+
+build:
+  stage: build
+  interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sg-.*/'
+      when: never
+    - when: always
+  tags:
+    - openstack-runner
+  script:
+    - mvn $MAVEN_CLI_OPTS clean install
+  artifacts:
+    when: always
+    paths:
+      - "*/target"
+      - ".m2/repository/com/floragunn/*"
+    reports:
+      junit:
+        - "*/target/surefire-reports/TEST-*.xml"
+        - "*/target/failsafe-reports/TEST-*.xml"
+    expire_in: 12h
+  cache:
+    key: mavenrepo
+    paths:
+      - .m2/repository
+
+deploy_snapshot:
+  stage: package
+  interruptible: true
+  tags:
+    - openstack-runner
+  needs:
+    - job: build
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sg-.*/'
+      when: never
+    - when: always
+  script:
+    - |
+      set -x
+      mvn -Drevision=b-$CI_COMMIT_REF_NAME-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -s settings.xml deploy
+  artifacts:
+    when: on_success
+    expire_in: 10d
+    reports:
+      dotenv: build.env
+  cache:
+    key: mavenrepopackage
+    paths:
+      - .m2/repository
+
+
