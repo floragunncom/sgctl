@@ -104,7 +104,7 @@ public class SearchGuardRestClient implements AutoCloseable {
 
     public BasicResponse getComponentState(String componentId, boolean verbose)
             throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
-        return get("/_searchguard/component/" + componentId + "/_health?verbose=" + verbose).by(BasicResponse::new);
+        return get("/_searchguard/component/" + (componentId != null ? componentId : "_all") + "/_health?verbose=" + verbose).by(BasicResponse::new);
     }
 
     protected Response get(String path) throws FailedConnectionException, InvalidResponseException {

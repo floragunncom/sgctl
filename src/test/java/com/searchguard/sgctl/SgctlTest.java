@@ -150,4 +150,16 @@ public class SgctlTest {
         // TODO check output
 
     }
+
+    @Test
+    public void testComponentState() throws Exception {
+
+        int rc = SgctlTool.exec("component-state", "--debug", "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(0, rc);
+
+        // TODO check output
+
+    }
+
 }

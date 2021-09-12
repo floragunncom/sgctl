@@ -33,7 +33,7 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "component-state", description = "Retrieves Search Guard compontent status information")
 public class ComponentState extends ConnectingCommand implements Callable<Integer> {
-    @Parameters(index = "0")
+    @Parameters(index = "0", arity = "0..1")
     String component;
 
     @Override
