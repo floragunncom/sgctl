@@ -199,7 +199,7 @@ public class YamlRewriter {
         }
 
         if (removals.length() > 0) {
-            result.append("Please remove these attributes:\n\n").append(removals).append("\n");
+            result.append("Please remove these attributes:\n\n").append(removals);
         }
 
         return result.toString();
@@ -451,5 +451,9 @@ public class YamlRewriter {
             return YamlRewriter.this.getManualInstructions();
         }
 
+    }
+
+    public String getSourceFileName() {
+        return sourceFileName;
     }
 }
