@@ -94,7 +94,7 @@ public class BaseCommand {
             return null;
         }
 
-        return SgctlConfig.Cluster.read(customConfigDir, selectedClusterId);
+        return SgctlConfig.Cluster.read(getConfigDir(), selectedClusterId);
     }
 
     protected File getConfigDir() throws SgctlException {
