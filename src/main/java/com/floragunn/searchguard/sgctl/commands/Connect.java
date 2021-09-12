@@ -37,7 +37,6 @@ public class Connect extends ConnectingCommand implements Callable<Integer> {
         try (SearchGuardRestClient client = getClient()) {
             SgctlConfig.Cluster cluster = new SgctlConfig.Cluster(client.getHttpHost().getHostName(), client.getHttpHost().getPort(),
                     client.getTlsConfig());
-            SgctlConfig config = getSgctlConfig();
 
             String clusterConfigId = getSelectedClusterId();
 
@@ -45,8 +44,9 @@ public class Connect extends ConnectingCommand implements Callable<Integer> {
                 clusterConfigId = host;
             }
 
-            config.addCluster(clusterConfigId, cluster);
-            config.write(getConfigDir());
+            cluster.setClusterId(clusterConfigId);
+
+            cluster.write(getConfigDir());
 
             writeSelectedClusterId(clusterConfigId);
 
@@ -61,11 +61,11 @@ public class Connect extends ConnectingCommand implements Callable<Integer> {
             return 1;
         }
     }
-    
+
     @Override
     protected String getHost() {
         if (host != null) {
-            return host; 
+            return host;
         } else {
             return server;
         }

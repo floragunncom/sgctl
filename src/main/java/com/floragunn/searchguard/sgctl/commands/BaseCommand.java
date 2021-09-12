@@ -47,32 +47,8 @@ public class BaseCommand {
 
     protected final ValidationErrors validationErrors = new ValidationErrors();
 
-    private SgctlConfig sgctlConfig;
     private String selectedClusterId;
     private boolean selectedClusterIdInitialized;
-
-    protected SgctlConfig getSgctlConfig() throws SgctlException {
-        if (sgctlConfig == null) {
-            File configFile = new File(getConfigDir(), "sgctl.yml");
-
-            if (configFile.exists()) {
-                if (verbose || debug) {
-                    System.out.println("Using configuration from " + configFile);
-                }
-
-                sgctlConfig = SgctlConfig.read(configFile);
-            } else {
-                if (verbose || debug) {
-                    System.out.println("Config file " + configFile + " does not exist; using default configuration.");
-                }
-
-                sgctlConfig = new SgctlConfig();
-            }
-
-        }
-
-        return sgctlConfig;
-    }
 
     protected String getSelectedClusterId() throws SgctlException {
         if (!selectedClusterIdInitialized) {
@@ -85,11 +61,11 @@ public class BaseCommand {
                 try {
                     selectedClusterId = Files.asCharSource(configFile, Charsets.UTF_8).readFirstLine();
                     selectedClusterIdInitialized = true;
-                    
+
                     if (verbose || debug) {
                         System.out.println("Selected cluster: " + selectedClusterId);
                     }
-                    
+
                 } catch (FileNotFoundException e) {
                     return null;
                 } catch (IOException e) {
@@ -112,16 +88,13 @@ public class BaseCommand {
     }
 
     protected SgctlConfig.Cluster getSelectedClusterConfig() throws SgctlException {
-        SgctlConfig sgctlConfig = getSgctlConfig();
         String selectedClusterId = getSelectedClusterId();
 
         if (selectedClusterId == null || "none".equals(selectedClusterId)) {
             return null;
         }
 
-        SgctlConfig.Cluster result = sgctlConfig.getCluster(selectedClusterId);
-                
-        return result;
+        return SgctlConfig.Cluster.read(customConfigDir, selectedClusterId);
     }
 
     protected File getConfigDir() throws SgctlException {
@@ -134,5 +107,5 @@ public class BaseCommand {
             return DEFAULT_CONFIG_DIR;
         }
     }
-    
+
 }
