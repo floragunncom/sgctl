@@ -99,6 +99,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ## Support
 * Commercial support available through [floragunn GmbH](https://search-guard.com)
 * Community support available via [Search Guard Forum](https://forum.search-guard.com)
+* Report issues with `sgctl` at the [floragunn Gitlab repository](https://git.floragunn.com/search-guard/sgctl/-/issues)
 * Follow us on twitter [@searchguard](https://twitter.com/searchguard)
 
 
