@@ -8,12 +8,14 @@ import com.floragunn.searchguard.sgctl.commands.ComponentState;
 import com.floragunn.searchguard.sgctl.commands.Connect;
 import com.floragunn.searchguard.sgctl.commands.GetConfig;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
+import com.floragunn.searchguard.sgctl.commands.ShowLicenses;
 import com.floragunn.searchguard.sgctl.commands.UpdateConfig;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
-@Command(name = "sgctl", subcommands = { Connect.class, GetConfig.class, UpdateConfig.class, MigrateConfig.class, ComponentState.class }, description = "Remote control tool for Search Guard")
+@Command(name = "sgctl", subcommands = { Connect.class, GetConfig.class, UpdateConfig.class, MigrateConfig.class, ComponentState.class,
+        ShowLicenses.class }, description = "Remote control tool for Search Guard")
 public class SgctlTool {
 
     static {
