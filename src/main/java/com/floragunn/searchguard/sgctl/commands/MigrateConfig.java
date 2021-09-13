@@ -619,7 +619,7 @@ public class MigrateConfig implements Callable<Integer> {
                 String subjectKey = vOidcAuthDomain.get("http_authenticator.config.subject_key").asString();
 
                 if (subjectKey != null) {
-                    newAuthDomain.put("user_mapping.subject", subjectKey);
+                    newAuthDomain.put("user_mapping.subject", "$['" + subjectKey + "']");
                 }
 
                 String subjectPath = vOidcAuthDomain.get("http_authenticator.config.subject_path").asString();
@@ -637,7 +637,7 @@ public class MigrateConfig implements Callable<Integer> {
                 String rolesKey = vOidcAuthDomain.get("http_authenticator.config.roles_key").asString();
 
                 if (rolesKey != null) {
-                    newAuthDomain.put("user_mapping.roles", rolesKey);
+                    newAuthDomain.put("user_mapping.roles", "$['" + rolesKey + "']");
                 }
 
                 String rolesPath = vOidcAuthDomain.get("http_authenticator.config.roles_path").asString();
@@ -683,12 +683,11 @@ public class MigrateConfig implements Callable<Integer> {
 
             newSgFrontendConfig.put("authcz", newAuthDomains);
 
-
             if (!this.oldKibanaConfig.hasNonNull("server.publicBaseUrl")) {
                 this.kibanaConfigRewriter.insertAtBeginning(new YamlRewriter.Attribute(
                         publicBaseUrlAvailable ? "server.publicBaseUrl" : "searchguard.frontend_base_url", frontendBaseUrl));
             }
-            
+
             updateInstructions.sgFrontendConfig(newSgFrontendConfig);
 
             this.kibanaConfigRewriter.remove("searchguard.auth.type");
