@@ -21,13 +21,13 @@ build:
   stage: build
   interruptible: true
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^sg-.*/'
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
     - when: always
   tags:
     - openstack-runner
   script:
-    - mvn $MAVEN_CLI_OPTS clean install
+    - mvn -Drevision=b-$CI_COMMIT_REF_NAME-SNAPSHOT $MAVEN_CLI_OPTS clean install
   artifacts:
     when: always
     paths:
@@ -52,7 +52,7 @@ deploy_snapshot:
     - job: build
       artifacts: true
   rules:
-    - if: '$CI_COMMIT_TAG =~ /^sg-.*/'
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
     - when: always
   script:
@@ -69,4 +69,52 @@ deploy_snapshot:
     paths:
       - .m2/repository
 
+build_release:
+  stage: build
+  interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+  tags:
+    - openstack-runner
+  script:
+    - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | cut -d- -f2)
+    - mvn -Drevision=$SGCTL_RELEASE_VERSION $MAVEN_CLI_OPTS clean install
+  artifacts:
+    when: always
+    paths:
+      - "*/target"
+      - ".m2/repository/com/floragunn/*"
+    reports:
+      junit:
+        - "*/target/surefire-reports/TEST-*.xml"
+        - "*/target/failsafe-reports/TEST-*.xml"
+    expire_in: 12h
+  cache:
+    key: mavenrepo
+    paths:
+      - .m2/repository
+
+deploy_release:
+  stage: package
+  interruptible: true
+  tags:
+    - openstack-runner
+  needs:
+    - job: build
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+  script:
+    - set -x
+    - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | cut -d- -f2)
+    - mvn -Drevision=$SGCTL_RELEASE_VERSION $MAVEN_CLI_OPTS -DskipTests -s settings.xml deploy
+  artifacts:
+    when: on_success
+    expire_in: 10d
+    reports:
+      dotenv: build.env
+  cache:
+    key: mavenrepopackage
+    paths:
+      - .m2/repository
 

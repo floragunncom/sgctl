@@ -16,9 +16,10 @@
 	<artifactId>sgctl</artifactId>
 	<packaging>jar</packaging>
 	<name>Search Guard Control Tool</name>
-	<version>0.1-SNAPSHOT</version>
+	<version>${revision}</version>
 
 	<properties>
+		<revision>master-SNAPSHOT</revision>
 		<elasticsearch.version>7.14.0</elasticsearch.version>
 		<sg.test-version>b-master-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>1.8</maven.compiler.source>
@@ -307,4 +308,5 @@
 			</plugin>
 		</plugins>
 	</build>
+
 </project>
