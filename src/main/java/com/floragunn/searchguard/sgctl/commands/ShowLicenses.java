@@ -24,7 +24,7 @@ public class ShowLicenses implements Callable<Integer> {
         System.out.println(
                 "sgctl is licensed under the Apache 2 license. See sgctl show-licenses --apache2 or https://git.floragunn.com/search-guard/sgctl/-/blob/main/LICENSE for details.\n\n");
 
-        System.out.println("This software incudes te following third party dependencies:");
+        System.out.println("This software incudes the following third party dependencies:");
         System.out.println(Resources.toString(Resources.getResource("THIRD-PARTY.txt"), Charsets.UTF_8));
 
         return 0;
