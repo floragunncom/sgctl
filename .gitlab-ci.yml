@@ -31,12 +31,12 @@ build:
   artifacts:
     when: always
     paths:
-      - "*/target"
+      - "target"
       - ".m2/repository/com/floragunn/*"
     reports:
       junit:
-        - "*/target/surefire-reports/TEST-*.xml"
-        - "*/target/failsafe-reports/TEST-*.xml"
+        - "target/surefire-reports/TEST-*.xml"
+        - "target/failsafe-reports/TEST-*.xml"
     expire_in: 12h
   cache:
     key: mavenrepo
@@ -118,3 +118,14 @@ deploy_release:
     paths:
       - .m2/repository
 
+coverage:
+  stage: package
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.7
+  script:
+    - python /opt/cover2cover.py target/site/jacoco/jacoco.xml $CI_PROJECT_DIR/src/main/java/ > target/site/cobertura.xml
+  needs: ["build"]
+  dependencies:
+    - build
+  artifacts:
+    reports:
+      cobertura: target/site/cobertura.xml
