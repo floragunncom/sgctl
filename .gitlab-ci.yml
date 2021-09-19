@@ -122,6 +122,7 @@ coverage:
   stage: package
   image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.7
   script:
+    - cat target/site/jacoco/jacoco.xml | grep -o 'Total[^%]*%'
     - python /opt/cover2cover.py target/site/jacoco/jacoco.xml $CI_PROJECT_DIR/src/main/java/ > target/site/cobertura.xml
   needs: ["build"]
   dependencies:
