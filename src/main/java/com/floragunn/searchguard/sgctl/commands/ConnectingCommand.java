@@ -22,6 +22,7 @@ import java.net.SocketException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -161,12 +162,22 @@ public abstract class ConnectingCommand extends BaseCommand {
                     ? clusterConfig.getTlsConfig().getClientCertAuthConfig().toMap()
                     : new LinkedHashMap<>();
 
+            // In attributeMapping, we track how we called the mapped attributes in clientAuthConfig
+            // This allows to translate the validation errors back to the actual parameter where they occured
+            Map<String, String> attributeMapping = new HashMap<>();
+
             if (clientCert != null) {
                 clientAuthConfig.put("certificate", "${file:" + clientCert.getAbsolutePath() + "}");
+                attributeMapping.put("certificate", "--cert");
+            } else if (clientAuthConfig.get("certificate") == null) {
+                attributeMapping.put("certificate", "--cert");
             }
 
             if (clientKey != null) {
                 clientAuthConfig.put("private_key", "${file:" + clientKey.getAbsolutePath() + "}");
+                attributeMapping.put("private_key", "--key");
+            } else if (clientAuthConfig.get("private_key") == null) {
+                attributeMapping.put("private_key", "--key");
             }
 
             if (clientKeyPass != null) {
@@ -175,8 +186,11 @@ public abstract class ConnectingCommand extends BaseCommand {
 
             if (caCert != null) {
                 config.put("trusted_cas", "${file:" + caCert.getAbsolutePath() + "}");
+                attributeMapping.put("trusted_cas", "--ca-cert");
+            } else if (clientAuthConfig.get("trusted_cas") == null) {
+                attributeMapping.put("trusted_cas", "--ca-cert");
             }
-
+            
             if (insecure != null) {
                 config.put("trust_all", insecure);
             }
@@ -192,8 +206,8 @@ public abstract class ConnectingCommand extends BaseCommand {
             } catch (ConfigValidationException e) {
                 validationErrors.add(null, e);
             }
-
-            validationErrors.throwExceptionForPresentErrors();
+            
+            validationErrors.mapKeys(attributeMapping).throwExceptionForPresentErrors();
 
         }
 

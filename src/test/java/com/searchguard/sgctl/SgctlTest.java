@@ -1,3 +1,20 @@
+/*
+ * Copyright 2021 floragunn GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.searchguard.sgctl;
 
 import java.io.File;
@@ -6,6 +23,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Map;
+import java.util.Random;
 
 import org.junit.Assert;
 import org.junit.BeforeClass;
@@ -123,7 +141,7 @@ public class SgctlTest {
     }
 
     @Test
-    public void testValidation() throws Exception {
+    public void testSgConfigValidation() throws Exception {
 
         Path sgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig");
 
@@ -137,7 +155,7 @@ public class SgctlTest {
 
         YamlRewriter yamlRewriter = new YamlRewriter(sgTenantsYml);
 
-        yamlRewriter.insertAtBeginning(new YamlRewriter.Attribute("sgctl_test_tenant", ImmutableMap.of("d", "Tenant added for testing sgctl")));
+        yamlRewriter.insertAtBeginning(new YamlRewriter.Attribute("sgctl_test_tenant_" + new Random().nextInt(), ImmutableMap.of("d", "Tenant added for testing sgctl")));
 
         RewriteResult rewriteResult = yamlRewriter.rewrite();
 
@@ -146,6 +164,18 @@ public class SgctlTest {
         rc = SgctlTool.exec("update-config", sgTenantsYml.toString(), "--debug", "--sgctl-config-dir", configDir);
 
         Assert.assertEquals(1, rc);
+
+        // TODO check output
+
+    }
+
+    @Test
+    public void testCommandLineValidation() throws Exception {
+        String configDir = Files.createTempDirectory("sgctl-test-config").toString();
+        InetSocketAddress httpAddress = cluster.getHttpAddress();
+
+        int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", "/nowhere",
+                "--sgctl-config-dir", configDir);
 
         // TODO check output
 

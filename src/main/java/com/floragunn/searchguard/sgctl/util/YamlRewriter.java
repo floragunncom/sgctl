@@ -147,6 +147,8 @@ public class YamlRewriter {
         }
 
         try {
+            System.out.println("############\n" + current + "\n##########");
+            
             boolean changed = verify(current);
 
             return new RewriteResult(current, changed);
