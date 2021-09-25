@@ -26,11 +26,10 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.documents.DocReader;
@@ -40,7 +39,7 @@ import com.floragunn.codova.validation.ValidationErrors;
 import com.google.common.base.Charsets;
 
 public class YamlRewriter {
-    private static final Logger log = LogManager.getLogger(YamlRewriter.class);
+    private static final Logger log = Logger.getLogger(YamlRewriter.class.getName());
 
     private String source;
     private String sourceFileName;
@@ -153,7 +152,7 @@ public class YamlRewriter {
             return new RewriteResult(current, changed);
         } catch (VerificationException e) {
             e.printStackTrace();
-            log.debug("Verification failed", e);
+            log.log(Level.FINE, "Verification failed", e);
 
             throw new RewriteException(e);
         }

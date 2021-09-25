@@ -24,6 +24,8 @@ import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import javax.net.ssl.SSLHandshakeException;
 
@@ -39,8 +41,6 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.config.net.TLSConfig;
@@ -59,7 +59,7 @@ import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 
 public class SearchGuardRestClient implements AutoCloseable {
-    private static final Logger log = LogManager.getLogger(SearchGuardRestClient.class);
+    private static final Logger log = Logger.getLogger(SearchGuardRestClient.class.getName());
 
     private final HttpHost httpHost;
     private final TLSConfig tlsConfig;
@@ -335,7 +335,7 @@ public class SearchGuardRestClient implements AutoCloseable {
                         }
                     }
                 } catch (Exception e) {
-                    log.warn("Error while parsing JSON response", e);
+                    log.log(Level.WARNING, "Error while parsing JSON response", e);
                 }
             }
 
@@ -362,7 +362,7 @@ public class SearchGuardRestClient implements AutoCloseable {
                     try {
                         validationErrors = ValidationErrors.parse(DocUtils.toStringKeyedMap((Map<?, ?>) response.get("detail")));
                     } catch (Exception e) {
-                        log.warn("Error while parsing validation errors in response", e);
+                        log.log(Level.WARNING, "Error while parsing validation errors in response", e);
                     }
                 }
 
