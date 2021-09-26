@@ -135,20 +135,20 @@ public abstract class ConnectingCommand extends BaseCommand {
             return clusterConfig.getTlsConfig();
         } else if (clusterConfig == null) {
             // 2nd case: Only command line config -> Use this
-            
+
             if (clientCert == null) {
                 validationErrors.add(new MissingAttribute("--cert"));
             }
-            
+
             if (clientKey == null) {
-                validationErrors.add(new MissingAttribute("--key"));                
+                validationErrors.add(new MissingAttribute("--key"));
             }
-            
+
             validationErrors.throwExceptionForPresentErrors();
 
             try {
                 return new TLSConfig.Builder().clientCert(clientCert, clientKey, clientKeyPass).trust(caCert)
-                        .trustAll(insecure != null ? insecure.booleanValue() : false).build();
+                        .verifyHostnames(insecure != null ? !insecure.booleanValue() : true).build();
             } catch (ConfigValidationException e) {
                 validationErrors.add(null, e);
             }
@@ -190,9 +190,9 @@ public abstract class ConnectingCommand extends BaseCommand {
             } else if (clientAuthConfig.get("trusted_cas") == null) {
                 attributeMapping.put("trusted_cas", "--ca-cert");
             }
-            
+
             if (insecure != null) {
-                config.put("trust_all", insecure);
+                config.put("verify_hostnames", !insecure);
             }
 
             if (ciphers != null) {
@@ -206,7 +206,7 @@ public abstract class ConnectingCommand extends BaseCommand {
             } catch (ConfigValidationException e) {
                 validationErrors.add(null, e);
             }
-            
+
             validationErrors.mapKeys(attributeMapping).throwExceptionForPresentErrors();
 
         }
@@ -248,7 +248,7 @@ public abstract class ConnectingCommand extends BaseCommand {
 
         return result.toString();
     }
-    
+
     protected String getHost() {
         return this.host;
     }
