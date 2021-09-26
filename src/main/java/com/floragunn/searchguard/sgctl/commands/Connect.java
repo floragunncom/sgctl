@@ -41,7 +41,7 @@ public class Connect extends ConnectingCommand implements Callable<Integer> {
             String clusterConfigId = getSelectedClusterId();
 
             if (clusterConfigId == null) {
-                clusterConfigId = host;
+                clusterConfigId = getHost();
             }
 
             cluster.setClusterId(clusterConfigId);

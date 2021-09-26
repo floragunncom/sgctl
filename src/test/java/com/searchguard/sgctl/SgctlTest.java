@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -58,6 +59,25 @@ public class SgctlTest {
                 "--sgctl-config-dir", configDir);
 
         Assert.assertEquals(0, rc);
+    }
+
+    @Test
+    public void connectWithoutHOption() throws Exception {
+        InetSocketAddress httpAddress = cluster.getHttpAddress();
+        Path adminCert = FileHelper.getAbsoluteFilePathFromClassPath("kirk-cert.pem");
+        Path adminKey = FileHelper.getAbsoluteFilePathFromClassPath("kirk-key.pem");
+        Path rootCaCert = FileHelper.getAbsoluteFilePathFromClassPath("root-ca.pem");
+        Path configDir = Files.createTempDirectory("sgctl-test-config");
+
+        int rc = SgctlTool.exec("connect", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert.toString(),
+                "--key", adminKey.toString(), "--key-pass", "secret", "--ca-cert", rootCaCert.toString(), "--debug", "--sgctl-config-dir",
+                configDir.toString());
+
+        Assert.assertEquals(0, rc);
+
+        List<String> filesInConfigDir = Arrays.asList(configDir.toFile().list());
+
+        Assert.assertTrue(filesInConfigDir.toString(), filesInConfigDir.contains("cluster_" + httpAddress.getHostString() + ".yml"));
     }
 
     @Test
@@ -155,7 +175,8 @@ public class SgctlTest {
 
         YamlRewriter yamlRewriter = new YamlRewriter(sgTenantsYml);
 
-        yamlRewriter.insertAtBeginning(new YamlRewriter.Attribute("sgctl_test_tenant_" + new Random().nextInt(), ImmutableMap.of("d", "Tenant added for testing sgctl")));
+        yamlRewriter.insertAtBeginning(
+                new YamlRewriter.Attribute("sgctl_test_tenant_" + new Random().nextInt(), ImmutableMap.of("d", "Tenant added for testing sgctl")));
 
         RewriteResult rewriteResult = yamlRewriter.rewrite();
 
@@ -176,6 +197,7 @@ public class SgctlTest {
 
         int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", "/nowhere",
                 "--sgctl-config-dir", configDir);
+        Assert.assertEquals(1, rc);
 
         // TODO check output
 
