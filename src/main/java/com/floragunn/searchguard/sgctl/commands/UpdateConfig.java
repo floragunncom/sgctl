@@ -83,7 +83,7 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
             for (File file : files) {
                 try {
                     DocType docType = DocType.getByFileName(file.getName(), DocType.YAML);
-                    DocNode content = new DocNode.PlainJavaObjectAdapter(DocReader.type(docType).readObject(file));
+                    DocNode content = DocNode.wrap(DocReader.type(docType).readObject(file));
 
                     ConfigType configType = ConfigType.getFor(file, content);
 
