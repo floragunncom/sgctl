@@ -246,9 +246,9 @@ public class SearchGuardRestClient implements AutoCloseable {
                 DocType docType = DocType.peekByContentType(contentType);
 
                 if (docType != null) {
-                    return new DocNode.PlainJavaObjectAdapter(DocReader.type(docType).read(bodyAsString));
+                    return DocNode.wrap(DocReader.type(docType).read(bodyAsString));
                 } else {
-                    return new DocNode.PlainJavaObjectAdapter(String.valueOf(bodyAsString));
+                    return DocNode.wrap(String.valueOf(bodyAsString));
                 }
             } catch (JsonProcessingException e) {
                 throw new InvalidResponseException(e);
@@ -350,7 +350,7 @@ public class SearchGuardRestClient implements AutoCloseable {
 
         private ApiException parseBadRequestJsonRespose() throws InvalidResponseException {
             try {
-                DocNode response = new DocNode.PlainJavaObjectAdapter(DocReader.json().read(this.bodyAsString));
+                DocNode response = DocNode.wrap(DocReader.json().read(this.bodyAsString));
                 String errorMessage = null;
                 ValidationErrors validationErrors = null;
 
