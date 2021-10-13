@@ -32,8 +32,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.documents.DocNode;
+import com.floragunn.codova.documents.DocParseException;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.validation.ValidatingDocNode;
@@ -224,7 +224,7 @@ public class MigrateConfig implements Callable<Integer> {
         private String dashboardConfigFileName;
 
         public SessionConfigMigrator(File legacySgConfig, File legacyKibanaConfig, boolean publicBaseUrlAvailable, String dashboardConfigFileName)
-                throws JsonProcessingException, FileNotFoundException, IOException {
+                throws FileNotFoundException, IOException, DocParseException {
             this.oldSgConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacySgConfig), oldSgConfigValidationErrors);
             this.oldKibanaConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacyKibanaConfig), oldKibanaConfigValidationErrors);
             this.kibanaConfigRewriter = new YamlRewriter(legacyKibanaConfig);

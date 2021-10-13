@@ -69,7 +69,7 @@ public class SgctlConfig {
             File configFile = new File(configDir, "cluster_" + clusterId + ".yml");
 
             try {
-                DocWriter.yaml().write(configFile, this.toMap());
+                DocWriter.yaml().write(configFile, this.toBasicObject());
             } catch (IOException e) {
                 throw new SgctlException("Error while writing " + configFile + ": " + e, e);
             }
@@ -93,12 +93,12 @@ public class SgctlConfig {
         }
 
         @Override
-        public Map<String, Object> toMap() {
+        public Map<String, Object> toBasicObject() {
             Map<String, Object> result = new LinkedHashMap<>();
 
             result.put("server", server);
             result.put("port", port);
-            result.put("tls", tlsConfig.toMap());
+            result.put("tls", tlsConfig.toBasicObject());
 
             return result;
         }

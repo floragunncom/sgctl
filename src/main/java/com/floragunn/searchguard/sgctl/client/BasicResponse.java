@@ -52,7 +52,7 @@ public class BasicResponse implements Document {
     }
 
     @Override
-    public Map<String, Object> toMap() {
+    public Map<String, Object> toBasicObject() {
         return content;
     }
 }

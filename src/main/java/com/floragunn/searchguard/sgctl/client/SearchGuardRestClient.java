@@ -42,14 +42,15 @@ import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.config.net.TLSConfig;
 import com.floragunn.codova.documents.DocNode;
+import com.floragunn.codova.documents.DocParseException;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocType;
-import com.floragunn.codova.documents.DocType.UnknownContentTypeException;
+import com.floragunn.codova.documents.DocType.UnknownDocTypeException;
 import com.floragunn.codova.documents.DocUtils;
 import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidatingFunction;
 import com.floragunn.codova.validation.ValidationErrors;
@@ -235,7 +236,7 @@ public class SearchGuardRestClient implements AutoCloseable {
             checkStatus();
             try {
                 return DocReader.type(DocType.getByContentType(contentType)).readObject(bodyAsString);
-            } catch (JsonProcessingException | UnknownContentTypeException e) {
+            } catch (UnknownDocTypeException | UnexpectedDocumentStructureException | DocParseException e) {
                 throw new InvalidResponseException(e);
             }
         }
@@ -250,7 +251,7 @@ public class SearchGuardRestClient implements AutoCloseable {
                 } else {
                     return DocNode.wrap(String.valueOf(bodyAsString));
                 }
-            } catch (JsonProcessingException e) {
+            } catch (DocParseException e) {
                 throw new InvalidResponseException(e);
             }
         }
@@ -368,7 +369,7 @@ public class SearchGuardRestClient implements AutoCloseable {
 
                 return new ApiException(errorMessage, httpResponse.getStatusLine(), httpResponse).validationErrors(validationErrors);
 
-            } catch (JsonProcessingException e) {
+            } catch (DocParseException e) {
                 throw new InvalidResponseException("Response contains invalid JSON: " + e.getMessage(), e);
             }
 

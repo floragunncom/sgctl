@@ -157,9 +157,9 @@ public abstract class ConnectingCommand extends BaseCommand {
         } else if (clusterConfig != null) {
             // 3rd case: Both. We have to merge the stuff
 
-            Map<String, Object> config = clusterConfig.getTlsConfig().toMap();
+            Map<String, Object> config = clusterConfig.getTlsConfig().toBasicObject();
             Map<String, Object> clientAuthConfig = clusterConfig.getTlsConfig().getClientCertAuthConfig() != null
-                    ? clusterConfig.getTlsConfig().getClientCertAuthConfig().toMap()
+                    ? clusterConfig.getTlsConfig().getClientCertAuthConfig().toBasicObject()
                     : new LinkedHashMap<>();
 
             // In attributeMapping, we track how we called the mapped attributes in clientAuthConfig
