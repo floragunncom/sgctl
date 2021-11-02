@@ -19,7 +19,9 @@ package com.searchguard.sgctl;
 
 import static java.util.Collections.singletonList;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,8 +29,11 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.UUID;
 
+import org.junit.After;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
@@ -44,6 +49,23 @@ import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 
 public class SgctlTest {
+
+    private final PrintStream standardOut = System.out;
+    private final PrintStream standardErr = System.out;
+    private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errStreamCaptor = new ByteArrayOutputStream();
+
+
+    @Before
+    public void setUp() {
+        System.setOut(new PrintStream(outputStreamCaptor));
+        System.setErr(new PrintStream(errStreamCaptor));
+    }
+    @After
+    public void tearDown() {
+        System.setOut(standardOut);
+        System.setErr(standardErr);
+    }
 
     private final static TestCertificates TEST_CERTIFICATES = TestCertificates.builder()
             .ca("CN=root.ca.example.com,OU=SearchGuard,O=SearchGuard")
@@ -224,6 +246,264 @@ public class SgctlTest {
 
         // TODO check output
 
+    }
+
+    @Test
+    public void testUserGet() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--backend-roles", "backend-role1,backend-role2",
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("get-user", userName,
+                "--debug", "--verbose",
+                "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(0, result);
+        String output = outputStreamCaptor.toString();
+        Assert.assertTrue(output.contains("User found\n{backend_roles=[backend-role1, backend-role2], attributes={a=1, b={c={d=2}}, e=foo}, search_guard_roles=[sg-role1, sg-role2]}\n"));
+    }
+
+    @Test
+    public void testUserGet_notFound() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("get-user", userName,
+                "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(1, result);
+        Assert.assertTrue(errStreamCaptor.toString().contains("User " + userName + " not found"));
+    }
+
+    @Test
+    public void testUserAdd() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--backend-roles", "backend-role1,backend-role2",
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+
+        Assert.assertEquals(0, result);
+        String output = outputStreamCaptor.toString();
+        Assert.assertTrue(output.contains("User " + userName + " has been added"));
+    }
+
+    @Test
+    public void testUserAdd_shouldCreate() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--backend-roles", "backend-role1,backend-role2",
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("get-user", userName,
+                "--debug", "--verbose",
+                "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(0, result);
+        String output = outputStreamCaptor.toString();
+        Assert.assertTrue(output.contains("User found\n{backend_roles=[backend-role1, backend-role2], attributes={a=1, b={c={d=2}}, e=foo}, search_guard_roles=[sg-role1, sg-role2]}\n"));
+    }
+
+    @Test
+    public void testUserAdd_userAlreadyExists() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--backend-roles", "backend-role1,backend-role2",
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--backend-roles", "backend-role1,backend-role2",
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+
+        Assert.assertEquals(1, result);
+        Assert.assertTrue(errStreamCaptor.toString().contains("User " + userName + " already exists"));
+    }
+
+    @Test
+    public void testUserDelete() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--backend-roles", "backend-role1,backend-role2",
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("delete-user", userName,
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+        Assert.assertTrue(outputStreamCaptor.toString().contains("User " + userName + " has been deleted"));
+    }
+
+    @Test
+    public void testUserDelete_userShouldBeDeleted() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--backend-roles", "backend-role1,backend-role2",
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("delete-user", userName,
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("get-user", userName,
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(1, result);
+    }
+
+    @Test
+    public void testUserDelete_noExistingUser() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("delete-user", userName,
+                "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(1, result);
+        Assert.assertTrue(errStreamCaptor.toString().contains("User " + userName + " for deletion not found"));
+    }
+
+    @Test
+    public void testUserUpdate() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--backend-roles", "backend-role1,backend-role2",
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("update-user", userName,
+                "-r", "sg-role1,sg-role3",
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+        Assert.assertTrue(outputStreamCaptor.toString().contains("User " + userName + " has been updated"));
+    }
+
+    @Test
+    public void testUserUpdate_passwordUpdate() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("update-user", userName,
+                "--password", "new_password",
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+    }
+
+    @Test
+    public void testUserUpdate_searchGuardRolesUpdate() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-r", "sg-role1,sg-role2",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("update-user", userName,
+                "-r", "new-sg-role1,new-sg-role2",
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("get-user", userName,
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+        Assert.assertTrue(outputStreamCaptor.toString().contains("search_guard_roles=[sg-role1, sg-role2, new-sg-role1, new-sg-role2]"));
+    }
+
+    @Test
+    public void testUserUpdate_backendRolesUpdate() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "--backend-roles", "backend-role1,backend-role2",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("update-user", userName,
+                "--backend-roles", "new-backend-role1,new-backend-role2",
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("get-user", userName,
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+        Assert.assertTrue(outputStreamCaptor.toString().contains("backend_roles=[backend-role1, backend-role2, new-backend-role1, new-backend-role2]"));
+    }
+
+    @Test
+    public void testUserUpdate_addAttributes() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-a", "a=1,b.c.d=2,e=foo",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("update-user", userName,
+                "-a", "a=new-1,b.c.d2=new-2,e=new-foo,e.a=newEA",
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("get-user", userName,
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+        Assert.assertTrue(outputStreamCaptor.toString().contains("attributes={a=new-1, b={c={d2=new-2, d=2}}, e={a=newEA}}"));
+    }
+
+    @Test
+    public void testUserUpdate_removeAttributesUpdate() {
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user", userName,
+                "-a", "a=1,b.c.d=2,e=foo,z.a=3,z.b=4",
+                "--sgctl-config-dir", configDir,
+                "--password", "pass");
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("update-user", userName,
+                "--remove-attributes", "a,b,z.a",
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+
+        result = SgctlTool.exec("get-user", userName,
+                "--sgctl-config-dir", configDir);
+        Assert.assertEquals(0, result);
+        Assert.assertTrue(outputStreamCaptor.toString().contains("attributes={e=foo, z={b=4}}"));
+    }
+
+    @Test
+    public void testUserUpdate_userNotFound() {
+        String userName = "userName_" + UUID.randomUUID();
+
+        int result = SgctlTool.exec("update-user", userName,
+                "-a", "a=new-1,b.c.d=new-2,e=new-foo",
+                "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(1, result);
+        Assert.assertTrue(errStreamCaptor.toString().contains("User " + userName + " not found"));
     }
 
 }

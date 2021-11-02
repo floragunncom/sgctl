@@ -34,7 +34,9 @@ import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpDelete;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPatch;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.entity.ContentType;
@@ -86,6 +88,26 @@ public class SearchGuardRestClient implements AutoCloseable {
     public GetBulkConfigResponse getConfigBulk()
             throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
         return get("/_searchguard/config").by(GetBulkConfigResponse::new);
+    }
+
+    public BasicResponse getUser(String userName)
+            throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        return get("/_searchguard/internal_users/" + userName).by(BasicResponse::new);
+    }
+
+    public BasicResponse deleteUser(String userName)
+            throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        return delete("/_searchguard/internal_users/" + userName).by(BasicResponse::new);
+    }
+
+    public BasicResponse putUser(String userName, Map<String, Object> newUserData)
+            throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        return putJson("/_searchguard/internal_users/" + userName, newUserData).by(BasicResponse::new);
+    }
+
+    public BasicResponse patchUser(String userName, Map<String, Object> userUpdateData)
+            throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        return patchJson("/_searchguard/internal_users/" + userName, userUpdateData).by(BasicResponse::new);
     }
 
     public BasicResponse putSgConfig(Map<String, Object> body)
@@ -177,6 +199,39 @@ public class SearchGuardRestClient implements AutoCloseable {
         return put(path, DocWriter.json().writeAsString(body), ContentType.APPLICATION_JSON);
     }
 
+    protected Response patchJson(String path, Map<String, ?> body) throws FailedConnectionException, InvalidResponseException {
+        return patch(path, DocWriter.json().writeAsString(body), ContentType.APPLICATION_JSON);
+    }
+
+    protected Response patch(String path, String body, ContentType contentType) throws FailedConnectionException, InvalidResponseException {
+        try {
+            HttpPatch httpPatch = new HttpPatch(path);
+            httpPatch.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+            return new Response(client.execute(httpHost, httpPatch));
+        } catch (ClientProtocolException e) {
+            throw new FailedConnectionException(e);
+        } catch (ConnectException e) {
+            throw new FailedConnectionException(e.getMessage(), e);
+        } catch (SSLHandshakeException e) {
+            throw new FailedConnectionException("TLS handshake failed while creating new connection: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new FailedConnectionException(e);
+        }
+    }
+
+    protected Response delete(String path) throws FailedConnectionException, InvalidResponseException {
+        try {
+            return new Response(client.execute(httpHost, new HttpDelete(path)));
+        } catch (ClientProtocolException e) {
+            throw new FailedConnectionException(e);
+        } catch (ConnectException e) {
+            throw new FailedConnectionException(e.getMessage(), e);
+        } catch (SSLHandshakeException e) {
+            throw new FailedConnectionException("TLS handshake failed while creating new connection: " + e.getMessage(), e);
+        } catch (IOException e) {
+            throw new FailedConnectionException(e);
+        }
+    }
     public HttpHost getHttpHost() {
         return httpHost;
     }
@@ -243,13 +298,16 @@ public class SearchGuardRestClient implements AutoCloseable {
 
         DocNode asDocNode() throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException {
             checkStatus();
+            if(bodyAsString == null) {
+                return DocNode.EMPTY;
+            }
             try {
                 DocType docType = DocType.peekByContentType(contentType);
 
                 if (docType != null) {
                     return DocNode.wrap(DocReader.type(docType).read(bodyAsString));
                 } else {
-                    return DocNode.wrap(String.valueOf(bodyAsString));
+                    return DocNode.wrap(bodyAsString);
                 }
             } catch (DocParseException e) {
                 throw new InvalidResponseException(e);
@@ -315,6 +373,9 @@ public class SearchGuardRestClient implements AutoCloseable {
 
                     throw new ApiException(message, httpResponse.getStatusLine(), httpResponse);
                 }
+            } else if (statusCode == 404) {
+                    String message = getStatusMessage("Not found");
+                    throw new ApiException(message, httpResponse.getStatusLine(), httpResponse);
             } else if (statusCode > 400) {
                 String message = getStatusMessage("Bad Request");
 
@@ -333,6 +394,15 @@ public class SearchGuardRestClient implements AutoCloseable {
 
                         if (error instanceof String) {
                             return (String) error;
+                        }
+
+                        if(error instanceof Map) {
+                            if(((Map) error).containsKey("message")); {
+                                Object errorMessage = ((Map<?, ?>) error).get("message");
+                                if(errorMessage instanceof String) {
+                                    return (String) errorMessage;
+                                }
+                            }
                         }
                     }
                 } catch (Exception e) {
@@ -390,6 +460,9 @@ public class SearchGuardRestClient implements AutoCloseable {
     }
 
     private static String getContentType(HttpResponse response) {
+        if(response.getEntity() == null) {
+            return null;
+        }
         Header header = response.getEntity().getContentType();
 
         if (header == null) {

@@ -37,10 +37,10 @@ public class BaseCommand {
     String clusterIdOption;
 
     @Option(names = { "--debug" }, description = "Print debug information")
-    boolean debug;
+    protected boolean debug;
 
     @Option(names = { "-v", "--verbose" }, description = "Print more information")
-    boolean verbose;
+    protected boolean verbose;
 
     @Option(names = { "--sgctl-config-dir" }, description = "The directory where sgctl reads from and writes to its configuration")
     File customConfigDir;

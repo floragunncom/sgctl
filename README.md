@@ -86,6 +86,32 @@ The Search Guard component state can be useful when debugging issues with a clus
 ```
 
 
+### User administration
+
+In order to get an internal user, you can use the following command:
+
+```shell
+./sgctl.sh get-user userName
+```
+
+In order to add a new internal user, you can use the following command:
+
+```shell
+./sgctl.sh add-user userName -r sg-role1,sg-role2 --backend-roles backend-role1,backend-role2 -a a=1,b.c.d=2,e=foo --password pass
+```
+
+In order to update an internal user, you can use the following command:
+
+```shell
+./sgctl.sh update-user userName -r sg-role1,sg-role2 --backend-roles backend-role1,backend-role2 -a a=1,b.c.d=2,e=foo --password pass
+```
+
+In order to delete an internal user, you can use the following command:
+
+```shell
+./sgctl.sh delete-user userName
+```
+
 ## License
 
 `sgctl` is licensed under the Apache 2 license. See the LICENSE file for details.

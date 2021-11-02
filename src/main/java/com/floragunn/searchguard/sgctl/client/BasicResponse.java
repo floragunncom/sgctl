@@ -38,7 +38,7 @@ public class BasicResponse implements Document {
         return getAsString("message");
     }
 
-    protected String getAsString(String name) {
+    public String getAsString(String name) {
         return content.get(name) != null ? String.valueOf(content.get(name)) : null;
     }
 
