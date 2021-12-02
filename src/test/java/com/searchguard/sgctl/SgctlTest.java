@@ -17,6 +17,8 @@
 
 package com.searchguard.sgctl;
 
+import static java.util.Collections.singletonList;
+
 import java.io.File;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
@@ -35,27 +37,36 @@ import com.floragunn.codova.documents.DocReader;
 import com.floragunn.searchguard.sgctl.SgctlTool;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteResult;
+import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
+import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
-import com.floragunn.searchguard.test.helper.file.FileHelper;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 
 public class SgctlTest {
+
+    private final static TestCertificates TEST_CERTIFICATES = TestCertificates.builder()
+            .ca("CN=root.ca.example.com,OU=SearchGuard,O=SearchGuard")
+            .addNodes("CN=127.0.0.1,OU=SearchGuard,O=SearchGuard")
+            .addAdminClients(singletonList("CN=admin-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "secret")
+            .build();
+
     @ClassRule
-    public static LocalCluster cluster = new LocalCluster.Builder().singleNode().sslEnabled().build();
+    public static LocalCluster cluster = new LocalCluster.Builder().singleNode().sslEnabled(TEST_CERTIFICATES).build();
 
     static String configDir;
 
     @BeforeClass
     public static void connect() throws Exception {
         InetSocketAddress httpAddress = cluster.getHttpAddress();
-        Path adminCert = FileHelper.getAbsoluteFilePathFromClassPath("kirk-cert.pem");
-        Path adminKey = FileHelper.getAbsoluteFilePathFromClassPath("kirk-key.pem");
-        Path rootCaCert = FileHelper.getAbsoluteFilePathFromClassPath("root-ca.pem");
+        TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
+        String adminCert = adminCertificate.getCertificateFile().getPath();
+        String adminKey = adminCertificate.getPrivateKeyFile().getPath();
+        String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         configDir = Files.createTempDirectory("sgctl-test-config").toString();
 
         int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert",
-                adminCert.toString(), "--key", adminKey.toString(), "--key-pass", "secret", "--ca-cert", rootCaCert.toString(), "--debug",
+                adminCert, "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug",
                 "--sgctl-config-dir", configDir);
 
         Assert.assertEquals(0, rc);
@@ -64,13 +75,14 @@ public class SgctlTest {
     @Test
     public void connectWithoutHOption() throws Exception {
         InetSocketAddress httpAddress = cluster.getHttpAddress();
-        Path adminCert = FileHelper.getAbsoluteFilePathFromClassPath("kirk-cert.pem");
-        Path adminKey = FileHelper.getAbsoluteFilePathFromClassPath("kirk-key.pem");
-        Path rootCaCert = FileHelper.getAbsoluteFilePathFromClassPath("root-ca.pem");
+        TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
+        String adminCert = adminCertificate.getCertificateFile().getPath();
+        String adminKey = adminCertificate.getPrivateKeyFile().getPath();
+        String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         Path configDir = Files.createTempDirectory("sgctl-test-config");
 
-        int rc = SgctlTool.exec("connect", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert.toString(),
-                "--key", adminKey.toString(), "--key-pass", "secret", "--ca-cert", rootCaCert.toString(), "--debug", "--sgctl-config-dir",
+        int rc = SgctlTool.exec("connect", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert,
+                "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir",
                 configDir.toString());
 
         Assert.assertEquals(0, rc);
