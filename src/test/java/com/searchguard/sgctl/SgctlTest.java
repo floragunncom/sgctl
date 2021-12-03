@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import org.apache.commons.io.output.TeeOutputStream;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -58,8 +59,8 @@ public class SgctlTest {
 
     @Before
     public void setUp() {
-        System.setOut(new PrintStream(outputStreamCaptor));
-        System.setErr(new PrintStream(errStreamCaptor));
+        System.setOut(new PrintStream(new TeeOutputStream(outputStreamCaptor, standardOut)));
+        System.setErr(new PrintStream(new TeeOutputStream(errStreamCaptor, standardErr)));
     }
     @After
     public void tearDown() {
