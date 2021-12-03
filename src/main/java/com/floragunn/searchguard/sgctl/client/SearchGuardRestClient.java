@@ -371,15 +371,15 @@ public class SearchGuardRestClient implements AutoCloseable {
                 } else {
                     String message = getStatusMessage("Bad Request");
 
-                    throw new ApiException(message, httpResponse.getStatusLine(), httpResponse);
+                    throw new ApiException(message, httpResponse.getStatusLine(), httpResponse, bodyAsString);
                 }
             } else if (statusCode == 404) {
                     String message = getStatusMessage("Not found");
-                    throw new ApiException(message, httpResponse.getStatusLine(), httpResponse);
+                    throw new ApiException(message, httpResponse.getStatusLine(), httpResponse, bodyAsString);
             } else if (statusCode > 400) {
                 String message = getStatusMessage("Bad Request");
 
-                throw new ApiException(message, httpResponse.getStatusLine(), httpResponse);
+                throw new ApiException(message, httpResponse.getStatusLine(), httpResponse, bodyAsString);
             }
 
         }
@@ -427,6 +427,16 @@ public class SearchGuardRestClient implements AutoCloseable {
 
                 if (response.get("error") instanceof String) {
                     errorMessage = (String) response.get("error");
+                } else if (response.get("error") instanceof Map) {
+                    DocNode errorNode = response.getAsNode("error");
+                    
+                    if (errorNode.get("reason") instanceof String) {
+                        errorMessage = (String) errorNode.get("reason");
+                        
+                        if (errorMessage.startsWith("Invalid index name [_searchguard]")) {
+                            errorMessage = "Invalid REST endpoint";                            
+                        }
+                    }
                 }
 
                 if (response.get("detail") instanceof Map) {
@@ -436,8 +446,12 @@ public class SearchGuardRestClient implements AutoCloseable {
                         log.log(Level.WARNING, "Error while parsing validation errors in response", e);
                     }
                 }
+                
+                if (errorMessage == null) {
+                    errorMessage = this.httpResponse.getStatusLine().toString();
+                }
 
-                return new ApiException(errorMessage, httpResponse.getStatusLine(), httpResponse).validationErrors(validationErrors);
+                return new ApiException(errorMessage, this.httpResponse.getStatusLine(), this.httpResponse, this.bodyAsString).validationErrors(validationErrors);
 
             } catch (DocParseException e) {
                 throw new InvalidResponseException("Response contains invalid JSON: " + e.getMessage(), e);

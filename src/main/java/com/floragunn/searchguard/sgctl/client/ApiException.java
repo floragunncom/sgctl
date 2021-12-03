@@ -27,24 +27,28 @@ public class ApiException extends Exception {
     private static final long serialVersionUID = -2613151852034285098L;
     private final StatusLine statusLine;
     private final HttpResponse httpResponse;
+    private final String httpResponseBody;
     private ValidationErrors validationErrors;
 
-    public ApiException(String message, StatusLine statusLine, HttpResponse httpResponse) {
+    public ApiException(String message, StatusLine statusLine, HttpResponse httpResponse,  String httpResponseBody) {
         super(message);
         this.statusLine = statusLine;
         this.httpResponse = httpResponse;
+        this.httpResponseBody = httpResponseBody;
     }
 
     public ApiException(String message, Throwable cause) {
         super(message, cause);
         this.statusLine = null;
         this.httpResponse = null;
+        this.httpResponseBody = null;
     }
 
     public ApiException(String message) {
         super(message);
         this.statusLine = null;
         this.httpResponse = null;
+        this.httpResponseBody = null;
     }
 
     public StatusLine getStatusLine() {
@@ -62,6 +66,10 @@ public class ApiException extends Exception {
     public ApiException validationErrors(ValidationErrors validationErrors) {
         this.validationErrors = validationErrors;
         return this;
+    }
+
+    public String getHttpResponseBody() {
+        return httpResponseBody;
     }
 
 }
