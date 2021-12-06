@@ -232,6 +232,7 @@ public class SearchGuardRestClient implements AutoCloseable {
             throw new FailedConnectionException(e);
         }
     }
+
     public HttpHost getHttpHost() {
         return httpHost;
     }
@@ -298,7 +299,7 @@ public class SearchGuardRestClient implements AutoCloseable {
 
         DocNode asDocNode() throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException {
             checkStatus();
-            if(bodyAsString == null) {
+            if (bodyAsString == null) {
                 return DocNode.EMPTY;
             }
             try {
@@ -374,8 +375,8 @@ public class SearchGuardRestClient implements AutoCloseable {
                     throw new ApiException(message, httpResponse.getStatusLine(), httpResponse, bodyAsString);
                 }
             } else if (statusCode == 404) {
-                    String message = getStatusMessage("Not found");
-                    throw new ApiException(message, httpResponse.getStatusLine(), httpResponse, bodyAsString);
+                String message = getStatusMessage("Not found");
+                throw new ApiException(message, httpResponse.getStatusLine(), httpResponse, bodyAsString);
             } else if (statusCode > 400) {
                 String message = getStatusMessage("Bad Request");
 
@@ -394,14 +395,9 @@ public class SearchGuardRestClient implements AutoCloseable {
 
                         if (error instanceof String) {
                             return (String) error;
-                        }
-
-                        if(error instanceof Map) {
-                            if(((Map) error).containsKey("message")); {
-                                Object errorMessage = ((Map<?, ?>) error).get("message");
-                                if(errorMessage instanceof String) {
-                                    return (String) errorMessage;
-                                }
+                        } else if (error instanceof Map) {
+                            if (((Map<?, ?>) error).get("message") instanceof String) {
+                                return (String) ((Map<?, ?>) error).get("message");
                             }
                         }
                     }
@@ -429,12 +425,12 @@ public class SearchGuardRestClient implements AutoCloseable {
                     errorMessage = (String) response.get("error");
                 } else if (response.get("error") instanceof Map) {
                     DocNode errorNode = response.getAsNode("error");
-                    
+
                     if (errorNode.get("reason") instanceof String) {
                         errorMessage = (String) errorNode.get("reason");
-                        
+
                         if (errorMessage.startsWith("Invalid index name [_searchguard]")) {
-                            errorMessage = "Invalid REST endpoint";                            
+                            errorMessage = "Invalid REST endpoint";
                         }
                     }
                 }
@@ -446,12 +442,13 @@ public class SearchGuardRestClient implements AutoCloseable {
                         log.log(Level.WARNING, "Error while parsing validation errors in response", e);
                     }
                 }
-                
+
                 if (errorMessage == null) {
                     errorMessage = this.httpResponse.getStatusLine().toString();
                 }
 
-                return new ApiException(errorMessage, this.httpResponse.getStatusLine(), this.httpResponse, this.bodyAsString).validationErrors(validationErrors);
+                return new ApiException(errorMessage, this.httpResponse.getStatusLine(), this.httpResponse, this.bodyAsString)
+                        .validationErrors(validationErrors);
 
             } catch (DocParseException e) {
                 throw new InvalidResponseException("Response contains invalid JSON: " + e.getMessage(), e);
@@ -474,7 +471,7 @@ public class SearchGuardRestClient implements AutoCloseable {
     }
 
     private static String getContentType(HttpResponse response) {
-        if(response.getEntity() == null) {
+        if (response.getEntity() == null) {
             return null;
         }
         Header header = response.getEntity().getContentType();

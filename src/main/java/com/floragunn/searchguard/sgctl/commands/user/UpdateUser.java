@@ -25,6 +25,8 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
+import com.floragunn.codova.documents.DocNode;
+import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.client.ApiException;
 import com.floragunn.searchguard.sgctl.client.BasicResponse;
@@ -69,10 +71,10 @@ public class UpdateUser extends ConnectingCommand implements Callable<Integer> {
     @Override
     public Integer call() {
         try (SearchGuardRestClient client = getClient().debug(debug)) {
-            Map<String, Object> userData = getUserData(client);
-            List<String> previousSgRoles = (List<String>) userData.get("search_guard_roles");
-            List<String> previousBackendRoles = (List<String>) userData.get("backend_roles");
-            Map<String, Object> previousAttributes = (Map<String, Object>) userData.get("attributes");
+            DocNode userData = getUserData(client);
+            List<String> previousSgRoles = userData.getListOfStrings("search_guard_roles");
+            List<String> previousBackendRoles = userData.getListOfStrings("backend_roles");
+            DocNode previousAttributes = userData.getAsNode("attributes");
 
             Map<String, Object> userUpdateData = new HashMap<>();
 
@@ -139,6 +141,9 @@ public class UpdateUser extends ConnectingCommand implements Callable<Integer> {
                 System.err.println(e.getMessage());
             }
             return 1;
+        } catch (ConfigValidationException e) {
+            System.err.println("Unexpected response: " + e.getValidationErrors());
+            return 1;
         }
     }
 
@@ -189,8 +194,9 @@ public class UpdateUser extends ConnectingCommand implements Callable<Integer> {
         }
     }
 
-    private Map<String, Object> getUserData(SearchGuardRestClient client) throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return (Map<String, Object>) client.getUser(userName).getContent().get("data");
+    private DocNode getUserData(SearchGuardRestClient client)
+            throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        return client.getUser(userName).toDocNode().getAsNode("data");
     }
 
 }
