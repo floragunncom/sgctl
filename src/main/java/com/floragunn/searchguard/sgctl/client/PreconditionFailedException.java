@@ -15,37 +15,25 @@
  * 
  */
 
-package com.floragunn.searchguard.sgctl;
+package com.floragunn.searchguard.sgctl.client;
 
-public class SgctlException extends Exception {
+import org.apache.http.HttpResponse;
+import org.apache.http.StatusLine;
 
-    private static final long serialVersionUID = 6181282719824113444L;
+public class PreconditionFailedException extends ApiException {
 
-    private String debugDetail;
+    private static final long serialVersionUID = -8533002682306022274L;
 
-    public SgctlException() {
-        super();
+    public PreconditionFailedException(String message, StatusLine statusLine, HttpResponse httpResponse, String httpResponseBody) {
+        super(message, statusLine, httpResponse, httpResponseBody);
     }
 
-    public SgctlException(String message, Throwable cause) {
+    public PreconditionFailedException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public SgctlException(String message) {
+    public PreconditionFailedException(String message) {
         super(message);
-    }
-
-    public SgctlException(Throwable cause) {
-        super(cause);
-    }
-
-    public SgctlException debugDetail(String debugDetail) {
-        this.debugDetail = debugDetail;
-        return this;
-    }
-
-    public String getDebugDetail() {
-        return debugDetail;
     }
 
 }

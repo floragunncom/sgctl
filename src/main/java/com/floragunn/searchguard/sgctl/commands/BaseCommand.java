@@ -24,6 +24,12 @@ import java.io.IOException;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.searchguard.sgctl.SgctlConfig;
 import com.floragunn.searchguard.sgctl.SgctlException;
+import com.floragunn.searchguard.sgctl.client.ApiException;
+import com.floragunn.searchguard.sgctl.client.FailedConnectionException;
+import com.floragunn.searchguard.sgctl.client.InvalidResponseException;
+import com.floragunn.searchguard.sgctl.client.PreconditionFailedException;
+import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
+import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
 
@@ -106,6 +112,32 @@ public class BaseCommand {
         } else {
             return DEFAULT_CONFIG_DIR;
         }
+    }
+
+    protected void retryOnConcurrencyConflict(RetryableProcedure retryableProcedure) throws SgctlException, InvalidResponseException,
+            FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        int maxRetries = 3;
+        int retry = 1;
+
+        for (;;) {
+            try {
+                retryableProcedure.run();
+                break;
+            } catch (PreconditionFailedException e) {
+                retry++;
+
+                if (retry > maxRetries) {
+                    throw new PreconditionFailedException(
+                            "Could not perform operation due to concurrency conflict. Retried " + maxRetries + " times. Giving up now.", e);
+                }
+            }
+        }
+    }
+    
+    @FunctionalInterface
+    protected static interface RetryableProcedure {
+        void run() throws SgctlException, InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException,
+                ApiException;
     }
 
 }

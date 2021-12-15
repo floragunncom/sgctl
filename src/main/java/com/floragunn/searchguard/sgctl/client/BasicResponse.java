@@ -20,31 +20,30 @@ package com.floragunn.searchguard.sgctl.client;
 import java.util.Map;
 
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
+import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient.Response;
 
 public class BasicResponse implements Document {
-    private final Map<String, Object> content;
+    private final DocNode content;
+    private final String eTag;
 
-    public BasicResponse(Map<String, Object> content) {
-        this.content = content;
-    }
-    
     public BasicResponse(DocNode content) {
         this.content = content;
-    }
-    
-    public String getMessage() {
-        return getAsString("message");
+        this.eTag = null;
     }
 
-    public String getAsString(String name) {
-        return content.get(name) != null ? String.valueOf(content.get(name)) : null;
+    public BasicResponse(Response content) throws InvalidResponseException {
+        this.content = content.asDocNode();
+        this.eTag = content.getETag();
+    }
+
+    public String getMessage() {
+        return content.getAsString("message");
     }
 
     @Override
     public String toString() {
-        return DocWriter.json().writeAsString(content);
+        return content.toJsonString();
     }
 
     public Map<String, Object> getContent() {
@@ -52,7 +51,11 @@ public class BasicResponse implements Document {
     }
 
     @Override
-    public Map<String, Object> toBasicObject() {
-        return content;
+    public Object toBasicObject() {
+        return content.toBasicObject();
+    }
+
+    public String getETag() {
+        return eTag;
     }
 }

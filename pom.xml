@@ -20,7 +20,7 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>7.14.0</elasticsearch.version>
+		<elasticsearch.version>7.16.1</elasticsearch.version>
 		<sg.test-version>b-master-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
@@ -227,6 +227,13 @@
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>io.github.hakky54</groupId>
+			<artifactId>sslcontext-kickstart-for-pem</artifactId>
+			<scope>test</scope>
+			<version>7.0.2</version>
+		</dependency>		
 
 		<dependency>
 			<groupId>commons-io</groupId>

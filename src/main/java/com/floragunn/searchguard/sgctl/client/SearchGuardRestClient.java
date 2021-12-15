@@ -53,11 +53,13 @@ import com.floragunn.codova.documents.DocType.UnknownDocTypeException;
 import com.floragunn.codova.documents.DocUtils;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
+import com.floragunn.codova.documents.patch.DocPatch;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidatingFunction;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.searchguard.sgctl.client.api.AuthInfoResponse;
 import com.floragunn.searchguard.sgctl.client.api.GetBulkConfigResponse;
+import com.floragunn.searchguard.sgctl.client.api.GetUserResponse;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 
@@ -77,57 +79,58 @@ public class SearchGuardRestClient implements AutoCloseable {
 
     public AuthInfoResponse authInfo()
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return get("/_searchguard/authinfo").by(AuthInfoResponse::new);
+        return get("/_searchguard/authinfo").parseResponseBy(AuthInfoResponse::new);
     }
 
     public BasicResponse putConfigBulk(Map<String, Map<String, Map<String, Object>>> configTypeToConfigMap)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return putJson("/_searchguard/config", configTypeToConfigMap).by(BasicResponse::new);
+        return putJson("/_searchguard/config", configTypeToConfigMap).parseResponseBy(BasicResponse::new);
     }
 
     public GetBulkConfigResponse getConfigBulk()
             throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
-        return get("/_searchguard/config").by(GetBulkConfigResponse::new);
+        return get("/_searchguard/config").parseResponseBy(GetBulkConfigResponse::new);
     }
 
-    public BasicResponse getUser(String userName)
+    public GetUserResponse getUser(String userName)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return get("/_searchguard/internal_users/" + userName).by(BasicResponse::new);
+        return get("/_searchguard/internal_users/" + userName).parseResponseBy(GetUserResponse::new);
     }
 
     public BasicResponse deleteUser(String userName)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return delete("/_searchguard/internal_users/" + userName).by(BasicResponse::new);
+        return delete("/_searchguard/internal_users/" + userName).parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse putUser(String userName, Map<String, Object> newUserData)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return putJson("/_searchguard/internal_users/" + userName, newUserData).by(BasicResponse::new);
+        return putJson("/_searchguard/internal_users/" + userName, newUserData).parseResponseBy(BasicResponse::new);
     }
 
-    public BasicResponse patchUser(String userName, Map<String, Object> userUpdateData)
+    public BasicResponse patchUser(String userName, DocPatch patch, String eTag)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return patchJson("/_searchguard/internal_users/" + userName, userUpdateData).by(BasicResponse::new);
+        return patch("/_searchguard/internal_users/" + userName, patch, eTag).parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse putSgConfig(Map<String, Object> body)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return putJson("/_searchguard/api/sg_config", body).by(BasicResponse::new);
+        return putJson("/_searchguard/api/sg_config", body).parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse reloadHttpCerts()
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return post("/_searchguard/api/ssl/http/reloadcerts/").by(BasicResponse::new);
+        return post("/_searchguard/api/ssl/http/reloadcerts/").parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse reloadTransportCerts()
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return post("/_searchguard/api/ssl/transport/reloadcerts/").by(BasicResponse::new);
+        return post("/_searchguard/api/ssl/transport/reloadcerts/").parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse getComponentState(String componentId, boolean verbose)
             throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
-        return get("/_searchguard/component/" + (componentId != null ? componentId : "_all") + "/_health?verbose=" + verbose).by(BasicResponse::new);
+        return get("/_searchguard/component/" + (componentId != null ? componentId : "_all") + "/_health?verbose=" + verbose)
+                .parseResponseBy(BasicResponse::new);
     }
 
     protected Response get(String path) throws FailedConnectionException, InvalidResponseException {
@@ -199,14 +202,20 @@ public class SearchGuardRestClient implements AutoCloseable {
         return put(path, DocWriter.json().writeAsString(body), ContentType.APPLICATION_JSON);
     }
 
-    protected Response patchJson(String path, Map<String, ?> body) throws FailedConnectionException, InvalidResponseException {
-        return patch(path, DocWriter.json().writeAsString(body), ContentType.APPLICATION_JSON);
+    protected Response patch(String path, DocPatch patch, String eTag) throws FailedConnectionException, InvalidResponseException {
+        return patch(path, patch.toJsonString(), ContentType.create(patch.getMediaType()), eTag);
     }
 
-    protected Response patch(String path, String body, ContentType contentType) throws FailedConnectionException, InvalidResponseException {
+    protected Response patch(String path, String body, ContentType contentType, String eTag)
+            throws FailedConnectionException, InvalidResponseException {
         try {
             HttpPatch httpPatch = new HttpPatch(path);
-            httpPatch.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+            httpPatch.setEntity(new StringEntity(body, contentType));
+
+            if (eTag != null) {
+                httpPatch.setHeader("If-Match", eTag);
+            }
+
             return new Response(client.execute(httpHost, httpPatch));
         } catch (ClientProtocolException e) {
             throw new FailedConnectionException(e);
@@ -254,10 +263,12 @@ public class SearchGuardRestClient implements AutoCloseable {
         private final HttpResponse httpResponse;
         private final String bodyAsString;
         private final String contentType;
+        private final String eTag;
 
         Response(HttpResponse httpResponse) throws InvalidResponseException {
             this.httpResponse = httpResponse;
             this.contentType = getContentType(httpResponse);
+            this.eTag = httpResponse.containsHeader("ETag") ? httpResponse.getFirstHeader("ETag").getValue() : null;
 
             if (debug) {
                 System.out.println("------------------------------------------------");
@@ -288,7 +299,8 @@ public class SearchGuardRestClient implements AutoCloseable {
             }
         }
 
-        Map<String, Object> asMap() throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        Map<String, Object> asMap()
+                throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, PreconditionFailedException {
             checkStatus();
             try {
                 return DocReader.type(DocType.getByContentType(contentType)).readObject(bodyAsString);
@@ -297,8 +309,7 @@ public class SearchGuardRestClient implements AutoCloseable {
             }
         }
 
-        DocNode asDocNode() throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException {
-            checkStatus();
+        public DocNode asDocNode() throws InvalidResponseException {
             if (bodyAsString == null) {
                 return DocNode.EMPTY;
             }
@@ -329,13 +340,13 @@ public class SearchGuardRestClient implements AutoCloseable {
             }
         }
 
-        public <T> T by(ValidatingFunction<DocNode, T> parser)
+        public <T> T parseResponseBy(ResponseParser<T> parser)
                 throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException {
 
             checkStatus();
 
             try {
-                return parser.apply(asDocNode());
+                return parser.apply(this);
             } catch (ConfigValidationException e) {
                 throw new InvalidResponseException(e);
             } catch (Exception e) {
@@ -377,6 +388,9 @@ public class SearchGuardRestClient implements AutoCloseable {
             } else if (statusCode == 404) {
                 String message = getStatusMessage("Not found");
                 throw new ApiException(message, httpResponse.getStatusLine(), httpResponse, bodyAsString);
+            } else if (statusCode == 412) {
+                String message = getStatusMessage("Precondition failed");
+                throw new PreconditionFailedException(message, httpResponse.getStatusLine(), httpResponse, bodyAsString);
             } else if (statusCode > 400) {
                 String message = getStatusMessage("Bad Request");
 
@@ -456,6 +470,15 @@ public class SearchGuardRestClient implements AutoCloseable {
 
         }
 
+        public String getETag() {
+            return eTag;
+        }
+
+    }
+
+    @FunctionalInterface
+    public static interface ResponseParser<R> {
+        R apply(Response response) throws InvalidResponseException, ConfigValidationException, ApiException;
     }
 
     private static String getEntityAsString(HttpResponse response) throws IllegalCharsetNameException, UnsupportedCharsetException, IOException {

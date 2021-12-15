@@ -39,6 +39,7 @@ import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Test;
 
+import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.searchguard.sgctl.SgctlTool;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter;
@@ -46,6 +47,7 @@ import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteResult;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
+import com.floragunn.searchguard.test.helper.rest.GenericRestClient;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 
@@ -56,23 +58,21 @@ public class SgctlTest {
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
     private final ByteArrayOutputStream errStreamCaptor = new ByteArrayOutputStream();
 
-
     @Before
     public void setUp() {
         System.setOut(new PrintStream(new TeeOutputStream(outputStreamCaptor, standardOut)));
         System.setErr(new PrintStream(new TeeOutputStream(errStreamCaptor, standardErr)));
     }
+
     @After
     public void tearDown() {
         System.setOut(standardOut);
         System.setErr(standardErr);
     }
 
-    private final static TestCertificates TEST_CERTIFICATES = TestCertificates.builder()
-            .ca("CN=root.ca.example.com,OU=SearchGuard,O=SearchGuard")
+    private final static TestCertificates TEST_CERTIFICATES = TestCertificates.builder().ca("CN=root.ca.example.com,OU=SearchGuard,O=SearchGuard")
             .addNodes("CN=127.0.0.1,OU=SearchGuard,O=SearchGuard")
-            .addAdminClients(singletonList("CN=admin-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "secret")
-            .build();
+            .addAdminClients(singletonList("CN=admin-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "secret").build();
 
     @ClassRule
     public static LocalCluster cluster = new LocalCluster.Builder().singleNode().sslEnabled(TEST_CERTIFICATES).build();
@@ -88,9 +88,8 @@ public class SgctlTest {
         String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         configDir = Files.createTempDirectory("sgctl-test-config").toString();
 
-        int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert",
-                adminCert, "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug",
-                "--sgctl-config-dir", configDir);
+        int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert,
+                "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir);
 
         Assert.assertEquals(0, rc);
     }
@@ -104,9 +103,8 @@ public class SgctlTest {
         String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         Path configDir = Files.createTempDirectory("sgctl-test-config");
 
-        int rc = SgctlTool.exec("connect", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert,
-                "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir",
-                configDir.toString());
+        int rc = SgctlTool.exec("connect", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert, "--key",
+                adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir.toString());
 
         Assert.assertEquals(0, rc);
 
@@ -250,153 +248,58 @@ public class SgctlTest {
     }
 
     @Test
-    public void testUserGet() {
+    public void testUserAdd_shouldCreate() throws Exception {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--backend-roles", "backend-role1,backend-role2",
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
+        int result = SgctlTool.exec("add-user", userName, "-r", "sg-role1,sg-role2", "--backend-roles", "backend-role1,backend-role2", "-a",
+                "a=1,b.c.d=2,e=foo", "--sgctl-config-dir", configDir, "--password", "pass");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("get-user", userName,
-                "--debug", "--verbose",
-                "--sgctl-config-dir", configDir);
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/internal_users/" + userName);
 
-        Assert.assertEquals(0, result);
-        String output = outputStreamCaptor.toString();
-        Assert.assertTrue(output.contains("User found\n{backend_roles=[backend-role1, backend-role2], attributes={a=1, b={c={d=2}}, e=foo}, search_guard_roles=[sg-role1, sg-role2]}\n"));
-    }
-
-    @Test
-    public void testUserGet_notFound() {
-        String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("get-user", userName,
-                "--sgctl-config-dir", configDir);
-
-        Assert.assertEquals(1, result);
-        Assert.assertTrue(errStreamCaptor.toString().contains("User " + userName + " not found"));
-    }
-
-    @Test
-    public void testUserAdd() {
-        String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--backend-roles", "backend-role1,backend-role2",
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
-
-        Assert.assertEquals(0, result);
-        String output = outputStreamCaptor.toString();
-        Assert.assertTrue(output.contains("User " + userName + " has been added"));
-    }
-
-    @Test
-    public void testUserAdd_shouldCreate() {
-        String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--backend-roles", "backend-role1,backend-role2",
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
-        Assert.assertEquals(0, result);
-
-        result = SgctlTool.exec("get-user", userName,
-                "--debug", "--verbose",
-                "--sgctl-config-dir", configDir);
-
-        Assert.assertEquals(0, result);
-        String output = outputStreamCaptor.toString();
-        Assert.assertTrue(output.contains("User found\n{backend_roles=[backend-role1, backend-role2], attributes={a=1, b={c={d=2}}, e=foo}, search_guard_roles=[sg-role1, sg-role2]}\n"));
-    }
-
-    @Test
-    public void testUserAdd_userAlreadyExists() {
-        String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--backend-roles", "backend-role1,backend-role2",
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
-        Assert.assertEquals(0, result);
-
-        result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--backend-roles", "backend-role1,backend-role2",
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
-
-        Assert.assertEquals(1, result);
-        Assert.assertTrue(errStreamCaptor.toString().contains("User " + userName + " already exists"));
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertEquals(response.getBody(), Arrays.asList("sg-role1", "sg-role2"),
+                    response.getBodyAsDocNode().get("data", "search_guard_roles"));
+        }
     }
 
     @Test
     public void testUserDelete() {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--backend-roles", "backend-role1,backend-role2",
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
+        int result = SgctlTool.exec("add-user", userName, "-r", "sg-role1,sg-role2", "--backend-roles", "backend-role1,backend-role2", "-a",
+                "a=1,b.c.d=2,e=foo", "--sgctl-config-dir", configDir, "--password", "pass");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("delete-user", userName,
-                "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("delete-user", userName, "--sgctl-config-dir", configDir);
         Assert.assertEquals(0, result);
         Assert.assertTrue(outputStreamCaptor.toString().contains("User " + userName + " has been deleted"));
     }
 
     @Test
-    public void testUserDelete_userShouldBeDeleted() {
+    public void testUserDelete_userShouldBeDeleted() throws Exception {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--backend-roles", "backend-role1,backend-role2",
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
+        int result = SgctlTool.exec("add-user", userName, "-r", "sg-role1,sg-role2", "--backend-roles", "backend-role1,backend-role2", "-a",
+                "a=1,b.c.d=2,e=foo", "--sgctl-config-dir", configDir, "--password", "pass");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("delete-user", userName,
-                "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("delete-user", userName, "--sgctl-config-dir", configDir);
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("get-user", userName,
-                "--sgctl-config-dir", configDir);
-        Assert.assertEquals(1, result);
-    }
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/internal_users/" + userName);
 
-    @Test
-    public void testUserDelete_noExistingUser() {
-        String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("delete-user", userName,
-                "--sgctl-config-dir", configDir);
-
-        Assert.assertEquals(1, result);
-        Assert.assertTrue(errStreamCaptor.toString().contains("User " + userName + " for deletion not found"));
+            Assert.assertEquals(response.getBody(), 404, response.getStatusCode());
+        }
     }
 
     @Test
     public void testUserUpdate() {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--backend-roles", "backend-role1,backend-role2",
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
+        int result = SgctlTool.exec("add-user", userName, "-r", "sg-role1,sg-role2", "--backend-roles", "backend-role1,backend-role2", "-a",
+                "a=1,b.c.d=2,e=foo", "--sgctl-config-dir", configDir, "--password", "pass");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("update-user", userName,
-                "-r", "sg-role1,sg-role3",
-                "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("update-user", userName, "-r", "sg-role1,sg-role3", "--sgctl-config-dir", configDir);
         Assert.assertEquals(0, result);
         Assert.assertTrue(outputStreamCaptor.toString().contains("User " + userName + " has been updated"));
     }
@@ -404,107 +307,77 @@ public class SgctlTest {
     @Test
     public void testUserUpdate_passwordUpdate() {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
+        int result = SgctlTool.exec("add-user", userName, "--sgctl-config-dir", configDir, "--password", "pass");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("update-user", userName,
-                "--password", "new_password",
-                "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("update-user", userName, "--password", "new_password", "--sgctl-config-dir", configDir);
         Assert.assertEquals(0, result);
     }
 
     @Test
     public void testUserUpdate_searchGuardRolesUpdate() {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-r", "sg-role1,sg-role2",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
+        int result = SgctlTool.exec("add-user", userName, "-r", "sg-role1,sg-role2", "--sgctl-config-dir", configDir, "--password", "pass",
+                "--debug");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("update-user", userName,
-                "-r", "new-sg-role1,new-sg-role2",
-                "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("update-user", userName, "-r", "new-sg-role1,new-sg-role2", "--sgctl-config-dir", configDir, "--debug");
         Assert.assertEquals(0, result);
-
-        result = SgctlTool.exec("get-user", userName,
-                "--sgctl-config-dir", configDir);
-        Assert.assertEquals(0, result);
-        Assert.assertTrue(outputStreamCaptor.toString().contains("search_guard_roles=[sg-role1, sg-role2, new-sg-role1, new-sg-role2]"));
     }
 
     @Test
-    public void testUserUpdate_backendRolesUpdate() {
+    public void testUserUpdate_backendRolesUpdate() throws Exception {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "--backend-roles", "backend-role1,backend-role2",
-                "--sgctl-config-dir", configDir,
+        int result = SgctlTool.exec("add-user", userName, "--backend-roles", "backend-role1,backend-role2", "--sgctl-config-dir", configDir,
                 "--password", "pass");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("update-user", userName,
-                "--backend-roles", "new-backend-role1,new-backend-role2",
-                "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("update-user", userName, "--backend-roles", "new-backend-role1,new-backend-role2", "--sgctl-config-dir", configDir);
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("get-user", userName,
-                "--sgctl-config-dir", configDir);
-        Assert.assertEquals(0, result);
-        Assert.assertTrue(outputStreamCaptor.toString().contains("backend_roles=[backend-role1, backend-role2, new-backend-role1, new-backend-role2]"));
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/internal_users/" + userName);
+
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertEquals(response.getBody(), Arrays.asList("backend-role1", "backend-role2", "new-backend-role1", "new-backend-role2"),
+                    response.getBodyAsDocNode().get("data", "backend_roles"));
+        }
     }
 
     @Test
-    public void testUserUpdate_addAttributes() {
+    public void testUserUpdate_addAttributes() throws Exception {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-a", "a=1,b.c.d=2,e=foo",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
+        int result = SgctlTool.exec("add-user", userName, "-a", "a=1,b.c.d=2,e=foo", "--sgctl-config-dir", configDir, "--password", "pass");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("update-user", userName,
-                "-a", "a=new-1,b.c.d2=new-2,e=new-foo,e.a=newEA",
-                "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("update-user", userName, "-a", "a=new-1,b.c.d2=new-2,e.a=newEA", "--sgctl-config-dir", configDir);
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("get-user", userName,
-                "--sgctl-config-dir", configDir);
-        Assert.assertEquals(0, result);
-        Assert.assertTrue(outputStreamCaptor.toString().contains("attributes={a=new-1, b={c={d2=new-2, d=2}}, e={a=newEA}}"));
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/internal_users/" + userName);
+
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertEquals(response.getBody(), DocNode.of("a", "new-1", "b.c.d2", "new-2", "b.c.d", "2", "e.a", "newEA").toNormalizedMap(),
+                    response.getBodyAsDocNode().get("data", "attributes"));
+        }
     }
 
     @Test
-    public void testUserUpdate_removeAttributesUpdate() {
+    public void testUserUpdate_removeAttributesUpdate() throws Exception {
         String userName = "userName_" + UUID.randomUUID();
-        int result = SgctlTool.exec("add-user", userName,
-                "-a", "a=1,b.c.d=2,e=foo,z.a=3,z.b=4",
-                "--sgctl-config-dir", configDir,
-                "--password", "pass");
+        int result = SgctlTool.exec("add-user", userName, "-a", "a=1,b.c.d=2,e=foo,z.a=3,z.b=4", "--sgctl-config-dir", configDir, "--password",
+                "pass");
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("update-user", userName,
-                "--remove-attributes", "a,b,z.a",
-                "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("update-user", userName, "--remove-attributes", "a,b,z.a", "--sgctl-config-dir", configDir);
         Assert.assertEquals(0, result);
 
-        result = SgctlTool.exec("get-user", userName,
-                "--sgctl-config-dir", configDir);
-        Assert.assertEquals(0, result);
-        Assert.assertTrue(outputStreamCaptor.toString().contains("attributes={e=foo, z={b=4}}"));
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/internal_users/" + userName);
+
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertEquals(response.getBody(), DocNode.of("e", "foo", "z.b", "4").toNormalizedMap(),
+                    response.getBodyAsDocNode().get("data", "attributes"));
+        }
     }
-
-    @Test
-    public void testUserUpdate_userNotFound() {
-        String userName = "userName_" + UUID.randomUUID();
-
-        int result = SgctlTool.exec("update-user", userName,
-                "-a", "a=new-1,b.c.d=new-2,e=new-foo",
-                "--sgctl-config-dir", configDir);
-
-        Assert.assertEquals(1, result);
-        Assert.assertTrue(errStreamCaptor.toString().contains("User " + userName + " not found"));
-    }
-
 }
