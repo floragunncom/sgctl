@@ -9,7 +9,7 @@ import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.errors.ValidationError;
 
 public enum ConfigType {
-    CONFIG, INTERNALUSERS, ACTIONGROUPS, ROLES, ROLESMAPPING, TENANTS, BLOCKS, FRONTEND_CONFIG;
+    CONFIG_VARS, CONFIG, INTERNALUSERS, ACTIONGROUPS, ROLES, ROLESMAPPING, TENANTS, BLOCKS, FRONTEND_CONFIG;
 
     public String getApiName() {
         return name().toLowerCase();

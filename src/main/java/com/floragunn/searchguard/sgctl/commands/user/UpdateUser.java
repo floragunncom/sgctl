@@ -29,6 +29,7 @@ import com.floragunn.codova.documents.patch.MergePatch;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.client.ApiException;
 import com.floragunn.searchguard.sgctl.client.BasicResponse;
+import com.floragunn.searchguard.sgctl.client.ConditionalRequestHeader.IfMatch;
 import com.floragunn.searchguard.sgctl.client.FailedConnectionException;
 import com.floragunn.searchguard.sgctl.client.InvalidResponseException;
 import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
@@ -148,7 +149,8 @@ public class UpdateUser extends ConnectingCommand implements Callable<Integer> {
                     System.out.println(messageBuilder);
                 }
 
-                BasicResponse basicResponse = client.patchUser(userName, new MergePatch(DocNode.wrap(userMergePatch)), getUserResponse.getETag());
+                BasicResponse basicResponse = client.patchUser(userName, new MergePatch(DocNode.wrap(userMergePatch)),
+                        new IfMatch(getUserResponse.getETag()));
                 System.out.println(basicResponse.getMessage());
             });
 

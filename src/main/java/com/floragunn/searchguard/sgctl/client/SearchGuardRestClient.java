@@ -23,6 +23,7 @@ import java.net.ConnectException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
 import java.nio.charset.UnsupportedCharsetException;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -107,9 +108,35 @@ public class SearchGuardRestClient implements AutoCloseable {
         return putJson("/_searchguard/internal_users/" + userName, newUserData).parseResponseBy(BasicResponse::new);
     }
 
-    public BasicResponse patchUser(String userName, DocPatch patch, String eTag)
+    public BasicResponse patchUser(String userName, DocPatch patch, Header... headers)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        return patch("/_searchguard/internal_users/" + userName, patch, eTag).parseResponseBy(BasicResponse::new);
+        return patch("/_searchguard/internal_users/" + userName, patch, headers).parseResponseBy(BasicResponse::new);
+    }
+
+    public BasicResponse putConfigVar(String id, Object value, String scope, boolean encrypt, Header... headers)
+            throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        Map<String, Object> doc = new LinkedHashMap<>();
+        doc.put("value", value);
+
+        if (scope != null) {
+            doc.put("scope", scope);
+        }
+
+        if (encrypt) {
+            doc.put("encrypt", true);
+        }
+
+        return putJson("/_searchguard/config/vars/" + id, doc, headers).parseResponseBy(BasicResponse::new);
+    }
+
+    public BasicResponse deleteConfigVar(String id)
+            throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        return delete("/_searchguard/config/vars/" + id).parseResponseBy(BasicResponse::new);
+    }
+
+    public BasicResponse getAllConfigVars()
+            throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        return delete("/_searchguard/config/vars").parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse putSgConfig(Map<String, Object> body)
@@ -182,10 +209,17 @@ public class SearchGuardRestClient implements AutoCloseable {
         }
     }
 
-    protected Response put(String path, String body, ContentType contentType) throws FailedConnectionException, InvalidResponseException {
+    protected Response put(String path, String body, ContentType contentType, Header... headers)
+            throws FailedConnectionException, InvalidResponseException {
         try {
             HttpPut httpPut = new HttpPut(path);
+
+            if (headers != null) {
+                httpPut.setHeaders(headers);
+            }
+
             httpPut.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+
             return new Response(client.execute(httpHost, httpPut));
         } catch (ClientProtocolException e) {
             throw new FailedConnectionException(e);
@@ -198,23 +232,24 @@ public class SearchGuardRestClient implements AutoCloseable {
         }
     }
 
-    protected Response putJson(String path, Map<String, ?> body) throws FailedConnectionException, InvalidResponseException {
-        return put(path, DocWriter.json().writeAsString(body), ContentType.APPLICATION_JSON);
+    protected Response putJson(String path, Map<String, ?> body, Header... headers) throws FailedConnectionException, InvalidResponseException {
+        return put(path, DocWriter.json().writeAsString(body), ContentType.APPLICATION_JSON, headers);
     }
 
-    protected Response patch(String path, DocPatch patch, String eTag) throws FailedConnectionException, InvalidResponseException {
-        return patch(path, patch.toJsonString(), ContentType.create(patch.getMediaType()), eTag);
+    protected Response patch(String path, DocPatch patch, Header... headers) throws FailedConnectionException, InvalidResponseException {
+        return patch(path, patch.toJsonString(), ContentType.create(patch.getMediaType()), headers);
     }
 
-    protected Response patch(String path, String body, ContentType contentType, String eTag)
+    protected Response patch(String path, String body, ContentType contentType, Header... headers)
             throws FailedConnectionException, InvalidResponseException {
         try {
             HttpPatch httpPatch = new HttpPatch(path);
-            httpPatch.setEntity(new StringEntity(body, contentType));
 
-            if (eTag != null) {
-                httpPatch.setHeader("If-Match", eTag);
+            if (headers != null) {
+                httpPatch.setHeaders(headers);
             }
+
+            httpPatch.setEntity(new StringEntity(body, contentType));
 
             return new Response(client.execute(httpHost, httpPatch));
         } catch (ClientProtocolException e) {

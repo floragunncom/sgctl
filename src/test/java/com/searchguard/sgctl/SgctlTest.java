@@ -41,6 +41,7 @@ import org.junit.Test;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
+import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.searchguard.sgctl.SgctlTool;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteResult;
@@ -378,6 +379,85 @@ public class SgctlTest {
             Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
             Assert.assertEquals(response.getBody(), DocNode.of("e", "foo", "z.b", "4").toNormalizedMap(),
                     response.getBodyAsDocNode().get("data", "attributes"));
+        }
+    }
+
+    @Test
+    public void testAddAndDeleteConfigVar() throws Exception {
+        String id = "add_test";
+        String value = "foo";
+        int result = SgctlTool.exec("add-var", id, value, "--scope", "scope", "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(0, result);
+
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/config/vars/" + id);
+
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertEquals(response.getBody(), value, response.getBodyAsDocNode().get("data", "value"));
+        }
+
+        result = SgctlTool.exec("delete-var", id, "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(0, result);
+
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/config/vars/" + id);
+
+            Assert.assertEquals(response.getBody(), 404, response.getStatusCode());
+        }
+    }
+
+    @Test
+    public void testAddConfigVarEncrypted() throws Exception {
+        String id = "add_encrypted_test";
+        String value = "foo";
+        int result = SgctlTool.exec("add-var", id, value, "-e", "--scope", "scope", "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(0, result);
+
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/config/vars/" + id);
+
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertNotNull(response.getBody(), response.getBodyAsDocNode().get("data", "encrypted", "value"));
+        }
+    }
+
+    @Test
+    public void testUpdateConfigVar() throws Exception {
+        String id = "update_test";
+        String value = "foo";
+        int result = SgctlTool.exec("add-var", id, value, "--scope", "scope", "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(0, result);
+
+        value += "2";
+
+        result = SgctlTool.exec("add-var", id, value, "--scope", "scope", "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(1, result);
+
+        result = SgctlTool.exec("update-var", id, value, "--scope", "scope", "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(0, result);
+
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/config/vars/" + id);
+
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertEquals(response.getBody(), value, response.getBodyAsDocNode().get("data", "value"));
+        }
+    }
+
+    @Test
+    public void testAddConfigVarFile() throws Exception {
+        String id = "add_test_file";
+        File file = File.createTempFile(id, ".json");
+        DocNode value = DocNode.of("a", 1, "b", 2, "c", Arrays.asList("x", "y"));
+        DocWriter.json().write(file, value);
+        int result = SgctlTool.exec("add-var", id, "-i", file.getAbsolutePath(), "--scope", "scope", "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(0, result);
+
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/config/vars/" + id);
+
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertEquals(response.getBody(), value.toMap(), response.getBodyAsDocNode().get("data", "value"));
         }
     }
 }
