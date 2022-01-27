@@ -24,9 +24,9 @@ import java.util.concurrent.Callable;
 
 import org.apache.http.Header;
 
-import com.floragunn.codova.documents.DocParseException;
 import com.floragunn.codova.documents.DocReader;
-import com.floragunn.codova.documents.DocType;
+import com.floragunn.codova.documents.DocumentParseException;
+import com.floragunn.codova.documents.Format;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.client.ApiException;
 import com.floragunn.searchguard.sgctl.client.BasicResponse;
@@ -75,19 +75,19 @@ public abstract class AddOrUpdateConfigVar extends ConnectingCommand implements 
                 value = this.numericValue;
             } else if (this.inputFile != null) {
                 try {
-                    DocType docType = DocType.getByFileName(this.inputFile.getName(), null);
+                    Format format = Format.getByFileName(this.inputFile.getName(), null);
                     String fileContent = Files.asCharSource(this.inputFile, Charset.defaultCharset()).read();
 
                     if (verbose || debug) {
-                        System.out.println("Uploading " + this.inputFile + " as " + (docType != null ? docType.getName() : "plain text"));
+                        System.out.println("Uploading " + this.inputFile + " as " + (format != null ? format.getName() : "plain text"));
                     }
 
-                    if (docType != null) {
-                        value = DocReader.type(docType).read(fileContent);
+                    if (format != null) {
+                        value = DocReader.format(format).read(fileContent);
                     } else {
                         value = fileContent;
                     }
-                } catch (IOException | DocParseException e) {
+                } catch (IOException | DocumentParseException e) {
                     throw new SgctlException("Error while reading " + this.inputFile + ": " + e.getMessage(), e);
                 }
             }

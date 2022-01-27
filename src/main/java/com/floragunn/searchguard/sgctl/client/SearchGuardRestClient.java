@@ -47,12 +47,12 @@ import org.apache.http.impl.client.HttpClientBuilder;
 
 import com.floragunn.codova.config.net.TLSConfig;
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.DocParseException;
 import com.floragunn.codova.documents.DocReader;
-import com.floragunn.codova.documents.DocType;
-import com.floragunn.codova.documents.DocType.UnknownDocTypeException;
 import com.floragunn.codova.documents.DocUtils;
 import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.codova.documents.DocumentParseException;
+import com.floragunn.codova.documents.Format;
+import com.floragunn.codova.documents.Format.UnknownDocTypeException;
 import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.codova.documents.patch.DocPatch;
 import com.floragunn.codova.validation.ConfigValidationException;
@@ -338,8 +338,8 @@ public class SearchGuardRestClient implements AutoCloseable {
                 throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, PreconditionFailedException {
             checkStatus();
             try {
-                return DocReader.type(DocType.getByContentType(contentType)).readObject(bodyAsString);
-            } catch (UnknownDocTypeException | UnexpectedDocumentStructureException | DocParseException e) {
+                return DocReader.format(Format.getByContentType(contentType)).readObject(bodyAsString);
+            } catch (UnknownDocTypeException | UnexpectedDocumentStructureException | DocumentParseException e) {
                 throw new InvalidResponseException(e);
             }
         }
@@ -349,14 +349,14 @@ public class SearchGuardRestClient implements AutoCloseable {
                 return DocNode.EMPTY;
             }
             try {
-                DocType docType = DocType.peekByContentType(contentType);
+                Format docType = Format.peekByContentType(contentType);
 
                 if (docType != null) {
-                    return DocNode.wrap(DocReader.type(docType).read(bodyAsString));
+                    return DocNode.wrap(DocReader.format(docType).read(bodyAsString));
                 } else {
                     return DocNode.wrap(bodyAsString);
                 }
-            } catch (DocParseException e) {
+            } catch (DocumentParseException e) {
                 throw new InvalidResponseException(e);
             }
         }
@@ -499,7 +499,7 @@ public class SearchGuardRestClient implements AutoCloseable {
                 return new ApiException(errorMessage, this.httpResponse.getStatusLine(), this.httpResponse, this.bodyAsString)
                         .validationErrors(validationErrors);
 
-            } catch (DocParseException e) {
+            } catch (DocumentParseException e) {
                 throw new InvalidResponseException("Response contains invalid JSON: " + e.getMessage(), e);
             }
 

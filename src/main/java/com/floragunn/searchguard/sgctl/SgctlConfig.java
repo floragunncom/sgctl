@@ -35,7 +35,7 @@ import com.floragunn.codova.validation.errors.JsonValidationError;
 
 public class SgctlConfig {
 
-    public static class Cluster implements Document {
+    public static class Cluster implements Document<Cluster> {
         private String clusterId;
         private String server;
         private int port;

@@ -23,7 +23,7 @@ import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient.Response;
 
-public class BasicResponse implements Document {
+public class BasicResponse implements Document<BasicResponse> {
     private final DocNode content;
     private final String eTag;
 

@@ -32,7 +32,7 @@ import java.util.concurrent.Callable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
-import com.floragunn.codova.documents.DocType;
+import com.floragunn.codova.documents.Format;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.errors.FileDoesNotExist;
@@ -82,8 +82,8 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
 
             for (File file : files) {
                 try {
-                    DocType docType = DocType.getByFileName(file.getName(), DocType.YAML);
-                    DocNode content = DocNode.wrap(DocReader.type(docType).readObject(file));
+                    Format format = Format.getByFileName(file.getName(), Format.YAML);
+                    DocNode content = DocNode.wrap(DocReader.format(format).readObject(file));
 
                     ConfigType configType = ConfigType.getFor(file, content);
 

@@ -204,6 +204,13 @@
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
+		
+		<dependency>
+			<groupId>com.floragunn</groupId>
+			<artifactId>search-guard-suite-ssl</artifactId>
+			<scope>test</scope>
+			<version>${sg.test-version}</version>
+		</dependency>		
 
 		<dependency>
 			<groupId>com.floragunn</groupId>

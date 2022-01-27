@@ -33,9 +33,10 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.DocParseException;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.codova.documents.DocumentParseException;
+import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.errors.MissingAttribute;
@@ -224,7 +225,7 @@ public class MigrateConfig implements Callable<Integer> {
         private String dashboardConfigFileName;
 
         public SessionConfigMigrator(File legacySgConfig, File legacyKibanaConfig, boolean publicBaseUrlAvailable, String dashboardConfigFileName)
-                throws FileNotFoundException, IOException, DocParseException {
+                throws FileNotFoundException, IOException, DocumentParseException, UnexpectedDocumentStructureException {
             this.oldSgConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacySgConfig), oldSgConfigValidationErrors);
             this.oldKibanaConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacyKibanaConfig), oldKibanaConfigValidationErrors);
             this.kibanaConfigRewriter = new YamlRewriter(legacyKibanaConfig);

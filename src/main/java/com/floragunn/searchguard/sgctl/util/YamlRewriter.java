@@ -31,10 +31,9 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.floragunn.codova.documents.DocParseException;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
@@ -53,7 +52,7 @@ public class YamlRewriter {
     private Map<String, List<Insertion>> insertionsBefore = new LinkedHashMap<>();
     private List<String> removals = new ArrayList<>();
 
-    public YamlRewriter(File sourceFile) throws IOException, DocParseException {
+    public YamlRewriter(File sourceFile) throws IOException, DocumentParseException, UnexpectedDocumentStructureException {
         this.source = new String(Files.readAllBytes(sourceFile.toPath()), Charsets.UTF_8);
         this.sourceDoc = new ValidatingDocNode(DocReader.yaml().readObject(source), sourceDocValidationErrors);
         this.sourceFileName = sourceFile.getName();
@@ -213,7 +212,7 @@ public class YamlRewriter {
         Map<String, Object> tree2;
         try {
             tree2 = DocReader.yaml().readObject(result);
-        } catch (DocParseException | UnexpectedDocumentStructureException e) {
+        } catch (DocumentParseException | UnexpectedDocumentStructureException e) {
             throw new VerificationException("Error while parsing rewritten file", e);
         }
 
@@ -223,7 +222,7 @@ public class YamlRewriter {
 
         try {
             originalTree = DocReader.yaml().readObject(source);
-        } catch (DocParseException | UnexpectedDocumentStructureException e) {
+        } catch (DocumentParseException | UnexpectedDocumentStructureException e) {
             throw new VerificationException("Error while parsing source file", e);
         }
 
@@ -310,7 +309,7 @@ public class YamlRewriter {
 
             return tree;
 
-        } catch (JsonProcessingException | DocParseException e) {
+        } catch (DocumentParseException | UnexpectedDocumentStructureException e) {
             throw new VerificationException("Error while parsing source file", e);
         }
     }
