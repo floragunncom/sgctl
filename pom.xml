@@ -21,7 +21,7 @@
 	<properties>
 		<revision>master-SNAPSHOT</revision>
 		<elasticsearch.version>7.16.1</elasticsearch.version>
-		<sg.test-version>b-master-SNAPSHOT</sg.test-version>
+		<sg.test-version>b-new-config-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.release>8</maven.compiler.release>
@@ -121,7 +121,7 @@
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>codova-sg</artifactId>
-			<version>b-master-SNAPSHOT</version>
+			<version>b-new-config-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

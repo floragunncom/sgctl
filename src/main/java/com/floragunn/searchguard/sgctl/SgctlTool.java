@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 floragunn GmbH
+ * Copyright 2021-2022 floragunn GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@ import com.floragunn.searchguard.sgctl.commands.ComponentState;
 import com.floragunn.searchguard.sgctl.commands.Connect;
 import com.floragunn.searchguard.sgctl.commands.GetConfig;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
+import com.floragunn.searchguard.sgctl.commands.SetCommand;
 import com.floragunn.searchguard.sgctl.commands.ShowLicenses;
 import com.floragunn.searchguard.sgctl.commands.ShowVersion;
 import com.floragunn.searchguard.sgctl.commands.UpdateConfig;
@@ -40,7 +41,7 @@ import picocli.CommandLine.Command;
 
 @Command(name = "sgctl", subcommands = { Connect.class, GetConfig.class, UpdateConfig.class, MigrateConfig.class, ComponentState.class,
         ShowLicenses.class, ShowVersion.class, AddUser.class, UpdateUser.class, DeleteUser.class, AddConfigVar.class, UpdateConfigVar.class,
-        DeleteConfigVar.class }, description = "Remote control tool for Search Guard")
+        DeleteConfigVar.class, SetCommand.class }, description = "Remote control tool for Search Guard")
 public class SgctlTool {
 
     static {

@@ -45,10 +45,10 @@ import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.searchguard.sgctl.SgctlTool;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteResult;
+import com.floragunn.searchguard.test.GenericRestClient;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
-import com.floragunn.searchguard.test.helper.rest.GenericRestClient;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 
@@ -459,5 +459,24 @@ public class SgctlTest {
             Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
             Assert.assertEquals(response.getBody(), value.toMap(), response.getBodyAsDocNode().get("data", "value"));
         }
+    }
+
+    @Test
+    public void setCommand() throws Exception {
+        int result = SgctlTool.exec("set", "authc", "debug", "--true", "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(0, result);
+
+        try (GenericRestClient client = cluster.getAdminCertRestClient()) {
+            GenericRestClient.HttpResponse response = client.get("/_searchguard/config/authc");
+
+            Assert.assertEquals(response.getBody(), 200, response.getStatusCode());
+            Assert.assertEquals(response.getBody(), Boolean.TRUE, response.getBodyAsDocNode().get("content", "debug"));
+        }
+    }
+
+    @Test
+    public void setCommand_invalidProperty() {
+        int result = SgctlTool.exec("set", "authc", "debux", "--true", "--sgctl-config-dir", configDir, "--debug");
+        Assert.assertEquals(1, result);
     }
 }

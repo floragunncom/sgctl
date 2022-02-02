@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 floragunn GmbH
+ * Copyright 2021-2022 floragunn GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -236,7 +236,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         return put(path, DocWriter.json().writeAsString(body), ContentType.APPLICATION_JSON, headers);
     }
 
-    protected Response patch(String path, DocPatch patch, Header... headers) throws FailedConnectionException, InvalidResponseException {
+    public Response patch(String path, DocPatch patch, Header... headers) throws FailedConnectionException, InvalidResponseException {
         return patch(path, patch.toJsonString(), ContentType.create(patch.getMediaType()), headers);
     }
 
@@ -480,6 +480,18 @@ public class SearchGuardRestClient implements AutoCloseable {
 
                         if (errorMessage.startsWith("Invalid index name [_searchguard]")) {
                             errorMessage = "Invalid REST endpoint";
+                        }
+                    }
+                    
+                    if (errorNode.get("message") instanceof String) {
+                        errorMessage = (String) errorNode.get("message");
+                    }
+                    
+                    if (errorNode.get("details") instanceof Map) {
+                        try {
+                            validationErrors = ValidationErrors.parse(DocUtils.toStringKeyedMap((Map<?, ?>) errorNode.get("details")));
+                        } catch (Exception e) {
+                            log.log(Level.WARNING, "Error while parsing validation errors in response", e);
                         }
                     }
                 }
