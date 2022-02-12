@@ -103,20 +103,14 @@ public class MigrateConfig implements Callable<Integer> {
             System.err.println("You must specify a path to a sg_config.yml on the command line");
             return 1;
         }
-
-        if (kibanaConfig == null) {
-            System.out.flush();
-            System.err.println("You must specify a path to a kibana.yml on the command line");
-            return 1;
-        }
-
+       
         if (!sgConfig.exists()) {
             System.out.flush();
             System.err.println("The file " + sgConfig + " does not exist");
             return 1;
         }
 
-        if (!kibanaConfig.exists()) {
+        if (kibanaConfig != null && !kibanaConfig.exists()) {
             System.out.flush();
             System.err.println("The file " + kibanaConfig + " does not exist");
             return 1;
@@ -237,6 +231,10 @@ public class MigrateConfig implements Callable<Integer> {
                     }
                 }
             }
+            
+            if (kibanaConfig == null) {
+                System.out.println("You have not specified a kibana.yml file. Thus, we are assuming that you are not using Kibana. If you are using Kibana and want to adapt the migration, please specify the path to your kibana.yml file on the command line.\n\n");
+            }
 
             System.out.println("The update process consists of these steps:\n");
             System.out.println(
@@ -349,9 +347,9 @@ public class MigrateConfig implements Callable<Integer> {
 
         public ConfigMigrator(File legacySgConfig, File legacyKibanaConfig, boolean publicBaseUrlAvailable, String dashboardConfigFileName)
                 throws FileNotFoundException, IOException, DocumentParseException, UnexpectedDocumentStructureException {
-            this.oldSgConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacySgConfig), oldSgConfigValidationErrors);
-            this.oldKibanaConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacyKibanaConfig), oldKibanaConfigValidationErrors);
-            this.kibanaConfigRewriter = new YamlRewriter(legacyKibanaConfig);
+            this.oldSgConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacySgConfig), oldSgConfigValidationErrors);                        
+            this.oldKibanaConfig = legacyKibanaConfig != null ? new ValidatingDocNode(DocReader.yaml().readObject(legacyKibanaConfig), oldKibanaConfigValidationErrors) : null;
+            this.kibanaConfigRewriter = legacyKibanaConfig != null ? new YamlRewriter(legacyKibanaConfig) : null;
             this.publicBaseUrlAvailable = publicBaseUrlAvailable;
             this.dashboardConfigFileName = dashboardConfigFileName;
         }
@@ -448,6 +446,10 @@ public class MigrateConfig implements Callable<Integer> {
         }
 
         public FrontendUpdateInstructions createUpdateInstructions() throws SgctlException {
+            if (oldKibanaConfig == null) {
+                return null;
+            }
+            
             KibanaAuthType kibanaAuthType = oldKibanaConfig.get("searchguard.auth.type").withDefault(KibanaAuthType.BASICAUTH)
                     .asEnum(KibanaAuthType.class);
 
