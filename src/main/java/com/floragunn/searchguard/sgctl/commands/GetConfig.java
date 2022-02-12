@@ -52,9 +52,10 @@ public class GetConfig extends ConnectingCommand implements Callable<Integer> {
             if (!outputDir.exists()) {
                 if (debug || verbose) {
                     System.out.println("Creating directory " + outputDir);
-                    if (!outputDir.mkdirs()) {
-                        throw new SgctlException("Could not create directory " + outputDir);
-                    }
+                }
+                
+                if (!outputDir.mkdirs()) {
+                    throw new SgctlException("Could not create directory " + outputDir);
                 }
             }
 

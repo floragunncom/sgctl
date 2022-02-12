@@ -63,7 +63,7 @@ public class GetBulkConfigResponse implements Iterable<GetBulkConfigResponse.Con
         private DocNode content;
 
         public ConfigDocument(ConfigType configType, DocNode docNode) {
-            this.content = docNode.getAsNode("content");
+            this.content = docNode.hasNonNull("content") ? docNode.getAsNode("content") : DocNode.EMPTY;
             this.configType = configType;
         }
 
