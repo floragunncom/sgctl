@@ -42,6 +42,7 @@ import org.junit.Test;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.codova.documents.Format;
 import com.floragunn.searchguard.sgctl.SgctlTool;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteResult;
@@ -49,6 +50,7 @@ import com.floragunn.searchguard.test.GenericRestClient;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
+import com.floragunn.searchsupport.util.ImmutableSet;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 
@@ -246,6 +248,21 @@ public class SgctlTest {
 
         // TODO check output
 
+    }
+
+    @Test
+    public void addUserLocalToDir() throws Exception {
+        File tempDir = Files.createTempDirectory("sgctl-test-add-user-local").toFile();
+
+        String userName = "userName_" + UUID.randomUUID();
+        int result = SgctlTool.exec("add-user-local", userName, "-r", "sg-role1,sg-role2,sg-role3", "--backend-roles", "backend-role1,backend-role2", "-a",
+                "a=1,b.c.d=2,e=foo", "--password", "pass", "-o", tempDir.toString());
+
+        Assert.assertEquals(0, result);
+        DocNode writtenDocument = DocNode.parse(Format.YAML).from(new File(tempDir, "sg_internal_users.yml"));
+
+        Assert.assertEquals(writtenDocument.toYamlString(), ImmutableSet.of("sg-role1", "sg-role2", "sg-role3"),
+                ImmutableSet.of(writtenDocument.getAsNode(userName).getListOfStrings("search_guard_roles")));
     }
 
     @Test
