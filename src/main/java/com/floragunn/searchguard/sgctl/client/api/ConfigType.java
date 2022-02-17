@@ -10,7 +10,7 @@ import com.floragunn.codova.validation.errors.ValidationError;
 
 public enum ConfigType {
     CONFIG_VARS, AUTHC_TRANSPORT, AUTHC, AUTHZ, LICENSE_KEY, FRONTEND_MULTI_TENANCY, SESSIONS, AUTH_TOKEN_SERVICE, CONFIG, INTERNALUSERS,
-    ACTIONGROUPS, ROLES, ROLESMAPPING, TENANTS, BLOCKS, FRONTEND_CONFIG;
+    ACTIONGROUPS, ROLES, ROLESMAPPING, TENANTS, BLOCKS, FRONTEND_AUTHC;
 
     public String getApiName() {
         return name().toLowerCase();
