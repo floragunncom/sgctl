@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 floragunn GmbH
+ * Copyright 2021-2022 floragunn GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,7 +21,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.concurrent.Callable;
 
-import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.client.ApiException;
 import com.floragunn.searchguard.sgctl.client.FailedConnectionException;
@@ -30,6 +29,8 @@ import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
 import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
 import com.floragunn.searchguard.sgctl.client.api.GetBulkConfigResponse;
+import com.google.common.base.Charsets;
+import com.google.common.io.Files;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
@@ -53,17 +54,25 @@ public class GetConfig extends ConnectingCommand implements Callable<Integer> {
                 if (debug || verbose) {
                     System.out.println("Creating directory " + outputDir);
                 }
-                
+
                 if (!outputDir.mkdirs()) {
                     throw new SgctlException("Could not create directory " + outputDir);
                 }
             }
 
             for (GetBulkConfigResponse.ConfigDocument config : response) {
+                if (!config.isExists()) {
+                    continue;
+                }
+                
                 File outputFile = new File(outputDir, config.getConfigType().getFileName());
 
+                String header = "# sg_" + config.getConfigType().getApiName() + " " + response.getSearchGuardVersion()
+                        + (config.getEtag() != null ? (" etag:" + config.getEtag()) : "") + "\n";
+
                 try {
-                    DocWriter.yaml().write(outputFile, config.getContent());
+                    String result = header + config.getContent().toYamlString();
+                    Files.asCharSink(outputFile, Charsets.UTF_8).write(result);
                 } catch (IOException e) {
                     throw new SgctlException("Error while writing " + outputFile + ": " + e.getMessage(), e);
                 }

@@ -1,6 +1,8 @@
 package com.floragunn.searchguard.sgctl.client.api;
 
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.validation.ConfigValidationException;
@@ -9,8 +11,11 @@ import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.errors.ValidationError;
 
 public enum ConfigType {
+    /**
+     * NOTE: Due to the prefix matching performed below, names which are prefixes of other names must appear after these
+     */
     CONFIG_VARS, AUTHC_TRANSPORT, AUTHC, AUTHZ, LICENSE_KEY, FRONTEND_MULTI_TENANCY, SESSIONS, AUTH_TOKEN_SERVICE, CONFIG, INTERNALUSERS,
-    ACTIONGROUPS, ROLES, ROLESMAPPING, TENANTS, BLOCKS, FRONTEND_AUTHC;
+    ACTIONGROUPS, ROLESMAPPING, ROLES, TENANTS, BLOCKS, FRONTEND_AUTHC;
 
     public String getApiName() {
         return name().toLowerCase();
@@ -32,7 +37,7 @@ public enum ConfigType {
         return valueOf(name.toUpperCase());
     }
 
-    public static ConfigType getFor(File file, DocNode content) throws ConfigValidationException {
+    public static ConfigType getFor(File file, DocNode content, String rawContent) throws ConfigValidationException {
         ValidationErrors validationErrors = new ValidationErrors();
         ValidatingDocNode vNode = new ValidatingDocNode(content, validationErrors);
 
@@ -40,6 +45,22 @@ public enum ConfigType {
 
         if (result != null) {
             return result;
+        }
+
+        if (rawContent != null) {
+            rawContent = rawContent.trim();
+
+            Matcher matcher = HEADER_PATTERN.matcher(rawContent);
+
+            if (matcher.find()) {
+                String name = matcher.group(1);
+
+                for (ConfigType configType : values()) {
+                    if (name.equalsIgnoreCase(configType.name())) {
+                        return configType;
+                    }
+                }
+            }
         }
 
         validationErrors.throwExceptionForPresentErrors();
@@ -62,4 +83,6 @@ public enum ConfigType {
 
         throw new ConfigValidationException(new ValidationError(null, "Unknown config type"));
     }
+
+    private static final Pattern HEADER_PATTERN = Pattern.compile("^#\\s*sg_([a-z_]+)\\s*");
 }

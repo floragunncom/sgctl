@@ -83,7 +83,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         return get("/_searchguard/authinfo").parseResponseBy(AuthInfoResponse::new);
     }
 
-    public BasicResponse putConfigBulk(Map<String, Map<String, Map<String, Object>>> configTypeToConfigMap)
+    public BasicResponse putConfigBulk(Map<String, Map<String, ?>> configTypeToConfigMap)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
         return putJson("/_searchguard/config", configTypeToConfigMap).parseResponseBy(BasicResponse::new);
     }
@@ -299,11 +299,15 @@ public class SearchGuardRestClient implements AutoCloseable {
         private final String bodyAsString;
         private final String contentType;
         private final String eTag;
+        private final String searchGuardVersion;
 
         Response(HttpResponse httpResponse) throws InvalidResponseException {
             this.httpResponse = httpResponse;
             this.contentType = getContentType(httpResponse);
             this.eTag = httpResponse.containsHeader("ETag") ? httpResponse.getFirstHeader("ETag").getValue() : null;
+            this.searchGuardVersion = httpResponse.containsHeader("X-Search-Guard-Version")
+                    ? httpResponse.getFirstHeader("X-Search-Guard-Version").getValue()
+                    : null;
 
             if (debug) {
                 System.out.println("------------------------------------------------");
@@ -482,11 +486,11 @@ public class SearchGuardRestClient implements AutoCloseable {
                             errorMessage = "Invalid REST endpoint";
                         }
                     }
-                    
+
                     if (errorNode.get("message") instanceof String) {
                         errorMessage = (String) errorNode.get("message");
                     }
-                    
+
                     if (errorNode.get("details") instanceof Map) {
                         try {
                             validationErrors = ValidationErrors.parse(DocUtils.toStringKeyedMap((Map<?, ?>) errorNode.get("details")));
@@ -519,6 +523,10 @@ public class SearchGuardRestClient implements AutoCloseable {
 
         public String getETag() {
             return eTag;
+        }
+
+        public String getSearchGuardVersion() {
+            return searchGuardVersion;
         }
 
     }

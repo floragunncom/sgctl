@@ -20,8 +20,8 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>7.16.1</elasticsearch.version>
-		<sg.test-version>b-new-config-SNAPSHOT</sg.test-version>
+		<elasticsearch.version>7.16.3</elasticsearch.version>
+		<sg.test-version>b-session-auth-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.release>8</maven.compiler.release>
@@ -121,7 +121,7 @@
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>codova-sg</artifactId>
-			<version>b-new-config-SNAPSHOT</version>
+			<version>b-session-auth-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>

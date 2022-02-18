@@ -86,9 +86,15 @@ public class YamlRewriter {
 
         String current = source;
 
+        while (current.startsWith("#")) {
+            int newLine = current.indexOf('\n');
+            prolog += current.substring(0, newLine + 1);
+            current = current.substring(newLine + 1);
+        }
+        
         if (current.startsWith("---")) {
             int newLine = current.indexOf('\n');
-            prolog = current.substring(0, newLine + 1);
+            prolog += current.substring(0, newLine + 1);
             current = current.substring(newLine + 1);
         }
 

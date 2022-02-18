@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 floragunn GmbH
+ * Copyright 2021-2022 floragunn GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.documents.DocNode;
@@ -42,13 +44,17 @@ import com.floragunn.searchguard.sgctl.client.ApiException;
 import com.floragunn.searchguard.sgctl.client.BasicResponse;
 import com.floragunn.searchguard.sgctl.client.FailedConnectionException;
 import com.floragunn.searchguard.sgctl.client.InvalidResponseException;
+import com.floragunn.searchguard.sgctl.client.PreconditionFailedException;
 import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
 import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
 import com.floragunn.searchguard.sgctl.client.api.ConfigType;
+import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.io.Files;
 
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
 @Command(name = "update-config", description = "Updates Search Guard configuration on the server from local files")
@@ -57,10 +63,13 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
     @Parameters
     List<File> files;
 
+    @Option(names = { "-f", "--force" }, arity = "0..1", description = "Upload the configuration even if a concurrent modification is detected")
+    boolean force;
+
     @Override
     public Integer call() {
         Map<String, String> configTypeToFileMap = new HashMap<>();
-        Map<String, Map<String, Map<String, Object>>> configTypeToConfigMap = new LinkedHashMap<>();
+        Map<String, Map<String, ?>> configTypeToConfigMap = new LinkedHashMap<>();
 
         try (SearchGuardRestClient client = getClient().debug(debug)) {
 
@@ -83,16 +92,19 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
             for (File file : files) {
                 try {
                     Format format = Format.getByFileName(file.getName(), Format.YAML);
+                    String rawContent = Files.asCharSource(file, Charsets.UTF_8).read();
                     DocNode content = DocNode.wrap(DocReader.format(format).readObject(file));
 
-                    ConfigType configType = ConfigType.getFor(file, content);
+                    ConfigType configType = ConfigType.getFor(file, content, rawContent);
+                    String etag = force ? null : getETag(rawContent);
 
                     if (!configTypeToConfigMap.containsKey(configType.getApiName())) {
-                        configTypeToConfigMap.put(configType.getApiName(), ImmutableMap.of("content", content));
+                        configTypeToConfigMap.put(configType.getApiName(),
+                                etag != null ? ImmutableMap.of("content", content, "etag", etag) : ImmutableMap.of("content", content));
                         configTypeToFileMap.put(configType.getApiName(), file.getPath());
                     } else {
                         validationErrors.add(new ValidationError(file.getPath(), "Configuration of type " + configType.getApiName()
-                                + " is already specifed in file " + configTypeToConfigMap.get(configType.getApiName())));
+                                + " is already specifed in file " + configTypeToFileMap.get(configType.getApiName())));
                     }
                 } catch (FileNotFoundException e) {
                     validationErrors.add(new FileDoesNotExist(file.getPath(), file));
@@ -130,6 +142,10 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
         } catch (UnauthorizedException e) {
             System.err.println(e.getMessage());
             return 1;
+        } catch (PreconditionFailedException e) {
+            System.err.println(e.getMessage());
+            System.err.println("Use the --force switch to overwrite any concurrent change");
+            return 1;            
         } catch (ApiException e) {
             if (e.getValidationErrors() != null) {
                 Map<String, ValidationErrors> validationErrorsByFile = e.getValidationErrors().groupByKeys(configTypeToFileMap);
@@ -149,4 +165,15 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
         }
     }
 
+    private static final Pattern HEADER_PATTERN = Pattern.compile("^#\\s*.*etag:([a-z0-9\\.]+)");
+
+    private String getETag(String rawContent) {
+        Matcher matcher = HEADER_PATTERN.matcher(rawContent);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
 }

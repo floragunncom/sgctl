@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 floragunn GmbH
+ * Copyright 2021-2022 floragunn GmbH
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,13 @@ import com.google.common.collect.Iterators;
 
 public class GetBulkConfigResponse implements Iterable<GetBulkConfigResponse.ConfigDocument> {
 
+    private final String searchGuardVersion;
     private Map<ConfigType, ConfigDocument> configMap = new EnumMap<>(ConfigType.class);
 
-    public GetBulkConfigResponse(DocNode docNode) {
+    public GetBulkConfigResponse(String searchGuardVersion, DocNode docNode) {
+
+        this.searchGuardVersion = searchGuardVersion;
+
         for (Map.Entry<String, Object> entry : docNode.entrySet()) {
             ConfigType configType;
 
@@ -46,7 +50,7 @@ public class GetBulkConfigResponse implements Iterable<GetBulkConfigResponse.Con
     }
 
     public GetBulkConfigResponse(SearchGuardRestClient.Response response) throws InvalidResponseException {
-        this(response.asDocNode());
+        this(response.getSearchGuardVersion(), response.asDocNode());
     }
 
     public ConfigDocument get(ConfigType configType) {
@@ -61,10 +65,14 @@ public class GetBulkConfigResponse implements Iterable<GetBulkConfigResponse.Con
     public static class ConfigDocument {
         private ConfigType configType;
         private DocNode content;
+        private String etag;
+        private boolean exists;
 
         public ConfigDocument(ConfigType configType, DocNode docNode) {
             this.content = docNode.hasNonNull("content") ? docNode.getAsNode("content") : DocNode.EMPTY;
             this.configType = configType;
+            this.etag = docNode.getAsString("_etag");
+            this.exists = Boolean.TRUE.equals(docNode.get("exists"));
         }
 
         public DocNode getContent() {
@@ -74,6 +82,19 @@ public class GetBulkConfigResponse implements Iterable<GetBulkConfigResponse.Con
         public ConfigType getConfigType() {
             return configType;
         }
+
+        public String getEtag() {
+            return etag;
+        }
+
+        public boolean isExists() {
+            return exists;
+        }
+
+    }
+
+    public String getSearchGuardVersion() {
+        return searchGuardVersion;
     }
 
 }
