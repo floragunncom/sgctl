@@ -195,6 +195,28 @@ public class SgctlTest {
         Assert.assertTrue(sgTenants.toString(), sgTenants.containsKey("sgctl_test_tenant2"));
 
     }
+    
+
+    @Test
+    public void testCompleteDownloadAndUploadConcurrencyControl() throws Exception {
+
+        Path sgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig");
+
+        int rc = SgctlTool.exec("get-config", "-o", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(0, rc);
+        
+        rc = SgctlTool.exec("set", "authc", "debug", "--true", "--debug", "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(0, rc);
+
+        Thread.sleep(100);
+
+        rc = SgctlTool.exec("update-config", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+
+        Assert.assertEquals(1, rc);
+    }
+
 
     @Test
     public void testSgConfigValidation() throws Exception {
