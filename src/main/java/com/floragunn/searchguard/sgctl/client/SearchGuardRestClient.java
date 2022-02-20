@@ -163,12 +163,12 @@ public class SearchGuardRestClient implements AutoCloseable {
 
     public GetSgLicenseResponse getSgLicense()
             throws FailedConnectionException, InvalidResponseException, UnauthorizedException, ServiceUnavailableException, ApiException {
-        return get("/_searchguard/api/license").parseResponseBy(GetSgLicenseResponse::new);
+        return get("/_searchguard/license").parseResponseBy(GetSgLicenseResponse::new);
     }
 
     public BasicResponse putSgLicense(Map<String, Object> body)
             throws FailedConnectionException, InvalidResponseException, UnauthorizedException, ServiceUnavailableException, ApiException {
-        return putJson("/_searchguard/api/license", body).parseResponseBy(BasicResponse::new);
+        return putJson("/_searchguard/license/key", body).parseResponseBy(BasicResponse::new);
     }
 
     protected Response get(String path) throws FailedConnectionException, InvalidResponseException {
@@ -509,9 +509,6 @@ public class SearchGuardRestClient implements AutoCloseable {
                             log.log(Level.WARNING, "Error while parsing validation errors in response", e);
                         }
                     }
-                }
-                else if(response.get("message") instanceof String) {
-                    errorMessage = (String) response.get("message");
                 }
 
                 if (response.get("detail") instanceof Map) {
