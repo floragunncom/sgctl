@@ -36,7 +36,7 @@ import picocli.CommandLine.Parameters;
 @Command(name = "delete-user", description = "Deletes a user")
 public class DeleteUser extends ConnectingCommand implements Callable<Integer> {
 
-    @Parameters(index = "0", description = "User name")
+    @Parameters(index = "0", arity = "1", description = "User name")
     private String userName;
 
     @Override

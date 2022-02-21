@@ -19,13 +19,13 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "set", description = "Modifies a property in the Search Guard Configuration")
 public class SetCommand extends ConnectingCommand implements Callable<Integer> {
-    @Parameters(index = "0")
+    @Parameters(index = "0", description = "Type of the configuration to be modified. Example: authc")
     String configType;
 
-    @Parameters(index = "1")
+    @Parameters(index = "1", description = "Path to the property to the modified. Example: network.trusted_proxies")
     String propertyPath;
 
-    @Parameters(index = "2", arity = "0..1")
+    @Parameters(index = "2", arity = "0..1", description = "Set the property to the given string value")
     String value;
 
     @Option(names = { "-n", "--numeric-value" }, description = "Set the property to the given numeric value")

@@ -28,7 +28,7 @@ import picocli.CommandLine.Parameters;
 
 @Command(name = "connect", description = "Tries to connect to a cluster and persists this connection for subsequent commands")
 public class Connect extends ConnectingCommand implements Callable<Integer> {
-    @Parameters(index = "0", arity = "0..1")
+    @Parameters(index = "0", arity = "0..1", description = "Name of the server to connect to.")
     String server;
 
     @Override

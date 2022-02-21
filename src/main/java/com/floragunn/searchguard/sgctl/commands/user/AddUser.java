@@ -42,7 +42,7 @@ import picocli.CommandLine.Parameters;
 @Command(name = "add-user", description = "Adds a new user")
 public class AddUser extends ConnectingCommand implements Callable<Integer> {
 
-    @Parameters(index = "0", description = "User name")
+    @Parameters(index = "0", arity = "1", description = "User name")
     private String userName;
 
     @Option(names = { "-r", "--sg-roles" }, split = ",")
