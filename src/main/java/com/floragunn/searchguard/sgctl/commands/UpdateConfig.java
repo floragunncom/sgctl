@@ -60,7 +60,7 @@ import picocli.CommandLine.Parameters;
 @Command(name = "update-config", description = "Updates Search Guard configuration on the server from local files")
 public class UpdateConfig extends ConnectingCommand implements Callable<Integer> {
 
-    @Parameters
+    @Parameters(arity = "1..*")
     List<File> files;
 
     @Option(names = { "-f", "--force" }, arity = "0..1", description = "Upload the configuration even if a concurrent modification is detected")
