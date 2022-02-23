@@ -57,7 +57,7 @@ public class SgctlConfig {
             try {
 
                 if (!configFile.exists()) {
-                    return new Cluster();
+                    return null;
                 }
 
                 Map<String, Object> config;
@@ -101,7 +101,7 @@ public class SgctlConfig {
 
             result.server = vNode.get("server").required().asString();
             result.port = vNode.get("port").withDefault(9300).asInt();
-            result.tlsConfig = vNode.get("tls").by(TLSConfig::parse);
+            result.tlsConfig = vNode.get("tls").required().by(TLSConfig::parse);
             result.clusterId = clusterId;
 
             validationErrors.throwExceptionForPresentErrors();

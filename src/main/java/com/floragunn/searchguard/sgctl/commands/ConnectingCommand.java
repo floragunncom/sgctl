@@ -167,14 +167,14 @@ public abstract class ConnectingCommand extends BaseCommand {
             Map<String, String> attributeMapping = new HashMap<>();
 
             if (clientCert != null) {
-                clientAuthConfig.put("certificate", "${file:" + clientCert.getAbsolutePath() + "}");
+                clientAuthConfig.put("certificate", "#{file:" + clientCert.getAbsolutePath() + "}");
                 attributeMapping.put("certificate", "--cert");
             } else if (clientAuthConfig.get("certificate") == null) {
                 attributeMapping.put("certificate", "--cert");
             }
 
             if (clientKey != null) {
-                clientAuthConfig.put("private_key", "${file:" + clientKey.getAbsolutePath() + "}");
+                clientAuthConfig.put("private_key", "#{file:" + clientKey.getAbsolutePath() + "}");
                 attributeMapping.put("private_key", "--key");
             } else if (clientAuthConfig.get("private_key") == null) {
                 attributeMapping.put("private_key", "--key");
@@ -185,7 +185,7 @@ public abstract class ConnectingCommand extends BaseCommand {
             }
 
             if (caCert != null) {
-                config.put("trusted_cas", "${file:" + caCert.getAbsolutePath() + "}");
+                config.put("trusted_cas", "#{file:" + caCert.getAbsolutePath() + "}");
                 attributeMapping.put("trusted_cas", "--ca-cert");
             } else if (clientAuthConfig.get("trusted_cas") == null) {
                 attributeMapping.put("trusted_cas", "--ca-cert");

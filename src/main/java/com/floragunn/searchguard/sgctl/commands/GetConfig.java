@@ -67,7 +67,7 @@ public class GetConfig extends ConnectingCommand implements Callable<Integer> {
                 
                 File outputFile = new File(outputDir, config.getConfigType().getFileName());
 
-                String header = "# sg_" + config.getConfigType().getApiName() + " " + response.getSearchGuardVersion()
+                String header = "# sg_" + config.getConfigType().getApiName() + " v:" + response.getSearchGuardVersion()
                         + (config.getEtag() != null ? (" etag:" + config.getEtag()) : "") + "\n";
 
                 try {
