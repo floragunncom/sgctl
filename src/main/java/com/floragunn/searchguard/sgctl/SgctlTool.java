@@ -57,7 +57,7 @@ public class SgctlTool {
     }
 
     public static int exec(String... args) {
-        return new CommandLine(new SgctlTool()).execute(args);
+        return new CommandLine(new SgctlTool()).setCaseInsensitiveEnumValuesAllowed(true).execute(args);
     }
 
 }
