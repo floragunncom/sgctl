@@ -1293,7 +1293,7 @@ public class MigrateConfig implements Callable<Integer> {
         }
 
         List<NewAuthDomain> toNewAuthDomains(List<UserInformationBackend> userInformationBackends) {
-            if (oldFrontendType.equals("saml") || oldFrontendType.equals("openid")) {
+            if (oldFrontendType == null || oldFrontendType.equals("saml") || oldFrontendType.equals("openid")) {
                 return Collections.emptyList();
             }
 
@@ -1526,7 +1526,7 @@ public class MigrateConfig implements Callable<Integer> {
             LinkedHashMap<String, Object> newConfig = new LinkedHashMap<>();
             LinkedHashMap<String, Object> idpConfig = new LinkedHashMap<>();
 
-            boolean ssl = vNode.get("authentication_backend.config.enable_ssl").asBoolean();
+            boolean ssl = vNode.get("authentication_backend.config.enable_ssl").withDefault(false).asBoolean();
 
             idpConfig.put("hosts", oldBackendConfig.getAsListOfStrings("hosts").stream()
                     .map(s -> ssl ? (s.startsWith("ldaps://") ? s : ("ldaps://" + s)) : s).collect(Collectors.toList()));
@@ -1541,8 +1541,8 @@ public class MigrateConfig implements Callable<Integer> {
 
             LinkedHashMap<String, Object> tlsConfig = new LinkedHashMap<>();
 
-            boolean startTls = vNode.get("authentication_backend.config.enable_start_tls").asBoolean();
-            boolean clientAuthEnabled = vNode.get("authentication_backend.config.enable_ssl_client_auth").asBoolean();
+            boolean startTls = vNode.get("authentication_backend.config.enable_start_tls").withDefault(false).asBoolean();
+            boolean clientAuthEnabled = vNode.get("authentication_backend.config.enable_ssl_client_auth").withDefault(false).asBoolean();
             boolean verifyHostnames = vNode.get("authentication_backend.config.verify_hostnames").withDefault(true).asBoolean();
             String pemTrustedCasFile = vNode.get("authentication_backend.config.pemtrustedcas_filepath").asString();
             String pemTrustedCasContent = vNode.get("authentication_backend.config.pemtrustedcas_content").asString();
@@ -1854,7 +1854,7 @@ public class MigrateConfig implements Callable<Integer> {
                 LinkedHashMap<String, Object> newConfig = new LinkedHashMap<>();
                 LinkedHashMap<String, Object> idpConfig = new LinkedHashMap<>();
 
-                boolean ssl = vNode.get("authorization_backend.config.enable_ssl").asBoolean();
+                boolean ssl = vNode.get("authorization_backend.config.enable_ssl").withDefault(false).asBoolean();
 
                 idpConfig.put("hosts", vNode.get("authorization_backend.config.hosts").required().asList().withEmptyListAsDefault().ofStrings()
                         .stream().map(s -> ssl ? (s.startsWith("ldaps://") ? s : ("ldaps://" + s)) : s).collect(Collectors.toList()));
@@ -1871,8 +1871,8 @@ public class MigrateConfig implements Callable<Integer> {
 
                 LinkedHashMap<String, Object> tlsConfig = new LinkedHashMap<>();
 
-                boolean startTls = vNode.get("authorization_backend.config.enable_start_tls").asBoolean();
-                boolean clientAuthEnabled = vNode.get("authorization_backend.config.enable_ssl_client_auth").asBoolean();
+                boolean startTls = vNode.get("authorization_backend.config.enable_start_tls").withDefault(false).asBoolean();
+                boolean clientAuthEnabled = vNode.get("authorization_backend.config.enable_ssl_client_auth").withDefault(false).asBoolean();
                 boolean verifyHostnames = vNode.get("authorization_backend.config.verify_hostnames").withDefault(true).asBoolean();
                 String pemTrustedCasFile = vNode.get("authorization_backend.config.pemtrustedcas_filepath").asString();
                 String pemTrustedCasContent = vNode.get("authorization_backend.config.pemtrustedcas_content").asString();
@@ -1946,7 +1946,7 @@ public class MigrateConfig implements Callable<Integer> {
                 }
 
                 if (oldBackendConfig.hasNonNull("rolesearch")) {
-                    groupSearch.put("filter", ImmutableMap.of("raw", oldBackendConfig.getAsString("usersearch").replace("{0}", "${dn}")));
+                    groupSearch.put("filter", ImmutableMap.of("raw", oldBackendConfig.getAsString("rolesearch").replace("{0}", "${dn}")));
                 }
 
                 if (oldBackendConfig.hasNonNull("rolename")) {
@@ -2021,7 +2021,7 @@ public class MigrateConfig implements Callable<Integer> {
                 userSearch.put("base_dn", entry.getValue().getAsString("base"));
 
                 if (entry.getValue().hasNonNull("search")) {
-                    userSearch.put("filter", ImmutableMap.of("raw", entry.getValue().getAsString("base").replace("{0}", "${user.name}")));
+                    userSearch.put("filter", ImmutableMap.of("raw", entry.getValue().getAsString("search").replace("{0}", "${user.name}")));
                 }
 
                 authDomain.backendConfig = newConfig;
