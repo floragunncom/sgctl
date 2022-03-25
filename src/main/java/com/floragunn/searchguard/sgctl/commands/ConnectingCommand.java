@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 floragunn GmbH
+ * Copyright 2021-2022 floragunn GmbH
  * 
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -76,6 +76,9 @@ public abstract class ConnectingCommand extends BaseCommand {
     @Option(names = { "--tls" }, description = "The TLS version to use when connecting to the cluster")
     String tls;
 
+    @Option(names = { "--skip-connection-check" }, description = "Skips initial REST API call to check the connection")
+    boolean skipInitialConnectionCheck;
+
     public SearchGuardRestClient getClient() throws SgctlException {
 
         try {
@@ -110,8 +113,11 @@ public abstract class ConnectingCommand extends BaseCommand {
                 SearchGuardRestClient client = new SearchGuardRestClient(new HttpHost(server, serverPort, "https"), tlsConfig);
                 client.debug(debug);
 
-                AuthInfoResponse authInfoResponse = client.authInfo();
-                System.out.println("Successfully connected to " + server + " as user " + authInfoResponse.getUserName());
+                if (!skipInitialConnectionCheck) {
+                    AuthInfoResponse authInfoResponse = client.authInfo();
+                    System.out.println("Successfully connected to " + server + " as user " + authInfoResponse.getUserName());
+                }
+                
                 return client;
             } catch (FailedConnectionException e) {
                 throw new SgctlException(getHumanReadableErrorMessage(e), e);
