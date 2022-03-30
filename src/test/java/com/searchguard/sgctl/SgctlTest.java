@@ -50,7 +50,7 @@ import com.floragunn.searchguard.test.GenericRestClient;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
-import com.floragunn.searchsupport.util.ImmutableSet;
+import com.floragunn.fluent.collections.ImmutableSet;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 
