@@ -17,7 +17,18 @@
 
 package com.searchguard.sgctl;
 
-import static java.util.Collections.singletonList;
+import com.floragunn.searchguard.sgctl.SgctlTool;
+import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
+import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
+import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
+import com.google.common.base.Charsets;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -25,19 +36,7 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.apache.commons.io.output.TeeOutputStream;
-import org.junit.After;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-
-import com.floragunn.searchguard.sgctl.SgctlTool;
-import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
-import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
-import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
-import com.google.common.base.Charsets;
+import static java.util.Collections.singletonList;
 
 public class ClusterInitializationTest {
     private final PrintStream standardOut = System.out;
@@ -45,13 +44,13 @@ public class ClusterInitializationTest {
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
     private final ByteArrayOutputStream errStreamCaptor = new ByteArrayOutputStream();
 
-    @Before
+    @BeforeEach
     public void setUp() {
         System.setOut(new PrintStream(new TeeOutputStream(outputStreamCaptor, standardOut)));
         System.setErr(new PrintStream(new TeeOutputStream(errStreamCaptor, standardErr)));
     }
 
-    @After
+    @AfterEach
     public void tearDown() {
         System.setOut(standardOut);
         System.setErr(standardErr);
@@ -61,13 +60,14 @@ public class ClusterInitializationTest {
             .addNodes("CN=127.0.0.1,OU=SearchGuard,O=SearchGuard")
             .addAdminClients(singletonList("CN=admin-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "secret").build();
 
-    @ClassRule
-    public static LocalCluster cluster = new LocalCluster.Builder().singleNode().sslEnabled(TEST_CERTIFICATES).build();
+    public static LocalCluster cluster;
 
     static String configDir;
 
-    @BeforeClass
+    @BeforeAll
     public static void connect() throws Exception {
+        cluster = new LocalCluster.Builder().singleNode().sslEnabled(TEST_CERTIFICATES).start();
+
         InetSocketAddress httpAddress = cluster.getHttpAddress();
         TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
         String adminCert = adminCertificate.getCertificateFile().getPath();
@@ -79,7 +79,12 @@ public class ClusterInitializationTest {
                 "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir,
                 "--skip-connection-check");
 
-        Assert.assertEquals(0, rc);
+        Assertions.assertEquals(0, rc);
+    }
+
+    @AfterAll
+    public static void destroy() throws Exception {
+        cluster.close();
     }
 
     @Test
@@ -97,7 +102,7 @@ public class ClusterInitializationTest {
 
         int rc = SgctlTool.exec("update-config", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir, "--skip-connection-check");
 
-        Assert.assertEquals(0, rc);
+        Assertions.assertEquals(0, rc);
 
         Path sgConfigDir2 = Files.createTempDirectory("sgctl-test-sgconfig-updated");
 
@@ -105,10 +110,10 @@ public class ClusterInitializationTest {
 
         rc = SgctlTool.exec("get-config", "-o", sgConfigDir2.toString(), "--debug", "--sgctl-config-dir", configDir);
 
-        Assert.assertEquals(0, rc);
+        Assertions.assertEquals(0, rc);
 
         String sgRoles = com.google.common.io.Files.asCharSource(sgConfigDir2.resolve("sg_roles.yml").toFile(), Charsets.UTF_8).read();
 
-        Assert.assertTrue(sgRoles, sgRoles.contains("test_role"));
+        Assertions.assertTrue(sgRoles.contains("test_role"), sgRoles);
     }
 }

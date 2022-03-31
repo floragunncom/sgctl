@@ -150,10 +150,37 @@
 
 		<!-- ### Test Dependencies ### -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>5.8.2</version>
 			<scope>test</scope>
-			<version>4.12</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-migrationsupport</artifactId>
+			<version>5.8.2</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.arkinator</groupId>
+			<artifactId>mockserver-netty</artifactId>
+			<scope>test</scope>
+			<version>5.11.9</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.arkinator</groupId>
+			<artifactId>mockserver-client-java</artifactId>
+			<scope>test</scope>
+			<version>5.11.9</version>
+		</dependency>
+
+		<dependency>
+			<groupId>io.github.arkinator</groupId>
+			<artifactId>mockserver-junit-jupiter</artifactId>
+			<version>5.11.9</version>
 		</dependency>
 
 		<dependency>
