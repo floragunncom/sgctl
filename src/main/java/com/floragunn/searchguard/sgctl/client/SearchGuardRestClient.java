@@ -171,7 +171,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         return putJson("/_searchguard/license/key", body).parseResponseBy(BasicResponse::new);
     }
 
-    protected Response get(String path) throws FailedConnectionException, InvalidResponseException {
+    public Response get(String path) throws FailedConnectionException, InvalidResponseException {
         try {
             return new Response(client.execute(httpHost, new HttpGet(path)));
         } catch (ClientProtocolException e) {
@@ -185,7 +185,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         }
     }
 
-    protected Response post(String path, String body, ContentType contentType) throws FailedConnectionException, InvalidResponseException {
+    public Response post(String path, String body, ContentType contentType) throws FailedConnectionException, InvalidResponseException {
         try {
             HttpPost httpPost = new HttpPost(path);
             httpPost.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
@@ -205,7 +205,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         return post(path, DocWriter.json().writeAsString(body), ContentType.APPLICATION_JSON);
     }
 
-    protected Response post(String path) throws FailedConnectionException, InvalidResponseException {
+    public Response post(String path) throws FailedConnectionException, InvalidResponseException {
         try {
             HttpPost httpPost = new HttpPost(path);
             return new Response(client.execute(httpHost, httpPost));
@@ -220,7 +220,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         }
     }
 
-    protected Response put(String path, String body, ContentType contentType, Header... headers)
+    public Response put(String path, String body, ContentType contentType, Header... headers)
             throws FailedConnectionException, InvalidResponseException {
         try {
             HttpPut httpPut = new HttpPut(path);
@@ -251,7 +251,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         return patch(path, patch.toJsonString(), ContentType.create(patch.getMediaType()), headers);
     }
 
-    protected Response patch(String path, String body, ContentType contentType, Header... headers)
+    public Response patch(String path, String body, ContentType contentType, Header... headers)
             throws FailedConnectionException, InvalidResponseException {
         try {
             HttpPatch httpPatch = new HttpPatch(path);
@@ -274,7 +274,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         }
     }
 
-    protected Response delete(String path) throws FailedConnectionException, InvalidResponseException {
+    public Response delete(String path) throws FailedConnectionException, InvalidResponseException {
         try {
             return new Response(client.execute(httpHost, new HttpDelete(path)));
         } catch (ClientProtocolException e) {
