@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.commands;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.DocumentParseException;
+import com.floragunn.codova.documents.Format;
 import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.client.ApiException;
@@ -28,7 +29,6 @@ import static picocli.CommandLine.Parameters;
 
 @Command(name = "rest", description = "REST client for administration")
 public class RestCommand extends ConnectingCommand implements Callable<Integer> {
-    enum SupportedHttpMethods {get, put, delete, post, patch}
 
     @Parameters(index = "0", arity = "1", description = "http method")
     SupportedHttpMethods httpMethod;
@@ -46,62 +46,154 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
     File outputFilePath;
 
     @Override
-    public Integer call() throws Exception {
+    public Integer call() {
         try (SearchGuardRestClient client = getClient().debug(debug)) {
-            SearchGuardRestClient.Response response;
-            switch (httpMethod) {
-                case get:
-                    response = client.get(endpoint);
-                    break;
-                case delete:
-                    response = client.delete(endpoint);
-                    break;
-                case put:
-                    response = client.put(endpoint, evaluateBody(), ContentType.APPLICATION_JSON);
-                    break;
-                case patch:
-                    response = client.patch(endpoint, evaluateBody(), ContentType.APPLICATION_JSON);
-                case post:
-                    if (jsonString == null && inputFilePath == null)
-                        response = client.post(endpoint);
-                    else
-                        response = client.post(endpoint, evaluateBody(), ContentType.APPLICATION_JSON);
-                    break;
-                default:
-                    throw new SgctlException("Unknown http method '" + httpMethod + "'");
-            }
-            BasicResponse basicResponse = response.parseResponseBy(BasicResponse::new);
-            String responseString = DocWriter.json().pretty().writeAsString(basicResponse.getContent());
+            BasicResponse basicResponse = httpMethod.handle(client, endpoint, jsonString, inputFilePath);
+            String responseString = DocWriter.json().pretty().writeAsString(basicResponse.getContent()); //DocWriter does not support pretty printing to file
             System.out.println(responseString);
-            if (outputFilePath != null) {
-                handleFileOutput(responseString);
-            }
+            handleFileOutput(outputFilePath, responseString);
             return 0;
         }
-        catch (UnexpectedDocumentStructureException | DocumentParseException | IOException | SgctlException |
-                FailedConnectionException | InvalidResponseException | UnauthorizedException | ServiceUnavailableException | ApiException e) {
+        catch (SgctlException | UnauthorizedException | ApiException | InvalidResponseException | ServiceUnavailableException | FailedConnectionException e) {
             System.err.println(e.getMessage());
             return 1;
         }
     }
 
-    private String evaluateBody() throws UnexpectedDocumentStructureException, DocumentParseException, IOException, SgctlException {
-        if (jsonString != null) {
-            return jsonString;
-        }
-        else if(inputFilePath != null) {
-            return DocWriter.json().writeAsString(DocReader.json().readObject(inputFilePath));
-        }
-        throw new SgctlException("Http method '" + httpMethod + "' requires an input file or a JSON string");
-    }
-
-    private void handleFileOutput(String response) throws SgctlException {
+    private static void handleFileOutput(File outputFilePath, String response) throws SgctlException {
+        if (outputFilePath == null) return;
         try {
             BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath));
             writer.write(response);
             writer.close();
-        } catch (IOException e) {
+        }
+        catch (IOException e) {
             throw new SgctlException("Error while writing " + outputFilePath.getPath() + ": " + e, e);
+        }
+    }
+
+    private enum SupportedHttpMethods {
+        GET("get",
+                input -> input.validateNoInput(),
+                (client, endpoint, evaluatedInput) -> client.get(endpoint)),
+        PUT("put",
+                input -> input.validateExistent().validateNoDuplicate(),
+                (client, endpoint, evaluatedInput) -> client.put(endpoint, evaluatedInput.getContentString(), evaluatedInput.getContentType())),
+        DELETE("delete",
+                input -> input.validateNoInput(),
+                (client, endpoint, evaluatedInput) -> client.delete(endpoint)),
+        POST("post",
+                input -> input.validateNoDuplicate(),
+                (client, endpoint, evaluatedInput) -> {
+                    if (evaluatedInput.isEmpty()) return client.post(endpoint);
+                    return client.post(endpoint, evaluatedInput.getContentString(), evaluatedInput.getContentType());
+                }),
+        PATCH("patch",
+                input -> input.validateExistent().validateNoDuplicate(),
+                (client, endpoint, evaluatedInput) -> client.patch(endpoint, evaluatedInput.getContentString(), evaluatedInput.getContentType())
+        );
+
+        private final String name;
+        private final InputValidator validator;
+        private final SupportedHttpMethodHandler handler;
+
+        SupportedHttpMethods(String name, InputValidator validator, SupportedHttpMethodHandler handler) {
+            this.name = name;
+            this.validator = validator;
+            this.handler = handler;
+        }
+
+        @Override
+        public String toString() {
+            return name;
+        }
+
+        public BasicResponse handle(SearchGuardRestClient client, String endpoint, String jsonString, File inputFilePath)
+                throws SgctlException, FailedConnectionException, InvalidResponseException, UnauthorizedException, ServiceUnavailableException, ApiException {
+            Input input = Input.create(jsonString, inputFilePath);
+            SearchGuardRestClient.Response response = handler.handle(client, endpoint, validator.validate(input).evaluate());
+            return response.parseResponseBy(BasicResponse::new);
+        }
+
+        interface SupportedHttpMethodHandler {
+            SearchGuardRestClient.Response handle(SearchGuardRestClient client, String endpoint, Input.EvaluatedInput evaluatedInput)
+                    throws SgctlException, FailedConnectionException, InvalidResponseException;
+        }
+
+        interface InputValidator {
+            Input validate(Input input) throws SgctlException;
+        }
+
+        private static class Input {
+            public static Input create(String jsonString, File inputFilePath) {
+                return new Input(jsonString, inputFilePath);
+            }
+
+            private final String jsonString;
+            private final File inputFilePath;
+
+            private Input(String jsonString, File inputFilePath) {
+                this.jsonString = jsonString;
+                this.inputFilePath = inputFilePath;
+            }
+
+            public Input validateNoInput() throws SgctlException {
+                if (jsonString != null || inputFilePath != null)
+                    System.out.println("No input required. Input is ignored");
+                return this;
+            }
+
+            public Input validateNoDuplicate() throws SgctlException {
+                if (jsonString != null && inputFilePath != null)
+                    throw new SgctlException("Two inputs defined. Choose either '--json' or '--input'");
+                return this;
+            }
+
+            public Input validateExistent() throws SgctlException {
+                if (jsonString == null && inputFilePath == null)
+                    throw new SgctlException("This method requires an input. Use '--json' or '--input' to define an input");
+                return this;
+            }
+
+            public boolean isEmpty() {
+                return jsonString == null && inputFilePath == null;
+            }
+
+            public EvaluatedInput evaluate() throws SgctlException {
+                if (isEmpty()) return new EvaluatedInput(null, null);
+                if (jsonString != null) return new EvaluatedInput(jsonString, ContentType.APPLICATION_JSON);
+                Format format = Format.getByFileName(inputFilePath.getName(), Format.JSON);
+                try {
+                    //TODO: Do we use the given format in the request?
+                    String content = DocWriter.format(format).writeAsString(DocReader.format(format).readObject(inputFilePath));
+                    //TODO: Not sure if this works correctly
+                    return new EvaluatedInput(content, ContentType.create(format.getMediaType()));
+                } catch (UnexpectedDocumentStructureException | DocumentParseException | IOException e) {
+                    throw new SgctlException("Could not read file from path '" + inputFilePath + "' " + e, e);
+                }
+            }
+
+            private static class EvaluatedInput {
+                private final String contentString;
+                private final ContentType contentType;
+
+                protected EvaluatedInput(String contentString, ContentType contentType) {
+                    this.contentString = contentString;
+                    this.contentType = contentType;
+                }
+
+                public String getContentString() {
+                    return contentString;
+                }
+
+                public ContentType getContentType() {
+                    return contentType;
+                }
+
+                public boolean isEmpty() {
+                    return contentString == null && contentType == null;
+                }
+            }
         }
     }
 }
