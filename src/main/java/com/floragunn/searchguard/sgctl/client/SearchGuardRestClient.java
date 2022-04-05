@@ -229,7 +229,7 @@ public class SearchGuardRestClient implements AutoCloseable {
                 httpPut.setHeaders(headers);
             }
 
-            httpPut.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+            httpPut.setEntity(new StringEntity(body, contentType));
 
             return new Response(client.execute(httpHost, httpPut));
         } catch (ClientProtocolException e) {

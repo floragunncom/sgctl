@@ -74,24 +74,20 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
 
     private enum SupportedHttpMethods {
         GET("get",
-                input -> input.validateNoInput(),
+                Input::validateNoInput,
                 (client, endpoint, evaluatedInput) -> client.get(endpoint)),
         PUT("put",
                 input -> input.validateExistent().validateNoDuplicate(),
-                (client, endpoint, evaluatedInput) -> client.put(endpoint, evaluatedInput.getContentString(), evaluatedInput.getContentType())),
+                (client, endpoint, evaluatedInput) -> client.put(endpoint, evaluatedInput.getContent(), evaluatedInput.getContentType())),
         DELETE("delete",
-                input -> input.validateNoInput(),
+                Input::validateNoInput,
                 (client, endpoint, evaluatedInput) -> client.delete(endpoint)),
         POST("post",
-                input -> input.validateNoDuplicate(),
-                (client, endpoint, evaluatedInput) -> {
-                    if (evaluatedInput.isEmpty()) return client.post(endpoint);
-                    return client.post(endpoint, evaluatedInput.getContentString(), evaluatedInput.getContentType());
-                }),
+                Input::validateNoDuplicate,
+                (client, endpoint, evaluatedInput) -> evaluatedInput == null ? client.post(endpoint) : client.post(endpoint, evaluatedInput.getContent(), evaluatedInput.getContentType())),
         PATCH("patch",
                 input -> input.validateExistent().validateNoDuplicate(),
-                (client, endpoint, evaluatedInput) -> client.patch(endpoint, evaluatedInput.getContentString(), evaluatedInput.getContentType())
-        );
+                (client, endpoint, evaluatedInput) -> client.patch(endpoint, evaluatedInput.getContent(), evaluatedInput.getContentType()));
 
         private final String name;
         private final InputValidator validator;
@@ -129,8 +125,8 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
                 return new Input(jsonString, inputFilePath);
             }
 
-            private final String jsonString;
-            private final File inputFilePath;
+            private String jsonString;
+            private File inputFilePath;
 
             private Input(String jsonString, File inputFilePath) {
                 this.jsonString = jsonString;
@@ -138,8 +134,9 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             }
 
             public Input validateNoInput() throws SgctlException {
-                if (jsonString != null || inputFilePath != null)
-                    System.out.println("No input required. Input is ignored");
+                if (!isEmpty()) System.out.println("No input required. Input is ignored");
+                jsonString = null;
+                inputFilePath = null;
                 return this;
             }
 
@@ -160,38 +157,34 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             }
 
             public EvaluatedInput evaluate() throws SgctlException {
-                if (isEmpty()) return new EvaluatedInput(null, null);
-                if (jsonString != null) return new EvaluatedInput(jsonString, ContentType.APPLICATION_JSON);
+                if (isEmpty()) return null;
+                if (jsonString != null) return new EvaluatedInput(jsonString, ContentType.create(Format.JSON.getMediaType()));
+                //TODO: Check if format is supported
                 Format format = Format.getByFileName(inputFilePath.getName(), Format.JSON);
                 try {
-                    //TODO: Do we use the given format in the request?
                     String content = DocWriter.format(format).writeAsString(DocReader.format(format).readObject(inputFilePath));
-                    //TODO: Not sure if this works correctly
                     return new EvaluatedInput(content, ContentType.create(format.getMediaType()));
-                } catch (UnexpectedDocumentStructureException | DocumentParseException | IOException e) {
+                }
+                catch (UnexpectedDocumentStructureException | DocumentParseException | IOException e) {
                     throw new SgctlException("Could not read file from path '" + inputFilePath + "' " + e, e);
                 }
             }
 
             private static class EvaluatedInput {
-                private final String contentString;
+                private final String content;
                 private final ContentType contentType;
 
                 protected EvaluatedInput(String contentString, ContentType contentType) {
-                    this.contentString = contentString;
+                    this.content = contentString;
                     this.contentType = contentType;
                 }
 
-                public String getContentString() {
-                    return contentString;
+                public String getContent() {
+                    return content;
                 }
 
                 public ContentType getContentType() {
                     return contentType;
-                }
-
-                public boolean isEmpty() {
-                    return contentString == null && contentType == null;
                 }
             }
         }
