@@ -96,6 +96,13 @@ public class RestCommandTest {
     }
 
     @Test
+    public void testInvalidInput() {
+        int result = SgctlTool.exec("rest", "put", "/some/endpoint", "--json", "{\"key\":\"value}}",
+                "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
+        Assertions.assertEquals(1, result);
+    }
+
+    @Test
     public void testPutJson() throws Exception {
         String json = "{\"key\": \"value\", \"array\": [\"val1\", 2, 3], \"obj\": {}}";
         wm.stubFor(put(urlEqualTo("/some/endpoint"))

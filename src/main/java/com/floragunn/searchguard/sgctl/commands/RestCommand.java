@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.commands;
 
+import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.DocumentParseException;
@@ -19,6 +20,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.util.Map;
 import java.util.concurrent.Callable;
 
 import static picocli.CommandLine.Command;
@@ -134,7 +136,7 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             }
 
             public Input validateNoInput() throws SgctlException {
-                if (!isEmpty()) System.out.println("No input required. Input is ignored");
+                if (!isEmpty()) System.out.println("No input required for this HTTP method. Input is ignored");
                 jsonString = null;
                 inputFilePath = null;
                 return this;
@@ -148,7 +150,7 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
 
             public Input validateExistent() throws SgctlException {
                 if (jsonString == null && inputFilePath == null)
-                    throw new SgctlException("This method requires an input. Use '--json' or '--input' to define an input");
+                    throw new SgctlException("This HTTP method requires an input. Use '--json' or '--input' to define an input");
                 return this;
             }
 
@@ -158,15 +160,14 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
 
             public EvaluatedInput evaluate() throws SgctlException {
                 if (isEmpty()) return null;
-                if (jsonString != null) return new EvaluatedInput(jsonString, ContentType.create(Format.JSON.getMediaType()));
                 //TODO: Check if format is supported
-                Format format = Format.getByFileName(inputFilePath.getName(), Format.JSON);
                 try {
-                    String content = DocWriter.format(format).writeAsString(DocReader.format(format).readObject(inputFilePath));
-                    return new EvaluatedInput(content, ContentType.create(format.getMediaType()));
+                    final Format format = jsonString != null ? Format.JSON : Format.getByFileName(inputFilePath.getName(), Format.JSON);
+                    final Map<String, Object> content = jsonString != null ? DocReader.format(format).readObject(jsonString) : DocReader.format(format).readObject(inputFilePath);
+                    return new EvaluatedInput(DocWriter.format(format).writeAsString(content), ContentType.create(format.getMediaType()));
                 }
                 catch (UnexpectedDocumentStructureException | DocumentParseException | IOException e) {
-                    throw new SgctlException("Could not read file from path '" + inputFilePath + "' " + e, e);
+                    throw new SgctlException((jsonString != null ? "JSON input is invalid" : "Could not read file from path '" + inputFilePath + "' ") + "\n" + e, e);
                 }
             }
 
