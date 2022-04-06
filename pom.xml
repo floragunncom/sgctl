@@ -120,8 +120,8 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>codova-sg</artifactId>
-			<version>b-session-auth-SNAPSHOT</version>
+			<artifactId>codova</artifactId>
+			<version>b-main-SNAPSHOT</version>
 		</dependency>
 
 		<dependency>
@@ -146,6 +146,12 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-jdk14</artifactId>
 			<version>1.7.32</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.70</version>
 		</dependency>
 
 		<!-- ### Test Dependencies ### -->

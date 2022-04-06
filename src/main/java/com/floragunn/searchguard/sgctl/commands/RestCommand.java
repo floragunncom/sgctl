@@ -1,6 +1,5 @@
 package com.floragunn.searchguard.sgctl.commands;
 
-import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.DocumentParseException;
@@ -20,6 +19,8 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
@@ -64,25 +65,30 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
 
     private static void handleFileOutput(File outputFilePath, String response) throws SgctlException {
         if (outputFilePath == null) return;
+        File file = outputFilePath;
+        if (outputFilePath.isDirectory())
+            file = new File(outputFilePath, "response-" + new SimpleDateFormat("yyyy-MM-dd--HH-mm'.json'").format(new Date()));
+        else if(file.getPath().lastIndexOf('.') <= 0)
+            file = new File(outputFilePath + ".json");
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(outputFilePath));
+            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
             writer.write(response);
             writer.close();
         }
         catch (IOException e) {
-            throw new SgctlException("Error while writing " + outputFilePath.getPath() + ": " + e, e);
+            throw new SgctlException("Error while writing output to " + file.getPath() + ": " + e, e);
         }
     }
 
     private enum SupportedHttpMethods {
         GET("get",
-                Input::validateNoInput,
+                Input::validateEmpty,
                 (client, endpoint, evaluatedInput) -> client.get(endpoint)),
         PUT("put",
                 input -> input.validateExistent().validateNoDuplicate(),
                 (client, endpoint, evaluatedInput) -> client.put(endpoint, evaluatedInput.getContent(), evaluatedInput.getContentType())),
         DELETE("delete",
-                Input::validateNoInput,
+                Input::validateEmpty,
                 (client, endpoint, evaluatedInput) -> client.delete(endpoint)),
         POST("post",
                 Input::validateNoDuplicate,
@@ -135,7 +141,7 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
                 this.inputFilePath = inputFilePath;
             }
 
-            public Input validateNoInput() throws SgctlException {
+            public Input validateEmpty() throws SgctlException {
                 if (!isEmpty()) System.out.println("No input required for this HTTP method. Input is ignored");
                 jsonString = null;
                 inputFilePath = null;
@@ -160,13 +166,12 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
 
             public EvaluatedInput evaluate() throws SgctlException {
                 if (isEmpty()) return null;
-                //TODO: Check if format is supported
                 try {
-                    final Format format = jsonString != null ? Format.JSON : Format.getByFileName(inputFilePath.getName(), Format.JSON);
+                    final Format format = jsonString != null ? Format.JSON : Format.getByFileName(inputFilePath.getName());
                     final Map<String, Object> content = jsonString != null ? DocReader.format(format).readObject(jsonString) : DocReader.format(format).readObject(inputFilePath);
                     return new EvaluatedInput(DocWriter.format(format).writeAsString(content), ContentType.create(format.getMediaType()));
                 }
-                catch (UnexpectedDocumentStructureException | DocumentParseException | IOException e) {
+                catch (UnexpectedDocumentStructureException | DocumentParseException | IOException | Format.UnknownDocTypeException e) {
                     throw new SgctlException((jsonString != null ? "JSON input is invalid" : "Could not read file from path '" + inputFilePath + "' ") + "\n" + e, e);
                 }
             }
