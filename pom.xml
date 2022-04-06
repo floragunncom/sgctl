@@ -254,6 +254,13 @@
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
+
+		<dependency>
+			<groupId>com.floragunn</groupId>
+			<artifactId>fluent-collections</artifactId>
+			<version>b-main-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
 		
 		<dependency>
 			<groupId>io.github.hakky54</groupId>
