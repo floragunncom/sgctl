@@ -188,7 +188,7 @@ public class SearchGuardRestClient implements AutoCloseable {
     public Response post(String path, String body, ContentType contentType) throws FailedConnectionException, InvalidResponseException {
         try {
             HttpPost httpPost = new HttpPost(path);
-            httpPost.setEntity(new StringEntity(body, ContentType.APPLICATION_JSON));
+            httpPost.setEntity(new StringEntity(body, contentType));
             return new Response(client.execute(httpHost, httpPost));
         } catch (ClientProtocolException e) {
             throw new FailedConnectionException(e);
