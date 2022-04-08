@@ -232,17 +232,24 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
+			<artifactId>fluent-collections</artifactId>
+			<version>b-main-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.floragunn</groupId>
 			<artifactId>search-guard-suite-security</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>search-guard-suite-ssl</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
-		</dependency>		
+		</dependency>
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
@@ -266,13 +273,13 @@
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>io.github.hakky54</groupId>
 			<artifactId>sslcontext-kickstart-for-pem</artifactId>
 			<scope>test</scope>
 			<version>7.0.2</version>
-		</dependency>		
+		</dependency>
 
 		<dependency>
 			<groupId>commons-io</groupId>
@@ -410,13 +417,13 @@
 							<minimizeJar>true</minimizeJar>
 							<transformers>
 								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
+										implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer" />
 								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+										implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
 								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
+										implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer" />
 								<transformer
-									implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+										implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
 									<mainClass>com.floragunn.searchguard.sgctl.SgctlTool</mainClass>
 								</transformer>
 							</transformers>
