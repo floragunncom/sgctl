@@ -125,6 +125,24 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpg-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+
+		<dependency>
 			<groupId>com.fasterxml.jackson.core</groupId>
 			<artifactId>jackson-core</artifactId>
 			<version>2.12.5</version>
@@ -146,12 +164,6 @@
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-jdk14</artifactId>
 			<version>1.7.32</version>
-		</dependency>
-
-		<dependency>
-			<groupId>org.bouncycastle</groupId>
-			<artifactId>bcprov-jdk15on</artifactId>
-			<version>1.70</version>
 		</dependency>
 
 		<!-- ### Test Dependencies ### -->
@@ -220,13 +232,6 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>fluent-collections</artifactId>
-			<version>b-main-SNAPSHOT</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>com.floragunn</groupId>
 			<artifactId>search-guard-suite-security</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
@@ -260,13 +265,6 @@
 			<artifactId>dlic-search-guard-suite-security</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.floragunn</groupId>
-			<artifactId>fluent-collections</artifactId>
-			<version>b-main-SNAPSHOT</version>
-			<scope>test</scope>
 		</dependency>
 		
 		<dependency>
