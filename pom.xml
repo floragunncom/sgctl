@@ -232,6 +232,13 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
+			<artifactId>fluent-collections</artifactId>
+			<version>b-main-SNAPSHOT</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.floragunn</groupId>
 			<artifactId>search-guard-suite-security</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
