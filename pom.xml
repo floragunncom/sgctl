@@ -120,8 +120,26 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>codova-sg</artifactId>
-			<version>b-session-auth-SNAPSHOT</version>
+			<artifactId>codova</artifactId>
+			<version>b-main-SNAPSHOT</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcprov-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpg-jdk15on</artifactId>
+			<version>1.70</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.bouncycastle</groupId>
+			<artifactId>bcpkix-jdk15on</artifactId>
+			<version>1.70</version>
 		</dependency>
 
 		<dependency>
@@ -150,10 +168,24 @@
 
 		<!-- ### Test Dependencies ### -->
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter</artifactId>
+			<version>5.8.2</version>
 			<scope>test</scope>
-			<version>4.12</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-migrationsupport</artifactId>
+			<version>5.8.2</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.tomakehurst</groupId>
+			<artifactId>wiremock-jre8</artifactId>
+			<version>2.32.0</version>
+			<scope>test</scope>
 		</dependency>
 
 		<dependency>
@@ -195,6 +227,13 @@
 			<groupId>org.elasticsearch.plugin</groupId>
 			<artifactId>reindex-client</artifactId>
 			<version>${elasticsearch.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+		<dependency>
+			<groupId>com.floragunn</groupId>
+			<artifactId>fluent-collections</artifactId>
+			<version>b-main-SNAPSHOT</version>
 			<scope>test</scope>
 		</dependency>
 

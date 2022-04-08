@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLHandshakeException;
 
+import com.floragunn.searchguard.sgctl.client.api.GetSgLicenseResponse;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -158,6 +159,16 @@ public class SearchGuardRestClient implements AutoCloseable {
             throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
         return get("/_searchguard/component/" + (componentId != null ? componentId : "_all") + "/_health?verbose=" + verbose)
                 .parseResponseBy(BasicResponse::new);
+    }
+
+    public GetSgLicenseResponse getSgLicense()
+            throws FailedConnectionException, InvalidResponseException, UnauthorizedException, ServiceUnavailableException, ApiException {
+        return get("/_searchguard/license").parseResponseBy(GetSgLicenseResponse::new);
+    }
+
+    public BasicResponse putSgLicense(Map<String, Object> body)
+            throws FailedConnectionException, InvalidResponseException, UnauthorizedException, ServiceUnavailableException, ApiException {
+        return putJson("/_searchguard/license/key", body).parseResponseBy(BasicResponse::new);
     }
 
     protected Response get(String path) throws FailedConnectionException, InvalidResponseException {
@@ -418,7 +429,7 @@ public class SearchGuardRestClient implements AutoCloseable {
                 throw new UnauthorizedException(message, httpResponse.getStatusLine(), httpResponse);
             } else if (statusCode == 400) {
                 if ("application/json".equals(contentType)) {
-                    throw parseBadRequestJsonRespose();
+                    throw parseBadRequestJsonResponse();
                 } else {
                     String message = getStatusMessage("Bad Request");
 
@@ -468,7 +479,7 @@ public class SearchGuardRestClient implements AutoCloseable {
             }
         }
 
-        private ApiException parseBadRequestJsonRespose() throws InvalidResponseException {
+        private ApiException parseBadRequestJsonResponse() throws InvalidResponseException {
             try {
                 DocNode response = DocNode.wrap(DocReader.json().read(this.bodyAsString));
                 String errorMessage = null;
