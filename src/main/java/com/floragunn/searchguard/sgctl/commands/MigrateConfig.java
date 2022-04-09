@@ -479,7 +479,7 @@ public class MigrateConfig implements Callable<Integer> {
             FrontendUpdateInstructions updateInstructions = new FrontendUpdateInstructions().mainInstructions(
                     "You have configured the Search Guard Kibana plugin to use basic authentication (user name and password based).");
 
-            Map<String, Object> newSgFrontendConfig = new LinkedHashMap<>(SG_META);
+            Map<String, Object> newSgFrontendConfig = new LinkedHashMap<>();
 
             String loginSubtitle = oldKibanaConfig.get("searchguard.basicauth.login.subtitle").asString();
 
@@ -526,7 +526,7 @@ public class MigrateConfig implements Callable<Integer> {
                 newSgFrontendConfig.put("login_page", loginPageConfig);
             }
 
-            updateInstructions.sgFrontendConfig(newSgFrontendConfig);
+            updateInstructions.sgFrontendConfig(ImmutableMap.of("default", newSgFrontendConfig));
 
             this.kibanaConfigRewriter.remove("searchguard.auth.type");
             this.kibanaConfigRewriter.remove("searchguard.basicauth.loadbalancer_url");
@@ -729,7 +729,7 @@ public class MigrateConfig implements Callable<Integer> {
 
             newSgFrontendConfig.put("auth_domains", newAuthDomains);
 
-            updateInstructions.sgFrontendConfig(newSgFrontendConfig);
+            updateInstructions.sgFrontendConfig(ImmutableMap.of("default", newSgFrontendConfig));
 
             this.kibanaConfigRewriter.remove("searchguard.auth.type");
             this.kibanaConfigRewriter.remove("searchguard.basicauth.loadbalancer_url");
@@ -908,7 +908,7 @@ public class MigrateConfig implements Callable<Integer> {
                         publicBaseUrlAvailable ? "server.publicBaseUrl" : "searchguard.frontend_base_url", frontendBaseUrl));
             }
 
-            updateInstructions.sgFrontendConfig(newSgFrontendConfig);
+            updateInstructions.sgFrontendConfig(ImmutableMap.of("default", newSgFrontendConfig));
 
             this.kibanaConfigRewriter.remove("searchguard.auth.type");
             this.kibanaConfigRewriter.remove("searchguard.basicauth.loadbalancer_url");
@@ -992,7 +992,7 @@ public class MigrateConfig implements Callable<Integer> {
 
                 newSgFrontendConfig.put("auth_domains", Collections.singletonList(ImmutableMap.of("type", "link", "url", loginEndpoint)));
 
-                updateInstructions.sgFrontendConfig(newSgFrontendConfig);
+                updateInstructions.sgFrontendConfig(ImmutableMap.of("default", newSgFrontendConfig));
 
                 return updateInstructions;
             } else {
