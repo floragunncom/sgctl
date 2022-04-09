@@ -15,7 +15,7 @@
  *
  */
 
-package com.searchguard.sgctl;
+package com.floragunn.searchguard.sgctl;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;

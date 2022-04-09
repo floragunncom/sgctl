@@ -103,7 +103,7 @@ public class MigrateConfig implements Callable<Integer> {
             System.err.println("You must specify a path to a sg_config.yml on the command line");
             return 1;
         }
-       
+
         if (!sgConfig.exists()) {
             System.out.flush();
             System.err.println("The file " + sgConfig + " does not exist");
@@ -158,7 +158,7 @@ public class MigrateConfig implements Callable<Integer> {
                             return 1;
                         }
                     }
-                    
+
                     if (backendUpdateInstructions.sgAuthz != null) {
                         try {
                             Files.write(new File(outputDir, "sg_authz.yml").toPath(),
@@ -169,7 +169,6 @@ public class MigrateConfig implements Callable<Integer> {
                             return 1;
                         }
                     }
-
 
                     if (backendUpdateInstructions.sgFrontendMultiTenancy != null) {
                         try {
@@ -231,9 +230,10 @@ public class MigrateConfig implements Callable<Integer> {
                     }
                 }
             }
-            
+
             if (kibanaConfig == null) {
-                System.out.println("You have not specified a kibana.yml file. Thus, we are assuming that you are not using Kibana. If you are using Kibana and want to adapt the migration, please specify the path to your kibana.yml file on the command line.\n\n");
+                System.out.println(
+                        "You have not specified a kibana.yml file. Thus, we are assuming that you are not using Kibana. If you are using Kibana and want to adapt the migration, please specify the path to your kibana.yml file on the command line.\n\n");
             }
 
             System.out.println("The update process consists of these steps:\n");
@@ -276,9 +276,9 @@ public class MigrateConfig implements Callable<Integer> {
             if (backendUpdateInstructions.sgAuthz != null) {
                 System.out.println("\n----------------------------- sg_authz.yml --------------------------------------");
                 System.out.println(DocWriter.yaml().writeAsString(backendUpdateInstructions.sgAuthz));
-                System.out.println("\n---------------------------------------------------------------------------------\n");                
+                System.out.println("\n---------------------------------------------------------------------------------\n");
             }
-            
+
             if (backendUpdateInstructions.sgFrontendMultiTenancy != null) {
                 System.out.println("\n--------------------- sg_frontend_multi_tenancy.yml -------------------------------");
                 System.out.println(DocWriter.yaml().writeAsString(backendUpdateInstructions.sgFrontendMultiTenancy));
@@ -347,8 +347,10 @@ public class MigrateConfig implements Callable<Integer> {
 
         public ConfigMigrator(File legacySgConfig, File legacyKibanaConfig, boolean publicBaseUrlAvailable, String dashboardConfigFileName)
                 throws FileNotFoundException, IOException, DocumentParseException, UnexpectedDocumentStructureException {
-            this.oldSgConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacySgConfig), oldSgConfigValidationErrors);                        
-            this.oldKibanaConfig = legacyKibanaConfig != null ? new ValidatingDocNode(DocReader.yaml().readObject(legacyKibanaConfig), oldKibanaConfigValidationErrors) : null;
+            this.oldSgConfig = new ValidatingDocNode(DocReader.yaml().readObject(legacySgConfig), oldSgConfigValidationErrors);
+            this.oldKibanaConfig = legacyKibanaConfig != null
+                    ? new ValidatingDocNode(DocReader.yaml().readObject(legacyKibanaConfig), oldKibanaConfigValidationErrors)
+                    : null;
             this.kibanaConfigRewriter = legacyKibanaConfig != null ? new YamlRewriter(legacyKibanaConfig) : null;
             this.publicBaseUrlAvailable = publicBaseUrlAvailable;
             this.dashboardConfigFileName = dashboardConfigFileName;
@@ -362,17 +364,17 @@ public class MigrateConfig implements Callable<Integer> {
             Map<String, Object> authTokenService = oldSgConfig.get("sg_config.dynamic.auth_token_provider").asMap();
             boolean doNotFailOnForbidden = oldSgConfig.get("sg_config.dynamic.do_not_fail_on_forbidden").withDefault(false).asBoolean();
             String fieldAnonymizationSalt2 = oldSgConfig.get("sg_config.dynamic.field_anonymization_salt2").asString();
-            
+
             if (doNotFailOnForbidden == false || fieldAnonymizationSalt2 != null) {
                 Map<String, Object> authzConfig = new LinkedHashMap<>();
                 if (doNotFailOnForbidden == false) {
-                    authzConfig.put("ignore_unauthorized_indices", false);                    
+                    authzConfig.put("ignore_unauthorized_indices", false);
                 }
-                
+
                 if (fieldAnonymizationSalt2 != null) {
                     authzConfig.put("field_anonymization.salt", fieldAnonymizationSalt2);
                 }
-                
+
                 result.sgAuthz = DocNode.wrap(authzConfig);
             }
 
@@ -449,7 +451,7 @@ public class MigrateConfig implements Callable<Integer> {
             if (oldKibanaConfig == null) {
                 return null;
             }
-            
+
             KibanaAuthType kibanaAuthType = oldKibanaConfig.get("searchguard.auth.type").withDefault(KibanaAuthType.BASICAUTH)
                     .asEnum(KibanaAuthType.class);
 
@@ -1109,13 +1111,13 @@ public class MigrateConfig implements Callable<Integer> {
         BASICAUTH, JWT, OPENID, PROXY, KERBEROS, SAML
     }
 
-    static class BackendUpdateInstructions {
-        private SgAuthc sgAuthc;
-        private DocNode sgLicense;
-        private DocNode sgAuthTokenService;
-        private DocNode sgAuthz;
-        private DocNode sgFrontendMultiTenancy;
-        private Object sgAuthcTransport;
+    public static class BackendUpdateInstructions {
+        SgAuthc sgAuthc;
+        DocNode sgLicense;
+        DocNode sgAuthTokenService;
+        DocNode sgAuthz;
+        DocNode sgFrontendMultiTenancy;
+        Object sgAuthcTransport;
 
     }
 
@@ -1532,11 +1534,11 @@ public class MigrateConfig implements Callable<Integer> {
                     .map(s -> ssl ? (s.startsWith("ldaps://") ? s : ("ldaps://" + s)) : s).collect(Collectors.toList()));
 
             if (oldBackendConfig.hasNonNull("bind_dn")) {
-                idpConfig.put("bind_dn", oldBackendConfig.getAsListOfStrings("bind_dn"));
+                idpConfig.put("bind_dn", oldBackendConfig.getAsString("bind_dn"));
             }
 
             if (oldBackendConfig.hasNonNull("password")) {
-                idpConfig.put("password", oldBackendConfig.getAsListOfStrings("password"));
+                idpConfig.put("password", oldBackendConfig.getAsString("password"));
             }
 
             LinkedHashMap<String, Object> tlsConfig = new LinkedHashMap<>();
@@ -1638,7 +1640,6 @@ public class MigrateConfig implements Callable<Integer> {
                             .collect(Collectors.toList());
                     List<UserInformationBackend> otherInformationBackends = userInformationBackends.stream()
                             .filter((b) -> !ldapUserInformationBackendsForMerging.contains(b)).collect(Collectors.toList());
-
 
                     if (ldapUserInformationBackendsForMerging.size() == 1) {
                         // Just merge the group search into this one
@@ -1862,11 +1863,11 @@ public class MigrateConfig implements Callable<Integer> {
                 DocNode oldBackendConfig = config.getAsNode("authorization_backend", "config");
 
                 if (oldBackendConfig.hasNonNull("bind_dn")) {
-                    idpConfig.put("bind_dn", oldBackendConfig.getAsListOfStrings("bind_dn"));
+                    idpConfig.put("bind_dn", oldBackendConfig.getAsString("bind_dn"));
                 }
 
                 if (oldBackendConfig.hasNonNull("password")) {
-                    idpConfig.put("password", oldBackendConfig.getAsListOfStrings("password"));
+                    idpConfig.put("password", oldBackendConfig.getAsString("password"));
                 }
 
                 LinkedHashMap<String, Object> tlsConfig = new LinkedHashMap<>();
