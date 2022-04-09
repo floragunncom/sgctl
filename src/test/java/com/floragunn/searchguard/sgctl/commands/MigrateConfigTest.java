@@ -21,6 +21,8 @@ import java.io.File;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
@@ -30,9 +32,11 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import com.floragunn.codova.documents.DocNode;
+import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig.BackendUpdateInstructions;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig.ConfigMigrator;
+import com.floragunn.searchguard.sgctl.commands.MigrateConfig.FrontendUpdateInstructions;
 import com.floragunn.searchguard.test.GenericRestClient;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
 
@@ -71,13 +75,32 @@ public class MigrateConfigTest {
         MigrateConfig command = new MigrateConfig();
         ConfigMigrator configMigrator = command.new ConfigMigrator(sgConfig, kibanaYml.exists() ? kibanaYml : null, true, "kibana.yml");
         BackendUpdateInstructions backendUpdateInstructions = configMigrator.createBackendUpdateInstructions();
+        FrontendUpdateInstructions frontendUpdateInstructions = configMigrator.createUpdateInstructions();
 
         System.out.println("Migrated sg_authc:\n" + backendUpdateInstructions.sgAuthc.toYamlString());
+        System.out.println(
+                "Migrated sg_frontend_authc:\n" + (frontendUpdateInstructions != null && frontendUpdateInstructions.getSgFrontendConfig() != null
+                        ? DocWriter.yaml().writeAsString(frontendUpdateInstructions.getSgFrontendConfig())
+                        : "null"));
+        System.out.println("Migrated sg_frontend_multitenancy:\n"
+                + (backendUpdateInstructions.sgFrontendMultiTenancy != null ? backendUpdateInstructions.sgFrontendMultiTenancy.toYamlString()
+                        : "null"));
 
         try (GenericRestClient client = cluster.getAdminCertRestClient()) {
-            GenericRestClient.HttpResponse response = client.putJson("/_searchguard/config",
-                    DocNode.of("authc.content", backendUpdateInstructions.sgAuthc.toBasicObject()));
-            
+            Map<String, Object> updateBody = new LinkedHashMap<>();
+            updateBody.put("authc", ImmutableMap.of("content", backendUpdateInstructions.sgAuthc.toBasicObject()));
+
+            if (frontendUpdateInstructions != null && frontendUpdateInstructions.getSgFrontendConfig() != null) {
+                updateBody.put("frontend_authc", ImmutableMap.of("content", frontendUpdateInstructions.getSgFrontendConfig()));
+            }
+
+            if (backendUpdateInstructions.sgFrontendMultiTenancy != null) {
+                updateBody.put("frontend_multi_tenancy",
+                        ImmutableMap.of("content", backendUpdateInstructions.sgFrontendMultiTenancy.toBasicObject()));
+            }
+
+            GenericRestClient.HttpResponse response = client.putJson("/_searchguard/config", DocWriter.json().writeAsString(updateBody));
+
             Assertions.assertEquals(200, response.getStatusCode(), response.getBody());
         }
 

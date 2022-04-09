@@ -275,6 +275,13 @@
 		</dependency>
 
 		<dependency>
+			<groupId>com.floragunn</groupId>
+			<artifactId>dlic-search-guard-suite-fe-multi-tenancy</artifactId>
+			<scope>test</scope>
+			<version>${sg.test-version}</version>
+		</dependency>		
+		
+		<dependency>
 			<groupId>io.github.hakky54</groupId>
 			<artifactId>sslcontext-kickstart-for-pem</artifactId>
 			<scope>test</scope>
