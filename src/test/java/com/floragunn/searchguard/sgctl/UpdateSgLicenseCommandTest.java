@@ -1,4 +1,4 @@
-package com.searchguard.sgctl;
+package com.floragunn.searchguard.sgctl;
 
 import com.floragunn.searchguard.sgctl.SgctlTool;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
