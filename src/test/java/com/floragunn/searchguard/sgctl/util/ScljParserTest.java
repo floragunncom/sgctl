@@ -75,4 +75,16 @@ class ScljParserTest {
         Object actualObject = ScljParser.evaluateExpression("key=value", "obj[inner_obj[arr]]=[one,-2,3]", "obj[inner_obj[key]]=test", "key2=value2");
         Assertions.assertEquals(expectedObject, actualObject);
     }
+
+    @Test
+    public void evaluateExpressionTest2() throws Exception {
+        Map<String, Object> expectedObject = ImmutableMap.of("key", "value",
+                "obj", ImmutableMap.of(
+                        "inner_obj", ImmutableMap.of(
+                                "arr", ImmutableList.ofArray("one", Long.valueOf(-2), Long.valueOf(3)),
+                                "key", "test")),
+                "key2", "value2");
+        Object actualObject = ClonExpressionEvaluator.evaluate("key=value", "obj[inner_obj[arr]]=[one,-2,3]", "obj[inner_obj[key]]=test", "key2=value2");
+        Assertions.assertEquals(expectedObject, actualObject);
+    }
 }
