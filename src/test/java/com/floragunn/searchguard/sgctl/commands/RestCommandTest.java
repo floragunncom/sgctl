@@ -208,6 +208,21 @@ public class RestCommandTest {
     }
 
     @Test
+    public void testPutClon() throws Exception {
+        String jsonResult = "{\"key\": \"value\", \"array\": [\"val1\", 2, 3], \"obj\": {\"num\": 3}}";
+        wm.stubFor(put(urlEqualTo("/some/endpoint"))
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withRequestBody(equalToJson(jsonResult))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody("{\"status\": 200,\"message\": \"Configuration has been updated\"}")));
+        int result = SgctlTool.exec("rest", "put", "/some/endpoint", "--clon", "key=value", "--clon", "array=[val1,2,3]", "--clon", "obj[num]=3",
+                "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
+        Assertions.assertEquals(0, result);
+        wm.verify(exactly(1), putRequestedFor(urlEqualTo("/some/endpoint")));
+    }
+
+    @Test
     public void testPutJsonFile() throws Exception {
         String json = "{\n" +
                 "    \"value1\":\"Hello World\",\n" +

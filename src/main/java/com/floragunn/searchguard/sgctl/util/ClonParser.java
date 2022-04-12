@@ -77,8 +77,7 @@ public class ClonParser {
                     map.put(key, array);
                     applier = new ValueApplier(key, array);
                 }
-                else if (map.get(key) instanceof List)
-                    applier = new ValueApplier(key, (List) map.get(key));
+                else if (map.get(key) instanceof List) applier = new ValueApplier(key, (List) map.get(key));
                 else throw ClonException.buildOverrideException(it, key);
                 it.readCharacter(EXPRESSION_CLOSE);
                 return applier;
@@ -237,26 +236,26 @@ public class ClonParser {
         private final int start;
         private final int end;
 
-        public Iterator(String expression, int start, int end) {
+        protected Iterator(String expression, int start, int end) {
             this.expression = expression;
             it = new StringCharacterIterator(expression, start, end, start);
             this.start = start;
             this.end = end;
         }
 
-        public Iterator(Iterator it, int start, int end) {
+        protected Iterator(Iterator it, int start, int end) {
             this(it.expression, start, end);
         }
 
-        public Iterator(Iterator other) {
+        protected Iterator(Iterator other) {
             this(other, other.start, other.end);
         }
 
-        public Iterator(String expression) {
+        protected Iterator(String expression) {
             this(expression, 0, expression.length());
         }
 
-        public static boolean peekContainsOnDepth(Iterator iterator, int depth, Character ... characters) throws ClonException {
+        protected static boolean peekContainsOnDepth(Iterator iterator, int depth, Character ... characters) throws ClonException {
             Iterator it = new Iterator(iterator);
             while (!it.isEnd()) {
                 if (Arrays.asList(characters).contains(it.current()) && it.parenthesis.size() == depth) return true;
@@ -265,15 +264,15 @@ public class ClonParser {
             return false;
         }
 
-        public String getCurrentExpression() {
+        protected String getCurrentExpression() {
             return expression.substring(getIndex(), end);
         }
 
-        public String getCompleteExpression() {
+        protected String getCompleteExpression() {
             return expression;
         }
 
-        public void peekParenthesisCorrect() throws ClonException {
+        protected void peekParenthesisCorrect() throws ClonException {
             Iterator it = new Iterator(this);
             while (!it.isEnd()) {
                 it.next();
@@ -281,7 +280,7 @@ public class ClonParser {
             it.validateParenthesis();
         }
 
-        public String readUntilMatchOnSameDepth(Character ... chars) throws ClonException {
+        protected String readUntilMatchOnSameDepth(Character ... chars) throws ClonException {
             StringBuilder builder = new StringBuilder();
             int depth = parenthesis.size();
             while (!Arrays.asList(chars).contains(it.current()) || parenthesis.size() != depth) {
@@ -326,22 +325,22 @@ public class ClonParser {
             return name.toString();
         }
 
-        public boolean inString() {
+        protected boolean inString() {
             return !parenthesis.empty() && STRING_INDICATORS.contains(parenthesis.peek());
         }
 
-        public char current() {
+        protected char current() {
             return it.current();
         }
 
-        public Character readCharacter(Character ... expectedCurrent) throws ClonException {
-            if (!Arrays.asList(expectedCurrent).contains(it.current())) throw ClonException.buildUnexpectedCharacterException(this, it.current());
+        protected Character readCharacter(Character ... expectedCurrent) throws ClonException {
+            if (!Arrays.asList(expectedCurrent).contains(it.current())) throw ClonException.buildUnexpectedCharacterException(this, expectedCurrent);
             Character current = it.current();
             next();
             return current;
         }
 
-        public char next() throws ClonException {
+        protected char next() throws ClonException {
             if (STRING_INDICATORS.contains(it.current())) {
                 if (inString() && it.current() == parenthesis.peek()) parenthesis.pop();
                 else parenthesis.push(it.current());
@@ -356,35 +355,36 @@ public class ClonParser {
             return it.next();
         }
 
-        public int getIndex() {
+        protected int getIndex() {
             return it.getIndex();
         }
 
-        public boolean isEnd() {
+        protected boolean isEnd() {
             return it.current() == CharacterIterator.DONE;
         }
 
-        public void validateNotEmpty(String context) throws ClonException {
+        protected void validateNotEmpty(String context) throws ClonException {
             if (Strings.isNullOrEmpty(expression)) throw ClonException.buildEmptyException(this, context);
         }
 
-        public void validateEnd() throws ClonException {
+        protected void validateEnd() throws ClonException {
             if (!isEnd()) throw ClonException.buildExpectedEndException(this);
         }
 
-        public void validateParenthesis() throws ClonException {
+        protected void validateParenthesis() throws ClonException {
             if (!parenthesis.empty()) throw ClonException.buildParenthesisStillOpenException(this);
         }
 
-        public void validateEndAndParenthesis() throws ClonException {
+        protected void validateEndAndParenthesis() throws ClonException {
             validateEnd();
             validateParenthesis();
         }
     }
 
     public static class ClonException extends Exception {
-        public static ClonException buildUnexpectedCharacterException(Iterator iterator, char c) {
-            return new ClonException(buildExceptionMessage("Unexpected character '" + c + "'", iterator));
+
+        public static ClonException buildUnexpectedCharacterException(Iterator iterator, Character[] expected) {
+            return new ClonException(buildExceptionMessage("Expected '" + Arrays.toString(expected) + "' but found '" + iterator.current() + "' instead", iterator));
         }
 
         public static ClonException buildExpectedEndException(Iterator iterator) {

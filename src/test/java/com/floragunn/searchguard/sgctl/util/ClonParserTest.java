@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.util;
 
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
+import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -11,75 +12,63 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 class ClonParserTest {
-    private static Stream<ExpressionExpectedPair> expressionStream() {
+    private static Stream<Pair<? extends ImmutableMap<String, ?>, String[]>> expressionStream() {
         return ImmutableList.ofArray(
-                ExpressionExpectedPair.of(
+                Pair.of(
                         ImmutableMap.of("key", "value"),
-                        "key=value"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=value"}),
+                Pair.of(
                         ImmutableMap.of("key", "value/var"),
-                        "'key'='value/var'"),
-                ExpressionExpectedPair.of(
+                        new String[]{"'key'='value/var'"}),
+                Pair.of(
                         ImmutableMap.of("key", Boolean.TRUE),
-                        "key=true"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=true"}),
+                Pair.of(
                         ImmutableMap.of("key", Boolean.FALSE),
-                        "key=false"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=false"}),
+                Pair.of(
                         ImmutableMap.of("key", Double.valueOf(4.2e-3)),
-                        "key=4.2e-3"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=4.2e-3"}),
+                Pair.of(
                         ImmutableMap.of("key", null),
-                        "key=null"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=null"}),
+                Pair.of(
                         ImmutableMap.of("key", ImmutableList.ofArray("one", "two", Long.valueOf(3))),
-                        "key=[one,two,3]"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=[one,two,3]"}),
+                Pair.of(
                         ImmutableMap.of("key", ImmutableMap.of("key", "value")),
-                        "key=[key=value]"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=[key=value]"}),
+                Pair.of(
                         ImmutableMap.of("key", ImmutableMap.of("inner_key", ImmutableMap.of("long", Long.valueOf(3)))),
-                        "key[inner_key[long]]=3"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key[inner_key[long]]=3"}),
+                Pair.of(
                         ImmutableMap.of("key", ImmutableMap.of("inner_key", ImmutableMap.of("arr", ImmutableList.ofArray(Double.valueOf(3.5))))),
-                        "key[inner_key[arr[]]]=3.5"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key[inner_key[arr[]]]=3.5"}),
+                Pair.of(
                         ImmutableMap.of("key", ImmutableMap.of("key1", Long.valueOf(56256), "key2", "valid_string", "key3", ImmutableList.ofArray("content"))),
-                        "key=[key1=56256,key2=valid_string,key3=[content]]"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=[key1=56256,key2=valid_string,key3=[content]]"}),
+                Pair.of(
                         ImmutableMap.of("key", "value",
                                 "obj", ImmutableMap.of(
                                         "inner_obj", ImmutableMap.of(
                                                 "arr", ImmutableList.ofArray("one", Long.valueOf(-2), Long.valueOf(3)))),
                                 "key2", "value2"),
-                        "key=value", "obj[inner_obj[arr]]=[one,-2,3]", "key2=value2"),
-                ExpressionExpectedPair.of(
+                        new String[]{"key=value", "obj[inner_obj[arr]]=[one,-2,3]", "key2=value2"}),
+                Pair.of(
                         ImmutableMap.of("key", ImmutableMap.of("key1", "value1", "key2", "value2")),
-                        "key=[key1=value1]", "key[key2]=value2")
+                        new String[]{"key=[key1=value1]", "key[key2]=value2"})
         ).stream();
     }
 
     @ParameterizedTest
     @MethodSource("expressionStream")
-    public void testEvaluation(ExpressionExpectedPair pair) throws Exception {
-        Map<String, Object> actual = ClonParser.parse(pair.expressions);
-        Assertions.assertEquals(pair.expected, actual);
+    public void testEvaluation(Pair<Map<String, Object>, String[]> pair) throws Exception {
+        Map<String, Object> actual = ClonParser.parse(pair.getRight());
+        Assertions.assertEquals(pair.getLeft(), actual);
     }
 
     @Test
     public void testErrors() throws Exception {
         Assertions.assertThrows(ClonParser.ClonException.class, () -> ClonParser.parse(""));
-    }
-
-    private static class ExpressionExpectedPair {
-        public static ExpressionExpectedPair of(Map<String, Object> expected, String ... expressions) {
-            return new ExpressionExpectedPair(expected, expressions);
-        }
-        private final String[] expressions;
-        private final Map<String, Object> expected;
-        protected ExpressionExpectedPair(Map<String, Object> expected, String ... expressions) {
-            this.expressions = expressions;
-            this.expected = expected;
-        }
     }
 }
