@@ -13,7 +13,7 @@ import com.floragunn.searchguard.sgctl.client.InvalidResponseException;
 import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
 import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
-import com.floragunn.searchguard.sgctl.util.ScljParser;
+import com.floragunn.searchguard.sgctl.util.ClonParser;
 import org.apache.http.entity.ContentType;
 
 import java.io.BufferedWriter;
@@ -174,15 +174,15 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             public EvaluatedInput evaluate() throws SgctlException {
                 if (isEmpty()) return null;
                 try {
-                    if (scljExpressions != null) jsonString = DocWriter.format(Format.JSON).writeAsString(ScljParser.evaluateExpression(scljExpressions));
+                    if (scljExpressions != null) jsonString = DocWriter.format(Format.JSON).writeAsString(ClonParser.parse(scljExpressions));
                     final Format format = jsonString != null ? Format.JSON : Format.getByFileName(inputFilePath.getName());
                     final Map<String, Object> content = jsonString != null ? DocReader.format(format).readObject(jsonString) : DocReader.format(format).readObject(inputFilePath);
                     return new EvaluatedInput(DocWriter.format(format).writeAsString(content), ContentType.create(format.getMediaType()));
                 }
                 catch (UnexpectedDocumentStructureException | DocumentParseException | IOException | Format.UnknownDocTypeException e) {
                     throw new SgctlException((jsonString != null ? "JSON input is invalid" : "Could not read file from path '" + inputFilePath + "' ") + "\n" + e, e);
-                } catch (ScljParser.ScljParseException e) {
-                    throw new SgctlException("SCLJ input invalid: " + e, e);
+                } catch (ClonParser.ClonException e) {
+                    throw new SgctlException("CLON input invalid: " + e, e);
                 }
             }
 
