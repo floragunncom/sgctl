@@ -1,3 +1,20 @@
+/*
+ * Copyright 2022 floragunn GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.codova.documents.DocReader;
@@ -56,9 +73,9 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
     public Integer call() {
         try (SearchGuardRestClient client = getClient().debug(debug)) {
             BasicResponse basicResponse = httpMethod.handle(client, endpoint, jsonString, inputFilePath, clonExpressions);
-            String responseString = DocWriter.json().pretty().writeAsString(basicResponse.getContent()); //DocWriter does not support pretty printing to file
+            String responseString = DocWriter.json().pretty().writeAsString(basicResponse.getContent());
             System.out.println(responseString);
-            handleFileOutput(outputFilePath, responseString);
+            handleFileOutput(outputFilePath, basicResponse);
             return 0;
         }
         catch (SgctlException | UnauthorizedException | ApiException | InvalidResponseException | ServiceUnavailableException | FailedConnectionException e) {
@@ -67,17 +84,19 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
         }
     }
 
-    private static void handleFileOutput(File outputFilePath, String response) throws SgctlException {
-        if (outputFilePath == null) return;
+    private static void handleFileOutput(File outputFilePath, BasicResponse response) throws SgctlException {
+        if (outputFilePath == null) {
+            return;
+        }
         File file = outputFilePath;
-        if (outputFilePath.isDirectory())
+        if (outputFilePath.isDirectory()) {
             file = new File(outputFilePath, "response-" + new SimpleDateFormat("yyyy-MM-dd--HH-mm'.json'").format(new Date()));
-        else if(file.getPath().lastIndexOf('.') <= 0)
+        }
+        else if(file.getPath().lastIndexOf('.') <= 0) {
             file = new File(outputFilePath + ".json");
+        }
         try {
-            BufferedWriter writer = new BufferedWriter(new FileWriter(file));
-            writer.write(response);
-            writer.close();
+            DocWriter.json().pretty().write(file, response);
         }
         catch (IOException e) {
             throw new SgctlException("Error while writing output to " + file.getPath() + ": " + e, e);
@@ -148,7 +167,9 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             }
 
             public Input validateEmpty() throws SgctlException {
-                if (!isEmpty()) System.out.println("No input required for this HTTP method. Input is ignored");
+                if (!isEmpty()) {
+                    System.out.println("No input required for this HTTP method. Input is ignored");
+                }
                 jsonString = null;
                 inputFilePath = null;
                 clonExpressions = null;
@@ -156,14 +177,16 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             }
 
             public Input validateNoDuplicate() throws SgctlException {
-                if ((jsonString != null && inputFilePath != null) || (inputFilePath != null && clonExpressions != null) || (clonExpressions != null && jsonString != null))
+                if ((jsonString != null && inputFilePath != null) || (inputFilePath != null && clonExpressions != null) || (clonExpressions != null && jsonString != null)) {
                     throw new SgctlException("Only one input required. Choose '--json', '--input' or '--clon'");
+                }
                 return this;
             }
 
             public Input validateExistent() throws SgctlException {
-                if (jsonString == null && inputFilePath == null && clonExpressions == null)
+                if (jsonString == null && inputFilePath == null && clonExpressions == null) {
                     throw new SgctlException("This HTTP method requires an input. Use '--json', '--input' or '--clon' to define an input");
+                }
                 return this;
             }
 
@@ -172,9 +195,13 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             }
 
             public EvaluatedInput evaluate() throws SgctlException {
-                if (isEmpty()) return null;
+                if (isEmpty()) {
+                    return null;
+                }
                 try {
-                    if (clonExpressions != null) jsonString = DocWriter.format(Format.JSON).writeAsString(ClonParser.parse(clonExpressions));
+                    if (clonExpressions != null) {
+                        jsonString = DocWriter.format(Format.JSON).writeAsString(ClonParser.parse(clonExpressions));
+                    }
                     final Format format = jsonString != null ? Format.JSON : Format.getByFileName(inputFilePath.getName());
                     final Map<String, Object> content = clonExpressions != null ? ClonParser.parse(clonExpressions)
                             : jsonString != null ? DocReader.format(format).readObject(jsonString) : DocReader.format(format).readObject(inputFilePath);

@@ -1,3 +1,20 @@
+/*
+ * Copyright 2022 floragunn GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 package com.floragunn.searchguard.sgctl.util;
 
 import com.google.common.base.Strings;
@@ -21,7 +38,7 @@ public class ClonParser {
     public static Map<String, Object> parse(String ... expressions) throws ClonException {
         Map<String, Object> result = new LinkedHashMap<>();
         for (String expression : expressions) {
-            Iterator iterator = new Iterator(expression);
+            TokenIterator iterator = new TokenIterator(expression, 0, expression.length());
             new ExpressionReader(iterator).read(result);
         }
         return result;
@@ -36,16 +53,19 @@ public class ClonParser {
     }
 
     private static class ExpressionReader {
-        private final Iterator it;
+        private final TokenIterator it;
 
-        private ExpressionReader(Iterator it) {
+        private ExpressionReader(TokenIterator it) {
             this.it = it;
         }
 
         public Map<String, Object> read(Map<String, Object> map) throws ClonException {
             it.validateNotEmpty("Expression");
-            it.peekParenthesisCorrect();
-            KeyReader.ValueApplier applier = new KeyReader(it).read(map);
+            int keyStart = it.getIndex();
+            it.readUntilMatch(ASSIGN_OPERATOR);
+            int keyEnd = it.getIndex();
+            TokenIterator keyIterator = new TokenIterator(it, keyStart, keyEnd);
+            KeyReader.ValueApplier applier = new KeyReader(keyIterator).read(map);
             it.readCharacter(ASSIGN_OPERATOR);
             Object value = new ValueReader(it).read();
             it.validateEndAndParenthesis();
@@ -55,20 +75,22 @@ public class ClonParser {
     }
 
     private static class KeyReader {
-        private final Iterator it;
+        private final TokenIterator it;
 
-        public KeyReader(Iterator it) {
+        public KeyReader(TokenIterator it) {
             this.it = it;
         }
 
         private ValueApplier read(Map<String, Object> map) throws ClonException {
             it.validateNotEmpty("Key");
+            it.peekParenthesisCorrect();
             String key = it.readString();
-            if (it.current() == ASSIGN_OPERATOR || it.current() == EXPRESSION_CLOSE) {
-                if (map.containsKey(key)) throw ClonException.buildOverrideException(it, key);
+            if (it.current() == CharacterIterator.DONE || it.current() == EXPRESSION_CLOSE) {
+                if (map.containsKey(key)) {
+                    throw ClonException.Builder.getOverrideExceptionBuilder(key).build(it);
+                }
                 return new ValueApplier(key, map);
             }
-
             it.readCharacter(EXPRESSION_OPEN);
             if (it.current() == EXPRESSION_CLOSE) {
                 ValueApplier applier;
@@ -77,8 +99,12 @@ public class ClonParser {
                     map.put(key, array);
                     applier = new ValueApplier(key, array);
                 }
-                else if (map.get(key) instanceof List) applier = new ValueApplier(key, (List) map.get(key));
-                else throw ClonException.buildOverrideException(it, key);
+                else if (map.get(key) instanceof List) {
+                    applier = new ValueApplier(key, (List) map.get(key));
+                }
+                else {
+                    throw ClonException.Builder.getOverrideExceptionBuilder(key).build(it);
+                }
                 it.readCharacter(EXPRESSION_CLOSE);
                 return applier;
             }
@@ -91,7 +117,9 @@ public class ClonParser {
             else if(map.get(key) instanceof Map) {
                 applier = read((Map<String, Object>) map.get(key));
             }
-            else throw ClonException.buildOverrideException(it, key);
+            else {
+                throw ClonException.Builder.getOverrideExceptionBuilder(key).build(it);
+            }
             it.readCharacter(EXPRESSION_CLOSE);
             return applier;
         }
@@ -114,36 +142,57 @@ public class ClonParser {
             }
 
             public void apply(Object object) throws ClonException {
-                if (list != null) list.add(object);
-                else if (map != null) map.put(key, object);
-                else throw new ClonException("Could not resolve object tree");
+                if (list != null) {
+                    list.add(object);
+                }
+                else if (map != null) {
+                    map.put(key, object);
+                }
+                else {
+                    throw new ClonException("Could not resolve object tree");
+                }
             }
         }
     }
 
     private static class ValueReader {
-        private final Iterator it;
+        private final TokenIterator it;
 
-        public ValueReader(Iterator it) {
+        public ValueReader(TokenIterator it) {
             this.it = it;
         }
 
         public Object read() throws ClonException {
             it.validateNotEmpty("Value");
+            it.peekParenthesisCorrect();
             Object result;
             String expression = it.getCurrentExpression();
             if (expression.charAt(0) == EXPRESSION_OPEN) {
-                if (expression.charAt(1) == EXPRESSION_CLOSE) throw ClonException.buildEmptyException(it, "Array or Object");
-                if (Iterator.peekContainsOnDepth(it, 1, ASSIGN_OPERATOR))
+                if (expression.charAt(1) == EXPRESSION_CLOSE) {
+                    throw ClonException.Builder.getEmptyExceptionBuilder("Array or object").build(it);
+                }
+                if (TokenIterator.peekContainsOnDepth(it, 1, ASSIGN_OPERATOR)) {
                     result = readObject();
-                else
+                }
+                else {
                     result = readArray();
+                }
             }
-            else if (isLong()) result = readLong();
-            else if (isDouble()) result = readDouble();
-            else if ("true".equals(expression) || "false".equals(expression)) result = readBoolean();
-            else if ("null".equals(expression)) result = readNull();
-            else result = readString();
+            else if (isLong()) {
+                result = readLong();
+            }
+            else if (isDouble()) {
+                result = readDouble();
+            }
+            else if ("true".equals(expression) || "false".equals(expression)) {
+                result = readBoolean();
+            }
+            else if ("null".equals(expression)) {
+                result = readNull();
+            }
+            else {
+                result = readString();
+            }
             it.validateEndAndParenthesis();
             return result;
         }
@@ -170,9 +219,13 @@ public class ClonParser {
 
         private boolean isString() {
             String expression = it.getCurrentExpression();
-            if (STRING_INDICATORS.contains(expression.charAt(0))) return true;
+            if (STRING_INDICATORS.contains(expression.charAt(0))) {
+                return true;
+            }
             for (Character c : expression.toCharArray()) {
-                if (!isNameSymbol(c)) return false;
+                if (!isNameSymbol(c)) {
+                    return false;
+                }
             }
             return true;
         }
@@ -205,9 +258,14 @@ public class ClonParser {
                 int valueStart = it.getIndex();
                 it.readUntilMatchOnSameDepth(SEPARATOR, EXPRESSION_CLOSE);
                 int valueEnd = it.getIndex();
-                ValueReader reader = new ValueReader(new Iterator(it, valueStart, valueEnd));
+                ValueReader reader = new ValueReader(new TokenIterator(it, valueStart, valueEnd));
                 values.add(reader.read());
-                if (it.current() != EXPRESSION_CLOSE) it.readCharacter(SEPARATOR);
+                if (it.current() != EXPRESSION_CLOSE) {
+                    it.readCharacter(SEPARATOR);
+                    if (it.current() == EXPRESSION_CLOSE) {
+                        throw ClonException.Builder.getEmptyExceptionBuilder("Value").build(it);
+                    }
+                }
             }
             it.readCharacter(EXPRESSION_CLOSE);
             return values;
@@ -220,45 +278,48 @@ public class ClonParser {
                 int expressionStart = it.getIndex();
                 it.readUntilMatchOnSameDepth(SEPARATOR, EXPRESSION_CLOSE);
                 int expressionEnd = it.getIndex();
-                ExpressionReader reader = new ExpressionReader(new Iterator(it, expressionStart, expressionEnd));
+                ExpressionReader reader = new ExpressionReader(new TokenIterator(it, expressionStart, expressionEnd));
                 reader.read(objectMap);
-                if (it.current() != EXPRESSION_CLOSE) it.readCharacter(SEPARATOR);
+                if (it.current() != EXPRESSION_CLOSE) {
+                    it.readCharacter(SEPARATOR);
+                    if (it.current() == EXPRESSION_CLOSE) {
+                        throw ClonException.Builder.getEmptyExceptionBuilder("Value").build(it);
+                    }
+                }
             }
             it.readCharacter(EXPRESSION_CLOSE);
             return objectMap;
         }
     }
 
-    private static class Iterator {
+    protected static class TokenIterator {
         private final String expression;
         private final StringCharacterIterator it;
         private final Stack<Character> parenthesis = new Stack<>();
         private final int start;
         private final int end;
 
-        protected Iterator(String expression, int start, int end) {
+        protected TokenIterator(String expression, int start, int end) {
             this.expression = expression;
             it = new StringCharacterIterator(expression, start, end, start);
             this.start = start;
             this.end = end;
         }
 
-        protected Iterator(Iterator it, int start, int end) {
+        protected TokenIterator(TokenIterator it, int start, int end) {
             this(it.expression, start, end);
         }
 
-        protected Iterator(Iterator other) {
+        protected TokenIterator(TokenIterator other) {
             this(other, other.start, other.end);
         }
 
-        protected Iterator(String expression) {
-            this(expression, 0, expression.length());
-        }
-
-        protected static boolean peekContainsOnDepth(Iterator iterator, int depth, Character ... characters) throws ClonException {
-            Iterator it = new Iterator(iterator);
+        protected static boolean peekContainsOnDepth(TokenIterator iterator, int depth, Character ... characters) throws ClonException {
+            TokenIterator it = new TokenIterator(iterator);
             while (!it.isEnd()) {
-                if (Arrays.asList(characters).contains(it.current()) && it.parenthesis.size() == depth) return true;
+                if (Arrays.asList(characters).contains(it.current()) && it.parenthesis.size() == depth) {
+                    return true;
+                }
                 it.next();
             }
             return false;
@@ -273,18 +334,32 @@ public class ClonParser {
         }
 
         protected void peekParenthesisCorrect() throws ClonException {
-            Iterator it = new Iterator(this);
+            TokenIterator it = new TokenIterator(this);
             while (!it.isEnd()) {
                 it.next();
             }
             it.validateParenthesis();
         }
 
+        protected String readUntilMatch(Character ... chars) throws ClonException {
+            StringBuilder builder = new StringBuilder();
+            while (!Arrays.asList(chars).contains(it.current())) {
+                if (it.current() == CharacterIterator.DONE) {
+                    throw ClonException.Builder.getCharacterNotFoundExceptionBuilder(chars).build(this);
+                }
+                builder.append(it.current());
+                next();
+            }
+            return builder.toString();
+        }
+
         protected String readUntilMatchOnSameDepth(Character ... chars) throws ClonException {
             StringBuilder builder = new StringBuilder();
             int depth = parenthesis.size();
             while (!Arrays.asList(chars).contains(it.current()) || parenthesis.size() != depth) {
-                if (it.current() == CharacterIterator.DONE) throw ClonException.buildExpectedCharNotFoundException(this, chars);
+                if (it.current() == CharacterIterator.DONE) {
+                    throw ClonException.Builder.getCharacterNotFoundExceptionBuilder(chars).build(this);
+                }
                 builder.append(it.current());
                 next();
             }
@@ -292,14 +367,20 @@ public class ClonParser {
         }
 
         protected String readString() throws ClonException {
-            if (STRING_INDICATORS.contains(it.current())) return readEncapsulatedString(it.current());
+            if (STRING_INDICATORS.contains(it.current())) {
+                return readEncapsulatedString(it.current());
+            }
             StringBuilder name = new StringBuilder();
             while (!isOperationSymbol(it.current()) && !isEnd()) {
-                if (!isNameSymbol(it.current())) throw ClonException.buildUnsupportedSymbolException(this);
+                if (!isNameSymbol(it.current())) {
+                    throw ClonException.Builder.getUnsupportedSymbolExceptionBuilder(it.current()).build(this);
+                }
                 name.append(it.current());
                 next();
             }
-            if (name.toString().isEmpty()) throw ClonException.buildNameEmptyException(this);
+            if (name.toString().isEmpty()) {
+                throw ClonException.Builder.getNameEmptyExceptionBuilder().build(this);
+            }
             return name.toString();
         }
 
@@ -307,12 +388,16 @@ public class ClonParser {
             readCharacter(parenthesis);
             StringBuilder name = new StringBuilder();
             while (it.current() != parenthesis) {
-                if (isEnd()) throw ClonException.buildParenthesisStillOpenException(this);
+                if (isEnd()) {
+                    throw ClonException.Builder.getParenthesisOpenExceptionBuilder().build(this);
+                }
                 name.append(it.current());
                 next();
             }
             readCharacter(parenthesis);
-            if (name.toString().isEmpty()) throw ClonException.buildNameEmptyException(this);
+            if (name.toString().isEmpty()) {
+                throw ClonException.Builder.getNameEmptyExceptionBuilder().build(this);
+            }
             return name.toString();
         }
 
@@ -334,7 +419,9 @@ public class ClonParser {
         }
 
         protected Character readCharacter(Character ... expectedCurrent) throws ClonException {
-            if (!Arrays.asList(expectedCurrent).contains(it.current())) throw ClonException.buildUnexpectedCharacterException(this, expectedCurrent);
+            if (!Arrays.asList(expectedCurrent).contains(it.current())) {
+                throw ClonException.Builder.getUnexpectedCharacterExceptionBuilder(expectedCurrent).build(this);
+            }
             Character current = it.current();
             next();
             return current;
@@ -342,14 +429,24 @@ public class ClonParser {
 
         protected char next() throws ClonException {
             if (STRING_INDICATORS.contains(it.current())) {
-                if (inString() && it.current() == parenthesis.peek()) parenthesis.pop();
-                else parenthesis.push(it.current());
+                if (inString() && it.current() == parenthesis.peek()) {
+                    parenthesis.pop();
+                }
+                else {
+                    parenthesis.push(it.current());
+                }
             }
             if (!inString()) {
-                if (it.current() == EXPRESSION_OPEN) parenthesis.push(it.current());
-                if (it.current() == EXPRESSION_CLOSE) {
-                    if (!parenthesis.empty()) parenthesis.pop();
-                    else throw ClonException.buildParenthesisClosedException(this);
+                if (it.current() == EXPRESSION_OPEN) {
+                    parenthesis.push(it.current());
+                }
+                else if (it.current() == EXPRESSION_CLOSE) {
+                    if (!parenthesis.empty()) {
+                        parenthesis.pop();
+                    }
+                    else {
+                        throw ClonException.Builder.getParenthesisCloseExceptionBuilder().build(this);
+                    }
                 }
             }
             return it.next();
@@ -359,20 +456,31 @@ public class ClonParser {
             return it.getIndex();
         }
 
+        protected TokenIterator setIndex(int index) {
+            it.setIndex(index);
+            return this;
+        }
+
         protected boolean isEnd() {
             return it.current() == CharacterIterator.DONE;
         }
 
         protected void validateNotEmpty(String context) throws ClonException {
-            if (Strings.isNullOrEmpty(expression)) throw ClonException.buildEmptyException(this, context);
+            if (Strings.isNullOrEmpty(getCurrentExpression())) {
+                throw ClonException.Builder.getEmptyExceptionBuilder(context).build(this);
+            }
         }
 
         protected void validateEnd() throws ClonException {
-            if (!isEnd()) throw ClonException.buildExpectedEndException(this);
+            if (!isEnd()) {
+                throw ClonException.Builder.getNotEndExceptionBuilder().build(this);
+            }
         }
 
         protected void validateParenthesis() throws ClonException {
-            if (!parenthesis.empty()) throw ClonException.buildParenthesisStillOpenException(this);
+            if (!parenthesis.empty()) {
+                throw (STRING_INDICATORS.contains(parenthesis.peek()) ? ClonException.Builder.getNoStringEndExceptionBuilder() : ClonException.Builder.getParenthesisOpenExceptionBuilder()).build(this);
+            }
         }
 
         protected void validateEndAndParenthesis() throws ClonException {
@@ -382,54 +490,87 @@ public class ClonParser {
     }
 
     public static class ClonException extends Exception {
-
-        public static ClonException buildUnexpectedCharacterException(Iterator iterator, Character[] expected) {
-            return new ClonException(buildExceptionMessage("Expected '" + Arrays.toString(expected) + "' but found '" + iterator.current() + "' instead", iterator));
-        }
-
-        public static ClonException buildExpectedEndException(Iterator iterator) {
-            return new ClonException(buildExceptionMessage("Expected expression to end but found '" + iterator.getCompleteExpression().substring(iterator.getIndex(), iterator.end) + "' instead", iterator));
-        }
-
-        public static ClonException buildExpectedCharNotFoundException(Iterator iterator, Character ... chars) {
-            return new ClonException(buildExceptionMessage("Expected " + Arrays.toString(chars) + " in expression '" + iterator.getCurrentExpression() + "'", iterator));
-        }
-
-        public static ClonException buildParenthesisStillOpenException(Iterator iterator) {
-            char missing = STRING_INDICATORS.contains(iterator.parenthesis.peek()) ? iterator.parenthesis.peek() : EXPRESSION_CLOSE;
-            return new ClonException(buildExceptionMessage("Expected '" + missing + "'", iterator));
-        }
-
-        public static ClonException buildParenthesisClosedException(Iterator iterator) {
-            return new ClonException(buildExceptionMessage("Unexpected '" + EXPRESSION_CLOSE + "'", iterator));
-        }
-
-        public static ClonException buildOverrideException(Iterator iterator, String key) {
-            return new ClonException(buildExceptionMessage("Can not override field '" + key + "'", iterator));
-        }
-
-        public static ClonException buildEmptyException(Iterator iterator, String context) {
-            return new ClonException(buildExceptionMessage(context + " can not be empty", iterator));
-        }
-
-        public static ClonException buildUnsupportedSymbolException(Iterator iterator) {
-            return new ClonException(buildExceptionMessage("Unsupported symbol. Consider using quotes", iterator));
-        }
-
-        public static ClonException buildNameEmptyException(Iterator iterator) {
-            return new ClonException(buildExceptionMessage("Key names and strings can not be empty", iterator));
-        }
-
-        private static String buildExceptionMessage(String message, Iterator iterator) {
-            StringBuilder builder = new StringBuilder();
-            builder.append(message).append("\n")
-                    .append(iterator.getCompleteExpression()).append("\n");
-            for (int i = 0; i < iterator.getIndex(); i++) builder.append(" ");
-            return builder.append("^").toString();
-        }
+        private static final long serialVersionUID = -821669828214088092L;
 
         private ClonException(String message) {
             super(message);
+        }
+
+        protected static class Builder {
+            String message;
+            String expression;
+            int index;
+
+            protected ClonException build(TokenIterator iterator) {
+                expression = iterator.getCompleteExpression();
+                index = iterator.getIndex();
+                return build();
+            }
+
+            protected ClonException build() {
+                StringBuilder builder = new StringBuilder();
+                builder.append(message).append("\n");
+                builder.append(expression).append("\n");
+                char[] spaces = new char[index];
+                Arrays.fill(spaces, ' ');
+                builder.append(spaces).append('^');
+                return new ClonException(builder.toString());
+            }
+
+            protected Builder setMessage(String message) {
+                this.message = message;
+                return this;
+            }
+
+            protected Builder setExpression(String expression) {
+                this.expression = expression;
+                return this;
+            }
+
+            protected Builder setIndex(int index) {
+                this.index = index;
+                return this;
+            }
+
+            public static Builder getUnexpectedCharacterExceptionBuilder(Character ... expected) {
+                return new Builder().setMessage("Expected '" + Arrays.toString(expected) + "'");
+            }
+
+            public static Builder getNotEndExceptionBuilder() {
+                return new Builder().setMessage("Expected expression to end");
+            }
+
+            public static Builder getCharacterNotFoundExceptionBuilder(Character ... expected) {
+                return new Builder().setMessage("Expected " + Arrays.toString(expected));
+            }
+
+            public static Builder getParenthesisOpenExceptionBuilder() {
+                return new Builder().setMessage("Expected '" + EXPRESSION_CLOSE + "'");
+            }
+
+            public static Builder getParenthesisCloseExceptionBuilder() {
+                return new Builder().setMessage("Unexpected '" + EXPRESSION_CLOSE + "'");
+            }
+
+            public static Builder getNoStringEndExceptionBuilder() {
+                return new Builder().setMessage("Expected string or key name to end");
+            }
+
+            public static Builder getEmptyExceptionBuilder(String context) {
+                return new Builder().setMessage(context + " can not be empty");
+            }
+
+            public static Builder getUnsupportedSymbolExceptionBuilder(Character c) {
+                return new Builder().setMessage("Unsupported symbol '" + c + "'. Consider using quotes");
+            }
+
+            public static Builder getNameEmptyExceptionBuilder() {
+                return new Builder().setMessage("Key names and strings values can not be empty");
+            }
+
+            public static Builder getOverrideExceptionBuilder(String key) {
+                return new Builder().setMessage("Can not override field '" + key + "'");
+            }
         }
     }
 }

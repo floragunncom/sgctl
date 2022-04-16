@@ -67,8 +67,38 @@ class ClonParserTest {
         Assertions.assertEquals(pair.getLeft(), actual);
     }
 
+    private static Stream<ClonParser.ClonException.Builder> errorExpressionStream() {
+        return ImmutableList.ofArray(
+                ClonParser.ClonException.Builder.getNotEndExceptionBuilder().setExpression("key=[val]k").setIndex(9),
+                ClonParser.ClonException.Builder.getCharacterNotFoundExceptionBuilder('=').setExpression("hello_world").setIndex(11),
+                ClonParser.ClonException.Builder.getParenthesisOpenExceptionBuilder().setExpression("key=[value1,value2").setIndex(18),
+                ClonParser.ClonException.Builder.getParenthesisCloseExceptionBuilder().setExpression("key=val]").setIndex(7),
+                ClonParser.ClonException.Builder.getNoStringEndExceptionBuilder().setExpression("'key=value").setIndex(4),
+                ClonParser.ClonException.Builder.getEmptyExceptionBuilder("Expression").setExpression("").setIndex(0),
+                ClonParser.ClonException.Builder.getEmptyExceptionBuilder("Key").setExpression("=54").setIndex(0),
+                ClonParser.ClonException.Builder.getEmptyExceptionBuilder("Value").setExpression("key=").setIndex(4),
+                ClonParser.ClonException.Builder.getEmptyExceptionBuilder("Value").setExpression("key=[value1,value2,]").setIndex(19),
+                ClonParser.ClonException.Builder.getUnsupportedSymbolExceptionBuilder('!').setExpression("bl!a=6").setIndex(2),
+                ClonParser.ClonException.Builder.getNameEmptyExceptionBuilder().setExpression("''='moin'").setIndex(2)
+        ).stream();
+    }
+
+    @ParameterizedTest
+    @MethodSource("errorExpressionStream")
+    public void testErrors(ClonParser.ClonException.Builder builder) throws Exception {
+        ClonParser.ClonException expected = builder.build();
+        ClonParser.ClonException actual = Assertions.assertThrowsExactly(expected.getClass(), () -> ClonParser.parse(builder.expression));
+        Assertions.assertEquals(expected.getMessage(), actual.getMessage());
+    }
+
     @Test
-    public void testErrors() throws Exception {
-        Assertions.assertThrows(ClonParser.ClonException.class, () -> ClonParser.parse(""));
+    public void testOverrideException() throws Exception {
+        ClonParser.ClonException expected = ClonParser.ClonException.Builder.getOverrideExceptionBuilder("key").setExpression("key=value2").setIndex(3).build();
+        ClonParser.ClonException actual = Assertions.assertThrows(expected.getClass(), () -> ClonParser.parse("key=value", "key=value2"));
+        Assertions.assertEquals(expected.getMessage(), actual.getMessage());
+
+        expected = ClonParser.ClonException.Builder.getOverrideExceptionBuilder("key").setExpression("obj[inner[key]]=[value]").setIndex(13).build();
+        actual = Assertions.assertThrows(expected.getClass(), () -> ClonParser.parse("obj=[inner=[key=3]]", "obj[inner[key]]=[value]"));
+        Assertions.assertEquals(expected.getMessage(), actual.getMessage());
     }
 }
