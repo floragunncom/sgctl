@@ -3,4 +3,8 @@
 .idea/
 *.iml
 
+### Eclipse ###
+.classpath
+.project
+
 unittest.log

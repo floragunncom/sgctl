@@ -1,0 +1,37 @@
+_sg_meta:
+  type: "config"
+  config_version: 2
+
+sg_config:
+  dynamic:
+    authc:
+      basic_internal_auth_domain: 
+        http_enabled: true
+        order: 0
+        http_authenticator:
+          type: basic
+          challenge: true
+    authz:
+      roles_from_myldap:
+        authorization_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: true
+            enable_ssl_client_auth: true
+            verify_hostnames: true
+            trust_all: true
+            hosts:
+              - ldap.example.com:636
+              - otherldap.example.com:888
+            bind_dn: "cn=admin,dc=example,dc=com"
+            password: "password"
+            rolebase: 'ou=groups,dc=example,dc=com'
+            rolesearch: '(uniqueMember={0})'
+            rolename: cn
+            resolve_nested_roles: false
+            skip_users:
+              - kibanaserver
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            username_attribute: uid

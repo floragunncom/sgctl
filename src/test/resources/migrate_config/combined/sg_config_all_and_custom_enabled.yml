@@ -1,0 +1,139 @@
+_sg_meta:
+  type: "config"
+  config_version: 2
+
+sg_config:
+  dynamic:
+    kibana:
+      multitenancy_enabled: true
+      server_username: kibanaserver
+      index: '.kibana'
+      do_not_fail_on_forbidden: true
+    http:
+      anonymous_auth_enabled: true
+      xff:
+        enabled: true
+        internalProxies: '192\.168\.0\.10|192\.168\.0\.11' # regex pattern
+        remoteIpHeader:  'x-forwarded-for'
+    authc:
+      custom_authc_domain:
+        http_enabled: true
+        order: 0
+        http_authenticator:
+          type: com.floragunn.custom.CustomHttpAuthenticator
+          challenge: false
+        authentication_backend:
+          type: com.floragunn.custom.CustomAuthenticationBackend
+      kerberos_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 1
+        http_authenticator:
+          type: kerberos # NOT FREE FOR COMMERCIAL USE
+          challenge: true
+          config:
+            krb_debug: false
+            strip_realm_from_principal: true
+        authentication_backend:
+          type: noop
+      basic_internal_auth_domain: 
+        http_enabled: true
+        transport_enabled: true
+        order: 2
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: intern
+      proxy_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 3
+        http_authenticator:
+          type: proxy
+          challenge: false
+          config:
+            user_header: "x-proxy-user"
+            roles_header: "x-proxy-roles"
+        authentication_backend:
+          type: noop
+      jwt_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 4
+        http_authenticator:
+          type: jwt
+          challenge: false
+          config:
+            signing_key: "bmRSMW00c2pmNUk4Uk9sVVFmUnhjZEhXUk5Hc0V5MWgyV2p1RFE3Zk1wSTE"
+            jwt_header: "Authorization"
+            jwt_url_parameter: null
+            roles_key: null
+            subject_key: null
+        authentication_backend:
+          type: noop
+      clientcert_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 4
+        http_authenticator:
+          type: clientcert
+          config:
+            username_attribute: cn #optional, if omitted DN becomes username
+          challenge: false
+        authentication_backend:
+          type: noop
+      ldap:
+        http_enabled: true
+        transport_enabled: true
+        order: 5
+        http_authenticator:
+          type: basic
+          challenge: false
+        authentication_backend:
+          type: ldap # NOT FREE FOR COMMERCIAL USE
+          config:
+            enable_ssl: false
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: true
+            hosts:
+              - localhost:8389
+              - ldapauthc.example.com:389
+            bind_dn: "cn=admin,dc=example,dc=com"
+            password: "ldap_password"
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(sAMAccountName={0})'
+            username_attribute: "username"
+    authz:    
+      roles_from_myldap:
+        http_enabled: true
+        transport_enabled: true
+        authorization_backend:
+          # LDAP authorization backend (gather roles from a LDAP or Active Directory, you have to configure the above LDAP authentication backend settings too)
+          type: ldap # NOT FREE FOR COMMERCIAL USE
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: true
+            hosts:
+              - localhost:8389
+              - ldapauthz.example.com:389
+            bind_dn: null
+            password: null
+            rolebase: 'ou=groups,dc=example,dc=com'
+            rolesearch: '(member={0})'
+            userroleattribute: null
+            userrolename: disabled
+            rolename: cn
+            resolve_nested_roles: true
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            skip_users:
+              - 'cn=Michael Jackson,ou*people,o=TEST'
+              - '/\S*/'
+      custom_authz_domain:
+        http_enabled: true
+        authorization_backend:
+          type: com.floragunn.custom.CustomAuthorizationBackend
