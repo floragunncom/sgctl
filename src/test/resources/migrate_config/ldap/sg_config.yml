@@ -70,9 +70,7 @@ sg_config:
             # The attribute in a role entry containing the name of that role
             rolename: cn
             # Resolve nested roles transitive (roles which are members of other roles and so on ...)
-            resolve_nested_roles: false
+            resolve_nested_roles: true
             userbase: 'ou=people,dc=example,dc=com'
             usersearch: '(uid={0})'
             username_attribute: uid
-            skip_users:
-              - kibanaserver

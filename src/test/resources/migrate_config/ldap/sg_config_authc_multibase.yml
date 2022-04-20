@@ -1,0 +1,31 @@
+_sg_meta:
+  type: "config"
+  config_version: 2
+
+sg_config:
+  dynamic:
+    authc:
+      ldap:
+        http_enabled: true
+        order: 1
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            verify_hostnames: true
+            hosts:
+              - ldap.example.com:636
+            bind_dn: 'ou=dir,dc=example,dc=com'
+            password: secret
+            users:
+              primary-userbase:
+                base: 'ou=people,dc=example,dc=com'
+                search: '(uid={0})'
+              secondary-userbase:
+                base: 'ou=otherpeople,dc=example,dc=com'
+                search: '(initials={0})'
+            usersearch: '(uid={0})'
+            username_attribute: uid

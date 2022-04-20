@@ -1,0 +1,64 @@
+_sg_meta:
+  type: "config"
+  config_version: 2
+
+sg_config:
+  dynamic:
+    authc:
+      ldap:
+        http_enabled: true
+        order: 1
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            verify_hostnames: true
+            hosts:
+              - authc.ldap.example.com:636
+            bind_dn: 'ou=authc,dc=example,dc=com'
+            password: secret
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            username_attribute: uid
+    authz:
+      roles_from_ldap:
+        authorization_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: true
+            hosts:
+              - authz.ldap.example.com:636
+            bind_dn: 'ou=authz,dc=example,dc=com'
+            password: secret
+            rolebase: 'ou=groups,dc=example,dc=com'
+            rolesearch: '(uniqueMember={0})'
+            rolename: cn
+            resolve_nested_roles: true
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            username_attribute: uid
+      roles_from_other_ldap:
+        authorization_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: true
+            hosts:
+              - authz2.example.com:636
+            bind_dn: 'ou=authz2,dc=example,dc=com'
+            password: secret
+            rolebase: 'ou=othergroups2,dc=example,dc=com'
+            rolesearch: '(uniqueMember={0})'
+            rolename: cn
+            resolve_nested_roles: true
+            userbase: 'ou=otherpeople2,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            username_attribute: uid
