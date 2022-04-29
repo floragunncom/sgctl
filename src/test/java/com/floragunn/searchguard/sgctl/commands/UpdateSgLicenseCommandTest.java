@@ -1,9 +1,8 @@
-package com.floragunn.searchguard.sgctl;
+package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.searchguard.sgctl.SgctlTool;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
-import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.junit.jupiter.api.AfterEach;
@@ -20,7 +19,14 @@ import java.io.FileWriter;
 import java.io.PrintStream;
 import java.nio.file.Files;
 
-import static com.github.tomakehurst.wiremock.client.WireMock.*;
+import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
+import static com.github.tomakehurst.wiremock.client.WireMock.equalToJson;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
+import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.put;
+import static com.github.tomakehurst.wiremock.client.WireMock.putRequestedFor;
+import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.util.Collections.singletonList;
 
@@ -29,6 +35,7 @@ public class UpdateSgLicenseCommandTest {
                 .ca("CN=localhost,OU=SearchGuard,O=SearchGuard")
                 .addAdminClients(singletonList("CN=admin-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "secret").build();
     private final static TestCertificate wmCert = testCertificates.create("CN=localhost,OU=SearchGuard,O=SearchGuard");
+
     @RegisterExtension
     private final static WireMockExtension wm = WireMockExtension.newInstance().options(wireMockConfig()
             .httpDisabled(true)
@@ -62,16 +69,16 @@ public class UpdateSgLicenseCommandTest {
     public void setUp() {
         System.setOut(new PrintStream(new TeeOutputStream(outputStreamCaptor, standardOut)));
         System.setErr(new PrintStream(new TeeOutputStream(errStreamCaptor, standardErr)));
-        wm.stubFor(WireMock.put(urlEqualTo("/_searchguard/license/key"))
+        wm.stubFor(put(urlEqualTo("/_searchguard/license/key"))
                 .willReturn(aResponse().withStatus(400)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"status\": 400,\"error\": {\"message\":\"error-message\"}}")));
-        wm.stubFor(WireMock.put(urlEqualTo("/_searchguard/license/key"))
+        wm.stubFor(put(urlEqualTo("/_searchguard/license/key"))
                 .withRequestBody(equalToJson("{\"key\":\"valid\"}"))
                 .willReturn(aResponse().withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"status\": 200,\"message\": \"Configuration has been updated\"}")));
-        wm.stubFor(WireMock.get(urlEqualTo("/_searchguard/license"))
+        wm.stubFor(get(urlEqualTo("/_searchguard/license"))
                 .willReturn(aResponse().withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"cluster_name\": \"searchguard_demo\",\"sg_license\":{\"uid\":\"00000000-0000-0000-0000-000000000000\",\"type\":\"TRIAL\",\"features\": [\"COMPLIANCE\"],\"issue_date\": \"2022-02-20\",\"expiry_date\": \"2022-04-21\"}}")));
@@ -85,7 +92,7 @@ public class UpdateSgLicenseCommandTest {
 
     @Test
     public void testUpdateValidLicense() throws Exception {
-        File validLicense = File.createTempFile("license", "txt");
+        File validLicense = File.createTempFile("license", ".txt");
         BufferedWriter writer = new BufferedWriter(new FileWriter(validLicense));
         writer.write("valid");
         writer.close();
@@ -98,7 +105,7 @@ public class UpdateSgLicenseCommandTest {
 
     @Test
     public void testUpdateInvalidLicense() throws Exception {
-        File invalidLicense = File.createTempFile("license", "txt");
+        File invalidLicense = File.createTempFile("license", ".txt");
         BufferedWriter writer = new BufferedWriter(new FileWriter(invalidLicense));
         writer.write("invalid");
         writer.close();
@@ -107,7 +114,7 @@ public class UpdateSgLicenseCommandTest {
         Assertions.assertEquals(1, result);
         wm.verify(exactly(1), putRequestedFor(urlEqualTo("/_searchguard/license/key")));
 
-        invalidLicense = File.createTempFile("empty", "txt");
+        invalidLicense = File.createTempFile("empty", ".txt");
         result = SgctlTool.exec("update-license", "-l", invalidLicense.getPath(),
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(1, result);

@@ -1,6 +1,6 @@
 # Search Guard sgctl
 
-`sgctl` is a command line remote control command for Search Guard. It is supposed to be a lightweight and easy-to-use replacement for the older `sgadmin` command.
+`sgctl` is a command line remote control tool for Search Guard. It is supposed to be a lightweight and easy-to-use replacement for the older `sgadmin`.
 
 Currently, `sgctl` is just a tech preview and not complete yet. You can only use it with the Search Guard tech preview version. It cannot be used with older Search Guard release versions.
 
@@ -8,7 +8,7 @@ Currently, `sgctl` is just a tech preview and not complete yet. You can only use
 
 In order to use `sgctl`, you need:
 
-- A cluster with Seard Guard installed  
+- A cluster with Search Guard installed  
 - An admin certificate and the corresponding private key to authenticate at that cluster. The certificate and the private key must be available as PEM files.
 
 To make the initial connection to the cluster, execute the following command:
@@ -17,7 +17,7 @@ To make the initial connection to the cluster, execute the following command:
 ./sgctl.sh connect my-cluster --cert path/to/admin-cert.pem --private-key path/to/private-key.pem
 ```
 
-If the private key is password protected, specify the paramter `--private-key-pass` in order to get a prompt for the password.
+If the private key is password protected, specify the parameter `--private-key-pass` in order to get a prompt for the password.
 
 If the cluster uses certificates which are signed by a private PKI, you can specify the root certificate of the PKI by using the parameter `--ca-cert`. 
 
@@ -112,6 +112,98 @@ In order to delete an internal user, you can use the following command:
 ./sgctl.sh delete-user userName
 ```
 
+### REST Client
+
+Sgctl comes with a REST client to perform REST calls on the cluster. Supported Methods are:
+
+| Command                | Required additional parameters                     | Description                              |
+|------------------------|----------------------------------------------------|------------------------------------------|
+| ./sgctl.sh rest get    | none                                               | Performs a get request on the cluster    |
+| ./sgctl.sh rest put    | input via `--json`, `--input` or `--clon` needed   | Performs a put request on the cluster    |
+| ./sgctl.sh rest delete | none                                               | Performs a delete request on the cluster |
+| ./sgctl.sh rest post   | optional input via `--json`, `--input` or `--clon` | Performs a post request on the cluster   |
+| ./sgctl.sh rest patch  | input via `--json`, `--input` or `--clon` needed   | Performs a patch request on the cluster  |
+
+#### CLON (Command Line Object Notation)
+
+CLON is an object notation for creating e.g. JSON strings based on easy writable expressions. A CLON expression always consists of a `key` and a `value`.
+ 
+**Key value example:**
+
+```shell
+./sgctl.sh rest put /endpoint --clon key=value
+```
+Result:
+```json
+{
+  "key": "value"
+}
+```
+
+##### Keys
+
+CLON also supports array and object keys to create complex object structures in simple expressions.
+
+**Array key example:**
+```shell
+./sgctl rest put /endpoint --clon names[]=kirk names[]=john
+```
+Result:
+```json
+{
+  "names": [
+    "kirk", "john"
+  ]
+}
+```
+
+**Object key example:**
+```shell
+./sgctl rest put /endpoint --clon person[age]=20 person[name]=max
+```
+Result:
+```json
+{
+  "person": {
+    "age": 20,
+    "name": "max"
+  }
+}
+```
+
+##### Values
+
+Supported value types are `string`, `boolean`, `number` and `null`. In order to set more complex values at once there are also array and object values available.
+
+**Array value example:**
+```shell
+./sgctl rest put /endpoint --clon important_people=[philipp,daniel,ole]
+```
+Result:
+```json
+{
+  "important_people": [
+    "philipp", "daniel", "ole"
+  ]
+}
+```
+
+**Object value example:**
+```shell
+./sgctl rest put /endpoint --clon car=[speed=167.5,range=500,electric=true,name=speedo]
+```
+Result:
+```json
+{
+  "car": {
+    "speed": 167.5,
+    "range": 500,
+    "electric": true,
+    "name": "speedo"
+  }
+}
+```
+
 ## License
 
 `sgctl` is licensed under the Apache 2 license. See the LICENSE file for details.
@@ -126,7 +218,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * Commercial support available through [floragunn GmbH](https://search-guard.com)
 * Community support available via [Search Guard Forum](https://forum.search-guard.com)
 * Report issues with `sgctl` at the [floragunn Gitlab repository](https://git.floragunn.com/search-guard/sgctl/-/issues)
-* Follow us on twitter [@searchguard](https://twitter.com/searchguard)
+* Follow us on Twitter [@searchguard](https://twitter.com/searchguard)
 
 
 ## Legal

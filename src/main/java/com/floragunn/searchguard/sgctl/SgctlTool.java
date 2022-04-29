@@ -21,6 +21,7 @@ import java.security.Security;
 
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
+import com.floragunn.searchguard.sgctl.commands.RestCommand;
 import com.floragunn.searchguard.sgctl.commands.ComponentState;
 import com.floragunn.searchguard.sgctl.commands.Connect;
 import com.floragunn.searchguard.sgctl.commands.GetConfig;
@@ -43,7 +44,7 @@ import picocli.CommandLine.Command;
 
 @Command(name = "sgctl", subcommands = { Connect.class, GetConfig.class, UpdateConfig.class, MigrateConfig.class, ComponentState.class,
         ShowLicenses.class, ShowVersion.class, AddUserLocal.class, AddUser.class, UpdateUser.class, DeleteUser.class, AddConfigVar.class,
-        UpdateConfigVar.class, DeleteConfigVar.class, SetCommand.class, UpdateSgLicense.class }, description = "Remote control tool for Search Guard")
+        UpdateConfigVar.class, DeleteConfigVar.class, SetCommand.class, UpdateSgLicense.class, RestCommand.class }, description = "Remote control tool for Search Guard")
 public class SgctlTool {
 
     static {
