@@ -1312,7 +1312,6 @@ public class MigrateConfig implements Callable<Integer> {
         NewAuthDomain toNewFrontendConfig() {
             NewAuthDomain result = new NewAuthDomain(newFrontendType, newBackendType, skipUsers, acceptIps, null, null);
             switch (oldFrontendType.toLowerCase()) {
-            case "kerberos":
             case "basic":
                 return result;
             case "jwt": {
@@ -1465,6 +1464,18 @@ public class MigrateConfig implements Callable<Integer> {
                 }
                 }
 
+            }
+            case "kerberos": {
+                try {
+                    LinkedHashMap<String, Object> newConfig = new LinkedHashMap<>();
+                    newConfig.putAll(vNode.get("http_authenticator.config").asDocNode().splitDottedAttributeNamesToTree().toMap());
+                    result.frontendConfig = newConfig;
+
+                    return result;
+                } catch (UnexpectedDocumentStructureException e) {
+                    validationErrors.add(new ValidationError("http_authenticator.config", e.getMessage()).cause(e));
+                    return result;
+                }
             }
             default:
                 validationErrors.add(new ValidationError("http_authenticator.type", "Unknown HTTP authenticator" + oldFrontendType));
