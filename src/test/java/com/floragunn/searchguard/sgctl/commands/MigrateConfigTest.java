@@ -63,7 +63,7 @@ public class MigrateConfigTest {
 
         File configDir = new File(configDirUrl.toURI());
 
-        return Arrays.asList(configDir.listFiles()).stream().map((f) -> Arguments.of(f));
+        return Arrays.asList(configDir.listFiles()).stream().filter((f) -> new File(f, "sg_config.yml").exists()).map((f) -> Arguments.of(f));
     }
 
     @ParameterizedTest

@@ -16,14 +16,6 @@ sg_config:
         internalProxies: '192\.168\.0\.10|192\.168\.0\.11' # regex pattern
         remoteIpHeader:  'x-forwarded-for'
     authc:
-      custom_authc_domain:
-        http_enabled: true
-        order: 0
-        http_authenticator:
-          type: com.floragunn.custom.CustomHttpAuthenticator
-          challenge: false
-        authentication_backend:
-          type: com.floragunn.custom.CustomAuthenticationBackend
       kerberos_auth_domain:
         http_enabled: true
         transport_enabled: true
