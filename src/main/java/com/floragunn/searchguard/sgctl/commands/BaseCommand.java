@@ -21,6 +21,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 
+import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.searchguard.sgctl.SgctlConfig;
 import com.floragunn.searchguard.sgctl.SgctlException;
@@ -115,7 +116,7 @@ public class BaseCommand {
     }
 
     protected void retryOnConcurrencyConflict(RetryableProcedure retryableProcedure) throws SgctlException, InvalidResponseException,
-            FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+            FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException, UnexpectedDocumentStructureException {
         int maxRetries = 3;
         int retry = 1;
 
@@ -133,11 +134,11 @@ public class BaseCommand {
             }
         }
     }
-    
+
     @FunctionalInterface
     protected static interface RetryableProcedure {
         void run() throws SgctlException, InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException,
-                ApiException;
+                ApiException, UnexpectedDocumentStructureException;
     }
 
 }

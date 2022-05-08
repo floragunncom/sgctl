@@ -39,6 +39,8 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.errors.FileDoesNotExist;
 import com.floragunn.codova.validation.errors.ValidationError;
+import com.floragunn.fluent.collections.ImmutableMap;
+import com.floragunn.fluent.collections.OrderedImmutableMap;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.client.ApiException;
 import com.floragunn.searchguard.sgctl.client.BasicResponse;
@@ -50,7 +52,6 @@ import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
 import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
 import com.floragunn.searchguard.sgctl.client.api.ConfigType;
 import com.google.common.base.Charsets;
-import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 
 import picocli.CommandLine.Command;
@@ -93,14 +94,14 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
                 try {
                     Format format = Format.getByFileName(file.getName(), Format.YAML);
                     String rawContent = Files.asCharSource(file, Charsets.UTF_8).read();
-                    DocNode content = DocNode.wrap(DocReader.format(format).readObject(file));
+                    DocNode content = DocNode.wrap(DocReader.format(format).fallbackForEmptyDocuments(ImmutableMap.empty()).readObject(file));
 
                     ConfigType configType = ConfigType.getFor(file, content, rawContent);
                     String etag = force ? null : getETag(rawContent);
 
                     if (!configTypeToConfigMap.containsKey(configType.getApiName())) {
                         configTypeToConfigMap.put(configType.getApiName(),
-                                etag != null ? ImmutableMap.of("content", content, "etag", etag) : ImmutableMap.of("content", content));
+                                etag != null ? OrderedImmutableMap.of("content", content, "etag", etag) : OrderedImmutableMap.of("content", content));
                         configTypeToFileMap.put(configType.getApiName(), file.getPath());
                     } else {
                         validationErrors.add(new ValidationError(file.getPath(), "Configuration of type " + configType.getApiName()
@@ -145,7 +146,7 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
         } catch (PreconditionFailedException e) {
             System.err.println(e.getMessage());
             System.err.println("Use the --force switch to overwrite any concurrent change");
-            return 1;            
+            return 1;
         } catch (ApiException e) {
             if (e.getValidationErrors() != null) {
                 Map<String, ValidationErrors> validationErrorsByFile = e.getValidationErrors().groupByKeys(configTypeToFileMap);

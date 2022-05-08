@@ -25,6 +25,7 @@ import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 
 import com.floragunn.codova.documents.DocNode;
+import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.codova.documents.patch.MergePatch;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.client.ApiException;
@@ -137,7 +138,7 @@ public class UpdateUser extends ConnectingCommand implements Callable<Integer> {
                         }
                     }
 
-                    userMergePatch.put("attributes", DocNode.wrap(attributesPatch).toNormalizedMap());
+                    userMergePatch.put("attributes", DocNode.wrap(attributesPatch).splitDottedAttributeNamesToTree().toMap());
                 }
 
                 if (password != null) {
@@ -155,7 +156,8 @@ public class UpdateUser extends ConnectingCommand implements Callable<Integer> {
             });
 
             return 0;
-        } catch (SgctlException | InvalidResponseException | FailedConnectionException | ServiceUnavailableException | UnauthorizedException e) {
+        } catch (SgctlException | InvalidResponseException | FailedConnectionException | ServiceUnavailableException | UnauthorizedException
+                | UnexpectedDocumentStructureException e) {
             System.err.println(e.getMessage());
             return 1;
         } catch (ApiException e) {
