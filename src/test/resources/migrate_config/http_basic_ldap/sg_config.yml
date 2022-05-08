@@ -18,7 +18,6 @@ sg_config:
           config:
             enable_ssl: true
             enable_start_tls: true
-            enable_ssl_client_auth: true
             verify_hostnames: true
             trust_all: true
             hosts:
