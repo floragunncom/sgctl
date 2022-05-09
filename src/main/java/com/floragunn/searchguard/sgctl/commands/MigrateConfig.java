@@ -1620,9 +1620,9 @@ public class MigrateConfig implements Callable<Integer> {
             result.backendConfig = newConfig;
 
             // TODO
-            //if (oldBackendConfig.hasNonNull("username_attribute")) {
-            //    result.userMappingUserName.
-            //}
+            // if (oldBackendConfig.hasNonNull("username_attribute")) {
+            //     result.userMappingUserName.put("from", "");
+            // }
 
             if (oldBackendConfig.hasNonNull("map_ldap_attrs_to_user_attrs")) {
                 LinkedHashMap<String, String> attrsFrom = new LinkedHashMap<>();
@@ -1958,7 +1958,21 @@ public class MigrateConfig implements Callable<Integer> {
                 }
 
                 if (oldBackendConfig.hasNonNull("rolesearch")) {
-                    groupSearch.put("filter", ImmutableMap.of("raw", oldBackendConfig.getAsString("rolesearch").replace("{0}", "${dn}")));
+                    String userRoleAttributePlaceholder;
+
+                    if (oldBackendConfig.hasNonNull("userroleattribute")) {
+                        userRoleAttributePlaceholder = "${ldap_user_entry." + oldBackendConfig.getAsString("userroleattribute") + "}";
+                    } else {
+                        userRoleAttributePlaceholder = "${ldap_user_entry.UNDEFINED_USER_ROLE_ATTRIBUTE}";
+
+                        if (oldBackendConfig.getAsString("rolesearch").contains("{2}")) {
+                            validationErrors.add(
+                                    new ValidationError("authorization_backend.config.rolesearch", "Uses {2} without defined userroleattribute"));
+                        }
+                    }
+
+                    groupSearch.put("filter", ImmutableMap.of("raw", oldBackendConfig.getAsString("rolesearch").replace("{0}", "${dn}").replace("{1}",
+                            "${user.name}".replace("{2}", userRoleAttributePlaceholder))));
                 }
 
                 if (oldBackendConfig.hasNonNull("rolename")) {
@@ -2044,7 +2058,17 @@ public class MigrateConfig implements Callable<Integer> {
         }
 
         List<UserInformationBackend> addNewLdapBackendConfigMultiGroupBase(UserInformationBackend baseAuthDomain) {
+            DocNode oldBackendConfig = config.getAsNode("authorization_backend", "config");
+
             Map<String, DocNode> users = config.getAsNode("authorization_backend", "config", "roles").toMapOfNodes();
+
+            String userRoleAttributePlaceholder;
+
+            if (oldBackendConfig.hasNonNull("userroleattribute")) {
+                userRoleAttributePlaceholder = "${ldap_user_entry." + oldBackendConfig.getAsString("userroleattribute") + "}";
+            } else {
+                userRoleAttributePlaceholder = "${ldap_user_entry.UNDEFINED_USER_ROLE_ATTRIBUTE}";
+            }
 
             ArrayList<UserInformationBackend> result = new ArrayList<>();
 
@@ -2059,7 +2083,8 @@ public class MigrateConfig implements Callable<Integer> {
                 userSearch.put("base_dn", entry.getValue().getAsString("base"));
 
                 if (entry.getValue().hasNonNull("search")) {
-                    userSearch.put("filter", ImmutableMap.of("raw", entry.getValue().getAsString("search").replace("{0}", "${dn}")));
+                    userSearch.put("filter", ImmutableMap.of("raw", entry.getValue().getAsString("search").replace("{0}", "${dn}")
+                            .replace("{1}", "${user.name}").replace("{2}", userRoleAttributePlaceholder)));
                 }
 
                 authDomain.backendConfig = newConfig;
