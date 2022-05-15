@@ -17,18 +17,7 @@
 
 package com.floragunn.searchguard.sgctl;
 
-import com.floragunn.searchguard.sgctl.SgctlTool;
-import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
-import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
-import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
-import com.google.common.base.Charsets;
-import org.apache.commons.io.output.TeeOutputStream;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
+import static java.util.Collections.singletonList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
@@ -36,7 +25,18 @@ import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import static java.util.Collections.singletonList;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
+import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
+import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
+import com.google.common.base.Charsets;
 
 public class ClusterInitializationTest {
     private final PrintStream standardOut = System.out;
