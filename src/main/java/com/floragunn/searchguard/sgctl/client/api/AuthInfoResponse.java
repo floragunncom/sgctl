@@ -42,6 +42,10 @@ public class AuthInfoResponse {
     public String getUserName() {
         return getAsString("user_name");
     }
+    
+    public String getClusterName() {
+        return getAsString("cluster_name");
+    }
 
     protected String getAsString(String name) {
         return content.get(name) != null ? String.valueOf(content.get(name)) : null;

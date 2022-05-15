@@ -67,9 +67,21 @@ public class GetConfig extends ConnectingCommand implements Callable<Integer> {
                 
                 File outputFile = new File(outputDir, config.getConfigType().getFileName());
 
-                String header = "# sg_" + config.getConfigType().getApiName() + " v:" + response.getSearchGuardVersion()
-                        + (config.getEtag() != null ? (" etag:" + config.getEtag()) : "") + "\n";
-
+                StringBuilder header = new StringBuilder();
+                
+                header.append("# sg_" + config.getConfigType().getApiName());
+                header.append(" v:" + response.getSearchGuardVersion());
+                
+                if (getConnectedClusterName() != null) {
+                    header.append(" cluster:" + getConnectedClusterName());                    
+                }
+                
+                if (config.getEtag() != null) {
+                    header.append(" etag:" + config.getEtag());
+                }
+                
+                header.append("\n");
+                
                 try {
                     String result = header + config.getContent().toYamlString();
                     Files.asCharSink(outputFile, Charsets.UTF_8).write(result);

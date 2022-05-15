@@ -78,6 +78,8 @@ public abstract class ConnectingCommand extends BaseCommand {
 
     @Option(names = { "--skip-connection-check" }, description = "Skips initial REST API call to check the connection")
     boolean skipInitialConnectionCheck;
+    
+    private String connectedClusterName;
 
     public SearchGuardRestClient getClient() throws SgctlException {
 
@@ -115,7 +117,9 @@ public abstract class ConnectingCommand extends BaseCommand {
 
                 if (!skipInitialConnectionCheck) {
                     AuthInfoResponse authInfoResponse = client.authInfo();
-                    System.out.println("Successfully connected to " + server + " as user " + authInfoResponse.getUserName());
+                    System.out.println("Successfully connected to cluster " + authInfoResponse.getClusterName() + " (" + server + ") as user "
+                            + authInfoResponse.getUserName());
+                    connectedClusterName = authInfoResponse.getClusterName();
                 }
                 
                 return client;
@@ -257,5 +261,9 @@ public abstract class ConnectingCommand extends BaseCommand {
 
     protected String getHost() {
         return this.host;
+    }
+
+    protected String getConnectedClusterName() {
+        return connectedClusterName;
     }
 }

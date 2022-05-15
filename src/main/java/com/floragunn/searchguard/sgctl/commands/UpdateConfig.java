@@ -98,6 +98,14 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
 
                     ConfigType configType = ConfigType.getFor(file, content, rawContent);
                     String etag = force ? null : getETag(rawContent);
+                    String clusterName = getClusterName(rawContent);
+
+                    if (!force && clusterName != null && getConnectedClusterName() != null && !clusterName.equals(getConnectedClusterName())) {
+                        validationErrors.add(new ValidationError(file.getPath(),
+                                "The file is designated for the cluster " + clusterName + ", but we are connected to the cluster "
+                                        + getConnectedClusterName() + ". Use the --force switch to write the configuration to "
+                                        + getConnectedClusterName()));
+                    }
 
                     if (!configTypeToConfigMap.containsKey(configType.getApiName())) {
                         configTypeToConfigMap.put(configType.getApiName(),
@@ -166,10 +174,22 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
         }
     }
 
-    private static final Pattern HEADER_PATTERN = Pattern.compile("^#\\s*.*etag:([a-z0-9\\.]+)");
+    private static final Pattern ETAG_HEADER_PATTERN = Pattern.compile("^#\\s*.*etag:([a-z0-9\\.]+)");
 
     private String getETag(String rawContent) {
-        Matcher matcher = HEADER_PATTERN.matcher(rawContent);
+        Matcher matcher = ETAG_HEADER_PATTERN.matcher(rawContent);
+
+        if (matcher.find()) {
+            return matcher.group(1);
+        } else {
+            return null;
+        }
+    }
+
+    private static final Pattern CLUSTER_HEADER_PATTERN = Pattern.compile("^#\\s*.*cluster:(\\S+)");
+
+    private String getClusterName(String rawContent) {
+        Matcher matcher = CLUSTER_HEADER_PATTERN.matcher(rawContent);
 
         if (matcher.find()) {
             return matcher.group(1);
