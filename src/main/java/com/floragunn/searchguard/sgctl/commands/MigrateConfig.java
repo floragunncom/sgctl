@@ -1619,10 +1619,9 @@ public class MigrateConfig implements Callable<Integer> {
 
             result.backendConfig = newConfig;
 
-            // TODO
-            // if (oldBackendConfig.hasNonNull("username_attribute")) {
-            //     result.userMappingUserName.put("from", "");
-            // }
+            if (oldBackendConfig.hasNonNull("username_attribute")) {
+                result.userMappingUserName.put("from_backend", addPrefixToJsonPath("ldap_user_entry", oldBackendConfig.getAsString("username_attribute")));
+            }
 
             if (oldBackendConfig.hasNonNull("map_ldap_attrs_to_user_attrs")) {
                 LinkedHashMap<String, String> attrsFrom = new LinkedHashMap<>();
