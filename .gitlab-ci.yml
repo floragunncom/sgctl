@@ -77,7 +77,8 @@ build_release:
   tags:
     - openstack-runner
   script:
-    - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | cut -d- -f2)
+    # $CI_COMMIT_TAG: sgctl-1.0.0-beta-1
+    - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
     - mvn -Drevision=$SGCTL_RELEASE_VERSION $MAVEN_CLI_OPTS clean install
   artifacts:
     when: always
