@@ -270,7 +270,7 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>search-guard-suite-security</artifactId>
+			<artifactId>search-guard-flx-security</artifactId>
 			<classifier>tests</classifier>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
