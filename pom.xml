@@ -20,8 +20,8 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>7.16.3</elasticsearch.version>
-		<sg.test-version>b-session-auth-SNAPSHOT</sg.test-version>
+		<elasticsearch.version>7.17.3</elasticsearch.version>
+		<sg.test-version>b-master-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.release>8</maven.compiler.release>
@@ -43,7 +43,7 @@
 		</repository>
 		<repository>
 			<id>release</id>
-			<url>https://maven.search-guard.com/search-guard-suite-release</url>
+			<url>https://maven.search-guard.com/search-guard-flx-release</url>
 			<releases>
 				<enabled>true</enabled>
 			</releases>
@@ -53,7 +53,7 @@
 		</repository>
 		<repository>
 			<id>snapshot</id>
-			<url>https://maven.search-guard.com/search-guard-suite-snapshot</url>
+			<url>https://maven.search-guard.com/search-guard-flx-snapshot</url>
 			<releases>
 				<enabled>false</enabled>
 			</releases>
@@ -87,12 +87,12 @@
 		<repository>
 			<id>release</id>
 			<name>Release repository</name>
-			<url>https://maven.search-guard.com:443/search-guard-suite-release</url>
+			<url>https://maven.search-guard.com:443/search-guard-flx-release</url>
 		</repository>
 		<snapshotRepository>
 			<id>snapshot</id>
 			<name>Snapshot repository</name>
-			<url>https://maven.search-guard.com:443/search-guard-suite-snapshot</url>
+			<url>https://maven.search-guard.com:443/search-guard-flx-snapshot</url>
 		</snapshotRepository>
 	</distributionManagement>
 
@@ -131,7 +131,7 @@
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>codova</artifactId>
-			<version>0.2.6</version>
+			<version>0.2.8</version>
 		</dependency>
 
 		<dependency>
@@ -248,21 +248,21 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>search-guard-suite-security</artifactId>
+			<artifactId>search-guard-flx-security</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>search-guard-suite-ssl</artifactId>
+			<artifactId>search-guard-flx-ssl</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>		
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>search-guard-suite-support</artifactId>
+			<artifactId>search-guard-flx-support</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
@@ -270,7 +270,7 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>search-guard-suite-security</artifactId>
+			<artifactId>search-guard-flx-security</artifactId>
 			<classifier>tests</classifier>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
@@ -278,14 +278,14 @@
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>dlic-search-guard-suite-security</artifactId>
+			<artifactId>dlic-search-guard-flx-security</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.floragunn</groupId>
-			<artifactId>dlic-search-guard-suite-fe-multi-tenancy</artifactId>
+			<artifactId>dlic-search-guard-flx-fe-multi-tenancy</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>		
