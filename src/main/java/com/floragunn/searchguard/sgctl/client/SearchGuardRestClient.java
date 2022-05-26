@@ -464,6 +464,12 @@ public class SearchGuardRestClient implements AutoCloseable {
                                 return (String) ((Map<?, ?>) error).get("message");
                             }
                         }
+
+                        Object message = ((Map<?, ?>) document).get("message");
+
+                        if (message != null) {
+                            return message.toString();
+                        }
                     }
                 } catch (Exception e) {
                     log.log(Level.WARNING, "Error while parsing JSON response", e);
