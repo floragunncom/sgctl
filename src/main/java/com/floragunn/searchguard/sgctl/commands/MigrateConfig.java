@@ -362,14 +362,10 @@ public class MigrateConfig implements Callable<Integer> {
             boolean anonymousAuth = oldSgConfig.get("sg_config.dynamic.http.anonymous_auth_enabled").withDefault(false).asBoolean();
             String license = oldSgConfig.get("sg_config.dynamic.license").asString();
             Map<String, Object> authTokenService = oldSgConfig.get("sg_config.dynamic.auth_token_provider").asMap();
-            boolean doNotFailOnForbidden = oldSgConfig.get("sg_config.dynamic.do_not_fail_on_forbidden").withDefault(false).asBoolean();
             String fieldAnonymizationSalt2 = oldSgConfig.get("sg_config.dynamic.field_anonymization_salt2").asString();
 
-            if (doNotFailOnForbidden == false || fieldAnonymizationSalt2 != null) {
+            if (fieldAnonymizationSalt2 != null) {
                 Map<String, Object> authzConfig = new LinkedHashMap<>();
-                if (doNotFailOnForbidden == false) {
-                    authzConfig.put("ignore_unauthorized_indices", false);
-                }
 
                 if (fieldAnonymizationSalt2 != null) {
                     authzConfig.put("field_anonymization.salt", fieldAnonymizationSalt2);
@@ -1118,6 +1114,8 @@ public class MigrateConfig implements Callable<Integer> {
         DocNode sgAuthz;
         DocNode sgFrontendMultiTenancy;
         Object sgAuthcTransport;
+        
+        List<String> infos = new ArrayList<>();
 
     }
 
