@@ -25,15 +25,18 @@ import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient.Response;
 
 public class BasicResponse implements Document<BasicResponse> {
     private final DocNode content;
+    private final String contentType;
     private final String eTag;
 
     public BasicResponse(DocNode content) {
         this.content = content;
+        this.contentType = "application/json";
         this.eTag = null;
     }
 
     public BasicResponse(Response content) throws InvalidResponseException {
         this.content = content.asDocNode();
+        this.contentType = content.getContentType();
         this.eTag = content.getETag();
     }
 
@@ -43,7 +46,11 @@ public class BasicResponse implements Document<BasicResponse> {
 
     @Override
     public String toString() {
-        return content.toJsonString();
+        if (contentType.equalsIgnoreCase("text/plain")) {
+            return content.toString();
+        } else {
+            return content.toPrettyJsonString();
+        }
     }
 
     public Map<String, Object> getContent() {
@@ -58,4 +65,9 @@ public class BasicResponse implements Document<BasicResponse> {
     public String getETag() {
         return eTag;
     }
+
+    public String getContentType() {
+        return contentType;
+    }
+    
 }

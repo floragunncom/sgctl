@@ -314,7 +314,7 @@ public class SearchGuardRestClient implements AutoCloseable {
 
         Response(HttpResponse httpResponse) throws InvalidResponseException {
             this.httpResponse = httpResponse;
-            this.contentType = getContentType(httpResponse);
+            this.contentType = getContentTypeFromResponse(httpResponse);
             this.eTag = httpResponse.containsHeader("ETag") ? httpResponse.getFirstHeader("ETag").getValue() : null;
             this.searchGuardVersion = httpResponse.containsHeader("X-Search-Guard-Version")
                     ? httpResponse.getFirstHeader("X-Search-Guard-Version").getValue()
@@ -546,6 +546,10 @@ public class SearchGuardRestClient implements AutoCloseable {
             return searchGuardVersion;
         }
 
+        public String getContentType() {
+            return contentType;
+        }
+
     }
 
     @FunctionalInterface
@@ -565,7 +569,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         return entity.getContentEncoding() != null ? Charset.forName(entity.getContentEncoding().getValue()) : Charsets.UTF_8;
     }
 
-    private static String getContentType(HttpResponse response) {
+    private static String getContentTypeFromResponse(HttpResponse response) {
         if (response.getEntity() == null) {
             return null;
         }

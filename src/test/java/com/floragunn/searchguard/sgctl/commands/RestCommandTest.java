@@ -146,7 +146,7 @@ public class RestCommandTest {
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(0, result);
 
-        reader = new BufferedReader(new FileReader(outputFile.getPath() + ".json"));
+        reader = new BufferedReader(new FileReader(outputFile.getPath()));
         outputString = new StringBuilder();
         for (String line = reader.readLine(); line != null; line = reader.readLine()) outputString.append(line).append("\n");
         reader.close();

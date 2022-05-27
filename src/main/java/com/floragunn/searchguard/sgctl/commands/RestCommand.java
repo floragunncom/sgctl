@@ -19,6 +19,7 @@ package com.floragunn.searchguard.sgctl.commands;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -41,12 +42,11 @@ import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
 import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
 import com.floragunn.searchguard.sgctl.util.ClonParser;
+import com.google.common.io.Files;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
-
-
 
 @Command(name = "rest", description = "REST client for administration")
 public class RestCommand extends ConnectingCommand implements Callable<Integer> {
@@ -57,26 +57,27 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
     @Parameters(index = "1", arity = "1", description = "Endpoint path")
     String endpoint;
 
-    @Option(names = {"-i", "--input"}, description = "Path to a file")
+    @Option(names = { "-i", "--input" }, description = "Path to a file")
     File inputFilePath;
 
-    @Option(names = {"--json"}, description = "JavaScript Object Notation string")
+    @Option(names = { "--json" }, description = "JavaScript Object Notation string")
     String jsonString;
 
-    @Option(names = {"--clon"}, arity = "1..*", description = "Command Line Object Notation string")
+    @Option(names = { "--clon" }, arity = "1..*", description = "Command Line Object Notation string")
     List<String> clonExpressions;
 
-    @Option(names = {"-o", "--output"}, description = "Custom output file path")
+    @Option(names = { "-o", "--output" }, description = "Custom output file path")
     File outputFilePath;
 
     @Override
     public Integer call() {
         try (SearchGuardRestClient client = getClient().debug(debug)) {
             BasicResponse basicResponse = httpMethod.handle(client, endpoint, jsonString, inputFilePath, clonExpressions);
-            System.out.println(basicResponse.toPrettyJsonString());
+            System.out.println(basicResponse.toString());
             handleFileOutput(outputFilePath, basicResponse);
             return 0;
-        } catch (SgctlException | UnauthorizedException | ApiException | InvalidResponseException | ServiceUnavailableException | FailedConnectionException e) {
+        } catch (SgctlException | UnauthorizedException | ApiException | InvalidResponseException | ServiceUnavailableException
+                | FailedConnectionException e) {
             System.err.println(e.getMessage());
             return 1;
         }
@@ -86,34 +87,30 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
         if (outputFilePath == null) {
             return;
         }
+        String fileSuffix = "text/plain".equals(response.getContentType()) ? "txt" : "json";
+        String fileContent = "text/plain".equals(response.getContentType()) ? response.toString() : response.toPrettyJsonString();
+
         File file = outputFilePath;
         if (outputFilePath.isDirectory()) {
-            file = new File(outputFilePath, "response-" + new SimpleDateFormat("yyyy-MM-dd--HH-mm'.json'").format(new Date()));
-        } else if(file.getPath().lastIndexOf('.') <= 0) {
-            file = new File(outputFilePath + ".json");
-        }
+            file = new File(outputFilePath, "response-" + new SimpleDateFormat("yyyy-MM-dd--HH-mm").format(new Date()) + "." + fileSuffix);
+        } 
+        
         try {
-            DocWriter.json().pretty().write(file, response);
+            Files.asCharSink(file, Charset.defaultCharset()).write(fileContent);
         } catch (IOException e) {
             throw new SgctlException("Error while writing output to " + file.getPath() + ": " + e, e);
         }
     }
 
     private enum SupportedHttpMethods {
-        GET("get",
-                Input::validateEmpty,
-                (client, endpoint, evaluatedInput) -> client.get(endpoint)),
-        PUT("put",
-                input -> input.validateExistent().validateNoDuplicate(),
+        GET("get", Input::validateEmpty, (client, endpoint, evaluatedInput) -> client.get(endpoint)),
+        PUT("put", input -> input.validateExistent().validateNoDuplicate(),
                 (client, endpoint, evaluatedInput) -> client.put(endpoint, evaluatedInput.getContent(), evaluatedInput.getContentType())),
-        DELETE("delete",
-                Input::validateEmpty,
-                (client, endpoint, evaluatedInput) -> client.delete(endpoint)),
-        POST("post",
-                Input::validateNoDuplicate,
-                (client, endpoint, evaluatedInput) -> evaluatedInput == null ? client.post(endpoint) : client.post(endpoint, evaluatedInput.getContent(), evaluatedInput.getContentType())),
-        PATCH("patch",
-                input -> input.validateExistent().validateNoDuplicate(),
+        DELETE("delete", Input::validateEmpty, (client, endpoint, evaluatedInput) -> client.delete(endpoint)),
+        POST("post", Input::validateNoDuplicate,
+                (client, endpoint, evaluatedInput) -> evaluatedInput == null ? client.post(endpoint)
+                        : client.post(endpoint, evaluatedInput.getContent(), evaluatedInput.getContentType())),
+        PATCH("patch", input -> input.validateExistent().validateNoDuplicate(),
                 (client, endpoint, evaluatedInput) -> client.patch(endpoint, evaluatedInput.getContent(), evaluatedInput.getContentType()));
 
         private final String name;
@@ -131,8 +128,9 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             return name;
         }
 
-        public BasicResponse handle(SearchGuardRestClient client, String endpoint, String jsonString, File inputFilePath, List<String> scljExpressions)
-                throws SgctlException, FailedConnectionException, InvalidResponseException, UnauthorizedException, ServiceUnavailableException, ApiException {
+        public BasicResponse handle(SearchGuardRestClient client, String endpoint, String jsonString, File inputFilePath,
+                List<String> scljExpressions) throws SgctlException, FailedConnectionException, InvalidResponseException, UnauthorizedException,
+                ServiceUnavailableException, ApiException {
             Input input = Input.create(jsonString, inputFilePath, scljExpressions);
             SearchGuardRestClient.Response response = handler.handle(client, endpoint, validator.validate(input).evaluate());
             return response.parseResponseBy(BasicResponse::new);
@@ -173,7 +171,8 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
             }
 
             public Input validateNoDuplicate() throws SgctlException {
-                if ((jsonString != null && inputFilePath != null) || (inputFilePath != null && clonExpressions != null) || (clonExpressions != null && jsonString != null)) {
+                if ((jsonString != null && inputFilePath != null) || (inputFilePath != null && clonExpressions != null)
+                        || (clonExpressions != null && jsonString != null)) {
                     throw new SgctlException("Only one input required. Choose '--json', '--input' or '--clon'");
                 }
                 return this;
@@ -197,10 +196,12 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
                 try {
                     final Format format = jsonString != null || clonExpressions != null ? Format.JSON : Format.getByFileName(inputFilePath.getName());
                     final Map<String, Object> content = clonExpressions != null ? ClonParser.parse(clonExpressions)
-                            : jsonString != null ? DocReader.format(format).readObject(jsonString) : DocReader.format(format).readObject(inputFilePath);
+                            : jsonString != null ? DocReader.format(format).readObject(jsonString)
+                                    : DocReader.format(format).readObject(inputFilePath);
                     return new EvaluatedInput(DocWriter.format(format).writeAsString(content), ContentType.create(format.getMediaType()));
                 } catch (UnexpectedDocumentStructureException | DocumentParseException | IOException | Format.UnknownDocTypeException e) {
-                    throw new SgctlException((jsonString != null ? "JSON input is invalid" : "Could not read file from path '" + inputFilePath + "' ") + "\n" + e, e);
+                    throw new SgctlException(
+                            (jsonString != null ? "JSON input is invalid" : "Could not read file from path '" + inputFilePath + "' ") + "\n" + e, e);
                 } catch (ClonParser.ClonException e) {
                     throw new SgctlException("CLON input invalid: " + e, e);
                 }
