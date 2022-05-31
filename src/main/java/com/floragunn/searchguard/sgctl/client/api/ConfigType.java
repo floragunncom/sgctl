@@ -14,7 +14,7 @@ public enum ConfigType {
     /**
      * NOTE: Due to the prefix matching performed below, names which are prefixes of other names must appear after these
      */
-    CONFIG_VARS, AUTHC, AUTHZ, LICENSE_KEY, FRONTEND_MULTI_TENANCY, SESSIONS, AUTH_TOKEN_SERVICE, CONFIG, INTERNALUSERS,
+    CONFIG_VARS, AUTHC, AUTHZ_DLSFLS, AUTHZ, LICENSE_KEY, FRONTEND_MULTI_TENANCY, SESSIONS, AUTH_TOKEN_SERVICE, CONFIG, INTERNALUSERS,
     ACTIONGROUPS, ROLESMAPPING, ROLES, TENANTS, BLOCKS, FRONTEND_AUTHC;
 
     public String getApiName() {
