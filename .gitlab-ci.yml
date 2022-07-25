@@ -133,4 +133,6 @@ coverage:
     - build
   artifacts:
     reports:
-      cobertura: target/site/cobertura.xml
+      coverage_report:
+        coverage_format: cobertura
+        path: target/site/cobertura.xml
