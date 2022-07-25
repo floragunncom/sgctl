@@ -646,7 +646,7 @@ public class MigrateConfig implements Callable<Integer> {
                     }
                 }
 
-                newAuthDomain.put("idp", idp);
+                newAuthDomain.put("saml.idp", idp);
 
                 String spEntityId = vSamlAuthDomain.get("http_authenticator.config.sp.entity_id").required().asString();
                 String spSignatureAlgorithm = vSamlAuthDomain.get("http_authenticator.config.sp.signature_algorithm").asString();
@@ -679,42 +679,49 @@ public class MigrateConfig implements Callable<Integer> {
                     sp.put("forceAuthn", useForceAuth);
                 }
 
-                newAuthDomain.put("sp", sp);
+                newAuthDomain.put("saml.sp", sp);
 
                 String subjectKey = vSamlAuthDomain.get("http_authenticator.config.subject_key").asString();
-
-                if (subjectKey != null) {
-                    newAuthDomain.put("user_mapping.subject", subjectKey);
-                }
-
                 String subjectPattern = vSamlAuthDomain.get("http_authenticator.config.subject_pattern").asString();
 
-                if (subjectPattern != null) {
-                    newAuthDomain.put("user_mapping.subject_pattern", subjectPattern);
+                if (subjectPattern == null) {
+                    if (subjectKey != null) {
+                        newAuthDomain.put("user_mapping.user_name.from", "$.saml_response['" + subjectKey + "']");
+                    }
+                } else {
+                    if (subjectKey != null) {
+                        newAuthDomain.put("user_mapping.user_name.from.json_path", "$.saml_response['" + subjectKey + "']");
+                    }
+
+                    newAuthDomain.put("user_mapping.user_name.from.pattern", subjectPattern);
+
                 }
 
                 String rolesKey = vSamlAuthDomain.get("http_authenticator.config.roles_key").required().asString();
-
-                if (rolesKey != null) {
-                    newAuthDomain.put("user_mapping.roles", rolesKey);
-                }
-
                 String rolesSeparator = vSamlAuthDomain.get("http_authenticator.config.roles_seperator").asString();
 
-                if (rolesSeparator != null) {
-                    newAuthDomain.put("user_mapping.roles_seperator", rolesKey);
+                if (rolesSeparator == null || ",".equals(rolesSeparator)) {
+                    if (rolesKey != null) {
+                        newAuthDomain.put("user_mapping.roles.from_comma_separated_string", "$.saml_response['" + rolesKey + "']");
+                    }
+                } else {
+                    if (rolesKey != null) {
+                        newAuthDomain.put("user_mapping.roles.from.json_path", "$.saml_response['" + rolesKey + "']");
+                    }
+                    
+                    newAuthDomain.put("user_mapping.roles.from.split", rolesSeparator);
                 }
 
                 Boolean checkIssuer = vSamlAuthDomain.get("http_authenticator.config.check_issuer").asBoolean();
 
                 if (checkIssuer != null) {
-                    newAuthDomain.put("check_issuer", checkIssuer);
+                    newAuthDomain.put("saml.check_issuer", checkIssuer);
                 }
 
                 Object validator = vSamlAuthDomain.get("http_authenticator.config.validator").asAnything();
 
                 if (validator instanceof Map) {
-                    newAuthDomain.put("validator", validator);
+                    newAuthDomain.put("saml.validator", validator);
                 }
 
                 if (samlAuthDomainValidationErrors.hasErrors()) {
@@ -820,58 +827,65 @@ public class MigrateConfig implements Callable<Integer> {
                 String scope = oldKibanaConfig.get("searchguard.openid.scope").asString();
                 String logoutUrl = oldKibanaConfig.get("searchguard.openid.logout_url").asString();
 
-                newAuthDomain.put("idp.openid_configuration_url", openIdConnectUrl);
-                newAuthDomain.put("client_id", clientId);
-                newAuthDomain.put("client_secret", clientSecret);
+                newAuthDomain.put("oidc.idp.openid_configuration_url", openIdConnectUrl);
+                newAuthDomain.put("oidc.client_id", clientId);
+                newAuthDomain.put("oidc.client_secret", clientSecret);
 
                 if (scope != null) {
-                    newAuthDomain.put("scope", scope);
+                    newAuthDomain.put("oidc.scope", scope);
                 }
 
                 if (logoutUrl != null) {
-                    newAuthDomain.put("logout_url", logoutUrl);
+                    newAuthDomain.put("oidc.logout_url", logoutUrl);
                 }
 
                 String subjectKey = vOidcAuthDomain.get("http_authenticator.config.subject_key").asString();
-
-                if (subjectKey != null) {
-                    newAuthDomain.put("user_mapping.subject", "$['" + subjectKey + "']");
-                }
-
+                String subjectPattern = vOidcAuthDomain.get("http_authenticator.config.subject_pattern").asString();
                 String subjectPath = vOidcAuthDomain.get("http_authenticator.config.subject_path").asString();
 
-                if (subjectPath != null) {
-                    newAuthDomain.put("user_mapping.subject", subjectPath);
-                }
-
-                String subjectPattern = vOidcAuthDomain.get("http_authenticator.config.subject_pattern").asString();
-
                 if (subjectPattern != null) {
-                    newAuthDomain.put("user_mapping.subject_pattern", subjectPattern);
+                    if (subjectKey != null) {
+                        newAuthDomain.put("user_mapping.user_name.from.json_path", "$.oidc_id_token['" + subjectKey + "']");
+                    }
+
+                    if (subjectPath != null) {
+                        newAuthDomain.put("user_mapping.user_name.from.json_path", "$.oidc_id_token." + subjectPath);
+                    }
+
+                    newAuthDomain.put("user_mapping.user_name.from.pattern", subjectPattern);
+
+                } else {
+                    if (subjectKey != null) {
+                        newAuthDomain.put("user_mapping.user_name.from", "$.oidc_id_token['" + subjectKey + "']");
+                    }
+
+                    if (subjectPath != null) {
+                        newAuthDomain.put("user_mapping.user_name.from", "$.oidc_id_token." + subjectPath);
+                    }
                 }
 
                 String rolesKey = vOidcAuthDomain.get("http_authenticator.config.roles_key").asString();
 
                 if (rolesKey != null) {
-                    newAuthDomain.put("user_mapping.roles", "$['" + rolesKey + "']");
+                    newAuthDomain.put("user_mapping.roles.from_comma_separated_string", "$.oidc_id_token['" + rolesKey + "']");
                 }
 
                 String rolesPath = vOidcAuthDomain.get("http_authenticator.config.roles_path").asString();
 
                 if (rolesPath != null) {
-                    newAuthDomain.put("user_mapping.roles", rolesPath);
+                    newAuthDomain.put("user_mapping.roles.from_comma_separated_string", rolesPath);
                 }
 
                 Object claimsToUserAttrs = vOidcAuthDomain.get("http_authenticator.config.map_claims_to_user_attrs").asAnything();
 
                 if (claimsToUserAttrs != null) {
-                    newAuthDomain.put("user_mapping.attrs", claimsToUserAttrs);
+                    newAuthDomain.put("user_mapping.attributes.from", claimsToUserAttrs);
                 }
 
                 Object proxy = vOidcAuthDomain.get("http_authenticator.config.proxy").asAnything();
 
                 if (proxy != null) {
-                    newAuthDomain.put("idp.proxy", proxy);
+                    newAuthDomain.put("oidc.idp.proxy", proxy);
                 }
 
                 Map<String, Object> tls = vOidcAuthDomain.get("http_authenticator.config.openid_connect_idp").asMap();
@@ -880,16 +894,16 @@ public class MigrateConfig implements Callable<Integer> {
                     MigrationResult migrationResult = migrateTlsConfig(tls);
 
                     if (migrationResult != null) {
-                        newAuthDomain.put("idp.tls", tls);
+                        newAuthDomain.put("oidc.idp.tls", tls);
                         oldSgConfigValidationErrors.add("http_authenticator.config.openid_connect_idp", migrationResult.getSourceValidationErrors());
                     }
                 }
 
-                migrateAttribute("idp_request_timeout_ms", vOidcAuthDomain, newAuthDomain);
-                migrateAttribute("idp_queued_thread_timeout_ms", vOidcAuthDomain, newAuthDomain);
-                migrateAttribute("refresh_rate_limit_time_window_ms", vOidcAuthDomain, newAuthDomain);
-                migrateAttribute("refresh_rate_limit_count", vOidcAuthDomain, newAuthDomain);
-                migrateAttribute("cache_jwks_endpoint", vOidcAuthDomain, newAuthDomain);
+                migrateAttribute("idp_request_timeout_ms", vOidcAuthDomain, newAuthDomain, "oidc");
+                migrateAttribute("idp_queued_thread_timeout_ms", vOidcAuthDomain, newAuthDomain, "oidc");
+                migrateAttribute("refresh_rate_limit_time_window_ms", vOidcAuthDomain, newAuthDomain, "oidc");
+                migrateAttribute("refresh_rate_limit_count", vOidcAuthDomain, newAuthDomain, "oidc");
+                migrateAttribute("cache_jwks_endpoint", vOidcAuthDomain, newAuthDomain, "oidc");
 
                 if (authDomainValidationErrors.hasErrors()) {
                     oldSgConfigValidationErrors.add("sg_config.dynamic.authc." + oidcAuthDomain.getKey(), authDomainValidationErrors);
@@ -1022,11 +1036,11 @@ public class MigrateConfig implements Callable<Integer> {
             }
         }
 
-        private void migrateAttribute(String name, ValidatingDocNode source, Map<String, Object> target) {
+        private void migrateAttribute(String name, ValidatingDocNode source, Map<String, Object> target, String newScope) {
             Object value = source.get("http_authenticator.config." + name).asAnything();
 
             if (value != null) {
-                target.put(name, value);
+                target.put(newScope + "." + name, value);
             }
         }
 
@@ -1114,7 +1128,7 @@ public class MigrateConfig implements Callable<Integer> {
         DocNode sgAuthz;
         DocNode sgFrontendMultiTenancy;
         Object sgAuthcTransport;
-        
+
         List<String> infos = new ArrayList<>();
 
     }
@@ -1618,7 +1632,8 @@ public class MigrateConfig implements Callable<Integer> {
             result.backendConfig = newConfig;
 
             if (oldBackendConfig.hasNonNull("username_attribute")) {
-                result.userMappingUserName.put("from_backend", addPrefixToJsonPath("ldap_user_entry", oldBackendConfig.getAsString("username_attribute")));
+                result.userMappingUserName.put("from_backend",
+                        addPrefixToJsonPath("ldap_user_entry", oldBackendConfig.getAsString("username_attribute")));
             }
 
             if (oldBackendConfig.hasNonNull("map_ldap_attrs_to_user_attrs")) {
