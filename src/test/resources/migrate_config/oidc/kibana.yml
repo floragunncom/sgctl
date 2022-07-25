@@ -1,0 +1,9 @@
+home.disableWelcomeScreen: true
+
+searchguard.auth.type: openid
+searchguard.openid.base_redirect_url: "https://kibana.example.com:5601"
+searchguard.openid.connect_url: "https://searchguard-test.eu.auth0.com/.well-known/openid-configuration"
+searchguard.openid.client_id: "abcd_client_id"
+searchguard.openid.client_secret: "efgh_client_secret"
+searchguard.openid.scope: "profile email"
+
