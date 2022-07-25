@@ -131,7 +131,7 @@
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>codova</artifactId>
-			<version>0.2.20</version>
+			<version>0.2.21</version>
 		</dependency>
 
 		<dependency>
