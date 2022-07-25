@@ -708,7 +708,7 @@ public class MigrateConfig implements Callable<Integer> {
                     if (rolesKey != null) {
                         newAuthDomain.put("user_mapping.roles.from.json_path", "$.saml_response['" + rolesKey + "']");
                     }
-                    
+
                     newAuthDomain.put("user_mapping.roles.from.split", rolesSeparator);
                 }
 
@@ -1478,16 +1478,26 @@ public class MigrateConfig implements Callable<Integer> {
 
             }
             case "kerberos": {
-                try {
-                    LinkedHashMap<String, Object> newConfig = new LinkedHashMap<>();
-                    newConfig.putAll(vNode.get("http_authenticator.config").asDocNode().splitDottedAttributeNamesToTree().toMap());
-                    result.frontendConfig = newConfig;
+                LinkedHashMap<String, Object> newConfig = new LinkedHashMap<>();
 
-                    return result;
-                } catch (UnexpectedDocumentStructureException e) {
-                    validationErrors.add(new ValidationError("http_authenticator.config", e.getMessage()).cause(e));
-                    return result;
+                if (oldFrontendConfig.hasNonNull("krb_debug")) {
+                    newConfig.put("debug", oldFrontendConfig.get("krb_debug"));
                 }
+                
+                if (oldFrontendConfig.hasNonNull("strip_realm_from_principal")) {
+                    newConfig.put("strip_realm_from_principal", oldFrontendConfig.get("strip_realm_from_principal"));
+                }
+                
+                newConfig.put("acceptor_keytab", "## Please move from searchguard.kerberos.acceptor_keytab_filepath in elasticsearch.yml");
+                newConfig.put("acceptor_principal", "## Please move from searchguard.kerberos.acceptor_keytab_filepath in elasticsearch.yml");
+
+                validationErrors.add(new ValidationError("http_authenticator.config", "For kerberos, you need to complete the values acceptor_keytab and acceptor_principal"));
+
+                
+                result.frontendConfig = newConfig;
+
+                return result;
+
             }
             default:
                 validationErrors.add(new ValidationError("http_authenticator.type", "Unknown HTTP authenticator" + oldFrontendType));

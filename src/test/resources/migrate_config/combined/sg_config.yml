@@ -16,18 +16,6 @@ sg_config:
         internalProxies: '192\.168\.0\.10|192\.168\.0\.11' # regex pattern
         remoteIpHeader:  'x-forwarded-for'
     authc:
-      kerberos_auth_domain:
-        http_enabled: true
-        transport_enabled: true
-        order: 1
-        http_authenticator:
-          type: kerberos # NOT FREE FOR COMMERCIAL USE
-          challenge: true
-          config:
-            krb_debug: false
-            strip_realm_from_principal: true
-        authentication_backend:
-          type: noop
       basic_internal_auth_domain: 
         http_enabled: true
         transport_enabled: true
