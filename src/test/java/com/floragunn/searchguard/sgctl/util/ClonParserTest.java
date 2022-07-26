@@ -57,7 +57,14 @@ class ClonParserTest {
                         ImmutableList.ofArray("key=value", "obj[inner_obj[arr]]=[one,-2,3]", "key2=value2")),
                 Pair.of(
                         ImmutableMap.of("key", ImmutableMap.of("key1", "value1", "key2", "value2")),
-                        ImmutableList.ofArray("key=[key1=value1]", "key[key2]=value2"))
+                        ImmutableList.ofArray("key=[key1=value1]", "key[key2]=value2")),
+                Pair.of(
+                        ImmutableMap.of("key", ""),
+                        ImmutableList.ofArray("key=''")),
+                Pair.of(ImmutableMap.of("key", "val\"ue"),
+                        ImmutableList.ofArray("key='val\"ue'")),
+                Pair.of(ImmutableMap.of("key'", ImmutableMap.of("inner\"", ImmutableList.ofArray(ImmutableMap.of("bla", "value")))),
+                        ImmutableList.ofArray("\"key'\"['inner\"'[]]=[bla=value]"))
         );
         return list.stream();
     }
@@ -71,17 +78,18 @@ class ClonParserTest {
 
     private static Stream<ClonParser.ClonException.Builder> errorExpressionStream() {
         return ImmutableList.ofArray(
-                ClonParser.ClonException.Builder.getNotEndExceptionBuilder().setExpression("key=[val]k").setIndex(9),
-                ClonParser.ClonException.Builder.getCharacterNotFoundExceptionBuilder('=').setExpression("hello_world").setIndex(11),
-                ClonParser.ClonException.Builder.getParenthesisOpenExceptionBuilder().setExpression("key=[value1,value2").setIndex(18),
-                ClonParser.ClonException.Builder.getParenthesisCloseExceptionBuilder().setExpression("key=val]").setIndex(7),
-                ClonParser.ClonException.Builder.getNoStringEndExceptionBuilder().setExpression("'key=value").setIndex(4),
-                ClonParser.ClonException.Builder.getEmptyExceptionBuilder("Expression").setExpression("").setIndex(0),
-                ClonParser.ClonException.Builder.getEmptyExceptionBuilder("Key").setExpression("=54").setIndex(0),
-                ClonParser.ClonException.Builder.getEmptyExceptionBuilder("Value").setExpression("key=").setIndex(4),
-                ClonParser.ClonException.Builder.getEmptyExceptionBuilder("Value").setExpression("key=[value1,value2,]").setIndex(19),
-                ClonParser.ClonException.Builder.getUnsupportedSymbolExceptionBuilder('!').setExpression("bl!a=6").setIndex(2),
-                ClonParser.ClonException.Builder.getNameEmptyExceptionBuilder().setExpression("''='moin'").setIndex(2)
+                ClonParser.ClonException.Builder.getNotEndExceptionBuilder().setExpression("key=[val]k").setErrorIndex(9).setPart("key=[val]k").setPartStartIndex(0),
+                ClonParser.ClonException.Builder.getCharacterNotFoundExceptionBuilder('=').setExpression("hello_world").setErrorIndex(11).setPart("hello_world").setPartStartIndex(0),
+                ClonParser.ClonException.Builder.getParenthesisOpenExceptionBuilder().setExpression("key=[value1,value2").setErrorIndex(18).setPart("[value1,value2").setPartStartIndex(4),
+                ClonParser.ClonException.Builder.getParenthesisCloseExceptionBuilder().setExpression("key=val]").setErrorIndex(7).setPart("key=val]").setPartStartIndex(0),
+                ClonParser.ClonException.Builder.getNoStringEndExceptionBuilder().setExpression("'key=value").setErrorIndex(4).setPart("'key").setPartStartIndex(0),
+                ClonParser.ClonException.Builder.getEmptyExceptionBuilder(ClonParser.PartType.EXPRESSION).setExpression("").setErrorIndex(0).setPart("").setPartStartIndex(0),
+                ClonParser.ClonException.Builder.getEmptyExceptionBuilder(ClonParser.PartType.KEY).setExpression("=54").setErrorIndex(0).setPart("").setPartStartIndex(0),
+                ClonParser.ClonException.Builder.getEmptyExceptionBuilder(ClonParser.PartType.VALUE).setExpression("key=").setErrorIndex(4).setPart("").setPartStartIndex(4),
+                ClonParser.ClonException.Builder.getEmptyExceptionBuilder(ClonParser.PartType.VALUE).setExpression("key=[value1,value2,]").setErrorIndex(19).setPart("[value1,value2,]").setPartStartIndex(4),
+                ClonParser.ClonException.Builder.getUnsupportedSymbolExceptionBuilder('!').setExpression("bl!a=6").setErrorIndex(2).setPart("bl!a").setPartStartIndex(0),
+                ClonParser.ClonException.Builder.getNameEmptyExceptionBuilder(ClonParser.PartType.KEY).setExpression("''='moin'").setErrorIndex(2).setPart("''").setPartStartIndex(0),
+                ClonParser.ClonException.Builder.getParenthesisOpenExceptionBuilder().setExpression("transient[logger.com.floragunn=TRACE]").setErrorIndex(30).setPart("transient[logger.com.floragunn").setPartStartIndex(0)
         ).stream();
     }
 
@@ -95,11 +103,11 @@ class ClonParserTest {
 
     @Test
     public void testOverrideException() throws Exception {
-        ClonParser.ClonException expected = ClonParser.ClonException.Builder.getOverrideExceptionBuilder("key").setExpression("key=value2").setIndex(3).build();
+        ClonParser.ClonException expected = ClonParser.ClonException.Builder.getOverrideExceptionBuilder("key").setExpression("key=value2").setErrorIndex(3).setPart("key").setPartStartIndex(0).build();
         ClonParser.ClonException actual = Assertions.assertThrows(expected.getClass(), () -> ClonParser.parse("key=value", "key=value2"));
         Assertions.assertEquals(expected.getMessage(), actual.getMessage());
 
-        expected = ClonParser.ClonException.Builder.getOverrideExceptionBuilder("key").setExpression("obj[inner[key]]=[value]").setIndex(13).build();
+        expected = ClonParser.ClonException.Builder.getOverrideExceptionBuilder("key").setExpression("obj[inner[key]]=[value]").setErrorIndex(13).setPart("key").setPartStartIndex(10).build();
         actual = Assertions.assertThrows(expected.getClass(), () -> ClonParser.parse("obj=[inner=[key=3]]", "obj[inner[key]]=[value]"));
         Assertions.assertEquals(expected.getMessage(), actual.getMessage());
     }

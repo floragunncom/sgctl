@@ -31,9 +31,11 @@ import java.util.Stack;
 public class ClonParser {
     private static final List<Character> STRING_INDICATORS = Arrays.asList('"', '\'');
     private static final char ASSIGN_OPERATOR = '=';
-    private static final Character EXPRESSION_OPEN = '[';
-    private static final Character EXPRESSION_CLOSE = ']';
+    private static final Character PARENTHESIS_OPEN = '[';
+    private static final Character PARENTHESIS_CLOSE = ']';
     private static final Character SEPARATOR = ',';
+
+    protected enum PartType {KEY, VALUE, EXPRESSION}
 
     public static Map<String, Object> parse(List<String> expressions) throws ClonException {
         Map<String, Object> result = new LinkedHashMap<>();
@@ -49,11 +51,11 @@ public class ClonParser {
     }
 
     private static boolean isOperationSymbol(char c) {
-        return c == SEPARATOR || c == ASSIGN_OPERATOR || c == EXPRESSION_OPEN || c == EXPRESSION_CLOSE;
+        return c == SEPARATOR || c == ASSIGN_OPERATOR || c == PARENTHESIS_OPEN || c == PARENTHESIS_CLOSE;
     }
 
     private static boolean isNameSymbol(char c) {
-        return Character.isLetterOrDigit(c) || c == '_' || c == '-';
+        return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.';
     }
 
     private static class ExpressionReader {
@@ -64,15 +66,19 @@ public class ClonParser {
         }
 
         public Map<String, Object> read(Map<String, Object> map) throws ClonException {
-            it.validateNotEmpty("Expression");
+            it.validateNotEmpty(PartType.EXPRESSION);
             int keyStart = it.getIndex();
             it.readUntilMatch(ASSIGN_OPERATOR);
             int keyEnd = it.getIndex();
             TokenIterator keyIterator = new TokenIterator(it, keyStart, keyEnd);
             KeyReader.ValueApplier applier = new KeyReader(keyIterator).read(map);
             it.readCharacter(ASSIGN_OPERATOR);
-            Object value = new ValueReader(it).read();
-            it.validateEndAndParenthesis();
+            int valueStart = it.getIndex();
+            it.readUntilParenthesisOrIteratorEnd();
+            int valueEnd = it.getIndex();
+            TokenIterator valueIterator = new TokenIterator(it, valueStart, valueEnd);
+            Object value = new ValueReader(valueIterator).read();
+            it.validateEndAndParenthesis(PartType.EXPRESSION);
             applier.apply(value);
             return map;
         }
@@ -87,41 +93,46 @@ public class ClonParser {
 
         @SuppressWarnings("unchecked")
         private ValueApplier read(Map<String, Object> map) throws ClonException {
-            it.validateNotEmpty("Key");
-            it.peekParenthesisCorrect();
-            String key = it.readString();
-            if (it.current() == CharacterIterator.DONE || it.current() == EXPRESSION_CLOSE) {
+            it.validateNotEmpty(PartType.KEY);
+            TokenIterator.peekParenthesisCorrect(it, PartType.KEY);
+            String key = it.readString(PartType.KEY);
+            ValueApplier applier;
+            if (it.current() == CharacterIterator.DONE) {
                 if (map.containsKey(key)) {
                     throw ClonException.Builder.getOverrideExceptionBuilder(key).build(it);
                 }
-                return new ValueApplier(key, map);
-            }
-            it.readCharacter(EXPRESSION_OPEN);
-            if (it.current() == EXPRESSION_CLOSE) {
-                ValueApplier applier;
-                if (!map.containsKey(key)) {
-                    List<Object> array = new ArrayList<>();
-                    map.put(key, array);
-                    applier = new ValueApplier(key, array);
-                } else if (map.get(key) instanceof List) {
-                    applier = new ValueApplier(key, (List<Object>) map.get(key));
-                } else {
-                    throw ClonException.Builder.getOverrideExceptionBuilder(key).build(it);
-                }
-                it.readCharacter(EXPRESSION_CLOSE);
-                return applier;
-            }
-            ValueApplier applier;
-            if (!map.containsKey(key)) {
-                Map<String, Object> innerMap = new LinkedHashMap<>();
-                map.put(key, innerMap);
-                applier = read(innerMap);
-            } else if(map.get(key) instanceof Map) {
-                applier = read((Map<String, Object>) map.get(key));
+                applier = new ValueApplier(key, map);
             } else {
-                throw ClonException.Builder.getOverrideExceptionBuilder(key).build(it);
+                it.readCharacter(PARENTHESIS_OPEN);
+                if (it.current() == PARENTHESIS_CLOSE) {
+                    if (!map.containsKey(key)) {
+                        List<Object> array = new ArrayList<>();
+                        map.put(key, array);
+                        applier = new ValueApplier(key, array);
+                    } else if (map.get(key) instanceof List) {
+                        applier = new ValueApplier(key, (List<Object>) map.get(key));
+                    } else {
+                        throw ClonException.Builder.getOverrideExceptionBuilder(key).build(it);
+                    }
+                } else {
+                    int innerKeyStart = it.getIndex();
+                    it.readUntilMatchOnSameDepth(PARENTHESIS_CLOSE);
+                    int innerKeyEnd = it.getIndex();
+                    TokenIterator innerKeyIterator = new TokenIterator(it, innerKeyStart, innerKeyEnd);
+
+                    if (!map.containsKey(key)) {
+                        Map<String, Object> innerMap = new LinkedHashMap<>();
+                        map.put(key, innerMap);
+                        applier = new KeyReader(innerKeyIterator).read(innerMap);
+                    } else if(map.get(key) instanceof Map) {
+                        applier = new KeyReader(innerKeyIterator).read((Map<String, Object>) map.get(key));
+                    } else {
+                        throw ClonException.Builder.getOverrideExceptionBuilder(key).build(it);
+                    }
+                }
+                it.readCharacter(PARENTHESIS_CLOSE);
             }
-            it.readCharacter(EXPRESSION_CLOSE);
+            it.validateEndAndParenthesis(PartType.KEY);
             return applier;
         }
 
@@ -162,13 +173,13 @@ public class ClonParser {
         }
 
         public Object read() throws ClonException {
-            it.validateNotEmpty("Value");
-            it.peekParenthesisCorrect();
+            it.validateNotEmpty(PartType.VALUE);
+            TokenIterator.peekParenthesisCorrect(it, PartType.VALUE);
             Object result;
             String expression = it.getCurrentExpression();
-            if (expression.charAt(0) == EXPRESSION_OPEN) {
-                if (expression.charAt(1) == EXPRESSION_CLOSE) {
-                    throw ClonException.Builder.getEmptyExceptionBuilder("Array or object").build(it);
+            if (expression.charAt(0) == PARENTHESIS_OPEN) {
+                if (expression.charAt(1) == PARENTHESIS_CLOSE) {
+                    throw ClonException.Builder.getEmptyExceptionBuilder(PartType.VALUE).build(it);
                 }
                 if (TokenIterator.peekContainsOnDepth(it, 1, ASSIGN_OPERATOR)) {
                     result = readObject();
@@ -184,9 +195,9 @@ public class ClonParser {
             } else if ("null".equals(expression)) {
                 result = readNull();
             } else {
-                result = readString();
+                result = readString(PartType.VALUE);
             }
-            it.validateEndAndParenthesis();
+            it.validateEndAndParenthesis(PartType.VALUE);
             return result;
         }
 
@@ -225,47 +236,47 @@ public class ClonParser {
             return null;
         }
 
-        private Object readString() throws ClonException {
-            return it.readString();
+        private Object readString(PartType context) throws ClonException {
+            return it.readString(context);
         }
 
         private Object readArray() throws ClonException {
-            it.readCharacter(EXPRESSION_OPEN);
+            it.readCharacter(PARENTHESIS_OPEN);
             List<Object> values = new ArrayList<>();
-            while (it.current() != EXPRESSION_CLOSE) {
+            while (it.current() != PARENTHESIS_CLOSE) {
                 int valueStart = it.getIndex();
-                it.readUntilMatchOnSameDepth(SEPARATOR, EXPRESSION_CLOSE);
+                it.readUntilMatchOnSameDepth(SEPARATOR, PARENTHESIS_CLOSE);
                 int valueEnd = it.getIndex();
                 ValueReader reader = new ValueReader(new TokenIterator(it, valueStart, valueEnd));
                 values.add(reader.read());
-                if (it.current() != EXPRESSION_CLOSE) {
+                if (it.current() != PARENTHESIS_CLOSE) {
                     it.readCharacter(SEPARATOR);
-                    if (it.current() == EXPRESSION_CLOSE) {
-                        throw ClonException.Builder.getEmptyExceptionBuilder("Value").build(it);
+                    if (it.current() == PARENTHESIS_CLOSE) {
+                        throw ClonException.Builder.getEmptyExceptionBuilder(PartType.VALUE).build(it);
                     }
                 }
             }
-            it.readCharacter(EXPRESSION_CLOSE);
+            it.readCharacter(PARENTHESIS_CLOSE);
             return values;
         }
 
         private Object readObject() throws ClonException {
-            it.readCharacter(EXPRESSION_OPEN);
+            it.readCharacter(PARENTHESIS_OPEN);
             Map<String, Object> objectMap = new LinkedHashMap<>();
-            while (it.current() != EXPRESSION_CLOSE) {
+            while (it.current() != PARENTHESIS_CLOSE) {
                 int expressionStart = it.getIndex();
-                it.readUntilMatchOnSameDepth(SEPARATOR, EXPRESSION_CLOSE);
+                it.readUntilMatchOnSameDepth(SEPARATOR, PARENTHESIS_CLOSE);
                 int expressionEnd = it.getIndex();
                 ExpressionReader reader = new ExpressionReader(new TokenIterator(it, expressionStart, expressionEnd));
                 reader.read(objectMap);
-                if (it.current() != EXPRESSION_CLOSE) {
+                if (it.current() != PARENTHESIS_CLOSE) {
                     it.readCharacter(SEPARATOR);
-                    if (it.current() == EXPRESSION_CLOSE) {
-                        throw ClonException.Builder.getEmptyExceptionBuilder("Value").build(it);
+                    if (it.current() == PARENTHESIS_CLOSE) {
+                        throw ClonException.Builder.getEmptyExceptionBuilder(PartType.VALUE).build(it);
                     }
                 }
             }
-            it.readCharacter(EXPRESSION_CLOSE);
+            it.readCharacter(PARENTHESIS_CLOSE);
             return objectMap;
         }
     }
@@ -303,20 +314,24 @@ public class ClonParser {
             return false;
         }
 
+        protected static void peekParenthesisCorrect(TokenIterator iterator, PartType context) throws ClonException {
+            TokenIterator it = new TokenIterator(iterator);
+            while (!it.isEnd()) {
+                it.next();
+            }
+            it.validateParenthesis(context);
+        }
+
         protected String getCurrentExpression() {
             return expression.substring(getIndex(), end);
         }
 
-        protected String getCompleteExpression() {
-            return expression;
+        protected String getCurrentExpressionPart() {
+            return expression.substring(start, end);
         }
 
-        protected void peekParenthesisCorrect() throws ClonException {
-            TokenIterator it = new TokenIterator(this);
-            while (!it.isEnd()) {
-                it.next();
-            }
-            it.validateParenthesis();
+        protected String getCompleteExpression() {
+            return expression;
         }
 
         protected String readUntilMatch(Character ... chars) throws ClonException {
@@ -344,9 +359,23 @@ public class ClonParser {
             return builder.toString();
         }
 
-        protected String readString() throws ClonException {
+        protected String readUntilParenthesisOrIteratorEnd() throws ClonException {
+            StringBuilder builder = new StringBuilder();
+            int depth = parenthesis.size();
+            boolean capsuled = STRING_INDICATORS.contains(it.current()) || it.current() == PARENTHESIS_OPEN;
+            while (it.current() != CharacterIterator.DONE) {
+                builder.append(it.current());
+                next();
+                if (capsuled && depth == parenthesis.size()) {
+                    break;
+                }
+            }
+            return builder.toString();
+        }
+
+        protected String readString(PartType context) throws ClonException {
             if (STRING_INDICATORS.contains(it.current())) {
-                return readEncapsulatedString(it.current());
+                return readEncapsulatedString(context, it.current());
             }
             StringBuilder name = new StringBuilder();
             while (!isOperationSymbol(it.current()) && !isEnd()) {
@@ -357,12 +386,12 @@ public class ClonParser {
                 next();
             }
             if (name.toString().isEmpty()) {
-                throw ClonException.Builder.getNameEmptyExceptionBuilder().build(this);
+                throw ClonException.Builder.getNameEmptyExceptionBuilder(context).build(this);
             }
             return name.toString();
         }
 
-        private String readEncapsulatedString(Character parenthesis) throws ClonException {
+        private String readEncapsulatedString(PartType context, Character parenthesis) throws ClonException {
             readCharacter(parenthesis);
             StringBuilder name = new StringBuilder();
             while (it.current() != parenthesis) {
@@ -373,8 +402,8 @@ public class ClonParser {
                 next();
             }
             readCharacter(parenthesis);
-            if (name.toString().isEmpty()) {
-                throw ClonException.Builder.getNameEmptyExceptionBuilder().build(this);
+            if (name.toString().isEmpty() && context != PartType.VALUE) {
+                throw ClonException.Builder.getNameEmptyExceptionBuilder(context).build(this);
             }
             return name.toString();
         }
@@ -409,14 +438,14 @@ public class ClonParser {
             if (STRING_INDICATORS.contains(it.current())) {
                 if (inString() && it.current() == parenthesis.peek()) {
                     parenthesis.pop();
-                } else {
+                } else if (!inString()) {
                     parenthesis.push(it.current());
                 }
             }
             if (!inString()) {
-                if (it.current() == EXPRESSION_OPEN) {
+                if (it.current() == PARENTHESIS_OPEN) {
                     parenthesis.push(it.current());
-                } else if (it.current() == EXPRESSION_CLOSE) {
+                } else if (it.current() == PARENTHESIS_CLOSE) {
                     if (!parenthesis.empty()) {
                         parenthesis.pop();
                     } else {
@@ -435,7 +464,7 @@ public class ClonParser {
             return it.current() == CharacterIterator.DONE;
         }
 
-        protected void validateNotEmpty(String context) throws ClonException {
+        protected void validateNotEmpty(PartType context) throws ClonException {
             if (Strings.isNullOrEmpty(getCurrentExpression())) {
                 throw ClonException.Builder.getEmptyExceptionBuilder(context).build(this);
             }
@@ -447,15 +476,15 @@ public class ClonParser {
             }
         }
 
-        protected void validateParenthesis() throws ClonException {
+        protected void validateParenthesis(PartType context) throws ClonException {
             if (!parenthesis.empty()) {
                 throw (STRING_INDICATORS.contains(parenthesis.peek()) ? ClonException.Builder.getNoStringEndExceptionBuilder() : ClonException.Builder.getParenthesisOpenExceptionBuilder()).build(this);
             }
         }
 
-        protected void validateEndAndParenthesis() throws ClonException {
+        protected void validateEndAndParenthesis(PartType context) throws ClonException {
             validateEnd();
-            validateParenthesis();
+            validateParenthesis(context);
         }
     }
 
@@ -469,11 +498,15 @@ public class ClonParser {
         protected static class Builder {
             String message;
             String expression;
-            int index;
+            String part;
+            int errorIndex;
+            int partStartIndex;
 
             protected ClonException build(TokenIterator iterator) {
                 expression = iterator.getCompleteExpression();
-                index = iterator.getIndex();
+                part = iterator.getCurrentExpressionPart();
+                errorIndex = iterator.getIndex();
+                partStartIndex = iterator.start;
                 return build();
             }
 
@@ -481,7 +514,10 @@ public class ClonParser {
                 StringBuilder builder = new StringBuilder();
                 builder.append(message).append("\n");
                 builder.append(expression).append("\n");
-                char[] spaces = new char[index];
+                char[] spaces = new char[partStartIndex];
+                Arrays.fill(spaces, ' ');
+                builder.append(spaces).append(part).append("\n");
+                spaces = new char[errorIndex];
                 Arrays.fill(spaces, ' ');
                 builder.append(spaces).append('^');
                 return new ClonException(builder.toString());
@@ -497,8 +533,18 @@ public class ClonParser {
                 return this;
             }
 
-            protected Builder setIndex(int index) {
-                this.index = index;
+            protected Builder setPart(String part) {
+                this.part = part;
+                return this;
+            }
+
+            protected Builder setErrorIndex(int errorIndex) {
+                this.errorIndex = errorIndex;
+                return this;
+            }
+
+            protected Builder setPartStartIndex(int partStartIndex) {
+                this.partStartIndex = partStartIndex;
                 return this;
             }
 
@@ -515,27 +561,27 @@ public class ClonParser {
             }
 
             public static Builder getParenthesisOpenExceptionBuilder() {
-                return new Builder().setMessage("Expected '" + EXPRESSION_CLOSE + "'");
+                return new Builder().setMessage("Expected '" + PARENTHESIS_CLOSE + "'");
             }
 
             public static Builder getParenthesisCloseExceptionBuilder() {
-                return new Builder().setMessage("Unexpected '" + EXPRESSION_CLOSE + "'");
+                return new Builder().setMessage("Unexpected '" + PARENTHESIS_CLOSE + "'");
             }
 
             public static Builder getNoStringEndExceptionBuilder() {
                 return new Builder().setMessage("Expected string or key name to end");
             }
 
-            public static Builder getEmptyExceptionBuilder(String context) {
-                return new Builder().setMessage(context + " can not be empty");
+            public static Builder getEmptyExceptionBuilder(PartType context) {
+                return new Builder().setMessage(context != PartType.VALUE ? context + " can not be empty" : "Empty string value must be surrounded by ' or \"");
             }
 
             public static Builder getUnsupportedSymbolExceptionBuilder(Character c) {
                 return new Builder().setMessage("Unsupported symbol '" + c + "'. Consider using quotes");
             }
 
-            public static Builder getNameEmptyExceptionBuilder() {
-                return new Builder().setMessage("Key names and strings values can not be empty");
+            public static Builder getNameEmptyExceptionBuilder(PartType context) {
+                return new Builder().setMessage(context == PartType.KEY ? "Key names can not be empty" : "String values can not be empty");
             }
 
             public static Builder getOverrideExceptionBuilder(String key) {
