@@ -123,6 +123,38 @@ public class SgctlTest {
     }
 
     @Test
+    public void testConnectWithoutSavingPrivateKeyPassword() throws Exception {
+        InetSocketAddress httpAddress = cluster.getHttpAddress();
+        TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
+        String adminCert = adminCertificate.getCertificateFile().getPath();
+        String adminKey = adminCertificate.getPrivateKeyFile().getPath();
+        String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
+        Path configDir = Files.createTempDirectory("sgctl-test-config");
+
+        int result = SgctlTool.exec("connect", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert, "--key",
+                adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--save-key-pass", "false", "--sgctl-config-dir", configDir.toString());
+
+        Assertions.assertEquals(0, result);
+
+        List<String> filesInConfigDir = Arrays.asList(configDir.toFile().list());
+        Assertions.assertTrue(filesInConfigDir.contains("cluster_" + httpAddress.getHostString() + ".yml"), filesInConfigDir.toString());
+
+        File clusterConfigFile = new File(configDir.toFile(), "cluster_" + httpAddress.getHostString() + ".yml");
+
+        Map<String, Object> config = DocReader.yaml().readObject(clusterConfigFile);
+        Map<String, Object> clientAuthConfig = (Map<String, Object>) ((Map<String, Object>) config.get("tls")).get("client_auth");
+        Assertions.assertNull(clientAuthConfig.get("private_key_password"));
+        Assertions.assertFalse(clientAuthConfig.containsKey("private_key_password"));
+
+        Path sgConfigDestinationDir = Files.createTempDirectory("sgctl-test-sgconfig");
+        result = SgctlTool.exec("get-config", "-o", sgConfigDestinationDir.toString(), "--debug", "--sgctl-config-dir", configDir.toString());
+        Assertions.assertEquals(1, result);
+
+        result = SgctlTool.exec("get-config", "-o", sgConfigDestinationDir.toString(), "--debug", "--sgctl-config-dir", configDir.toString(), "--key-pass", "secret");
+        Assertions.assertEquals(0, result);
+    }
+
+    @Test
     public void testDownloadAndUpload() throws Exception {
 
         Path sgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig");

@@ -18,6 +18,7 @@
 package com.floragunn.searchguard.sgctl.commands;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.SocketException;
 import java.security.cert.Certificate;
 import java.security.cert.X509Certificate;
@@ -30,6 +31,9 @@ import java.util.Map;
 import javax.net.ssl.SSLException;
 import javax.net.ssl.SSLHandshakeException;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.floragunn.codova.documents.DocReader;
+import com.floragunn.codova.validation.errors.JsonValidationError;
 import org.apache.http.HttpHost;
 
 import com.floragunn.codova.config.net.TLSConfig;
@@ -80,6 +84,48 @@ public abstract class ConnectingCommand extends BaseCommand {
     boolean skipInitialConnectionCheck;
     
     private String connectedClusterName;
+
+    @SuppressWarnings("unchecked")
+    protected SgctlConfig.Cluster getSelectedClusterConfig() throws SgctlException {
+        String selectedClusterId = getSelectedClusterId();
+
+        if (selectedClusterId == null || "none".equals(selectedClusterId)) {
+            return null;
+        }
+
+        File configFile = new File(getConfigDir(), "cluster_" + selectedClusterId + ".yml");
+
+        try {
+            if (!configFile.exists()) {
+                return null;
+            }
+
+            Map<String, Object> config;
+
+            try {
+                config = DocReader.yaml().readObject(configFile);
+            } catch (JsonProcessingException e) {
+                throw new ConfigValidationException(new JsonValidationError(null, e));
+            } catch (IOException e) {
+                throw new SgctlException("Error while reading " + configFile + ": " + e, e);
+            }
+
+            if (config.containsKey("tls")) {
+                Map<String, Object> tlsConfig = (Map<String, Object>) config.get("tls");
+                if (tlsConfig.containsKey("client_auth")) {
+                    Map<String, Object> clientAuthConfig = (Map<String, Object>) tlsConfig.get("client_auth");
+                    if (!clientAuthConfig.containsKey("private_key_password") && clientKeyPass == null) {
+                        throw new SgctlException("Private key password is not saved in configuration file and must be provided with --key-pass");
+                    } else if (!clientAuthConfig.containsKey("private_key_password")) {
+                        clientAuthConfig.put("private_key_password", clientKeyPass);
+                    }
+                }
+            }
+            return SgctlConfig.Cluster.parse(config, selectedClusterId);
+        } catch (ConfigValidationException e) {
+            throw new SgctlException("File " + configFile + " is invalid:\n" + e.getValidationErrors(), e).debugDetail(e.toDebugString());
+        }
+    }
 
     public SearchGuardRestClient getClient() throws SgctlException {
 
@@ -173,7 +219,7 @@ public abstract class ConnectingCommand extends BaseCommand {
                     : new LinkedHashMap<>();
 
             // In attributeMapping, we track how we called the mapped attributes in clientAuthConfig
-            // This allows to translate the validation errors back to the actual parameter where they occured
+            // This allows to translate the validation errors back to the actual parameter where they occurred
             Map<String, String> attributeMapping = new HashMap<>();
 
             if (clientCert != null) {

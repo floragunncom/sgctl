@@ -17,13 +17,8 @@
 
 package com.floragunn.searchguard.sgctl.commands;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-
 import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.codova.validation.ValidationErrors;
-import com.floragunn.searchguard.sgctl.SgctlConfig;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.client.ApiException;
 import com.floragunn.searchguard.sgctl.client.FailedConnectionException;
@@ -33,8 +28,11 @@ import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
 import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-
 import picocli.CommandLine.Option;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 
 public class BaseCommand {
 
@@ -94,16 +92,6 @@ public class BaseCommand {
         }
     }
 
-    protected SgctlConfig.Cluster getSelectedClusterConfig() throws SgctlException {
-        String selectedClusterId = getSelectedClusterId();
-
-        if (selectedClusterId == null || "none".equals(selectedClusterId)) {
-            return null;
-        }
-
-        return SgctlConfig.Cluster.read(getConfigDir(), selectedClusterId);
-    }
-
     protected File getConfigDir() throws SgctlException {
         if (customConfigDir != null) {
             if (customConfigDir.isFile()) {
@@ -136,7 +124,7 @@ public class BaseCommand {
     }
 
     @FunctionalInterface
-    protected static interface RetryableProcedure {
+    protected interface RetryableProcedure {
         void run() throws SgctlException, InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException,
                 ApiException, UnexpectedDocumentStructureException;
     }

@@ -25,11 +25,15 @@ import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Option;
 
 @Command(name = "connect", description = "Tries to connect to a cluster and persists this connection for subsequent commands")
 public class Connect extends ConnectingCommand implements Callable<Integer> {
     @Parameters(index = "0", arity = "0..1", description = "Name of the server to connect to.")
     String server;
+
+    @Option(names = { "--save-key-pass" }, description = "Save private key password to sgctl config file", arity = "0..1")
+    boolean savePrivateKeyPass = true;
 
     @Override
     public Integer call() {
@@ -46,7 +50,7 @@ public class Connect extends ConnectingCommand implements Callable<Integer> {
 
             cluster.setClusterId(clusterConfigId);
 
-            cluster.write(getConfigDir());
+            cluster.write(getConfigDir(), savePrivateKeyPass);
 
             writeSelectedClusterId(clusterConfigId);
 

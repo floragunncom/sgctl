@@ -53,32 +53,7 @@ public class SgctlConfig {
 
         }
 
-        public static Cluster read(File configDir, String clusterId) throws SgctlException {
-            File configFile = new File(configDir, "cluster_" + clusterId + ".yml");
-
-            try {
-
-                if (!configFile.exists()) {
-                    return null;
-                }
-
-                Map<String, Object> config;
-
-                try {
-                    config = DocReader.yaml().readObject(configFile);
-                } catch (JsonProcessingException e) {
-                    throw new ConfigValidationException(new JsonValidationError(null, e));
-                } catch (IOException e) {
-                    throw new SgctlException("Error while reading " + configFile + ": " + e, e);
-                }
-
-                return parse(config, clusterId);
-            } catch (ConfigValidationException e) {
-                throw new SgctlException("File " + configFile + " is invalid:\n" + e.getValidationErrors(), e).debugDetail(e.toDebugString());
-            }
-        }
-
-        public void write(File configDir) throws SgctlException {
+        public void write(File configDir, boolean savePrivateKeyPassword) throws SgctlException {
             if (!configDir.exists()) {
                 if (!configDir.mkdir()) {
                     throw new SgctlException("Could not create directory " + configDir + ")");
@@ -86,13 +61,27 @@ public class SgctlConfig {
             }
 
             File configFile = new File(configDir, "cluster_" + clusterId + ".yml");
-
             try {
-                DocWriter.yaml().write(configFile, this.toBasicObject());
+                if (savePrivateKeyPassword) {
+                    DocWriter.yaml().write(configFile, this.toBasicObject());
+                } else {
+                    Map<String, Object> result = new LinkedHashMap<>();
+                    result.put("server", server);
+                    result.put("port", port);
+                    if (tlsConfig.getClientCertAuthConfig() != null && tlsConfig.getClientCertAuthConfig().toBasicObject().containsKey("private_key_password")) {
+                        Map<String, Object> tlsConfigMap = tlsConfig.toBasicObject();
+                        Map<String, Object> clientAuthConfig = tlsConfig.getClientCertAuthConfig().toBasicObject();
+                        clientAuthConfig.remove("private_key_password");
+                        tlsConfigMap.put("client_auth", clientAuthConfig);
+                        result.put("tls", tlsConfigMap);
+                    } else {
+                        result.put("tls", tlsConfig.toBasicObject());
+                    }
+                    DocWriter.yaml().write(configFile, result);
+                }
             } catch (IOException e) {
                 throw new SgctlException("Error while writing " + configFile + ": " + e, e);
             }
-
         }
 
         public static Cluster parse(Map<String, Object> config, String clusterId) throws ConfigValidationException {
