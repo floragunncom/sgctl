@@ -34,6 +34,7 @@ import com.floragunn.codova.validation.ValidatingFunction;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.VariableResolvers;
 import com.floragunn.codova.validation.errors.JsonValidationError;
+import com.google.common.base.Strings;
 
 public class SgctlConfig {
 
@@ -62,8 +63,9 @@ public class SgctlConfig {
 
             File configFile = new File(configDir, "cluster_" + clusterId + ".yml");
             try {
+                /*
                 if (savePrivateKeyPassword) {
-                    DocWriter.yaml().write(configFile, this.toBasicObject());
+                    DocWriter.yaml().write(configFile, toBasicObject());
                 } else {
                     Map<String, Object> result = new LinkedHashMap<>();
                     result.put("server", server);
@@ -78,7 +80,18 @@ public class SgctlConfig {
                         result.put("tls", tlsConfig.toBasicObject());
                     }
                     DocWriter.yaml().write(configFile, result);
+                }*/
+                Map<String, Object> result = new LinkedHashMap<>();
+                result.put("server", server);
+                result.put("port", port);
+                Map<String, Object> tlsConfigMap = tlsConfig.toBasicObject();
+                Map<String, Object> clientAuthConfigMap = tlsConfig.getClientCertAuthConfig().toBasicObject();
+                if (!savePrivateKeyPassword && !Strings.isNullOrEmpty((String) clientAuthConfigMap.get("private_key_password"))) {
+                    clientAuthConfigMap.remove("private_key_password");
+                    tlsConfigMap.put("client_auth", clientAuthConfigMap);
                 }
+                result.put("tls", tlsConfigMap);
+                DocWriter.yaml().write(configFile, result);
             } catch (IOException e) {
                 throw new SgctlException("Error while writing " + configFile + ": " + e, e);
             }
