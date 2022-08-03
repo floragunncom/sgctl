@@ -433,7 +433,7 @@ public class MigrateConfig implements Callable<Integer> {
             result.sgAuthc.authDomains = newAuthDomains;
 
             if (license != null) {
-                result.sgLicense = DocNode.of("license", license);
+                result.sgLicense = DocNode.of("key", license);
             }
 
             if (authTokenService != null && authTokenService.size() != 0) {
