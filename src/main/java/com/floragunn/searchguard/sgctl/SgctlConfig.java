@@ -22,10 +22,8 @@ import java.io.IOException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.config.net.TLSConfig;
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.codova.validation.ConfigValidationException;
@@ -33,7 +31,6 @@ import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidatingFunction;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.VariableResolvers;
-import com.floragunn.codova.validation.errors.JsonValidationError;
 import com.google.common.base.Strings;
 
 public class SgctlConfig {
@@ -63,24 +60,6 @@ public class SgctlConfig {
 
             File configFile = new File(configDir, "cluster_" + clusterId + ".yml");
             try {
-                /*
-                if (savePrivateKeyPassword) {
-                    DocWriter.yaml().write(configFile, toBasicObject());
-                } else {
-                    Map<String, Object> result = new LinkedHashMap<>();
-                    result.put("server", server);
-                    result.put("port", port);
-                    if (tlsConfig.getClientCertAuthConfig() != null && tlsConfig.getClientCertAuthConfig().toBasicObject().containsKey("private_key_password")) {
-                        Map<String, Object> tlsConfigMap = tlsConfig.toBasicObject();
-                        Map<String, Object> clientAuthConfig = tlsConfig.getClientCertAuthConfig().toBasicObject();
-                        clientAuthConfig.remove("private_key_password");
-                        tlsConfigMap.put("client_auth", clientAuthConfig);
-                        result.put("tls", tlsConfigMap);
-                    } else {
-                        result.put("tls", tlsConfig.toBasicObject());
-                    }
-                    DocWriter.yaml().write(configFile, result);
-                }*/
                 Map<String, Object> result = new LinkedHashMap<>();
                 result.put("server", server);
                 result.put("port", port);
