@@ -24,7 +24,7 @@ sg_config:
           challenge: true
         authentication_backend:
           # LDAP authentication backend (authenticate users against a LDAP or Active Directory)
-          type: ldap
+          type: ldap2
           config:
             enable_ssl: true
             verify_hostnames: true
@@ -38,12 +38,15 @@ sg_config:
             usersearch: '(uid={0})'
             # Use this attribute from the user as username (if not set then DN is used)
             username_attribute: uid
+            map_ldap_attrs_to_user_attrs:
+              givenName: givenName
+              sn: sn
     authz:
       roles_from_myldap:
         http_enabled: true
         authorization_backend:
           # LDAP authorization backend (gather roles from a LDAP or Active Directory, you have to configure the above LDAP authentication backend settings too)
-          type: ldap
+          type: ldap2
           config:
             # enable ldaps
             enable_ssl: true

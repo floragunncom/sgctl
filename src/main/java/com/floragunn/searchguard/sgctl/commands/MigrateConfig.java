@@ -879,7 +879,7 @@ public class MigrateConfig implements Callable<Integer> {
                 Object claimsToUserAttrs = vOidcAuthDomain.get("http_authenticator.config.map_claims_to_user_attrs").asAnything();
 
                 if (claimsToUserAttrs != null) {
-                    newAuthDomain.put("user_mapping.attributes.from", claimsToUserAttrs);
+                    newAuthDomain.put("user_mapping.attrs.from", claimsToUserAttrs);
                 }
 
                 Object proxy = vOidcAuthDomain.get("http_authenticator.config.proxy").asAnything();
@@ -1292,6 +1292,8 @@ public class MigrateConfig implements Callable<Integer> {
                 newBackendType = null;
             } else if (oldBackendType.equals("intern") || oldBackendType.equals("internal")) {
                 newBackendType = "internal_users_db";
+            } else if (oldBackendType.equals("ldap2")) {
+                newBackendType = oldBackendType = "ldap";
             } else {
                 newBackendType = oldBackendType;
             }
@@ -1649,7 +1651,7 @@ public class MigrateConfig implements Callable<Integer> {
             if (oldBackendConfig.hasNonNull("map_ldap_attrs_to_user_attrs")) {
                 LinkedHashMap<String, String> attrsFrom = new LinkedHashMap<>();
 
-                for (Map.Entry<String, ?> entry : oldFrontendConfig.getAsNode("map_ldap_attrs_to_user_attrs").entrySet()) {
+                for (Map.Entry<String, ?> entry : oldBackendConfig.getAsNode("map_ldap_attrs_to_user_attrs").entrySet()) {
                     attrsFrom.put(entry.getKey(), addPrefixToJsonPath("ldap_user_entry", entry.getValue().toString()));
                 }
 
@@ -1840,7 +1842,7 @@ public class MigrateConfig implements Callable<Integer> {
                 }
 
                 if (userMappingAttributes.size() != 0) {
-                    userMapping.put("attributes", userMappingAttributes);
+                    userMapping.put("attrs", userMappingAttributes);
                 }
 
                 result.put("user_mapping", userMapping);
@@ -1883,6 +1885,7 @@ public class MigrateConfig implements Callable<Integer> {
             case "intern":
             case "internal":
                 return Collections.singletonList(new UserInformationBackend("internal_users_db"));
+            case "ldap2":
             case "ldap": {
                 UserInformationBackend result = new UserInformationBackend("ldap");
                 LinkedHashMap<String, Object> newConfig = new LinkedHashMap<>();
