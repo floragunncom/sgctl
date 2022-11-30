@@ -62,16 +62,16 @@
 				<updatePolicy>always</updatePolicy>
 			</snapshots>
 		</repository>
-		<repository>
-			<id>alpha</id>
-			<url>https://maven.search-guard.com/search-guard-suite-alpha</url>
-			<releases>
-				<enabled>true</enabled>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-		</repository>		
+        <repository>
+            <id>util-release</id>
+            <url>https://maven.search-guard.com:443/util</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>	
 		<repository>
 			<id>elasticsearch-releases</id>
 			<url>https://artifacts.elastic.co/maven</url>
@@ -131,7 +131,7 @@
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>codova</artifactId>
-			<version>1.0.0</version>
+			<version>[1.0.0,)</version>
 		</dependency>
 
 		<dependency>

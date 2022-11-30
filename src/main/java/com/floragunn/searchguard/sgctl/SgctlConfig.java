@@ -24,11 +24,13 @@ import java.util.Map;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.config.net.TLSConfig;
+import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidatingDocNode;
+import com.floragunn.codova.validation.ValidatingFunction;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.VariableResolvers;
 import com.floragunn.codova.validation.errors.JsonValidationError;
@@ -101,7 +103,7 @@ public class SgctlConfig {
 
             result.server = vNode.get("server").required().asString();
             result.port = vNode.get("port").withDefault(9300).asInt();
-            result.tlsConfig = vNode.get("tls").required().by(TLSConfig::parse);
+            result.tlsConfig = vNode.get("tls").required().by((ValidatingFunction<DocNode, TLSConfig>) TLSConfig::parse);
             result.clusterId = clusterId;
 
             validationErrors.throwExceptionForPresentErrors();
