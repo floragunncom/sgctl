@@ -305,6 +305,17 @@ public class SearchGuardRestClient implements AutoCloseable {
         }
     }
 
+    public BasicResponse listAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
+        return get("/_searchguard/authtoken/_search")
+                .parseResponseBy(BasicResponse::new);
+
+    }
+
+    public BasicResponse createAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
+        return post("/_searchguard/authtoken/_search")
+                .parseResponseBy(BasicResponse::new);
+
+    }
     public class Response {
         private final HttpResponse httpResponse;
         private final String bodyAsString;
@@ -392,7 +403,7 @@ public class SearchGuardRestClient implements AutoCloseable {
 
         public <T> T parseResponseBy(ResponseParser<T> parser)
                 throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException {
-
+            System.out.println("YYYY" + this);
             checkStatus();
 
             try {
