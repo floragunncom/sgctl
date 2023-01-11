@@ -31,6 +31,9 @@ import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 
+import com.floragunn.searchguard.authtoken.AuthTokenModule;
+import com.floragunn.searchguard.authtoken.AuthTokenService;
+import com.floragunn.searchguard.test.TestSgConfig;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
@@ -82,7 +85,8 @@ public class SgctlTest {
 
     @BeforeAll
     public static void connect() throws Exception {
-        cluster = new LocalCluster.Builder().singleNode().sslEnabled(TEST_CERTIFICATES).start();
+        TestSgConfig.AuthTokenService authTokenService = new TestSgConfig.AuthTokenService();
+        cluster = new LocalCluster.Builder().singleNode().enterpriseModulesEnabled().enableModule(AuthTokenModule.class).sslEnabled(TEST_CERTIFICATES).start();
 
         InetSocketAddress httpAddress = cluster.getHttpAddress();
         TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
@@ -377,6 +381,14 @@ public class SgctlTest {
 
         result = SgctlTool.exec("update-user", userName, "-r", "new-sg-role1,new-sg-role2", "--sgctl-config-dir", configDir, "--debug");
         Assertions.assertEquals(0, result);
+    }
+
+    @Test
+    public void testAuthTokens_testListTokens() {
+        int result = SgctlTool.exec("list-auth-tokens","--sgctl-config-dir", configDir, "--debug");
+
+        Assertions.assertEquals(0, result);
+
     }
 
     @Test
