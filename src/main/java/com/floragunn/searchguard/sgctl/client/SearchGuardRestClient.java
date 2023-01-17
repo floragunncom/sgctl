@@ -84,6 +84,18 @@ public class SearchGuardRestClient implements AutoCloseable {
         return get("/_searchguard/authinfo").parseResponseBy(AuthInfoResponse::new);
     }
 
+    public BasicResponse listAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
+        return get("/_searchguard/authtoken/_search")
+                .parseResponseBy(BasicResponse::new);
+
+    }
+
+    public BasicResponse revokeAuthToken(String id)  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
+        return delete("/_searchguard/authtoken/"+  id)
+                .parseResponseBy(BasicResponse::new);
+
+    }
+
     public BasicResponse putConfigBulk(Map<String, Map<String, ?>> configTypeToConfigMap)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
         return putJson("/_searchguard/config", configTypeToConfigMap).parseResponseBy(BasicResponse::new);
@@ -305,17 +317,6 @@ public class SearchGuardRestClient implements AutoCloseable {
         }
     }
 
-    public BasicResponse listAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
-        return get("/_searchguard/authtoken/_search")
-                .parseResponseBy(BasicResponse::new);
-
-    }
-
-    public BasicResponse createAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
-        return post("/_searchguard/authtoken/_search")
-                .parseResponseBy(BasicResponse::new);
-
-    }
     public class Response {
         private final HttpResponse httpResponse;
         private final String bodyAsString;

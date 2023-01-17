@@ -36,7 +36,7 @@ import picocli.CommandLine.Command;
 
 @Command(name = "sgctl", subcommands = { Connect.class, GetConfig.class, UpdateConfig.class, MigrateConfig.class, ComponentState.class,
         ShowLicenses.class, ShowVersion.class, AddUserLocal.class, AddUser.class, UpdateUser.class, DeleteUser.class, AddConfigVar.class,
-        UpdateConfigVar.class, DeleteConfigVar.class, SetCommand.class, UpdateSgLicense.class, RestCommand.class, SpecialCommand.class, ListAuthTokensCommand.class }, description = "Remote control tool for Search Guard")
+        UpdateConfigVar.class, DeleteConfigVar.class, SetCommand.class, UpdateSgLicense.class, RestCommand.class, SpecialCommand.class, ListAuthTokensCommand.class, RevokeAuthTokenCommand.class }, description = "Remote control tool for Search Guard")
 public class SgctlTool {
 
     static {
