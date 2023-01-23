@@ -163,10 +163,10 @@
 			<artifactId>jackson-dataformat-yaml</artifactId>
 			<version>2.12.5</version>
 			<exclusions>
-				<exclusion>
-					<artifactId>jackson-databind</artifactId>
-					<groupId>com.fasterxml.jackson.core</groupId>
-				</exclusion>
+<!--				<exclusion>-->
+<!--					<artifactId>jackson-databind</artifactId>-->
+<!--					<groupId>com.fasterxml.jackson.core</groupId>-->
+<!--				</exclusion>-->
 			</exclusions>
 		</dependency>
 
@@ -249,20 +249,22 @@
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>fluent-collections</artifactId>
-			<version>1.0.0</version>
+			<version>1.0.1</version>
+<!--			<scope>test</scope>-->
+
 		</dependency>
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>search-guard-flx-security</artifactId>
-			<scope>test</scope>
+<!--			<scope>test</scope>-->
 			<version>${sg.test-version}</version>
 		</dependency>
 		
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>search-guard-flx-ssl</artifactId>
-			<scope>test</scope>
+<!--			<scope>test</scope>-->
 			<version>${sg.test-version}</version>
 		</dependency>		
 
@@ -322,6 +324,22 @@
 			<artifactId>log4j-core</artifactId>
 			<version>2.14.1</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.floragunn</groupId>
+			<artifactId>dlic-search-guard-flx-security</artifactId>
+			<version>master-SNAPSHOT-es-7.17.7</version>
+			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>de.vandermeer</groupId>
+			<artifactId>asciitable</artifactId>
+			<version>0.3.2</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.10.1</version>
 		</dependency>
 	</dependencies>
 

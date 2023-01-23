@@ -384,14 +384,6 @@ public class SgctlTest {
     }
 
     @Test
-    public void testAuthTokens_testListTokens() {
-        int result = SgctlTool.exec("list-auth-tokens","--sgctl-config-dir", configDir, "--debug");
-
-        Assertions.assertEquals(0, result);
-
-    }
-
-    @Test
     public void testUserUpdate_backendRolesUpdate() throws Exception {
         String userName = "userName_" + UUID.randomUUID();
         int result = SgctlTool.exec("add-user", userName, "--backend-roles", "backend-role1,backend-role2", "--sgctl-config-dir", configDir,

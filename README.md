@@ -112,6 +112,24 @@ In order to delete an internal user, you can use the following command:
 ./sgctl.sh delete-user userName
 ```
 
+### Auth Tokens
+
+Though the same can be achieved using the R est command, sgctl has specific commands for listing and revoking Auth Tokens
+
+#### List
+You can revoke a list all  Auth Tokens using the following command:
+
+```shell
+./sgctl.sh list-auth-tokens
+```
+
+#### Revoke
+You can revoke a specific Auth Token using the following command:
+
+```shell
+./sgctl.sh revoke-auth-token authTokenId
+```
+
 ### REST Client
 
 Sgctl comes with a REST client to perform REST calls on the cluster. Supported Methods are:

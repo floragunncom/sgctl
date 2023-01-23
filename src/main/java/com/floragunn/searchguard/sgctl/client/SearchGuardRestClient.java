@@ -30,7 +30,7 @@ import java.util.logging.Logger;
 
 import javax.net.ssl.SSLHandshakeException;
 
-import com.floragunn.searchguard.sgctl.client.api.GetSgLicenseResponse;
+import com.floragunn.searchguard.sgctl.client.api.*;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHost;
@@ -59,9 +59,6 @@ import com.floragunn.codova.documents.patch.DocPatch;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidatingFunction;
 import com.floragunn.codova.validation.ValidationErrors;
-import com.floragunn.searchguard.sgctl.client.api.AuthInfoResponse;
-import com.floragunn.searchguard.sgctl.client.api.GetBulkConfigResponse;
-import com.floragunn.searchguard.sgctl.client.api.GetUserResponse;
 import com.google.common.base.Charsets;
 import com.google.common.io.CharStreams;
 
@@ -84,15 +81,15 @@ public class SearchGuardRestClient implements AutoCloseable {
         return get("/_searchguard/authinfo").parseResponseBy(AuthInfoResponse::new);
     }
 
-    public BasicResponse listAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
+    public AuthTokenResponse listAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
         return get("/_searchguard/authtoken/_search")
-                .parseResponseBy(BasicResponse::new);
+                .parseResponseBy(AuthTokenResponse::new);
 
     }
 
-    public BasicResponse revokeAuthToken(String id)  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
+    public RevokeAuthTokenResponse revokeAuthToken(String id)  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
         return delete("/_searchguard/authtoken/"+  id)
-                .parseResponseBy(BasicResponse::new);
+                .parseResponseBy(RevokeAuthTokenResponse::new);
 
     }
 
@@ -404,7 +401,6 @@ public class SearchGuardRestClient implements AutoCloseable {
 
         public <T> T parseResponseBy(ResponseParser<T> parser)
                 throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException {
-            System.out.println("YYYY" + this);
             checkStatus();
 
             try {

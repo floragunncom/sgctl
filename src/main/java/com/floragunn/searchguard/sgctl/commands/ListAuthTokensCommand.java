@@ -1,6 +1,7 @@
 package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.searchguard.sgctl.client.*;
+import com.floragunn.searchguard.sgctl.client.api.AuthTokenResponse;
 import picocli.CommandLine;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -16,8 +17,8 @@ public class ListAuthTokensCommand  extends ConnectingCommand  implements Callab
     @Override
     public Integer call()  {
         try (SearchGuardRestClient client = getClient().debug(debug)) {
-            BasicResponse response = client.listAuthTokens();
-            System.out.println("List AuthToken Response: " + response);
+            AuthTokenResponse response = client.listAuthTokens();
+            System.out.println(response);
             return CommandLine.ExitCode.OK;
         }
         catch (Exception e){
