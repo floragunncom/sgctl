@@ -2,6 +2,8 @@ package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.searchguard.sgctl.client.BasicResponse;
 import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
+import com.floragunn.searchguard.sgctl.client.api.AuthTokenResponse;
+import com.floragunn.searchguard.sgctl.client.api.RevokeAuthTokenResponse;
 import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Command;
@@ -18,8 +20,8 @@ public class RevokeAuthTokenCommand extends ConnectingCommand  implements Callab
     public Integer call() throws Exception {
 
         try (SearchGuardRestClient client = getClient().debug(debug)) {
-            BasicResponse response = client.revokeAuthToken(authTokenId);
-            System.out.println("Remove AuthToken Response: " + response);
+            RevokeAuthTokenResponse response = client.revokeAuthToken(authTokenId);
+            System.out.println(response);
             return CommandLine.ExitCode.OK;
 
         }

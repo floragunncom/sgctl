@@ -43,7 +43,6 @@ import picocli.CommandLine.ExitCode;
 
 
 public class AuthTokenTests {
-    static final TestSgConfig.DlsFls DLSFLS = new TestSgConfig.DlsFls().useImpl("flx").metrics("detailed");
     private final PrintStream standardOut = System.out;
     private final PrintStream standardErr = System.out;
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
@@ -79,7 +78,7 @@ public class AuthTokenTests {
         final String INDEX = "logs";
 
         TestSgConfig.AuthTokenService authTokenService = new TestSgConfig.AuthTokenService();
-        cluster = new LocalCluster.Builder().singleNode().enterpriseModulesEnabled().enableModule(AuthTokenModule.class).authTokenService(AUTH_TOKEN_SERVICE).users(ADMIN).authc(AUTHC).dlsFls(DLSFLS).sslEnabled(TEST_CERTIFICATES).start();
+        cluster = new LocalCluster.Builder().singleNode().enterpriseModulesEnabled().enableModule(AuthTokenModule.class).authTokenService(AUTH_TOKEN_SERVICE).users(ADMIN).authc(AUTHC).sslEnabled(TEST_CERTIFICATES).start();
         InetSocketAddress httpAddress = cluster.getHttpAddress();
         TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
         String adminCert = adminCertificate.getCertificateFile().getPath();
@@ -99,10 +98,9 @@ public class AuthTokenTests {
         int result = SgctlTool.exec("list-auth-tokens", "--sgctl-config-dir", configDir, "--debug");
 
         Assertions.assertEquals(ExitCode.OK, result);
-        Assertions.assertTrue(outputStreamCaptor.toString().contains("\"timed_out\" : false,"));
+        Assertions.assertTrue(outputStreamCaptor.toString().contains("No AuthTokens found") || outputStreamCaptor.toString().contains("entries returned and listed below") );
 
     }
-
     @Test
     public void testAuthTokens_testRevokeToken() throws Exception {
             String tokenId = "NonExistinTokenId";
@@ -110,7 +108,10 @@ public class AuthTokenTests {
             int result = SgctlTool.exec("revoke-auth-token","--sgctl-config-dir", configDir, "--debug", tokenId);
 
             Assertions.assertEquals(ExitCode.OK, result);
-            Assertions.assertTrue(outputStreamCaptor.toString().contains("Auth token has been revoked") || outputStreamCaptor.toString().contains("No such auth token") );
+            Assertions.assertTrue(outputStreamCaptor.toString().contains("Auth token has been revoked") ||
+                    outputStreamCaptor.toString().contains("No such auth token") ||
+                    outputStreamCaptor.toString().contains("Auth token was already revoked")
+            );
     }
 
     @Test
