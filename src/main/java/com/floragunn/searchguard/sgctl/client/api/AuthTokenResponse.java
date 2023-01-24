@@ -72,7 +72,7 @@ public class AuthTokenResponse {
 
         ArrayList<JsonElement> entries  = getEntries();
         if(entries.size() == 0) {
-            return "No authTokens found";
+            return "No AuthTokens found";
         }
       return entries.size() + " entries returned and listed below \n" + buildAsciiTableOutput();
     }
