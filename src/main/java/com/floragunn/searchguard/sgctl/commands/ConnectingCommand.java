@@ -114,10 +114,11 @@ public abstract class ConnectingCommand extends BaseCommand {
                 Map<String, Object> tlsConfig = (Map<String, Object>) config.get("tls");
                 if (tlsConfig.containsKey("client_auth")) {
                     Map<String, Object> clientAuthConfig = (Map<String, Object>) tlsConfig.get("client_auth");
-                    if (!clientAuthConfig.containsKey("private_key_password") && clientKeyPass == null) {
-                        throw new SgctlException("Private key password is not saved in configuration file and must be provided with --key-pass");
-                    } else if (!clientAuthConfig.containsKey("private_key_password")) {
+                    if(clientKeyPass != null) {
                         clientAuthConfig.put("private_key_password", clientKeyPass);
+                    }
+                    else if (!clientAuthConfig.containsKey("private_key_password")) {
+                        throw new SgctlException("Private key password is not saved in configuration file and must be provided with --key-pass");
                     }
                 }
             }
