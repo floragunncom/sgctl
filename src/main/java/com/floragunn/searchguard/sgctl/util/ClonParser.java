@@ -24,6 +24,7 @@ import java.text.StringCharacterIterator;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Stack;
@@ -31,23 +32,54 @@ import java.util.Stack;
 public class ClonParser {
     private static final List<Character> STRING_INDICATORS = Arrays.asList('"', '\'');
     private static final char ASSIGN_OPERATOR = '=';
-    private static final Character PARENTHESIS_OPEN = '[';
-    private static final Character PARENTHESIS_CLOSE = ']';
-    private static final Character SEPARATOR = ',';
+    private static final char PARENTHESIS_OPEN = '[';
+    private static final char PARENTHESIS_CLOSE = ']';
+    private static final char SEPARATOR = ',';
 
     protected enum PartType {KEY, VALUE, EXPRESSION}
 
-    public static Map<String, Object> parse(List<String> expressions) throws ClonException {
+    public static Map<String, Object> parseExpressions(List<String> expressions) throws ClonException {
         Map<String, Object> result = new LinkedHashMap<>();
         for (String expression : expressions) {
             TokenIterator iterator = new TokenIterator(expression, 0, expression.length());
+            if (!isExpression(expression)) {
+                throw ClonException.Builder.getExpressionValueMixException(PartType.EXPRESSION).build(iterator);
+            }
             new ExpressionReader(iterator).read(result);
         }
         return result;
     }
 
-    public static Map<String, Object> parse(String ... expressions) throws ClonException {
-        return parse(Arrays.asList(expressions));
+    public static Object parseValues(List<String> inputs) throws ClonException {
+        if (inputs.size() < 2) {
+            TokenIterator iterator = new TokenIterator(inputs.get(0), 0, inputs.get(0).length());
+            return new ValueReader(iterator).read();
+        }
+        List<Object> result = new LinkedList<>();
+        for (String input : inputs) {
+            TokenIterator iterator = new TokenIterator(input, 0, input.length());
+            if (isExpression(input)) {
+                throw ClonException.Builder.getExpressionValueMixException(PartType.VALUE).build(iterator);
+            }
+            result.add(new ValueReader(iterator).read());
+        }
+        return result;
+    }
+
+    public static Object parse(List<String> inputs) throws ClonException {
+        if (isExpression(inputs.get(0))) {
+            return parseExpressions(inputs);
+        }
+        return parseValues(inputs);
+    }
+
+    public static Object parse(String ... inputs) throws ClonException {
+        return parse(Arrays.asList(inputs));
+    }
+
+    public static boolean isExpression(String input) throws ClonException {
+        TokenIterator iterator = new TokenIterator(input, 0, input.length());
+        return TokenIterator.peekContainsOnDepth(iterator, 0, ASSIGN_OPERATOR);
     }
 
     private static boolean isOperationSymbol(char c) {
@@ -586,6 +618,10 @@ public class ClonParser {
 
             public static Builder getOverrideExceptionBuilder(String key) {
                 return new Builder().setMessage("Can not override field '" + key + "'");
+            }
+
+            public static Builder getExpressionValueMixException(PartType context) {
+                return new Builder().setMessage("Expected input to be " + context.name() + "s only");
             }
         }
     }

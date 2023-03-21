@@ -197,6 +197,17 @@ public class RestCommandTest {
         result = SgctlTool.exec("rest", "put", "/some/endpoint", "--json", json,
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(0, result);
+
+        json = "\"str\"";
+        wm.stubFor(put(urlEqualTo("/some/endpoint1"))
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withRequestBody(equalToJson(json))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(okMessage)));
+        result = SgctlTool.exec("rest", "put", "/some/endpoint1", "--json", json,
+                "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
+        Assertions.assertEquals(0, result);
     }
 
     @Test
@@ -215,6 +226,18 @@ public class RestCommandTest {
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(0, result);
         wm.verify(exactly(1), putRequestedFor(urlEqualTo("/some/endpoint")));
+
+        jsonResult = "\"str\"";
+        wm.stubFor(put(urlEqualTo("/some/endpoint1"))
+                .withHeader("Content-Type", equalTo("application/json"))
+                .withRequestBody(equalToJson(jsonResult))
+                .willReturn(aResponse().withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(okMessage)));
+        result = SgctlTool.exec("rest", "put", "/some/endpoint1", "--clon", "str",
+                "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
+        Assertions.assertEquals(0, result);
+        wm.verify(exactly(1), putRequestedFor(urlEqualTo("/some/endpoint1")));
     }
 
     @Test

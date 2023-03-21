@@ -116,31 +116,64 @@ In order to delete an internal user, you can use the following command:
 
 Sgctl comes with a REST client to perform REST calls on the cluster. Supported Methods are:
 
-| Command                | Required additional parameters                     | Description                              |
+| Command                | Additional parameters                              | Description                              |
 |------------------------|----------------------------------------------------|------------------------------------------|
 | ./sgctl.sh rest get    | none                                               | Performs a get request on the cluster    |
-| ./sgctl.sh rest put    | input via `--json`, `--input` or `--clon` needed   | Performs a put request on the cluster    |
+| ./sgctl.sh rest put    | required input via `--json`, `--input` or `--clon` | Performs a put request on the cluster    |
 | ./sgctl.sh rest delete | none                                               | Performs a delete request on the cluster |
 | ./sgctl.sh rest post   | optional input via `--json`, `--input` or `--clon` | Performs a post request on the cluster   |
-| ./sgctl.sh rest patch  | input via `--json`, `--input` or `--clon` needed   | Performs a patch request on the cluster  |
+| ./sgctl.sh rest patch  | required input via `--json`, `--input` or `--clon` | Performs a patch request on the cluster  |
 
-#### CLON (Command Line Object Notation)
+#### File input with `--input`
 
-CLON is an object notation for creating e.g. JSON strings based on easy writable expressions. A CLON expression always consists of a `key` and a `value`.
+The `--input` parameter takes a filepath, reads the file and uses the file content as request body. Supported filetypes ar e.g. `.yml` or `.json`.
+
+##### Examples
+
+```shell
+./sgctl.sh rest put /endpoint --input ./some-content.yml
+./sgctl.sh rest put /endpoint --input /some/path/content.json
+```
+
+#### JSON input with `--json`
+
+The `--json` parameter takes a json string and uses it as the rest request body.
+
+##### Examples
+
+```shell
+./sgctl.sh rest put /endpoint --json '{"key":"value"}'
+./sgctl.sh rest put /endpoint --json '"string_value"'
+```
+
+#### CLON (Command Line Object Notation) input with `--clon`
+
+CLON is an object notation for creating e.g. JSON strings based on easy writable expressions. A CLON expression always consists either of a `key` and a `value` or only of a `value`.
  
 **Key value example:**
 
 ```shell
 ./sgctl.sh rest put /endpoint --clon key=value
 ```
-Result:
+Would be equivalent to following json:
 ```json
 {
   "key": "value"
 }
 ```
 
-##### Keys
+**Value example:**
+
+```shell
+./sgctl.sh rest put /endpoint --clon string_value
+```
+
+Would be equivalent to following json:
+```json
+"string_value"
+```
+
+##### Special keys
 
 CLON also supports array and object keys to create complex object structures in simple expressions.
 
@@ -148,7 +181,7 @@ CLON also supports array and object keys to create complex object structures in 
 ```shell
 ./sgctl rest put /endpoint --clon names[]=kirk names[]=john
 ```
-Result:
+Would be equivalent to following json:
 ```json
 {
   "names": [
@@ -161,7 +194,7 @@ Result:
 ```shell
 ./sgctl rest put /endpoint --clon person[age]=20 person[name]=max
 ```
-Result:
+Would be equivalent to following json:
 ```json
 {
   "person": {
@@ -173,13 +206,13 @@ Result:
 
 ##### Values
 
-Supported value types are `string`, `boolean`, `number` and `null`. In order to set more complex values at once there are also array and object values available.
+Supported value types are `string`, `boolean`, `number` and `null`. In order to set more complex values at once there are also `array` and `object` values available.
 
 **Array value example:**
 ```shell
 ./sgctl rest put /endpoint --clon important_people=[philipp,daniel,ole]
 ```
-Result:
+Would be equivalent to following json:
 ```json
 {
   "important_people": [
@@ -192,7 +225,7 @@ Result:
 ```shell
 ./sgctl rest put /endpoint --clon car=[speed=167.5,range=500,electric=true,name=speedo]
 ```
-Result:
+Would be equivalent to following json:
 ```json
 {
   "car": {
