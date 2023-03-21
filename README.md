@@ -204,6 +204,14 @@ Result:
 }
 ```
 
+### Clearing Authentication Caches
+
+In order to clear the authentication caches, you can simply use the sgctl REST Client.
+
+```shell
+./sgctl.sh rest delete /_searchguard/authc/cache
+```
+
 ## License
 
 `sgctl` is licensed under the Apache 2 license. See the LICENSE file for details.
