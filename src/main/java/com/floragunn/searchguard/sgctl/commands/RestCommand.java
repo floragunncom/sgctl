@@ -23,7 +23,6 @@ import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 
 import org.apache.http.entity.ContentType;
@@ -129,9 +128,9 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
         }
 
         public BasicResponse handle(SearchGuardRestClient client, String endpoint, String jsonString, File inputFilePath,
-                List<String> scljExpressions) throws SgctlException, FailedConnectionException, InvalidResponseException, UnauthorizedException,
+                List<String> clonExpressions) throws SgctlException, FailedConnectionException, InvalidResponseException, UnauthorizedException,
                 ServiceUnavailableException, ApiException {
-            Input input = Input.create(jsonString, inputFilePath, scljExpressions);
+            Input input = Input.create(jsonString, inputFilePath, clonExpressions);
             SearchGuardRestClient.Response response = handler.handle(client, endpoint, validator.validate(input).evaluate());
             return response.parseResponseBy(BasicResponse::new);
         }
@@ -146,8 +145,8 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
         }
 
         private static class Input {
-            public static Input create(String jsonString, File inputFilePath, List<String> scljExpressions) {
-                return new Input(jsonString, inputFilePath, scljExpressions);
+            public static Input create(String jsonString, File inputFilePath, List<String> clonExpressions) {
+                return new Input(jsonString, inputFilePath, clonExpressions);
             }
 
             private String jsonString;
@@ -195,8 +194,8 @@ public class RestCommand extends ConnectingCommand implements Callable<Integer> 
                 }
                 try {
                     final Format format = jsonString != null || clonExpressions != null ? Format.JSON : Format.getByFileName(inputFilePath.getName());
-                    final Map<String, Object> content = clonExpressions != null ? ClonParser.parse(clonExpressions)
-                            : jsonString != null ? DocReader.format(format).readObject(jsonString)
+                    final Object content = clonExpressions != null ? ClonParser.parse(clonExpressions)
+                            : jsonString != null ? DocReader.format(format).read(jsonString)
                                     : DocReader.format(format).readObject(inputFilePath);
                     return new EvaluatedInput(DocWriter.format(format).writeAsString(content), ContentType.create(format.getMediaType()));
                 } catch (UnexpectedDocumentStructureException | DocumentParseException | IOException | Format.UnknownDocTypeException e) {

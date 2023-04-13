@@ -410,6 +410,12 @@ public class MigrateConfig implements Callable<Integer> {
                 if (entry.getValue().hasNonNull("http_enabled") && Boolean.FALSE.equals(entry.getValue().get("http_enabled"))) {
                     continue;
                 }
+                if (entry.getValue().hasNonNull("authentication_backend")) {
+                    DocNode httpAuthenticator = entry.getValue().getAsNode("authentication_backend");
+                    if (httpAuthenticator.hasNonNull("type") && httpAuthenticator.getAsString("type").equals("sg_auth_token")) {
+                        continue;
+                    }
+                }
 
                 oldAuthDomains.add(new OldAuthDomain(entry.getKey(), entry.getValue()));
             }
