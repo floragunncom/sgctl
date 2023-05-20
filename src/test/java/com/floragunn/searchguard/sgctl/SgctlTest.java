@@ -233,6 +233,32 @@ public class SgctlTest {
     }
 
     @Test
+    public void testUploadFolderContainingNonConfigFilesWarning() throws Exception {
+        Path sgConfDir = Files.createTempDirectory("sgctl-test-sgconfig");
+        int res = SgctlTool.exec("get-config", "-o", sgConfDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, res);
+
+        File someFile = new File(sgConfDir.toFile(), "random-file.txt");
+        Assertions.assertTrue(someFile.createNewFile());
+
+        errStreamCaptor.reset();
+        res = SgctlTool.exec("update-config", sgConfDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, res);
+        Assertions.assertTrue(errStreamCaptor.toString().contains("File " + someFile.getName() + " does not seem to be a Search Guard configuration file. Ignoring it"), errStreamCaptor.toString());
+
+        File someFile2 = new File(sgConfDir.toFile(), "random-file2.txt");
+        Assertions.assertTrue(someFile2.createNewFile());
+
+        errStreamCaptor.reset();
+        res = SgctlTool.exec("update-config", sgConfDir.toString(), "--debug", "--force", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, res);
+        Assertions.assertTrue(
+                errStreamCaptor.toString().contains("Files random-file.txt, random-file2.txt do not seem to be Search Guard configuration files. Ignoring these") ||
+                        errStreamCaptor.toString().contains("Files random-file2.txt, random-file.txt do not seem to be Search Guard configuration files. Ignoring these"),
+                errStreamCaptor.toString());
+    }
+
+    @Test
     public void testSgConfigValidation() throws Exception {
 
         Path sgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig");

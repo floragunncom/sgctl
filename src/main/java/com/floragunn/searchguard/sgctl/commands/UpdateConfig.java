@@ -22,11 +22,7 @@ import static java.util.stream.Collectors.toList;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -76,7 +72,20 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
 
             if (files.size() == 1 && files.get(0).isDirectory()) {
                 File dir = files.get(0);
-                files = Arrays.asList(dir.listFiles((File fileDir, String name) -> name.startsWith("sg_") && name.endsWith(".yml")));
+                files = new ArrayList<>();
+                List<String> unprocessableFileNames = new ArrayList<>();
+                for (File file : dir.listFiles()) {
+                    if (Arrays.stream(ConfigType.values()).anyMatch(configType -> configType.getFileName().equals(file.getName()))) {
+                        files.add(file);
+                    } else {
+                        unprocessableFileNames.add(file.getName());
+                    }
+                }
+                if (unprocessableFileNames.size() == 1) {
+                    System.err.println("File " + unprocessableFileNames.get(0) + " does not seem to be a Search Guard configuration file. Ignoring it");
+                } else if(unprocessableFileNames.size() > 1) {
+                    System.err.println("Files " + String.join(", ", unprocessableFileNames) + " do not seem to be Search Guard configuration files. Ignoring these");
+                }
 
                 if (files.size() == 0) {
                     throw new SgctlException("Directory " + dir + " does not contain any configuration files");
