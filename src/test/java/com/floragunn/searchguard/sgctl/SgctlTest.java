@@ -202,6 +202,35 @@ public class SgctlTest {
     }
 
     @Test
+    public void testBulkConfigVarsDownloadAndUpload() throws Exception {
+        Path sgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig");
+
+        int rc = SgctlTool.exec("get-config", "-o", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, rc);
+
+        File varsConfig = new File(sgConfigDir.toFile(), "sg_config_vars.yml");
+        Assertions.assertTrue(varsConfig.exists(), Arrays.asList(sgConfigDir.toFile().list()).toString());
+
+        YamlRewriter yamlRewriter = new YamlRewriter(varsConfig);
+        yamlRewriter.insertAtBeginning(
+                new YamlRewriter.Attribute("addition", ImmutableMap.of("value", "some_value", "scope", "scope")));
+        RewriteResult rewriteResult = yamlRewriter.rewrite();
+        com.google.common.io.Files.asCharSink(varsConfig, Charsets.UTF_8).write(rewriteResult.getYaml());
+
+        rc = SgctlTool.exec("update-config", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, rc);
+
+        Path newSgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig-updated");
+        Thread.sleep(100);
+
+        rc = SgctlTool.exec("get-config", "-o", newSgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, rc);
+
+        Map<String, Object> newVarsConfig = DocReader.yaml().readObject(new File(newSgConfigDir.toFile(), "sg_config_vars.yml"));
+        Assertions.assertTrue(newVarsConfig.containsKey("addition"), newVarsConfig.toString());
+    }
+
+    @Test
     public void testCompleteDownloadAndUploadConcurrencyControl() throws Exception {
 
         Path sgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig");
