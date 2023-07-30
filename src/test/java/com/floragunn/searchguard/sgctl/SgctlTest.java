@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.Objects;
 
 import org.apache.commons.io.output.TeeOutputStream;
 import org.junit.jupiter.api.AfterAll;
@@ -172,7 +173,10 @@ public class SgctlTest {
 
         File sgTenantsYml = new File(sgConfigDir.toFile(), "sg_tenants.yml");
 
-        Assertions.assertTrue(sgTenantsYml.exists(), Arrays.asList(sgConfigDir.toFile().list()).toString());
+        Assertions.assertTrue(sgTenantsYml.exists(), Arrays.asList(Objects.requireNonNull(sgConfigDir.toFile().list())).toString());
+        Assertions.assertTrue(
+                Arrays.stream(Objects.requireNonNull(sgConfigDir.toFile().listFiles())).anyMatch(file -> file.getName().equals("sg_action_groups.yml")),
+                Arrays.toString(sgConfigDir.toFile().list()));
 
         YamlRewriter yamlRewriter = new YamlRewriter(sgTenantsYml);
 

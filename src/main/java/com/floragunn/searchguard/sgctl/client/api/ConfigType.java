@@ -28,6 +28,8 @@ public enum ConfigType {
             return "sg_internal_users.yml";
         } else if (this == ROLESMAPPING) {
             return "sg_roles_mapping.yml";
+        } else if (this == ACTIONGROUPS) {
+            return "sg_action_groups.yml";
         } else {
             return "sg_" + name().toLowerCase() + ".yml";
         }
