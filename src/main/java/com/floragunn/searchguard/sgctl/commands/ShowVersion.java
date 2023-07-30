@@ -37,7 +37,7 @@ public class ShowVersion extends BaseCommand implements Callable<Integer> {
         Properties pomProperties = new Properties();
         pomProperties.load(inputStream);
 
-        System.out.println("scgtl " + pomProperties.getProperty("version"));
+        System.out.println("sgctl " + pomProperties.getProperty("version"));
 
         return 0;
     }
