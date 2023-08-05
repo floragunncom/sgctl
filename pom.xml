@@ -300,7 +300,7 @@
 			<groupId>io.github.hakky54</groupId>
 			<artifactId>sslcontext-kickstart-for-pem</artifactId>
 			<scope>test</scope>
-			<version>7.0.2</version>
+			<version>8.1.5</version>
 		</dependency>		
 
 		<dependency>
