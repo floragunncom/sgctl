@@ -31,6 +31,7 @@ import java.security.PublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -38,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import com.floragunn.codova.documents.DocNode;
@@ -467,8 +469,9 @@ public class MigrateConfig implements Callable<Integer> {
                 return createSgFrontendConfigOidc();
             case JWT:
                 return createSgFrontendConfigJwt();
-            case KERBEROS:
             case PROXY:
+                return createSgFrontendConfigProxy();
+            case KERBEROS:
             default:
                 oldKibanaConfigValidationErrors
                         .add(new ValidationError("searchguard.auth.type", "The Kibana authentication type " + kibanaAuthType + " is not supported"));
@@ -1021,6 +1024,86 @@ public class MigrateConfig implements Callable<Integer> {
 
                 return updateInstructions;
             }
+        }
+
+        public FrontendUpdateInstructions createSgFrontendConfigProxy() {
+            FrontendUpdateInstructions updateInstructions = new FrontendUpdateInstructions()
+                .mainInstructions("You have configured Search Guard to use PROXY authentication.");
+
+            Map<String, Object> newSgFrontendConfig = new LinkedHashMap<>();
+
+            String loginSubtitle = oldKibanaConfig.get("searchguard.basicauth.login.subtitle").asString();
+
+            Map<String, Object> authczEntry = new LinkedHashMap<>();
+            authczEntry.put("type", "proxy");
+
+            if (loginSubtitle != null) {
+                authczEntry.put("message", loginSubtitle);
+            }
+
+            newSgFrontendConfig.put("auth_domains", Collections.singletonList(authczEntry));
+
+            String loadbalancerUrl = oldKibanaConfig.get("searchguard.basicauth.loadbalancer_url").asString();
+
+            if (loadbalancerUrl != null) {
+                String publicBaseUrl = oldKibanaConfig.get("server.publicBaseUrl").asString();
+
+                if (publicBaseUrl == null) {
+                    this.kibanaConfigRewriter.insertAtBeginning(
+                        new Attribute(publicBaseUrlAvailable ? "server.publicBaseUrl" : "searchguard.frontend_base_url", loadbalancerUrl));
+                } else if (!publicBaseUrl.equals(loadbalancerUrl)) {
+                    oldKibanaConfigValidationErrors.add(new ValidationError("searchguard.basicauth.loadbalancer_url",
+                        "server.publicBaseUrl and searchguard.basicauth.loadbalancer_url have different values. This is an unexpected configuration."));
+                }
+            }
+
+            Boolean showBrandImage = oldKibanaConfig.get("searchguard.basicauth.login.showbrandimage").asBoolean();
+            String brandImage = oldKibanaConfig.get("searchguard.basicauth.login.brandimage").asString();
+            String loginTitle = oldKibanaConfig.get("searchguard.basicauth.login.title").asString();
+            String buttonStyle = oldKibanaConfig.get("searchguard.basicauth.login.buttonstyle").asString();
+
+            if (showBrandImage != null || brandImage != null || loginTitle != null || buttonStyle != null) {
+                Map<String, Object> loginPageConfig = new LinkedHashMap<>();
+
+                if (showBrandImage != null)
+                    loginPageConfig.put("show_brand_image", showBrandImage);
+                if (brandImage != null)
+                    loginPageConfig.put("brand_image", brandImage);
+                if (loginTitle != null)
+                    loginPageConfig.put("title", loginTitle);
+                if (buttonStyle != null)
+                    loginPageConfig.put("button_style", buttonStyle);
+
+                newSgFrontendConfig.put("login_page", loginPageConfig);
+            }
+
+            updateInstructions.sgFrontendConfig(ImmutableMap.of("default", newSgFrontendConfig));
+
+            this.kibanaConfigRewriter.remove("searchguard.basicauth.loadbalancer_url");
+            this.kibanaConfigRewriter.remove("searchguard.basicauth.login.showbrandimage");
+            this.kibanaConfigRewriter.remove("searchguard.basicauth.login.brandimage");
+            this.kibanaConfigRewriter.remove("searchguard.basicauth.login.title");
+            this.kibanaConfigRewriter.remove("searchguard.basicauth.login.subtitle");
+            this.kibanaConfigRewriter.remove("searchguard.basicauth.login.buttonstyle");
+
+            try {
+                RewriteResult rewriteResult = this.kibanaConfigRewriter.rewrite();
+                updateInstructions.kibanaConfigInstructions("Before starting Kibana with the updated plugin, you need to update the file config/"
+                    + dashboardConfigFileName + " in your Kibana installation. \n  The necessary changes are listed below. "
+                    + (outputDir != null
+                    ? "An automatically updated " + dashboardConfigFileName + " file has been put by this tool to " + outputDir + "."
+                    : "")
+                    + "\n\n" + "---------------------------------------------------------------------------------\n"
+                    + kibanaConfigRewriter.getManualInstructions()
+                    + "\n---------------------------------------------------------------------------------");
+                updateInstructions.kibanaConfig(rewriteResult.getYaml());
+            } catch (RewriteException e) {
+                updateInstructions.kibanaConfigInstructions(
+                    "Before starting Kibana with the updated plugin, you need to update the file config/" + dashboardConfigFileName
+                        + " in your Kibana installation.\n  Please perform the following updates:\n\n" + e.getManualInstructions());
+            }
+
+            return updateInstructions;
         }
 
         private String getFrontendBaseUrlFromKibanaYaml() {
