@@ -19,29 +19,6 @@ package com.floragunn.searchguard.sgctl.commands;
 
 import static java.util.stream.Collectors.toList;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.security.KeyFactory;
-import java.security.NoSuchAlgorithmException;
-import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
-import java.security.spec.X509EncodedKeySpec;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Base64;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
-
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
@@ -59,7 +36,26 @@ import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteException;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteResult;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
-
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.PublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -1065,14 +1061,18 @@ public class MigrateConfig implements Callable<Integer> {
             if (showBrandImage != null || brandImage != null || loginTitle != null || buttonStyle != null) {
                 Map<String, Object> loginPageConfig = new LinkedHashMap<>();
 
-                if (showBrandImage != null)
+                if (showBrandImage != null) {
                     loginPageConfig.put("show_brand_image", showBrandImage);
-                if (brandImage != null)
+                }
+                if (brandImage != null) {
                     loginPageConfig.put("brand_image", brandImage);
-                if (loginTitle != null)
+                }
+                if (loginTitle != null) {
                     loginPageConfig.put("title", loginTitle);
-                if (buttonStyle != null)
+                }
+                if (buttonStyle != null) {
                     loginPageConfig.put("button_style", buttonStyle);
+                }
 
                 newSgFrontendConfig.put("login_page", loginPageConfig);
             }
@@ -1088,15 +1088,17 @@ public class MigrateConfig implements Callable<Integer> {
 
             try {
                 RewriteResult rewriteResult = this.kibanaConfigRewriter.rewrite();
-                updateInstructions.kibanaConfigInstructions("Before starting Kibana with the updated plugin, you need to update the file config/"
-                    + dashboardConfigFileName + " in your Kibana installation. \n  The necessary changes are listed below. "
-                    + (outputDir != null
-                    ? "An automatically updated " + dashboardConfigFileName + " file has been put by this tool to " + outputDir + "."
-                    : "")
-                    + "\n\n" + "---------------------------------------------------------------------------------\n"
-                    + kibanaConfigRewriter.getManualInstructions()
-                    + "\n---------------------------------------------------------------------------------");
-                updateInstructions.kibanaConfig(rewriteResult.getYaml());
+                if (rewriteResult.isChanged()) {
+                    updateInstructions.kibanaConfigInstructions("Before starting Kibana with the updated plugin, you need to update the file config/"
+                        + dashboardConfigFileName + " in your Kibana installation. \n  The necessary changes are listed below. "
+                        + (outputDir != null
+                        ? "An automatically updated " + dashboardConfigFileName + " file has been put by this tool to " + outputDir + "."
+                        : "")
+                        + "\n\n" + "---------------------------------------------------------------------------------\n"
+                        + kibanaConfigRewriter.getManualInstructions()
+                        + "\n---------------------------------------------------------------------------------");
+                    updateInstructions.kibanaConfig(rewriteResult.getYaml());
+                }
             } catch (RewriteException e) {
                 updateInstructions.kibanaConfigInstructions(
                     "Before starting Kibana with the updated plugin, you need to update the file config/" + dashboardConfigFileName
