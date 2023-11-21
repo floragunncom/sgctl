@@ -33,6 +33,7 @@ import javax.net.ssl.SSLHandshakeException;
 import com.floragunn.searchguard.sgctl.client.api.GetSgLicenseResponse;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHeaders;
 import org.apache.http.HttpHost;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.ClientProtocolException;
@@ -189,6 +190,7 @@ public class SearchGuardRestClient implements AutoCloseable {
         try {
             HttpPost httpPost = new HttpPost(path);
             httpPost.setEntity(new StringEntity(body, contentType));
+            httpPost.setHeader(HttpHeaders.CONTENT_TYPE, contentType.getMimeType());
             return new Response(client.execute(httpHost, httpPost));
         } catch (ClientProtocolException e) {
             throw new FailedConnectionException(e);
