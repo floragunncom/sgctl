@@ -1,5 +1,5 @@
 ARG JAVA_VERSION
-FROM eclipse-temurin:${JAVA_VERSION}-focal
+FROM eclipse-temurin:${JAVA_VERSION}-jammy
 
 ARG TLS_TOOL_VERSION=1.9.2
 
