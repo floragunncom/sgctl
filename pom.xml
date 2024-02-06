@@ -21,7 +21,7 @@
 	<properties>
 		<revision>master-SNAPSHOT</revision>
 		<elasticsearch.version>7.17.13</elasticsearch.version>
-		<sg.test-version>b-master-SNAPSHOT</sg.test-version>
+		<sg.test-version>1.6.0-es-8.7.1</sg.test-version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.release>8</maven.compiler.release>
