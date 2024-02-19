@@ -2,8 +2,6 @@
 
 `sgctl` is a command line remote control tool for Search Guard. It is supposed to be a lightweight and easy-to-use replacement for the older `sgadmin`.
 
-Currently, `sgctl` is just a tech preview and not complete yet. You can only use it with the Search Guard tech preview version. It cannot be used with older Search Guard release versions.
-
 ## Getting Started
 
 In order to use `sgctl`, you need:
