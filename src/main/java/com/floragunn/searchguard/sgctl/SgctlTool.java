@@ -39,13 +39,15 @@ import com.floragunn.searchguard.sgctl.commands.user.UpdateUser;
 import com.floragunn.searchguard.sgctl.commands.vars.AddConfigVar;
 import com.floragunn.searchguard.sgctl.commands.vars.DeleteConfigVar;
 import com.floragunn.searchguard.sgctl.commands.vars.UpdateConfigVar;
+import com.floragunn.searchguard.sgctl.commands.GenerateRandomBase64;
 
 import picocli.CommandLine;
 import picocli.CommandLine.Command;
 
 @Command(name = "sgctl", subcommands = { Connect.class, GetConfig.class, UpdateConfig.class, MigrateConfig.class, ComponentState.class,
         ShowLicenses.class, ShowVersion.class, AddUserLocal.class, AddUser.class, UpdateUser.class, DeleteUser.class, AddConfigVar.class,
-        UpdateConfigVar.class, DeleteConfigVar.class, SetCommand.class, UpdateSgLicense.class, RestCommand.class, SpecialCommand.class }, description = "Remote control tool for Search Guard")
+        UpdateConfigVar.class, DeleteConfigVar.class, SetCommand.class, UpdateSgLicense.class, RestCommand.class, SpecialCommand.class,
+        GenerateRandomBase64.class }, description = "Remote control tool for Search Guard")
 public class SgctlTool {
 
     static {
