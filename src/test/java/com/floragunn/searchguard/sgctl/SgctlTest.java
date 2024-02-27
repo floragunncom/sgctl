@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
+import java.util.Objects;
 
 import com.floragunn.searchguard.authtoken.AuthTokenModule;
 import com.floragunn.searchguard.authtoken.AuthTokenService;
@@ -176,7 +177,10 @@ public class SgctlTest {
 
         File sgTenantsYml = new File(sgConfigDir.toFile(), "sg_tenants.yml");
 
-        Assertions.assertTrue(sgTenantsYml.exists(), Arrays.asList(sgConfigDir.toFile().list()).toString());
+        Assertions.assertTrue(sgTenantsYml.exists(), Arrays.asList(Objects.requireNonNull(sgConfigDir.toFile().list())).toString());
+        Assertions.assertTrue(
+                Arrays.stream(Objects.requireNonNull(sgConfigDir.toFile().listFiles())).anyMatch(file -> file.getName().equals("sg_action_groups.yml")),
+                Arrays.toString(sgConfigDir.toFile().list()));
 
         YamlRewriter yamlRewriter = new YamlRewriter(sgTenantsYml);
 
@@ -203,6 +207,35 @@ public class SgctlTest {
 
         Assertions.assertTrue(sgTenants.containsKey("sgctl_test_tenant2"), sgTenants.toString());
 
+    }
+
+    @Test
+    public void testBulkConfigVarsDownloadAndUpload() throws Exception {
+        Path sgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig");
+
+        int rc = SgctlTool.exec("get-config", "-o", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, rc);
+
+        File varsConfig = new File(sgConfigDir.toFile(), "sg_config_vars.yml");
+        Assertions.assertTrue(varsConfig.exists(), Arrays.asList(sgConfigDir.toFile().list()).toString());
+
+        YamlRewriter yamlRewriter = new YamlRewriter(varsConfig);
+        yamlRewriter.insertAtBeginning(
+                new YamlRewriter.Attribute("addition", ImmutableMap.of("value", "some_value", "scope", "scope")));
+        RewriteResult rewriteResult = yamlRewriter.rewrite();
+        com.google.common.io.Files.asCharSink(varsConfig, Charsets.UTF_8).write(rewriteResult.getYaml());
+
+        rc = SgctlTool.exec("update-config", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, rc);
+
+        Path newSgConfigDir = Files.createTempDirectory("sgctl-test-sgconfig-updated");
+        Thread.sleep(100);
+
+        rc = SgctlTool.exec("get-config", "-o", newSgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, rc);
+
+        Map<String, Object> newVarsConfig = DocReader.yaml().readObject(new File(newSgConfigDir.toFile(), "sg_config_vars.yml"));
+        Assertions.assertTrue(newVarsConfig.containsKey("addition"), newVarsConfig.toString());
     }
 
     @Test
@@ -234,6 +267,32 @@ public class SgctlTest {
 
         int rc = SgctlTool.exec("update-config", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir, "--force");
         Assertions.assertEquals(0, rc);
+    }
+
+    @Test
+    public void testUploadFolderContainingNonConfigFilesWarning() throws Exception {
+        Path sgConfDir = Files.createTempDirectory("sgctl-test-sgconfig");
+        int res = SgctlTool.exec("get-config", "-o", sgConfDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, res);
+
+        File someFile = new File(sgConfDir.toFile(), "random-file.txt");
+        Assertions.assertTrue(someFile.createNewFile());
+
+        errStreamCaptor.reset();
+        res = SgctlTool.exec("update-config", sgConfDir.toString(), "--debug", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, res);
+        Assertions.assertTrue(errStreamCaptor.toString().contains("File " + someFile.getName() + " does not seem to be a Search Guard configuration file. Ignoring it"), errStreamCaptor.toString());
+
+        File someFile2 = new File(sgConfDir.toFile(), "random-file2.txt");
+        Assertions.assertTrue(someFile2.createNewFile());
+
+        errStreamCaptor.reset();
+        res = SgctlTool.exec("update-config", sgConfDir.toString(), "--debug", "--force", "--sgctl-config-dir", configDir);
+        Assertions.assertEquals(0, res);
+        Assertions.assertTrue(
+                errStreamCaptor.toString().contains("Files random-file.txt, random-file2.txt do not seem to be Search Guard configuration files. Ignoring these") ||
+                        errStreamCaptor.toString().contains("Files random-file2.txt, random-file.txt do not seem to be Search Guard configuration files. Ignoring these"),
+                errStreamCaptor.toString());
     }
 
     @Test

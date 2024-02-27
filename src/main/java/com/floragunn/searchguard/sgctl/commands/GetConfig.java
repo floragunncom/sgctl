@@ -28,6 +28,7 @@ import com.floragunn.searchguard.sgctl.client.InvalidResponseException;
 import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
 import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
+import com.floragunn.searchguard.sgctl.client.api.ConfigType;
 import com.floragunn.searchguard.sgctl.client.api.GetBulkConfigResponse;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
@@ -61,7 +62,7 @@ public class GetConfig extends ConnectingCommand implements Callable<Integer> {
             }
 
             for (GetBulkConfigResponse.ConfigDocument config : response) {
-                if (!config.isExists()) {
+                if (!config.isExists() && config.getConfigType() != ConfigType.CONFIG_VARS) {
                     continue;
                 }
                 

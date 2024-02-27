@@ -17,12 +17,16 @@
 
 package com.floragunn.searchguard.sgctl.commands.special;
 
+import com.floragunn.searchguard.sgctl.commands.special.multitenancy.datamigration880.GetMultiTenancyDataMigrationState;
+import com.floragunn.searchguard.sgctl.commands.special.multitenancy.datamigration880.StartMultiTenancyDataMigration;
 import picocli.CommandLine.Command;
 
 /**
  * This is just a container for other "special" commands. Special in this context means that these commands are only needed rarely, maybe even only once, or that these commands perform low-level operations.
  */
-@Command(name = "special", description = "Commands for special circumstances", subcommands = { MoveSearchGuardIndexCommand.class })
+@Command(name = "special", description = "Commands for special circumstances", subcommands = {
+        MoveSearchGuardIndexCommand.class, GetMultiTenancyDataMigrationState.class, StartMultiTenancyDataMigration.class }
+)
 public class SpecialCommand {
 
 }

@@ -17,20 +17,6 @@
 
 package com.floragunn.searchguard.sgctl.commands;
 
-import static java.util.stream.Collectors.toList;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
@@ -53,10 +39,24 @@ import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
 import com.floragunn.searchguard.sgctl.client.api.ConfigType;
 import com.google.common.base.Charsets;
 import com.google.common.io.Files;
-
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Command(name = "update-config", description = "Updates Search Guard configuration on the server from local files")
 public class UpdateConfig extends ConnectingCommand implements Callable<Integer> {
@@ -76,7 +76,21 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
 
             if (files.size() == 1 && files.get(0).isDirectory()) {
                 File dir = files.get(0);
-                files = Arrays.asList(dir.listFiles((File fileDir, String name) -> name.startsWith("sg_") && name.endsWith(".yml")));
+                files = Arrays.asList(Objects.requireNonNull(dir.listFiles()));
+                List<File> ignoredFiles = new ArrayList<>();
+                files = files.stream().filter(file -> {
+                    if (file.getName().startsWith("sg_") && file.getName().endsWith(".yml")) {
+                        return true;
+                    }
+                    ignoredFiles.add(file);
+                    return false;
+                }).collect(Collectors.toList());
+
+                if (ignoredFiles.size() == 1) {
+                    System.err.println("File " + ignoredFiles.get(0).getName() + " does not seem to be a Search Guard configuration file. Ignoring it");
+                } else if(ignoredFiles.size() > 1) {
+                    System.err.println("Files " + ignoredFiles.stream().map(File::getName).collect(Collectors.joining(", ")) + " do not seem to be Search Guard configuration files. Ignoring these");
+                }
 
                 if (files.size() == 0) {
                     throw new SgctlException("Directory " + dir + " does not contain any configuration files");
@@ -84,10 +98,10 @@ public class UpdateConfig extends ConnectingCommand implements Callable<Integer>
 
                 if (verbose || debug) {
                     System.out.println("Uploading config files from directory " + dir.getAbsolutePath() + ": "
-                            + String.join(", ", files.stream().map((f) -> f.getName()).collect(toList())));
+                            + files.stream().map(File::getName).collect(Collectors.joining(", ")));
                 }
             } else if (verbose || debug) {
-                System.out.println("Uploading config files: " + String.join(", ", files.stream().map((f) -> f.getName()).collect(toList())));
+                System.out.println("Uploading config files: " + files.stream().map(File::getName).collect(Collectors.joining(", ")));
             }
 
             for (File file : files) {

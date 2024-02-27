@@ -10,6 +10,7 @@ image: maven:3.6-jdk-${SG_JAVA_BUILD_VERSION}
 stages:
   - build
   - package
+  - "Deploy Docker Image"
 
 workflow:
   rules:
@@ -23,6 +24,8 @@ build:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
+    - if: '$DOCKER_ONLY'
+      when: never            
     - when: always
   tags:
     - openstack-runner
@@ -54,6 +57,8 @@ deploy_snapshot:
   rules:
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
+    - if: '$DOCKER_ONLY'
+      when: never      
     - when: always
   script:
     - |
@@ -73,6 +78,8 @@ build_release:
   stage: build
   interruptible: true
   rules:
+    - if: '$DOCKER_ONLY'
+      when: never          
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
   tags:
     - openstack-runner
@@ -104,6 +111,8 @@ deploy_release:
     - job: build_release
       artifacts: true
   rules:
+    - if: '$DOCKER_ONLY'
+      when: never        
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
   script:
     - set -x
@@ -125,14 +134,55 @@ coverage:
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
     - when: always
-  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.7
-  script:
-    - python /opt/cover2cover.py target/site/jacoco/jacoco.xml $CI_PROJECT_DIR/src/main/java/ > target/site/cobertura.xml
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
   needs: ["build"]
   dependencies:
     - build
+  script:
+    - python /opt/cover2cover.py target/site/jacoco/jacoco.xml src/main/java/ > target/site/cobertura.xml
+    - cat target/site/jacoco/index.html | grep -o '<tfoot>.*</tfoot>'
+  coverage: '/Total.*?([0-9]{1,3})%/'
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
         path: target/site/cobertura.xml
+        
+        
+        
+deploy_docker_image:
+  stage: "Deploy Docker Image"
+  image: docker:20.10.17
+  services:
+    - docker:20.10.17-dind
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+      when: always
+    - if: '$DOCKER_ONLY'
+      when: on_success
+  tags:
+    - build
+  timeout: 1h
+  script:
+    - |
+      cd docker
+      apk update && apk add bash curl 
+
+      export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
+      echo "SGCTL_RELEASE_VERSION=$SGCTL_RELEASE_VERSION"
+      if [[ -z "$SGCTL_RELEASE_VERSION" ]]; then
+        echo "SGCTL_RELEASE_VERSION is empty"
+        exit 1
+      fi
+      echo "Docker logout"
+      docker logout 
+      
+      echo "Login in into Docker Hub"      
+      echo "$DOCKER_PASSWORD" | docker login --username floragunncom --password-stdin docker.io > /dev/null
+
+      echo ""
+      echo "Enable qemu-user-static to support docker multiarch builds with buildx"
+      docker run --rm --privileged multiarch/qemu-user-static --reset -p yes > /dev/null
+
+      ./build_and_push.sh "floragunncom" "docker.io" "search-guard-flx-sgctl" "$SGCTL_RELEASE_VERSION" "--build-arg SGCTL_VERSION="$SGCTL_RELEASE_VERSION" --build-arg JAVA_VERSION=$SG_JAVA_BUILD_VERSION"
+  allow_failure: false        
