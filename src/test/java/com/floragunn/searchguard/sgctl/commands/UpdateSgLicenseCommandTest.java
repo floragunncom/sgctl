@@ -78,7 +78,7 @@ public class UpdateSgLicenseCommandTest {
                 .willReturn(aResponse().withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"status\": 200,\"message\": \"Configuration has been updated\"}")));
-        wm.stubFor(get(urlEqualTo("/_searchguard/license"))
+        wm.stubFor(get(urlEqualTo("/_searchguard/license/info"))
                 .willReturn(aResponse().withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody("{\"cluster_name\": \"searchguard_demo\",\"sg_license\":{\"uid\":\"00000000-0000-0000-0000-000000000000\",\"type\":\"TRIAL\",\"features\": [\"COMPLIANCE\"],\"issue_date\": \"2022-02-20\",\"expiry_date\": \"2022-04-21\"}}")));
@@ -100,7 +100,7 @@ public class UpdateSgLicenseCommandTest {
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(0, result);
         wm.verify(1, putRequestedFor(urlEqualTo("/_searchguard/license/key")));
-        wm.verify(1, getRequestedFor(urlEqualTo("/_searchguard/license")));
+        wm.verify(1, getRequestedFor(urlEqualTo("/_searchguard/license/info")));
     }
 
     @Test
@@ -124,6 +124,6 @@ public class UpdateSgLicenseCommandTest {
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(1, result);
         wm.verify(exactly(2), putRequestedFor(urlEqualTo("/_searchguard/license/key")));
-        wm.verify(exactly(0), getRequestedFor(urlEqualTo("/_searchguard/license")));
+        wm.verify(exactly(0), getRequestedFor(urlEqualTo("/_searchguard/license/info")));
     }
 }

@@ -164,7 +164,7 @@ public class SearchGuardRestClient implements AutoCloseable {
 
     public GetSgLicenseResponse getSgLicense()
             throws FailedConnectionException, InvalidResponseException, UnauthorizedException, ServiceUnavailableException, ApiException {
-        return get("/_searchguard/license").parseResponseBy(GetSgLicenseResponse::new);
+        return get("/_searchguard/license/info").parseResponseBy(GetSgLicenseResponse::new);
     }
 
     public BasicResponse putSgLicense(Map<String, Object> body)
