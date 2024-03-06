@@ -10,7 +10,7 @@ import java.util.concurrent.Callable;
         description = "Generates a random base 64 encoded integer.")
 public class GenerateRandomBase64 implements Callable<Integer> {
 
-    @Option(names = {"-b", "--bits"}, description = "Number of bits for the random number (must be divisible by 8). Defaults to 256 bits")
+    @Option(names = {"--bits"}, description = "Number of bits for the random number (must be divisible by 8). Defaults to 256 bits")
     private int bits = 256;
 
     @Option(names = {"--base64url"}, description = "If the encoding type should be of type 'url' instead of 'standard'")
