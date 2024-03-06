@@ -644,11 +644,11 @@ public class MigrateConfig implements Callable<Integer> {
                 Map<String, Object> tls = vSamlAuthDomain.get("http_authenticator.config.idp").asMap();
 
                 if (tls != null) {
-                    MigrationResult migrationResult = migrateTlsConfig(tls);
+                    MigrationResult tlsMigrationResult = migrateTlsConfig(tls);
 
-                    if (migrationResult != null) {
-                        idp.put("tls", tls);
-                        oldSgConfigValidationErrors.add("http_authenticator.config.idp", migrationResult.getSourceValidationErrors());
+                    if (tlsMigrationResult != null) {
+                        idp.put("tls", tlsMigrationResult.config);
+                        oldSgConfigValidationErrors.add("http_authenticator.config.idp", tlsMigrationResult.getSourceValidationErrors());
                     }
                 }
 
