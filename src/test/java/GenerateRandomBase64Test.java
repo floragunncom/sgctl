@@ -15,7 +15,7 @@ class GenerateRandomBase64Test {
     void testStandardEncoding256Bits() {
         // Execute the command with 256 bits and standard encoding
         CommandLine commandLine = new CommandLine(new GenerateRandomBase64());
-        int exitCode = commandLine.execute("-b", "256", "-e", "standard");
+        int exitCode = commandLine.execute("-b", "256", "--base64url");
         assertEquals(0, exitCode, "The command should execute successfully.");
 
         String output = outputStreamCaptor.toString();
@@ -26,7 +26,7 @@ class GenerateRandomBase64Test {
     @Test
     void testUrlEncoding512Bits() {
         CommandLine commandLine = new CommandLine(new GenerateRandomBase64());
-        int exitCode = commandLine.execute("-b", "512", "-e", "url");
+        int exitCode = commandLine.execute("-b", "512", "--base64url");
         assertEquals(0, exitCode, "The command should execute successfully.");
 
         String output = outputStreamCaptor.toString();
