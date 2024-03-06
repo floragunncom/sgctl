@@ -13,6 +13,9 @@ public class GenerateRandomBase64 implements Callable<Integer> {
     @Option(names = {"-b", "--bits"}, description = "Number of bits for the random number (must be divisible by 8). Defaults to 256 bits")
     private int bits = 256;
 
+    @Option(names = {"-e", "--encoding"}, description = "The encoding type: standard (default) or url.")
+    private String encoding = "standard";
+
     @Override
     public Integer call() throws Exception {
         if (bits % 8 != 0) {
@@ -23,7 +26,14 @@ public class GenerateRandomBase64 implements Callable<Integer> {
         SecureRandom random = new SecureRandom();
         byte[] bytes = new byte[bits / 8];
         random.nextBytes(bytes);
-        String encoded = Base64.getEncoder().encodeToString(bytes);
+        String encoded;
+
+        if ("url".equalsIgnoreCase(encoding)) {
+            encoded = Base64.getUrlEncoder().encodeToString(bytes);
+        } else {
+            encoded = Base64.getEncoder().encodeToString(bytes);
+        }
+
         System.out.println(encoded);
         return 0;
     }
