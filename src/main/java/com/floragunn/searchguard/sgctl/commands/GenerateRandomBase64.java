@@ -13,8 +13,8 @@ public class GenerateRandomBase64 implements Callable<Integer> {
     @Option(names = {"-b", "--bits"}, description = "Number of bits for the random number (must be divisible by 8). Defaults to 256 bits")
     private int bits = 256;
 
-    @Option(names = {"-e", "--encoding"}, description = "The encoding type: standard (default) or url.")
-    private String encoding = "standard";
+    @Option(names = {"--base64url"}, description = "If the encoding type should be of type 'url' instead of 'standard'")
+    private Boolean base64url = false;
 
     @Override
     public Integer call() throws Exception {
@@ -28,7 +28,7 @@ public class GenerateRandomBase64 implements Callable<Integer> {
         random.nextBytes(bytes);
         String encoded;
 
-        if ("url".equalsIgnoreCase(encoding)) {
+        if (base64url) {
             encoded = Base64.getUrlEncoder().encodeToString(bytes);
         } else {
             encoded = Base64.getEncoder().encodeToString(bytes);
