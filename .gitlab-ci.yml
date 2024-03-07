@@ -28,7 +28,7 @@ build:
       when: never            
     - when: always
   tags:
-    - openstack-runner
+    - build
   script:
     - mvn -Drevision=b-$CI_COMMIT_REF_NAME-SNAPSHOT $MAVEN_CLI_OPTS clean install
   artifacts:
@@ -50,7 +50,7 @@ deploy_snapshot:
   stage: package
   interruptible: true
   tags:
-    - openstack-runner
+    - build
   needs:
     - job: build
       artifacts: true
@@ -82,7 +82,7 @@ build_release:
       when: never          
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
   tags:
-    - openstack-runner
+    - build
   script:
     # $CI_COMMIT_TAG: sgctl-1.0.0-beta-1
     - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
@@ -106,7 +106,7 @@ deploy_release:
   stage: package
   interruptible: true
   tags:
-    - openstack-runner
+    - build
   needs:
     - job: build_release
       artifacts: true
