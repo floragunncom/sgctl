@@ -463,14 +463,14 @@ public class SgctlTest {
         int result = SgctlTool.exec("add-user", userName, "-a", "a=1,b.c.d=2,e.a=foo", "--sgctl-config-dir", configDir, "--password", "pass");
         Assertions.assertEquals(0, result);
 
-        result = SgctlTool.exec("update-user", userName, "-a", "a=new-1,b.c.d2=new-2,e.a=newEA", "--sgctl-config-dir", configDir);
+        result = SgctlTool.exec("update-user", userName, "-a", "a=new-1,b.c.d2=new-2,e.a=newEA", "-ia","f=2", "--sgctl-config-dir", configDir);
         Assertions.assertEquals(0, result);
 
         try (GenericRestClient client = cluster.getAdminCertRestClient()) {
             GenericRestClient.HttpResponse response = client.get("/_searchguard/internal_users/" + userName);
 
             Assertions.assertEquals(200, response.getStatusCode(), response.getBody());
-            Assertions.assertEquals(DocNode.of("a", "new-1", "b.c.d2", "new-2", "b.c.d", "2", "e.a", "newEA").toDeepBasicObject(),
+            Assertions.assertEquals(DocNode.of("a", "new-1","b.c.d", "2", "b.c.d2", "new-2",  "e.a", "newEA","f",2).toDeepBasicObject(),
                     response.getBodyAsDocNode().get("data", "attributes"), response.getBody());
         }
     }

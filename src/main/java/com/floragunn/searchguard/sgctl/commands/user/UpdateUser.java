@@ -64,6 +64,9 @@ public class UpdateUser extends ConnectingCommand implements Callable<Integer> {
     @Option(names = { "-a", "--attributes" }, split = ",")
     private Map<String, Object> attributesToAdd;
 
+    @Option(names = { "-ia", "--intattributes" }, split = ",")
+    private Map<String, Integer> intattributesToAdd;
+
     @Option(names = { "--remove-attributes" }, split = ",")
     private List<String> attributesToRemove;
 
@@ -114,6 +117,12 @@ public class UpdateUser extends ConnectingCommand implements Callable<Integer> {
 
                     if (!backendRoles.equals(getUserResponse.getBackendRoles())) {
                         userMergePatch.put("backend_roles", backendRoles);
+                    }
+                }
+
+                if(intattributesToAdd!=null) {
+                    for (Map.Entry<String, Integer> entry : intattributesToAdd.entrySet()) {
+                        attributesToAdd.put(entry.getKey(), entry.getValue());
                     }
                 }
 
