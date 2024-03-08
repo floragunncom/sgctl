@@ -31,6 +31,9 @@ import java.util.logging.Logger;
 import javax.net.ssl.SSLHandshakeException;
 
 import com.floragunn.searchguard.sgctl.client.api.GetSgLicenseResponse;
+import com.floragunn.searchguard.sgctl.client.api.AuthTokenResponse;
+import com.floragunn.searchguard.sgctl.client.api.RevokeAuthTokenResponse;
+
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpHeaders;
@@ -83,6 +86,18 @@ public class SearchGuardRestClient implements AutoCloseable {
     public AuthInfoResponse authInfo()
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
         return get("/_searchguard/authinfo").parseResponseBy(AuthInfoResponse::new);
+    }
+
+    public AuthTokenResponse listAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
+        return get("/_searchguard/authtoken/_search")
+                .parseResponseBy(AuthTokenResponse::new);
+
+    }
+
+    public RevokeAuthTokenResponse revokeAuthToken(String id)  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
+        return delete("/_searchguard/authtoken/"+  id)
+                .parseResponseBy(RevokeAuthTokenResponse::new);
+
     }
 
     public BasicResponse putConfigBulk(Map<String, Map<String, ?>> configTypeToConfigMap)
