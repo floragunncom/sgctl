@@ -381,7 +381,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.2.5</version>
 				<configuration>
-					<argLine>-Xmx3072m </argLine>
+					<argLine>-Xmx3072m ${surefireArgLine}</argLine>
 					<includes>
 						<include>**/*.java</include>
 					</includes>
