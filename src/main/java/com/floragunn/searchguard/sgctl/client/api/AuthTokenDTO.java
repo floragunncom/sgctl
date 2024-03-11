@@ -18,7 +18,7 @@
 package com.floragunn.searchguard.sgctl.client.api;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import java.util.ArrayList;
 import java.util.Date;
@@ -94,17 +94,17 @@ public class AuthTokenDTO {
 
          return cluster_permissions;
      }
-     public String toYaml(){
-         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
-         String yml;
-         try {
-             yml = mapper.writeValueAsString(this);
-         } catch (JsonProcessingException e) {
-             throw new RuntimeException(e);
-         }
-         System.out.println(yml);
-         return yml;
-     }
+//     public String toYaml(){
+//         ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+//         String yml;
+//         try {
+//             yml = mapper.writeValueAsString(this);
+//         } catch (JsonProcessingException e) {
+//             throw new RuntimeException(e);
+//         }
+//         System.out.println(yml);
+//         return yml;
+//     }
      @Override
      public String toString() {
          return "{" +
