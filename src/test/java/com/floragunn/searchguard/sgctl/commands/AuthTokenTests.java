@@ -27,9 +27,11 @@ import java.nio.file.Files;
 
 import com.floragunn.searchguard.authtoken.AuthTokenModule;
 import com.floragunn.searchguard.sgctl.SgctlTool;
+import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 import com.floragunn.searchguard.test.TestSgConfig;
 import org.apache.commons.io.output.TeeOutputStream;
 
+import org.apache.http.entity.ContentType;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
@@ -94,6 +96,12 @@ public class AuthTokenTests {
 
     @Test
     public void testAuthTokens_testListTokens() throws Exception {
+
+        String body  = "{\n" + "  \"name\": \"my_new_toaaaaaaaakaaaen\",\n" + "  \"requested\": {\n" + "    \"roles\": [\"admin\"],\n" + "    \"index_permissions\": \n" + "    [\n" + "      {\n" + "        \"index_patterns\": [\"*\"],\n" + "        \"allowed_actions\": [\"*\"]\n" + "      }\n" + "    ],\n" + "    \"cluster_permissions\": [\"*\"]\n" + "  },\n" + "  \"expires_after\": \"1d\"\n" + "}\n";
+
+        SearchGuardRestClient rc = new SearchGuardRestClient();
+
+        rc.post("https://localhost:9200/_searchguard/authtoken/", body, ContentType.APPLICATION_JSON);
 
         int result = SgctlTool.exec("list-auth-tokens", "--sgctl-config-dir", configDir, "--debug");
 
