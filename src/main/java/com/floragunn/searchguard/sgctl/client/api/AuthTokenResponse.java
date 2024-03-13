@@ -86,7 +86,7 @@ public class AuthTokenResponse {
         for (AuthTokenDTO token : parseAuthTokenEntries(getEntries())) {
             // AsciiTable library used removes double spaces before rendering, so replacing the double spaces for ±±,  a bit hacky solution to keep the yaml formatting.
             table.addRow(token.getUser_name(), token.getToken_name(), token.getCreated_at(), token.getExpires_at(), token.getRevoked_at(),
-                    token.getRequested());
+                    token.getRequested().toYaml().replace("\n", "<br/>").replace("  ", "±±"));
             table.addRule();
         }
         table.setPaddingLeft(1);
