@@ -428,7 +428,7 @@
 						<phase>package</phase>
 						<configuration>
 							<outputDirectory>target/releases/</outputDirectory>
-							<shadedArtifactAttached>false</shadedArtifactAttached>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
 							<shadedClassifierName>shaded</shadedClassifierName>
 							<minimizeJar>true</minimizeJar>
 							<transformers>
