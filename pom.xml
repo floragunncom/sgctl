@@ -475,7 +475,7 @@
 				<configuration>
 					<classifier>shaded</classifier>
 					<flags>-Xmx1G</flags>
-					<programFile>target/sgctl.sh</programFile>
+					<programFile>./sgctl.sh</programFile>
 				</configuration>
 				<executions>
 					<execution>
