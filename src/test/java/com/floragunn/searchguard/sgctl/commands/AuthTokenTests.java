@@ -27,9 +27,13 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 
+import com.floragunn.searchguard.test.GenericRestClient;
+
+
 
 import com.floragunn.searchguard.authtoken.AuthTokenModule;
 import com.floragunn.searchguard.sgctl.SgctlTool;
+import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 import com.floragunn.searchguard.test.TestSgConfig;
 import com.github.tomakehurst.wiremock.junit5.WireMockExtension;
 import org.apache.commons.io.output.TeeOutputStream;
@@ -53,8 +57,10 @@ public class AuthTokenTests {
     private final PrintStream standardErr = System.out;
     private final ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
     private final ByteArrayOutputStream errStreamCaptor = new ByteArrayOutputStream();
-    static final TestSgConfig.User ADMIN = new TestSgConfig.User("admin")
-            .roles(new TestSgConfig.Role("all_access").indexPermissions("*").on("*").clusterPermissions("*")
+    static final TestSgConfig.User ADMIN = new TestSgConfig.User("potato").password("potato")
+            .roles(new TestSgConfig.Role("all_access").indexPermissions("*").on("*").clusterPermissions("*"),
+                    new TestSgConfig.Role("SGS_MANAGE_ALL_AUTH_TOKEN").indexPermissions("*").on("*").clusterPermissions("*")
+
 
             );
     @BeforeEach
@@ -71,7 +77,8 @@ public class AuthTokenTests {
 
     private final static TestCertificates TEST_CERTIFICATES = TestCertificates.builder().ca("CN=root.ca.example.com,OU=SearchGuard,O=SearchGuard")
             .addNodes("CN=127.0.0.1,OU=SearchGuard,O=SearchGuard")
-            .addAdminClients(singletonList("CN=admin-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "secret").build();
+            .addClients(singletonList("CN=potato-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "potato")
+            .addAdminClients(singletonList("CN=potato-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "potato").build();
 
     private static LocalCluster cluster;
     static String configDir;
@@ -93,39 +100,53 @@ public class AuthTokenTests {
         configDir = Files.createTempDirectory("sgctl-test-config").toString();
 
         int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert,
-                "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir);
+                "--key", adminKey, "--key-pass", "potato", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir);
+
+
 
         Assertions.assertEquals(0, rc);
     }
-    private final static TestCertificates testCertificates = TestCertificates.builder()
-            .ca("CN=localhost,OU=SearchGuard,O=SearchGuard")
-            .addAdminClients(singletonList("CN=admin-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "secret").build();
-    private final static TestCertificate wmCert = testCertificates.create("CN=localhost,OU=SearchGuard,O=SearchGuard");
 
-    @RegisterExtension
-    private final static WireMockExtension wm = WireMockExtension.newInstance().options(wireMockConfig()
-            .httpDisabled(true)
-            .dynamicHttpsPort()
-            .keystorePath(wmCert.getJksFile().getPath())
-            .keystorePassword(wmCert.getPrivateKeyPassword())
-            .keyManagerPassword(wmCert.getPrivateKeyPassword())
-    ).build();
+//    @RegisterExtension
+//    private final static WireMockExtension wm = WireMockExtension.newInstance().options(wireMockConfig()
+//            .httpDisabled(true)
+//            .dynamicHttpsPort()
+//            .keystorePath(wmCert.getJksFile().getPath())
+//            .keystorePassword(wmCert.getPrivateKeyPassword())
+//            .keyManagerPassword(wmCert.getPrivateKeyPassword())
+//    ).build();
 
     @Test
     public void testAuthTokens_testListTokens() throws Exception {
+
+        String body  = "{\n" + "  \"name\": \"my_new_toaaaaaaaakaaaen\",\n" + "  \"requested\": {\n" + "    \"roles\": [\"user_potato__all_access\"],\n" + "    \"index_permissions\": \n" + "    [\n" + "      {\n" + "        \"index_patterns\": [\"my index\"],\n" + "        \"allowed_actions\": [\"*\"]\n" + "      }\n" + "    ],\n" + "    \"cluster_permissions\": [\"*\"]\n" + "  },\n" + "  \"expires_after\": \"1d\"\n" + "}\n";
+
+        String body2  = "{\n" + "  \"name\": \"kkkkkktoken\",\n" + "  \"requested\": {\n" + "    \"roles\": [\"user_potato__all_access\"],\n" + "    \"index_permissions\": \n" + "    [\n" + "      {\n" + "        \"index_patterns\": [\"my_index\"],\n" + "        \"allowed_actions\": [\"*\"]\n" + "      }\n" + "    ],\n" + "    \"cluster_permissions\": [\"*\"]\n" + "  },\n" + "  \"expires_after\": \"1d\"\n" + "}\n";
+
+        GenericRestClient restClient =  cluster.getRestClient("potato","potato");
+
+        GenericRestClient restClient2 =  cluster.getAdminCertRestClient();
+
+        String bodyPostSearch = "{\n" + "    \"query\": {\n" + "        \"wildcard\": {\n" + "            \"requested.index_permissions.index_patterns\": {\n" + "                \"value\": \"my_*\"\n" + "            }\n" + "        }\n" + "    }\n" + "}";
+
+
+        System.out.println("TTTT" + restClient.postJson("_searchguard/authtoken/", body2));
+        System.out.println("GGGG " + restClient.postJson("_searchguard/authtoken/_search", bodyPostSearch));
+
+//        System.out.println("HAHA" + restClient2.get("_searchguard/authtoken/_search").getBody());
 
 
         int result = SgctlTool.exec("list-auth-tokens", "--sgctl-config-dir", configDir, "--debug");
 
 
 
-        String tokenList = "{\n" + "    \"took\": 1,\n" + "    \"timed_out\": false,\n" + "    \"_shards\": {\n" + "        \"total\": 1,\n" + "        \"successful\": 1,\n" + "        \"skipped\": 0,\n" + "        \"failed\": 0\n" + "    },\n" + "    \"hits\": {\n" + "        \"total\": {\n" + "            \"value\": 2,\n" + "            \"relation\": \"eq\"\n" + "        },\n" + "        \"max_score\": 1.0,\n" + "        \"hits\": [\n" + "            {\n" + "                \"_index\": \".searchguard_authtokens\",\n" + "                \"_id\": \"PjZeFN2OQtmHACm7D3u5_A\",\n" + "                \"_score\": 1.0,\n" + "                \"_source\": {\n" + "                    \"user_name\": \"admin\",\n" + "                    \"token_name\": \"my_new_toaaaaaaaakaaaen\",\n" + "                    \"requested\": {\n" + "                        \"cluster_permissions\": [\n" + "                            \"*\"\n" + "                        ],\n" + "                        \"index_permissions\": [\n" + "                            {\n" + "                                \"index_patterns\": [\n" + "                                    \"*\"\n" + "                                ],\n" + "                                \"allowed_actions\": [\n" + "                                    \"*\"\n" + "                                ]\n" + "                            }\n" + "                        ],\n" + "                        \"exclude_cluster_permissions\": [\n" + "                            \"cluster:admin:searchguard:authtoken/_own/create\"\n" + "                        ],\n" + "                        \"roles\": [\n" + "                            \"admin\"\n" + "                        ]\n" + "                    },\n" + "                    \"base\": {\n" + "                        \"roles_be\": [\n" + "                            \"admin\"\n" + "                        ],\n" + "                        \"config\": [\n" + "                            {\n" + "                                \"type\": \"tenants\",\n" + "                                \"version\": 2\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"rolesmapping\",\n" + "                                \"version\": 1\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"roles\",\n" + "                                \"version\": 2\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"actiongroups\",\n" + "                                \"version\": 1\n" + "                            }\n" + "                        ]\n" + "                    },\n" + "                    \"created_at\": 1710203812000,\n" + "                    \"expires_at\": 1710290212000\n" + "                }\n" + "            },\n" + "            {\n" + "                \"_index\": \".searchguard_authtokens\",\n" + "                \"_id\": \"B3hN8UwXT2yJrCZ6e0s4dg\",\n" + "                \"_score\": 1.0,\n" + "                \"_source\": {\n" + "                    \"user_name\": \"admin\",\n" + "                    \"token_name\": \"my_new_toaaaaaaaakaaaen\",\n" + "                    \"requested\": {\n" + "                        \"cluster_permissions\": [\n" + "                            \"*\"\n" + "                        ],\n" + "                        \"index_permissions\": [\n" + "                            {\n" + "                                \"index_patterns\": [\n" + "                                    \"*\"\n" + "                                ],\n" + "                                \"allowed_actions\": [\n" + "                                    \"*\"\n" + "                                ]\n" + "                            }\n" + "                        ],\n" + "                        \"exclude_cluster_permissions\": [\n" + "                            \"cluster:admin:searchguard:authtoken/_own/create\"\n" + "                        ],\n" + "                        \"roles\": [\n" + "                            \"admin\"\n" + "                        ]\n" + "                    },\n" + "                    \"base\": {\n" + "                        \"roles_be\": [\n" + "                            \"admin\"\n" + "                        ],\n" + "                        \"config\": [\n" + "                            {\n" + "                                \"type\": \"tenants\",\n" + "                                \"version\": 2\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"rolesmapping\",\n" + "                                \"version\": 1\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"roles\",\n" + "                                \"version\": 2\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"actiongroups\",\n" + "                                \"version\": 1\n" + "                            }\n" + "                        ]\n" + "                    },\n" + "                    \"created_at\": 1710242871000,\n" + "                    \"expires_at\": 1710329271000\n" + "                }\n" + "            }\n" + "        ]\n" + "    }\n" + "}";
+//        String tokenList = "{\n" + "    \"took\": 1,\n" + "    \"timed_out\": false,\n" + "    \"_shards\": {\n" + "        \"total\": 1,\n" + "        \"successful\": 1,\n" + "        \"skipped\": 0,\n" + "        \"failed\": 0\n" + "    },\n" + "    \"hits\": {\n" + "        \"total\": {\n" + "            \"value\": 2,\n" + "            \"relation\": \"eq\"\n" + "        },\n" + "        \"max_score\": 1.0,\n" + "        \"hits\": [\n" + "            {\n" + "                \"_index\": \".searchguard_authtokens\",\n" + "                \"_id\": \"PjZeFN2OQtmHACm7D3u5_A\",\n" + "                \"_score\": 1.0,\n" + "                \"_source\": {\n" + "                    \"user_name\": \"admin\",\n" + "                    \"token_name\": \"my_new_toaaaaaaaakaaaen\",\n" + "                    \"requested\": {\n" + "                        \"cluster_permissions\": [\n" + "                            \"*\"\n" + "                        ],\n" + "                        \"index_permissions\": [\n" + "                            {\n" + "                                \"index_patterns\": [\n" + "                                    \"*\"\n" + "                                ],\n" + "                                \"allowed_actions\": [\n" + "                                    \"*\"\n" + "                                ]\n" + "                            }\n" + "                        ],\n" + "                        \"exclude_cluster_permissions\": [\n" + "                            \"cluster:admin:searchguard:authtoken/_own/create\"\n" + "                        ],\n" + "                        \"roles\": [\n" + "                            \"admin\"\n" + "                        ]\n" + "                    },\n" + "                    \"base\": {\n" + "                        \"roles_be\": [\n" + "                            \"admin\"\n" + "                        ],\n" + "                        \"config\": [\n" + "                            {\n" + "                                \"type\": \"tenants\",\n" + "                                \"version\": 2\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"rolesmapping\",\n" + "                                \"version\": 1\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"roles\",\n" + "                                \"version\": 2\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"actiongroups\",\n" + "                                \"version\": 1\n" + "                            }\n" + "                        ]\n" + "                    },\n" + "                    \"created_at\": 1710203812000,\n" + "                    \"expires_at\": 1710290212000\n" + "                }\n" + "            },\n" + "            {\n" + "                \"_index\": \".searchguard_authtokens\",\n" + "                \"_id\": \"B3hN8UwXT2yJrCZ6e0s4dg\",\n" + "                \"_score\": 1.0,\n" + "                \"_source\": {\n" + "                    \"user_name\": \"admin\",\n" + "                    \"token_name\": \"my_new_toaaaaaaaakaaaen\",\n" + "                    \"requested\": {\n" + "                        \"cluster_permissions\": [\n" + "                            \"*\"\n" + "                        ],\n" + "                        \"index_permissions\": [\n" + "                            {\n" + "                                \"index_patterns\": [\n" + "                                    \"*\"\n" + "                                ],\n" + "                                \"allowed_actions\": [\n" + "                                    \"*\"\n" + "                                ]\n" + "                            }\n" + "                        ],\n" + "                        \"exclude_cluster_permissions\": [\n" + "                            \"cluster:admin:searchguard:authtoken/_own/create\"\n" + "                        ],\n" + "                        \"roles\": [\n" + "                            \"admin\"\n" + "                        ]\n" + "                    },\n" + "                    \"base\": {\n" + "                        \"roles_be\": [\n" + "                            \"admin\"\n" + "                        ],\n" + "                        \"config\": [\n" + "                            {\n" + "                                \"type\": \"tenants\",\n" + "                                \"version\": 2\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"rolesmapping\",\n" + "                                \"version\": 1\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"roles\",\n" + "                                \"version\": 2\n" + "                            },\n" + "                            {\n" + "                                \"type\": \"actiongroups\",\n" + "                                \"version\": 1\n" + "                            }\n" + "                        ]\n" + "                    },\n" + "                    \"created_at\": 1710242871000,\n" + "                    \"expires_at\": 1710329271000\n" + "                }\n" + "            }\n" + "        ]\n" + "    }\n" + "}";
 
-        wm.stubFor(get(urlEqualTo("_searchguard/authtoken/_search"))
-                .withHeader("Content-Type", equalTo("application/json"))
-                .willReturn(aResponse().withStatus(200)
-                        .withHeader("Content-Type", "application/json")
-                        .withBody(tokenList)));
+//        wm.stubFor(get(urlEqualTo("_searchguard/authtoken/_search"))
+//                .withHeader("Content-Type", equalTo("application/json"))
+//                .willReturn(aResponse().withStatus(200)
+//                        .withHeader("Content-Type", "application/json")
+//                        .withBody(tokenList)));
 
         Assertions.assertEquals(ExitCode.OK, result);
         Assertions.assertTrue(outputStreamCaptor.toString().contains("No AuthTokens found") || outputStreamCaptor.toString().contains("entries returned and listed below") );

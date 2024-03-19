@@ -89,7 +89,10 @@ public class SearchGuardRestClient implements AutoCloseable {
     }
 
     public AuthTokenResponse listAuthTokens()  throws InvalidResponseException, ServiceUnavailableException, UnauthorizedException, ApiException, FailedConnectionException {
-        return get("/_searchguard/authtoken/_search")
+        String bodyPostSearch = "{\n" + "    \"query\": {\n" + "        \"wildcard\": {\n" + "            \"requested.index_permissions.index_patterns\": {\n" + "                \"value\": \"my_*\"\n" + "            }\n" + "        }\n" + "    }\n" + "}";
+
+
+        return post("/_searchguard/authtoken/_search",bodyPostSearch, ContentType.APPLICATION_JSON )
                 .parseResponseBy(AuthTokenResponse::new);
 
     }

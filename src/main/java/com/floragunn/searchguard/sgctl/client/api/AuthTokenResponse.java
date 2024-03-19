@@ -35,6 +35,7 @@ public class AuthTokenResponse {
     private final Map<String, Object> content;
 
     public AuthTokenResponse(DocNode content)  {
+        System.out.println("TTTTT" + content.get("hits"));
         this.content = content;
     }
 
