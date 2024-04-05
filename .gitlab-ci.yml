@@ -30,6 +30,7 @@ build:
   tags:
     - build
   script:
+    - cho "185.11.255.132 maven.search-guard.com" >> /etc/hosts
     - mvn -Drevision=b-$CI_COMMIT_REF_NAME-SNAPSHOT $MAVEN_CLI_OPTS clean install
   artifacts:
     when: always
@@ -62,6 +63,7 @@ deploy_snapshot:
     - when: always
   script:
     - |
+      cho "185.11.255.132 maven.search-guard.com" >> /etc/hosts
       set -x
       mvn -Drevision=b-$CI_COMMIT_REF_NAME-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -s settings.xml deploy
   artifacts:
