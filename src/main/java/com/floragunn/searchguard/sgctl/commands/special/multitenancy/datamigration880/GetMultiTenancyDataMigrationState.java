@@ -30,7 +30,7 @@ import picocli.CommandLine.Command;
 
 import java.util.concurrent.Callable;
 
-@Command(name = "get-mt-data-migration-state-8.7-to-8.8", description = "Gets state of multi-tenancy data migration from Kibana 8.7 to 8.8")
+@Command(name = "get-mt-data-migration-state-from-8.7", description = "Gets state of multi-tenancy data migration from Kibana 8.7 to 8.8")
 public class GetMultiTenancyDataMigrationState extends ConnectingCommand implements Callable<Integer> {
 
     private static final String ENDPOINT_PATH = "/_searchguard/config/fe_multi_tenancy/data_migration/8_8_0";

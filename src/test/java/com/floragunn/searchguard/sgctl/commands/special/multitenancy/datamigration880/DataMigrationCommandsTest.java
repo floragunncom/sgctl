@@ -99,7 +99,7 @@ public class DataMigrationCommandsTest {
         final String response = DocNode.of("status", HttpStatus.SC_OK, "migration-status", "ok").toPrettyJsonString();
         mockResponse(RequestMethod.GET, HttpStatus.SC_OK, response);
 
-        int result = SgctlTool.exec("special", "get-mt-data-migration-state-8.7-to-8.8", "--sgctl-config-dir", configDir,
+        int result = SgctlTool.exec("special", "get-mt-data-migration-state-from-8.7", "--sgctl-config-dir", configDir,
                 "--debug", "--skip-connection-check");
 
         assertThat(result, equalTo(0));
@@ -112,7 +112,7 @@ public class DataMigrationCommandsTest {
     public void getMigrationState_shouldNotGetMigrationState_response_404() {
         final String response = DocNode.of("status", HttpStatus.SC_NOT_FOUND).toPrettyJsonString();
         mockResponse(RequestMethod.GET, HttpStatus.SC_NOT_FOUND, response);
-        int result = SgctlTool.exec("special", "get-mt-data-migration-state-8.7-to-8.8", "--sgctl-config-dir", configDir,
+        int result = SgctlTool.exec("special", "get-mt-data-migration-state-from-8.7", "--sgctl-config-dir", configDir,
                 "--debug", "--skip-connection-check");
 
         assertThat(result, equalTo(1));
@@ -125,7 +125,7 @@ public class DataMigrationCommandsTest {
         final String response = DocNode.of("status", HttpStatus.SC_INTERNAL_SERVER_ERROR).toPrettyJsonString();
         mockResponse(RequestMethod.GET, HttpStatus.SC_INTERNAL_SERVER_ERROR, response);
 
-        int result = SgctlTool.exec("special", "get-mt-data-migration-state-8.7-to-8.8", "--sgctl-config-dir", configDir,
+        int result = SgctlTool.exec("special", "get-mt-data-migration-state-from-8.7", "--sgctl-config-dir", configDir,
                 "--debug", "--skip-connection-check");
 
         assertThat(result, equalTo(1));
@@ -138,7 +138,7 @@ public class DataMigrationCommandsTest {
         final String response = DocNode.of("status", HttpStatus.SC_OK, "migration-status", "started").toPrettyJsonString();
         mockResponse(RequestMethod.POST, HttpStatus.SC_OK, response);
 
-        int result = SgctlTool.exec("special", "start-mt-data-migration-8.7-to-8.8", "--sgctl-config-dir", configDir,
+        int result = SgctlTool.exec("special", "start-mt-data-migration-from-8.7", "--sgctl-config-dir", configDir,
                 "--debug", "--skip-connection-check");
 
         String expectedRequestBody = DocNode.of("allow_yellow_indices", false).toPrettyJsonString();
@@ -158,7 +158,7 @@ public class DataMigrationCommandsTest {
         final String response = DocNode.of("status", HttpStatus.SC_OK, "migration-status", "started").toPrettyJsonString();
         mockResponse(RequestMethod.POST, HttpStatus.SC_OK, response);
 
-        int result = SgctlTool.exec("special", "start-mt-data-migration-8.7-to-8.8", "--allow-yellow-indices", "--sgctl-config-dir", configDir,
+        int result = SgctlTool.exec("special", "start-mt-data-migration-from-8.7", "--allow-yellow-indices", "--sgctl-config-dir", configDir,
                 "--debug", "--skip-connection-check");
 
         String expectedRequestBody = DocNode.of("allow_yellow_indices", true).toPrettyJsonString();
@@ -178,7 +178,7 @@ public class DataMigrationCommandsTest {
         final String response = DocNode.of("status", HttpStatus.SC_NOT_FOUND).toPrettyJsonString();
         mockResponse(RequestMethod.POST, HttpStatus.SC_NOT_FOUND, response);
 
-        int result = SgctlTool.exec("special", "start-mt-data-migration-8.7-to-8.8", "--sgctl-config-dir", configDir,
+        int result = SgctlTool.exec("special", "start-mt-data-migration-from-8.7", "--sgctl-config-dir", configDir,
                 "--debug", "--skip-connection-check");
 
         assertThat(result, equalTo(1));
@@ -191,7 +191,7 @@ public class DataMigrationCommandsTest {
         final String response = DocNode.of("status", HttpStatus.SC_INTERNAL_SERVER_ERROR, "migration-status", "started").toPrettyJsonString();
         mockResponse(RequestMethod.POST, HttpStatus.SC_INTERNAL_SERVER_ERROR, response);
 
-        int result = SgctlTool.exec("special", "start-mt-data-migration-8.7-to-8.8", "--sgctl-config-dir", configDir,
+        int result = SgctlTool.exec("special", "start-mt-data-migration-from-8.7", "--sgctl-config-dir", configDir,
                 "--debug", "--skip-connection-check");
 
         assertThat(result, equalTo(1));
