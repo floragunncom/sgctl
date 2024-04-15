@@ -31,7 +31,7 @@ import picocli.CommandLine.Command;
 
 import java.util.concurrent.Callable;
 
-@Command(name = "enable-mt", description = "Turns on multi-tenancy")
+@Command(name = "enable-mt", description = "Turns on multi-tenancy. This operation can not be undone.")
 public class EnableMultiTenancy extends ConnectingCommand implements Callable<Integer> {
 
     private static final String ENDPOINT_PATH = "/_searchguard/config/fe_multi_tenancy/activation";
