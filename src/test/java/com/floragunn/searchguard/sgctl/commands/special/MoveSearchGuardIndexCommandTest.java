@@ -41,7 +41,10 @@ public class MoveSearchGuardIndexCommandTest {
 
     @Test
     public void test() throws Exception {
-        try (LocalCluster cluster = new LocalCluster.Builder().singleNode().sslEnabled(TEST_CERTIFICATES)//
+        try (LocalCluster.Embedded cluster = new LocalCluster.Builder()
+                .singleNode()
+                .sslEnabled(TEST_CERTIFICATES)//
+                .embedded()//
                 .configIndexName("searchguard")//
                 .start()) {
 
