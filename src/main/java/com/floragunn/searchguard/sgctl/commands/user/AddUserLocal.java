@@ -20,20 +20,17 @@ package com.floragunn.searchguard.sgctl.commands.user;
 import java.io.File;
 import java.io.IOException;
 import java.security.SecureRandom;
-import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Callable;
-
-import org.bouncycastle.crypto.generators.OpenBSDBCrypt;
 
 import com.floragunn.codova.documents.DocWriter;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.io.Files;
 
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
@@ -54,7 +51,7 @@ public class AddUserLocal implements Callable<Integer> {
     private Map<String, Object> attributes;
 
     @Option(names = { "--password" }, arity = "0..1", description = "Passphrase", interactive = true, required = true)
-    char[] password;
+    String password;
 
     @Option(names = { "-o",
             "--output" }, arity = "0..1", description = "File or directory to write configuration to. If not specified, the configuration is written to STDOUT.")
@@ -80,7 +77,7 @@ public class AddUserLocal implements Callable<Integer> {
 
             if (password != null) {
                 newUserData.put("hash", hash(password));
-                Arrays.fill(password, (char) 0);
+                password = "";
             }
 
             String userYaml = DocWriter.yaml().writeAsString(ImmutableMap.of(userName, newUserData));
@@ -120,13 +117,9 @@ public class AddUserLocal implements Callable<Integer> {
         } 
     }
 
-    private static String hash(char[] clearTextPassword) {
-        final byte[] salt = new byte[16];
-        new SecureRandom().nextBytes(salt);
-        final String hash = OpenBSDBCrypt.generate((Objects.requireNonNull(clearTextPassword)), salt, 12);
-        Arrays.fill(salt, (byte) 0);
-        Arrays.fill(clearTextPassword, '\0');
-        return hash;
+    private static String hash(String clearTextPassword) {
+        BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(12, new SecureRandom());
+        return  passwordEncoder.encode(clearTextPassword);
     }
 
 }
