@@ -20,8 +20,8 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>7.17.13</elasticsearch.version>
-		<sg.test-version>b-master-SNAPSHOT</sg.test-version>
+		<elasticsearch.version>8.15.2</elasticsearch.version>
+		<sg.test-version>main-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>1.8</maven.compiler.source>
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<maven.compiler.release>8</maven.compiler.release>
@@ -71,7 +71,17 @@
             <snapshots>
                 <enabled>false</enabled>
             </snapshots>
-        </repository>	
+        </repository>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>true</enabled>
+			</snapshots>
+			<id>third-party</id>
+			<url>https://maven.search-guard.com:443/third-party</url>
+		</repository>
 		<repository>
 			<id>elasticsearch-releases</id>
 			<url>https://artifacts.elastic.co/maven</url>
@@ -180,7 +190,7 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>5.11.3</version>
+			<version>5.11.2</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -207,36 +217,50 @@
 
 		<dependency>
 			<groupId>org.elasticsearch.plugin</groupId>
-			<artifactId>lang-mustache-client</artifactId>
+			<artifactId>lang-mustache</artifactId>
 			<scope>test</scope>
 			<version>${elasticsearch.version}</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.elasticsearch.plugin</groupId>
-			<artifactId>percolator-client</artifactId>
+			<artifactId>percolator</artifactId>
 			<version>${elasticsearch.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.elasticsearch.plugin</groupId>
-			<artifactId>parent-join-client</artifactId>
+			<artifactId>parent-join</artifactId>
+			<version>${elasticsearch.version}</version>
+			<scope>test</scope>
+		</dependency>
+
+<!--		<dependency>-->
+<!--			<groupId>org.elasticsearch.plugin</groupId>-->
+<!--			<artifactId>aggs-matrix-stats-client</artifactId>-->
+<!--			<version>${elasticsearch.version}</version>-->
+<!--			<scope>test</scope>-->
+<!--		</dependency>-->
+
+		<dependency>
+			<groupId>org.elasticsearch.plugin</groupId>
+			<artifactId>reindex</artifactId>
 			<version>${elasticsearch.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
-			<groupId>org.elasticsearch.plugin</groupId>
-			<artifactId>aggs-matrix-stats-client</artifactId>
+			<groupId>org.elasticsearch</groupId>
+			<artifactId>elasticsearch-ssl-config</artifactId>
 			<version>${elasticsearch.version}</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
-			<groupId>org.elasticsearch.plugin</groupId>
-			<artifactId>reindex-client</artifactId>
-			<version>${elasticsearch.version}</version>
+			<groupId>com.github.spullara.mustache.java</groupId>
+			<artifactId>compiler</artifactId>
+			<version>0.9.10</version>
 			<scope>test</scope>
 		</dependency>
 
