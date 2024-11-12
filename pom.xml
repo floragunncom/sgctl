@@ -241,13 +241,6 @@
 			<scope>test</scope>
 		</dependency>
 
-<!--		<dependency>-->
-<!--			<groupId>org.elasticsearch.plugin</groupId>-->
-<!--			<artifactId>aggs-matrix-stats-client</artifactId>-->
-<!--			<version>${elasticsearch.version}</version>-->
-<!--			<scope>test</scope>-->
-<!--		</dependency>-->
-
 		<dependency>
 			<groupId>org.elasticsearch.plugin</groupId>
 			<artifactId>reindex</artifactId>
