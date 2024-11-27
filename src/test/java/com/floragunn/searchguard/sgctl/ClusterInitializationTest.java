@@ -58,7 +58,7 @@ public class ClusterInitializationTest {
 
     private final static TestCertificates TEST_CERTIFICATES = TestCertificates.builder().ca("CN=root.ca.example.com,OU=SearchGuard,O=SearchGuard")
             .addNodes("CN=127.0.0.1,OU=SearchGuard,O=SearchGuard")
-            .addAdminClients(singletonList("CN=admin-0.example.com;OU=SearchGuard;O=SearchGuard"), 10, "secret").build();
+            .addAdminClients(singletonList("CN=admin-0.example.com,OU=SearchGuard,O=SearchGuard"), 10, "secret").build();
 
     public static LocalCluster cluster;
 
