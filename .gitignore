@@ -6,5 +6,9 @@
 ### Eclipse ###
 .classpath
 .project
-
+.settings
 unittest.log
+
+
+#gitlab-ci-local
+.gitlab-ci-local/
