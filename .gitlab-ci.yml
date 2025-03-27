@@ -7,10 +7,14 @@ variables:
 image: "floragunncom/ci-pipeline-focal-mvn38-java17:0.1.0"
 
 
+include:
+- local: 'ci/aikido.yml'  
+
 stages:
   - build
   - package
   - "Deploy Docker Image"
+  - "Aikido Scan"
 
 workflow:
   rules:
