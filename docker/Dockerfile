@@ -1,7 +1,7 @@
 ARG JAVA_VERSION
 FROM eclipse-temurin:${JAVA_VERSION}-jammy
 
-ARG TLS_TOOL_VERSION=3.1.0
+ARG TLS_TOOL_VERSION=3.1.1
 
 RUN groupadd -g 1000 sg && \
     adduser --uid 1000 --gid 1000 --home /usr/share/sg sg && \
