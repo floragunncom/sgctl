@@ -20,7 +20,7 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>8.16.0</elasticsearch.version>
+		<elasticsearch.version>9.0.1</elasticsearch.version>
 		<sg.test-version>main-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
@@ -124,6 +124,18 @@
 			<groupId>commons-validator</groupId>
 			<artifactId>commons-validator</artifactId>
 			<version>1.9.0</version>
+			<exclusions>
+				<exclusion>
+					<!--commons-beanutils in version 1.11.0 or newer is required-->
+					<groupId>commons-beanutils</groupId>
+					<artifactId>commons-beanutils</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>commons-beanutils</groupId>
+			<artifactId>commons-beanutils</artifactId>
+			<version>1.11.0</version>
 		</dependency>
 
 		<dependency>
