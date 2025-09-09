@@ -8,6 +8,9 @@ updates:
       interval: daily
     ignore:
       -   dependency-name: "org.elasticsearch*"
+      - dependency-name: "com.fasterxml.jackson*"
+      - dependency-name: "com.floragunn:search-guard-flx*"
+      - dependency-name: "com.floragunn:dlic-search-guard-flx*"
     #pull-request-branch-name:
       #separator: 'default: "-"'
       #prefix: 'default: "dependabot"'
