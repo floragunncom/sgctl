@@ -98,7 +98,7 @@ public class ClusterInitializationTest {
         Files.write(sgConfigDir.resolve("sg_roles.yml"), ("test_role:\n  cluster_permissions: ['SGS_CLUSTER_MONITOR']").getBytes());
         Files.write(sgConfigDir.resolve("sg_roles_mapping.yml"), ("role:\n  backend_roles: ['backend_role']").getBytes());
         Files.write(sgConfigDir.resolve("sg_tenants.yml"), ("admin_tenant:\n  description: \"Demo tenant\"").getBytes());
-        Files.write(sgConfigDir.resolve("sg_action_groups.yml"), ("ag:\n  allowed_actions: [\"indices:data/read/search*\"]").getBytes());
+        Files.write(sgConfigDir.resolve("sg_action_groups.yml"), ("ag:\n  allowed_actions: [\"indices:data/read/search*\"]\n  type: \"index\"").getBytes());
 
         int rc = SgctlTool.exec("update-config", sgConfigDir.toString(), "--debug", "--sgctl-config-dir", configDir, "--skip-connection-check");
 
