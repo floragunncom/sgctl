@@ -1,0 +1,25 @@
+stages: [build, sonar]
+
+image: maven:3.9-eclipse-temurin-17
+
+cache:
+  key: maven
+  paths:
+    - .m2/repository
+
+variables:
+  MAVEN_CLI_OPTS: "-B -Dmaven.test.skip=false"
+
+build:
+  stage: build
+  script:
+    - mvn $MAVEN_CLI_OPTS -q -e -DskipTests compile
+
+sonar:
+  stage: sonar
+  script:
+    - mvn -q -DskipTests sonar:sonar \
+      -Dsonar.host.url="$SONAR_HOST_URL" \
+      -Dsonar.login="$SONAR_TOKEN"
+  rules:
+    - if: '$CI_COMMIT_BRANCH'
