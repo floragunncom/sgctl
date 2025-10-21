@@ -20,8 +20,10 @@ package com.floragunn.searchguard.sgctl.client;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.ConnectException;
+import java.net.URLEncoder;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
+import java.nio.charset.StandardCharsets;
 import java.nio.charset.UnsupportedCharsetException;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -75,9 +77,16 @@ public class SearchGuardRestClient implements AutoCloseable {
     private boolean debug;
 
     public SearchGuardRestClient(HttpHost httpHost, TLSConfig tlsConfig) {
+        this(httpHost, tlsConfig, HttpClientBuilder.create().setSSLSocketFactory(tlsConfig.toSSLConnectionSocketFactory()).build());
+    }
+
+    /**
+     * For testing purposes only
+     */
+    SearchGuardRestClient(HttpHost httpHost, TLSConfig tlsConfig, CloseableHttpClient client) {
         this.httpHost = httpHost;
         this.tlsConfig = tlsConfig;
-        this.client = HttpClientBuilder.create().setSSLSocketFactory(tlsConfig.toSSLConnectionSocketFactory()).build();
+        this.client = client;
     }
 
     public AuthInfoResponse authInfo()
@@ -97,21 +106,25 @@ public class SearchGuardRestClient implements AutoCloseable {
 
     public GetUserResponse getUser(String userName)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        userName = URLEncoder.encode(userName, StandardCharsets.UTF_8);
         return get("/_searchguard/internal_users/" + userName).parseResponseBy(GetUserResponse::new);
     }
 
     public BasicResponse deleteUser(String userName)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        userName = URLEncoder.encode(userName, StandardCharsets.UTF_8);
         return delete("/_searchguard/internal_users/" + userName).parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse putUser(String userName, Map<String, Object> newUserData)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        userName = URLEncoder.encode(userName, StandardCharsets.UTF_8);
         return putJson("/_searchguard/internal_users/" + userName, newUserData).parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse patchUser(String userName, DocPatch patch, Header... headers)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
+        userName = URLEncoder.encode(userName, StandardCharsets.UTF_8);
         return patch("/_searchguard/internal_users/" + userName, patch, headers).parseResponseBy(BasicResponse::new);
     }
 
