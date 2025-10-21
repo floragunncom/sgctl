@@ -19,7 +19,6 @@ import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
 import org.apache.http.entity.BasicHttpEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.message.BasicHeader;
@@ -59,7 +58,6 @@ public class SearchGuardRestClientTest {
 
     @BeforeEach
     public void setup() throws Exception {
-//        when(tlsConfig.toSSLConnectionSocketFactory()).thenReturn(mock(SSLConnectionSocketFactory.class));
         httpHost = new HttpHost("localhost", 9200, "http");
         restClient = new SearchGuardRestClient(httpHost, tlsConfig, httpClient);
     }
@@ -89,7 +87,7 @@ public class SearchGuardRestClientTest {
         String json = "{\"data\":{\"description\":\"desc\",\"search_guard_roles\":[\"role1\"],\"backend_roles\":[\"b1\",\"b2\"],\"attributes\":{\"k\":\"v\"}}}";
         prepareHttpResponse(200, json, "application/json; charset=UTF-8", "etag-123");
 
-        GetUserResponse resp = restClient.getUser("john doe");
+        GetUserResponse resp = restClient.getUser("john doe+");
 
         assertThat(resp, notNullValue());
         assertThat(resp.getDescription(), equalTo("desc"));
@@ -104,7 +102,7 @@ public class SearchGuardRestClientTest {
         HttpRequest sentHttpRequest = captor.getValue();
         assertThat(sentHttpRequest, instanceOf(HttpUriRequest.class));
         String uri = sentHttpRequest.getRequestLine().getUri();
-        assertThat(uri, containsString("/_searchguard/internal_users/john+doe"));
+        assertThat(uri, containsString("/_searchguard/internal_users/john%20doe%2B"));
     }
 
     @Test
@@ -154,7 +152,7 @@ public class SearchGuardRestClientTest {
         newUser.put("password", "secret");
         newUser.put("description", "d");
 
-        BasicResponse response = restClient.putUser("bob@with? space #and[reserved]characters!", newUser);
+        BasicResponse response = restClient.putUser("bob@with? space #and[reserved]characters/!", newUser);
 
         assertThat(response, notNullValue());
         assertThat(response.getMessage(), equalTo("ok"));
@@ -169,7 +167,7 @@ public class SearchGuardRestClientTest {
         assertThat(sentBody, containsString("\"secret\""));
 
         String uri = sentHttpRequest.getRequestLine().getUri();
-        assertThat(uri, containsString("/_searchguard/internal_users/bob%40with%3F+space+%23and%5Breserved%5Dcharacters%21"));
+        assertThat(uri, containsString("/_searchguard/internal_users/bob%40with%3F%20space%20%23and%5Breserved%5Dcharacters%2F%21"));
     }
 
     @Test

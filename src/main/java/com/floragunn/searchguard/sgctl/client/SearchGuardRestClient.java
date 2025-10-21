@@ -106,25 +106,30 @@ public class SearchGuardRestClient implements AutoCloseable {
 
     public GetUserResponse getUser(String userName)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        userName = URLEncoder.encode(userName, StandardCharsets.UTF_8);
+        userName = encodeUserName(userName);
         return get("/_searchguard/internal_users/" + userName).parseResponseBy(GetUserResponse::new);
     }
 
     public BasicResponse deleteUser(String userName)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        userName = URLEncoder.encode(userName, StandardCharsets.UTF_8);
+        userName = encodeUserName(userName);
         return delete("/_searchguard/internal_users/" + userName).parseResponseBy(BasicResponse::new);
+    }
+
+    private static String encodeUserName(String userName) {
+        // URLEncoder.encode(userName, StandardCharsets.UTF_8); encodes space as + which is not correct in URL path segments
+        return URLEncoder.encode(userName, StandardCharsets.UTF_8).replace("+", "%20");
     }
 
     public BasicResponse putUser(String userName, Map<String, Object> newUserData)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        userName = URLEncoder.encode(userName, StandardCharsets.UTF_8);
+        userName = encodeUserName(userName);
         return putJson("/_searchguard/internal_users/" + userName, newUserData).parseResponseBy(BasicResponse::new);
     }
 
     public BasicResponse patchUser(String userName, DocPatch patch, Header... headers)
             throws InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException {
-        userName = URLEncoder.encode(userName, StandardCharsets.UTF_8);
+        userName = encodeUserName(userName);
         return patch("/_searchguard/internal_users/" + userName, patch, headers).parseResponseBy(BasicResponse::new);
     }
 

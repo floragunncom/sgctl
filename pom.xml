@@ -394,12 +394,14 @@
 			</exclusions>
 		</dependency>
 		<dependency>
+			<!-- replacement for byte-buddy used by mockito -->
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
 			<version>1.17.8</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<!-- replacement for byte-buddy used by mockito -->
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy-agent</artifactId>
 			<version>1.17.8</version>
