@@ -386,10 +386,10 @@
 		<dependency>
 			<groupId>org.mockito</groupId>
 			<artifactId>mockito-core</artifactId>
-			<version>5.2.0</version>
+			<version>5.20.0</version>
 			<scope>test</scope>
 			<exclusions>
-				<!-- Java 21 is not supported by byte-buddy version used by mockito 5.2.0 -->
+				<!-- Java 21 is not supported by byte-buddy version used by mockito 5.20.0 -->
 				<exclusion>
 					<groupId>net.bytebuddy</groupId>
 					<artifactId>byte-buddy</artifactId>
