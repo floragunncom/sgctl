@@ -1,19 +1,11 @@
 package com.floragunn.searchguard.sgctl.client;
 
-import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.*;
-import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.mockito.Mockito.*;
-
-import java.io.ByteArrayInputStream;
-import java.nio.charset.StandardCharsets;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
+import com.floragunn.codova.config.net.TLSConfig;
+import com.floragunn.codova.documents.patch.DocPatch;
 import com.floragunn.searchguard.sgctl.client.api.GetUserResponse;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
+import org.apache.http.HttpHost;
 import org.apache.http.HttpRequest;
 import org.apache.http.ProtocolVersion;
 import org.apache.http.StatusLine;
@@ -32,9 +24,23 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.floragunn.codova.config.net.TLSConfig;
-import com.floragunn.codova.documents.patch.DocPatch;
-import org.apache.http.HttpHost;
+import java.io.ByteArrayInputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.instanceOf;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class SearchGuardRestClientTest {
@@ -57,7 +63,7 @@ public class SearchGuardRestClientTest {
     private SearchGuardRestClient restClient;
 
     @BeforeEach
-    public void setup() throws Exception {
+    public void setup() {
         httpHost = new HttpHost("localhost", 9200, "http");
         restClient = new SearchGuardRestClient(httpHost, tlsConfig, httpClient);
     }
@@ -94,7 +100,7 @@ public class SearchGuardRestClientTest {
         assertThat(resp.getSearchGuardRoles(), hasSize(1));
         assertThat(resp.getSearchGuardRoles().get(0), equalTo("role1"));
         assertThat(resp.getBackendRoles(), hasSize(2));
-        assertThat(resp.getAttributes().get("k"), equalTo((Object) "v"));
+        assertThat(resp.getAttributes().get("k"), equalTo("v"));
         assertThat(resp.getETag(), equalTo("etag-123"));
 
         ArgumentCaptor<HttpRequest> captor = ArgumentCaptor.forClass(HttpRequest.class);
