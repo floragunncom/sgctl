@@ -20,8 +20,8 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>9.0.1</elasticsearch.version>
-		<sg.test-version>main-SNAPSHOT</sg.test-version>
+		<elasticsearch.version>9.0.8</elasticsearch.version>
+		<sg.test-version>sg-flx-3-1-x-es-9-0-x-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
