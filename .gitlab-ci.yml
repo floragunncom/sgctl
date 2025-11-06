@@ -3,7 +3,7 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
   MAVEN_CLI_OPTS: "--batch-mode"
   DOCKER_DRIVER: overlay2
-image: "floragunncom/focal-mvn38-java23:0.1.0"
+image: "floragunncom/minimal-java:251106"
 #image: "maven:3.9.9-amazoncorretto-21-debian"
 
 
