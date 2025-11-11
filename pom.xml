@@ -404,7 +404,7 @@
 			<!-- replacement for byte-buddy used by mockito -->
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.17.8</version>
+			<version>1.18.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
