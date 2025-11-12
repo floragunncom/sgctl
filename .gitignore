@@ -12,3 +12,5 @@ unittest.log
 
 #gitlab-ci-local
 .gitlab-ci-local/
+
+test_xpack
