@@ -17,23 +17,24 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class RoleTest {
 
-    private static final TypeReference<Map<String, Role>> ROLES_TYPE = new TypeReference<>() {
-    };
+    private static final TypeReference<Map<String, Role>> ROLES_TYPE = new TypeReference<>() {};
 
     @Test
     public void testRolesJsonRoundTrip() throws IOException {
-        String rolesJson;
+        final String rolesJson;
         try (var in = RoleTest.class.getResourceAsStream("/xpack_migrate/roles/roles.json")) {
             assertNotNull(in);
             rolesJson = new String(in.readAllBytes());
         }
 
-        ObjectMapper mapper = JsonMapper.builder()
-            .withConfigOverride(List.class, cfg -> cfg.setSetterInfo(JsonSetter.Value.forValueNulls(Nulls.AS_EMPTY)))
+        final ObjectMapper mapper = JsonMapper.builder()
+            .withConfigOverride(List.class, cfg ->
+                    cfg.setSetterInfo(JsonSetter.Value.forValueNulls(Nulls.AS_EMPTY))
+            )
             .serializationInclusion(JsonInclude.Include.NON_EMPTY)
             .build();
 
-        var roundTripped = mapper.writeValueAsString(mapper.readValue(rolesJson, ROLES_TYPE));
+        final String roundTripped = mapper.writeValueAsString(mapper.readValue(rolesJson, ROLES_TYPE));
         assertEquals(mapper.readTree(rolesJson), mapper.readTree(roundTripped));
     }
 
