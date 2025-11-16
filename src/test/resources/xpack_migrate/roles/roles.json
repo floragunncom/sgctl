@@ -1,0 +1,2112 @@
+{
+  "kibana_user": {
+    "cluster": [],
+    "indices": [],
+    "applications": [
+      {
+        "application": "kibana-.kibana",
+        "privileges": [
+          "all"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [],
+    "metadata": {
+      "_deprecated_reason": "Please use the [kibana_admin] role instead",
+      "_deprecated": true,
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access to all features in Kibana."
+  },
+  "beats_admin": {
+    "cluster": [],
+    "indices": [
+      {
+        "names": [
+          ".management-beats"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access to the .management-beats index, which contains configuration information for the Beats."
+  },
+  "remote_monitoring_agent": {
+    "cluster": [
+      "manage_index_templates",
+      "manage_ingest_pipelines",
+      "monitor",
+      "cluster:admin/ilm/get",
+      "cluster:admin/ilm/put",
+      "cluster:monitor/xpack/watcher/watch/get",
+      "cluster:admin/xpack/watcher/watch/put",
+      "cluster:admin/xpack/watcher/watch/delete"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".monitoring-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metricbeat-*"
+        ],
+        "privileges": [
+          "index",
+          "create_index",
+          "view_index_metadata",
+          "indices:admin/aliases",
+          "indices:admin/rollover"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants the minimum privileges required to write data into the monitoring indices (.monitoring-*). This role also has the privileges necessary to create Metricbeat indices (metricbeat-*) and write data into them."
+  },
+  "transform_user": {
+    "cluster": [
+      "monitor_transform"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".transform-notifications-*",
+          ".data-frame-notifications-*",
+          ".transform-notifications-read"
+        ],
+        "privileges": [
+          "view_index_metadata",
+          "read"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants monitor_transform cluster privileges, which enable you to perform read-only operations related to transforms. This role also includes all Kibana privileges for the machine learning features."
+  },
+  "snapshot_user": {
+    "cluster": [
+      "create_snapshot",
+      "cluster:admin/repository/get"
+    ],
+    "indices": [
+      {
+        "names": [
+          "*"
+        ],
+        "privileges": [
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": true
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants the necessary privileges to create snapshots of all the indices and to view their metadata. This role enables users to view the configuration of existing snapshot repositories and snapshot details. It does not grant authority to remove or add repositories or to restore snapshots. It also does not enable to change index settings or to read or update data stream or index data."
+  },
+  "reporting_user": {
+    "cluster": [],
+    "indices": [],
+    "applications": [
+      {
+        "application": "kibana-*",
+        "privileges": [
+          "reserved_reporting_user"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [],
+    "metadata": {
+      "_deprecated_reason": "Please grant access via Kibana privileges instead.",
+      "_deprecated": true,
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants the necessary privileges required to use reporting features in Kibana, including generating and downloading reports. This role implicitly grants access to all Kibana reporting features, with each user having access only to their own reports. Note that reporting users should also be assigned additional roles that grant read access to Kibana, and the indices that will be used to generate reports."
+  },
+  "watcher_user": {
+    "cluster": [
+      "monitor_watcher"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".watches"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".watcher-history-*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants read access to the .watches index, the get watch action and the watcher stats."
+  },
+  "kibana_system": {
+    "cluster": [
+      "monitor",
+      "manage_index_templates",
+      "manage_inference",
+      "cluster:admin/xpack/monitoring/bulk",
+      "manage_saml",
+      "manage_token",
+      "manage_oidc",
+      "manage_enrich",
+      "manage_pipeline",
+      "manage_ilm",
+      "monitor_connector",
+      "manage_transform",
+      "cluster:admin/xpack/security/api_key/invalidate",
+      "grant_api_key",
+      "manage_own_api_key",
+      "cluster:admin/xpack/security/privilege/builtin/get",
+      "delegate_pki",
+      "cluster:admin/xpack/security/profile/get",
+      "cluster:admin/xpack/security/profile/activate",
+      "cluster:admin/xpack/security/profile/suggest",
+      "cluster:admin/xpack/security/profile/has_privileges",
+      "write_fleet_secrets",
+      "manage_ml",
+      "cluster:admin/analyze",
+      "cluster:admin/script/put",
+      "cluster:admin/script/get",
+      "monitor_text_structure",
+      "cancel_task"
+    ],
+    "global": {
+      "application": {
+        "manage": {
+          "applications": [
+            "kibana-*"
+          ]
+        }
+      },
+      "profile": {
+        "write": {
+          "applications": [
+            "kibana*"
+          ]
+        }
+      },
+      "role": {}
+    },
+    "indices": [
+      {
+        "names": [
+          ".kibana*",
+          ".reporting-*",
+          ".chat-*",
+          ".workflows-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".monitoring-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".management-beats"
+        ],
+        "privileges": [
+          "create_index",
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".ml-anomalies*",
+          ".ml-stats-*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".ml-annotations*",
+          ".ml-notifications*"
+        ],
+        "privileges": [
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".reindexed-v8-ml-annotations*",
+          ".reindexed-v8-ml-notifications*"
+        ],
+        "privileges": [
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".apm-agent-configuration"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".apm-custom-link"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".apm-source-map"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          "apm-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-apm.*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metrics-apm.*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "traces-apm.*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "traces-apm-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metrics-logstash.*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "*"
+        ],
+        "privileges": [
+          "view_index_metadata",
+          "monitor"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".logs-endpoint.diagnostic.collection-*"
+        ],
+        "privileges": [
+          "read",
+          "create_index"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".fleet-secrets*"
+        ],
+        "privileges": [
+          "write",
+          "delete",
+          "create_index"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".integration_knowledge*"
+        ],
+        "privileges": [
+          "read",
+          "write",
+          "create_index"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-actions*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-agents*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-artifacts*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-enrollment-api-keys*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-policies*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-policies-leader*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-servers*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-fileds*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-file-data-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-files-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-filedelivery-data-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".fleet-filedelivery-meta-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          "logs-elastic_agent.status_change-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-elastic_agent*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metrics-fleet_server*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-fleet_server*"
+        ],
+        "privileges": [
+          "read",
+          "delete_index"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "fleet-synced-integrations",
+          "fleet-synced-integrations-ccr*"
+        ],
+        "privileges": [
+          "create_index",
+          "manage",
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".siem-signals*",
+          ".reindexed-v8-siem-signals*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".lists-*",
+          ".items-*",
+          ".reindexed-v8-lists-*",
+          ".reindexed-v8-items-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".internal.alerts*",
+          ".reindexed-v8-internal.alerts*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".alerts*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".internal.cases*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".cases*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".internal.adhoc.alerts*",
+          ".adhoc.alerts*"
+        ],
+        "privileges": [
+          "create_index",
+          "read",
+          "write",
+          "view_index_metadata",
+          "maintenance",
+          "indices:admin/rollover",
+          "indices:admin/aliases",
+          "indices:admin/mapping/put",
+          "indices:admin/mapping/auto_put",
+          "indices:admin/settings/update"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".preview.alerts*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".internal.preview.alerts*",
+          ".reindexed-v8-internal.preview.alerts*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metrics-endpoint.policy-*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metrics-endpoint.metrics-*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-endpoint.events.*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-*",
+          "synthetics-*",
+          "traces-*",
+          "/metrics-.*&~(metrics-endpoint\\.metadata_current_default.*)/",
+          ".logs-endpoint.action.responses-*",
+          ".logs-endpoint.diagnostic.collection-*",
+          ".logs-endpoint.actions-*",
+          ".logs-endpoint.heartbeat-*",
+          ".logs-osquery_manager.actions-*",
+          ".logs-osquery_manager.action.responses-*",
+          "logs-osquery_manager.action.responses-*",
+          "logs-osquery_manager.result-*",
+          "profiling-*"
+        ],
+        "privileges": [
+          "indices:admin/settings/update",
+          "indices:admin/mapping/put",
+          "indices:admin/rollover",
+          "indices:admin/data_stream/lifecycle/put"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".logs-endpoint.action.responses-*"
+        ],
+        "privileges": [
+          "auto_configure",
+          "read",
+          "write",
+          "create_index"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".logs-endpoint.actions-*"
+        ],
+        "privileges": [
+          "auto_configure",
+          "read",
+          "write",
+          "create_index"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".logs-osquery_manager.action.responses-*"
+        ],
+        "privileges": [
+          "auto_configure",
+          "create_index",
+          "read",
+          "index",
+          "delete"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-osquery_manager.action.responses-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".logs-osquery_manager.actions-*"
+        ],
+        "privileges": [
+          "auto_configure",
+          "create_index",
+          "read",
+          "index",
+          "write",
+          "delete"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-osquery_manager.result-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-sentinel_one.*",
+          "logs-crowdstrike.*",
+          "logs-microsoft_defender_endpoint.*",
+          "logs-m365_defender.*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".logs-endpoint.diagnostic.collection-*",
+          "logs-apm-*",
+          "logs-apm.*-*",
+          "logs-cloud_security_posture.findings-*",
+          "logs-cloud_security_posture.vulnerabilities-*",
+          "metrics-apm-*",
+          "metrics-apm.*-*",
+          "traces-apm-*",
+          "traces-apm.*-*",
+          "synthetics-http-*",
+          "synthetics-icmp-*",
+          "synthetics-tcp-*",
+          "synthetics-browser-*",
+          "synthetics-browser.network-*",
+          "synthetics-browser.screenshot-*"
+        ],
+        "privileges": [
+          "indices:admin/delete"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metrics-endpoint.metadata*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metrics-endpoint.metadata_current_default*",
+          ".metrics-endpoint.metadata_current_default*",
+          ".metrics-endpoint.metadata_united_default*"
+        ],
+        "privileges": [
+          "create_index",
+          "delete_index",
+          "read",
+          "index",
+          "indices:admin/aliases",
+          "indices:admin/settings/update"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-ti_*_latest.*"
+        ],
+        "privileges": [
+          "create_index",
+          "delete_index",
+          "read",
+          "index",
+          "delete",
+          "manage",
+          "indices:admin/aliases",
+          "indices:admin/settings/update"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-ti_*.*-*"
+        ],
+        "privileges": [
+          "indices:admin/delete",
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "kibana_sample_data_*"
+        ],
+        "privileges": [
+          "create_index",
+          "delete_index",
+          "read",
+          "index",
+          "view_index_metadata",
+          "indices:admin/aliases",
+          "indices:admin/settings/update"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-cloud_security_posture.findings-*",
+          "logs-cloud_security_posture.vulnerabilities-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-cloud_security_posture.findings_latest-default*",
+          "logs-cloud_security_posture.vulnerabilities_latest-default*"
+        ],
+        "privileges": [
+          "create_index",
+          "read",
+          "index",
+          "delete",
+          "indices:admin/delete",
+          "manage",
+          "indices:admin/aliases",
+          "indices:admin/settings/update"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-cloud_security_posture.scores-default*"
+        ],
+        "privileges": [
+          "create_index",
+          "read",
+          "index",
+          "delete",
+          "indices:admin/delete",
+          "indices:admin/aliases",
+          "indices:admin/settings/update",
+          "indices:admin/mapping/auto_put"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-wiz.vulnerability-*",
+          "logs-wiz.cloud_configuration_finding-*",
+          "logs-wiz.cloud_configuration_finding_full_posture-*",
+          "logs-google_scc.finding-*",
+          "logs-aws.securityhub_findings-*",
+          "logs-aws.securityhub_findings_full_posture-*",
+          "logs-aws.inspector-*",
+          "logs-aws.config-*",
+          "logs-amazon_security_lake.findings-*",
+          "logs-qualys_vmdr.asset_host_detection-*",
+          "logs-tenable_sc.vulnerability-*",
+          "logs-tenable_io.vulnerability-*",
+          "logs-rapid7_insightvm.vulnerability-*",
+          "logs-rapid7_insightvm.asset_vulnerability-*",
+          "logs-carbon_black_cloud.asset_vulnerability_summary-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-m365_defender.vulnerability-*",
+          "logs-microsoft_defender_endpoint.vulnerability-*",
+          "logs-microsoft_defender_cloud.assessment-*",
+          "logs-sentinel_one.application_risk-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata",
+          "indices:admin/delete"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-extrahop.investigation-*",
+          "logs-qualys_gav.asset-*",
+          "logs-sentinel_one.application-*",
+          "logs-island_browser.user-*",
+          "logs-island_browser.device-*",
+          "logs-cyera.classification-*",
+          "logs-cyera.issue-*",
+          "logs-cyera.datastore-*"
+        ],
+        "privileges": [
+          "manage",
+          "create_index",
+          "read",
+          "index",
+          "write",
+          "delete",
+          "indices:admin/delete",
+          "indices:admin/aliases",
+          "indices:admin/mapping/auto_put"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "security_solution-*.vulnerability_latest",
+          "security_solution-*.misconfiguration_latest"
+        ],
+        "privileges": [
+          "manage",
+          "read",
+          "indices:admin/aliases",
+          "indices:admin/settings/update"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "security_solution-*.vulnerability_latest-*",
+          "security_solution-*.misconfiguration_latest-*"
+        ],
+        "privileges": [
+          "create_index",
+          "index",
+          "manage",
+          "read",
+          "delete",
+          "indices:admin/aliases",
+          "indices:admin/settings/update"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "risk-score.risk-*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".entity_analytics.*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".asset-criticality.asset-criticality-*"
+        ],
+        "privileges": [
+          "create_index",
+          "manage",
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".entities.*"
+        ],
+        "privileges": [
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".entities.*history*"
+        ],
+        "privileges": [
+          "create_index",
+          "manage",
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".entities.*reset*"
+        ],
+        "privileges": [
+          "create_index",
+          "manage",
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "logs-cloud_defend.*",
+          "metrics-cloud_defend.*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".slo-observability.*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".logs-endpoint.heartbeat-*"
+        ],
+        "privileges": [
+          "read",
+          "create_index"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".edr-workflow-insights-*"
+        ],
+        "privileges": [
+          "create_index",
+          "auto_configure",
+          "manage",
+          "read",
+          "write",
+          "delete",
+          "indices:admin/settings/update",
+          "indices:admin/mapping/put",
+          "indices:admin/rollover"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".elastic-connectors*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "remote_indices": [
+      {
+        "names": [
+          ".monitoring-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      },
+      {
+        "names": [
+          "apm-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      },
+      {
+        "names": [
+          "logs-apm.*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      },
+      {
+        "names": [
+          "metrics-apm.*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      },
+      {
+        "names": [
+          "traces-apm.*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      },
+      {
+        "names": [
+          "traces-apm-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      }
+    ],
+    "remote_cluster": [
+      {
+        "privileges": [
+          "monitor_stats"
+        ],
+        "clusters": [
+          "*"
+        ]
+      }
+    ],
+    "description": "Grants access necessary for the Kibana system user to read from and write to the Kibana indices, manage index templates and tokens, and check the availability of the Elasticsearch cluster. It also permits activating, searching, and retrieving user profiles, as well as updating user profile data for the kibana-* namespace. Additionally, this role grants read access to the .monitoring-* indices and read and write access to the .reporting-* indices. Note: This role should not be assigned to users as the granted permissions may change between releases."
+  },
+  "kibana_admin": {
+    "cluster": [],
+    "indices": [],
+    "applications": [
+      {
+        "application": "kibana-.kibana",
+        "privileges": [
+          "all"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access to all features in Kibana."
+  },
+  "transport_client": {
+    "cluster": [
+      "transport_client"
+    ],
+    "indices": [],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants the privileges required to access the cluster through the Java Transport Client. The Java Transport Client fetches information about the nodes in the cluster using the Node Liveness API and the Cluster State API (when sniffing is enabled). Assign your users this role if they use the Transport Client."
+  },
+  "rollup_admin": {
+    "cluster": [
+      "manage_rollup"
+    ],
+    "indices": [],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants manage_rollup cluster privileges, which enable you to manage and execute all rollup actions."
+  },
+  "inference_admin": {
+    "cluster": [
+      "manage_inference"
+    ],
+    "indices": [],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access necessary to manage inference models and performing inference."
+  },
+  "monitoring_user": {
+    "cluster": [
+      "cluster:monitor/main",
+      "cluster:monitor/xpack/info",
+      "cluster:monitor/remote/info"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".monitoring-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "/metrics-(beats|elasticsearch|enterprisesearch|kibana|logstash).*/"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "metricbeat-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [
+      {
+        "application": "kibana-*",
+        "privileges": [
+          "reserved_monitoring"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "remote_indices": [
+      {
+        "names": [
+          ".monitoring-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      },
+      {
+        "names": [
+          "/metrics-(beats|elasticsearch|enterprisesearch|kibana|logstash).*/"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      },
+      {
+        "names": [
+          "metricbeat-*"
+        ],
+        "privileges": [
+          "read",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      }
+    ],
+    "description": "Grants the minimum privileges required for any user of X-Pack monitoring other than those required to use Kibana. This role grants access to the monitoring indices and grants privileges necessary for reading basic cluster information. This role also includes all Kibana privileges for the Elastic Stack monitoring features. Monitoring users should also be assigned the kibana_admin role, or another role with access to the Kibana instance."
+  },
+  "machine_learning_admin": {
+    "cluster": [
+      "manage_ml"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".ml-anomalies*",
+          ".ml-notifications*",
+          ".ml-state*",
+          ".ml-meta*",
+          ".ml-stats-*"
+        ],
+        "privileges": [
+          "view_index_metadata",
+          "read"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".ml-annotations*"
+        ],
+        "privileges": [
+          "view_index_metadata",
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [
+      {
+        "application": "kibana-*",
+        "privileges": [
+          "reserved_ml_admin"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Provides all of the privileges of the machine_learning_user role plus the full use of the machine learning APIs. Grants manage_ml cluster privileges, read access to .ml-anomalies*, .ml-notifications*, .ml-state*, .ml-meta* indices and write access to .ml-annotations* indices. Machine learning administrators also need index privileges for source and destination indices and roles that grant access to Kibana."
+  },
+  "viewer": {
+    "cluster": [],
+    "indices": [
+      {
+        "names": [
+          "/~(([.]|ilm-history-).*)/"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".slo-observability.*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".siem-signals*",
+          ".lists-*",
+          ".items-*",
+          ".reindexed-v8-siem-signals*",
+          ".reindexed-v8-lists-*",
+          ".reindexed-v8-items-*",
+          ".entities.v1.latest.security_*",
+          ".entities.*.history.*",
+          ".asset-criticality.asset-criticality-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".alerts*",
+          ".preview.alerts*",
+          ".adhoc.alerts*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "profiling-*",
+          ".profiling-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [
+      {
+        "application": "kibana-.kibana",
+        "privileges": [
+          "read"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants read-only access to all features in Kibana (including Solutions) and to data indices."
+  },
+  "logstash_admin": {
+    "cluster": [
+      "manage_logstash_pipelines"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".logstash*"
+        ],
+        "privileges": [
+          "create",
+          "delete",
+          "index",
+          "manage",
+          "read"
+        ],
+        "allow_restricted_indices": true
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access to the .logstash* indices for managing configurations, and grants necessary access for logstash-specific APIs exposed by the logstash x-pack plugin."
+  },
+  "logstash_system": {
+    "cluster": [
+      "monitor",
+      "cluster:admin/xpack/monitoring/bulk"
+    ],
+    "indices": [],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access necessary for the Logstash system user to send system-level data (such as monitoring) to Elasticsearch. This role should not be assigned to users as the granted permissions may change between releases."
+  },
+  "beats_system": {
+    "cluster": [
+      "monitor",
+      "cluster:admin/xpack/monitoring/bulk"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".monitoring-beats-*"
+        ],
+        "privileges": [
+          "create_index",
+          "create"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access necessary for the Beats system user to send system-level data (such as monitoring) to Elasticsearch. This role should not be assigned to users as the granted permissions may change between releases."
+  },
+  "inference_user": {
+    "cluster": [
+      "monitor_inference"
+    ],
+    "indices": [],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access necessary to perform inference."
+  },
+  "remote_monitoring_collector": {
+    "cluster": [
+      "monitor"
+    ],
+    "indices": [
+      {
+        "names": [
+          "*"
+        ],
+        "privileges": [
+          "monitor"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".kibana*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": true
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants the minimum privileges required to collect monitoring data for the Elastic Stack."
+  },
+  "machine_learning_user": {
+    "cluster": [
+      "monitor_ml"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".ml-anomalies*",
+          ".ml-notifications*"
+        ],
+        "privileges": [
+          "view_index_metadata",
+          "read"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".ml-annotations*"
+        ],
+        "privileges": [
+          "view_index_metadata",
+          "read",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [
+      {
+        "application": "kibana-*",
+        "privileges": [
+          "reserved_ml_user"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants the minimum privileges required to view machine learning configuration, status, and work with results. This role grants monitor_ml cluster privileges, read access to the .ml-notifications and .ml-anomalies* indices (which store machine learning results), and write access to .ml-annotations* indices. Machine learning users also need index privileges for source and destination indices and roles that grant access to Kibana."
+  },
+  "enrich_user": {
+    "cluster": [
+      "manage_enrich",
+      "manage_ingest_pipelines",
+      "monitor"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".enrich-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": true
+      },
+      {
+        "names": [
+          ".enrich-*"
+        ],
+        "privileges": [
+          "manage",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access to manage all enrich indices (.enrich-*) and all operations on ingest pipelines."
+  },
+  "editor": {
+    "cluster": [],
+    "indices": [
+      {
+        "names": [
+          "/~(([.]|ilm-history-).*)/"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "observability-annotations"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata",
+          "write"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".slo-observability.*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata",
+          "write",
+          "manage"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".siem-signals*",
+          ".lists-*",
+          ".items-*",
+          ".reindexed-v8-siem-signals*",
+          ".reindexed-v8-lists-*",
+          ".reindexed-v8-items-*",
+          ".asset-criticality.asset-criticality-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata",
+          "write",
+          "maintenance"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".entities.v1.latest.security_*",
+          ".entities.*.history.*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          ".internal.alerts*",
+          ".reindexed-v8-internal.alerts*",
+          ".alerts*",
+          ".internal.preview.alerts*",
+          ".reindexed-v8-internal.preview.alerts*",
+          ".preview.alerts*",
+          ".internal.adhoc.alerts*",
+          ".adhoc.alerts*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata",
+          "write",
+          "maintenance"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "profiling-*",
+          ".profiling-*"
+        ],
+        "privileges": [
+          "read",
+          "view_index_metadata"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [
+      {
+        "application": "kibana-.kibana",
+        "privileges": [
+          "all"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants full access to all features in Kibana (including Solutions) and read-only access to data indices."
+  },
+  "rollup_user": {
+    "cluster": [
+      "monitor_rollup"
+    ],
+    "indices": [],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants monitor_rollup cluster privileges, which enable you to perform read-only operations related to rollups."
+  },
+  "ingest_admin": {
+    "cluster": [
+      "manage_index_templates",
+      "manage_pipeline"
+    ],
+    "indices": [],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access to manage all index templates and all ingest pipeline configurations."
+  },
+  "superuser": {
+    "cluster": [
+      "all"
+    ],
+    "indices": [
+      {
+        "names": [
+          "*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false
+      },
+      {
+        "names": [
+          "*"
+        ],
+        "privileges": [
+          "monitor",
+          "read",
+          "view_index_metadata",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": true
+      }
+    ],
+    "applications": [
+      {
+        "application": "*",
+        "privileges": [
+          "*"
+        ],
+        "resources": [
+          "*"
+        ]
+      }
+    ],
+    "run_as": [
+      "*"
+    ],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {},
+    "remote_indices": [
+      {
+        "names": [
+          "*"
+        ],
+        "privileges": [
+          "all"
+        ],
+        "allow_restricted_indices": false,
+        "clusters": [
+          "*"
+        ]
+      },
+      {
+        "names": [
+          "*"
+        ],
+        "privileges": [
+          "monitor",
+          "read",
+          "view_index_metadata",
+          "read_cross_cluster"
+        ],
+        "allow_restricted_indices": true,
+        "clusters": [
+          "*"
+        ]
+      }
+    ],
+    "remote_cluster": [
+      {
+        "privileges": [
+          "monitor_enrich",
+          "monitor_stats"
+        ],
+        "clusters": [
+          "*"
+        ]
+      }
+    ],
+    "description": "Grants full access to cluster management and data indices. This role also grants direct read-only access to restricted indices like .security. A user with this role can impersonate any other user in the system, manage security and create roles with unlimited privileges. Take extra care when assigning it to a user."
+  },
+  "transform_admin": {
+    "cluster": [
+      "manage_transform"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".transform-notifications-*",
+          ".data-frame-notifications-*",
+          ".transform-notifications-read"
+        ],
+        "privileges": [
+          "view_index_metadata",
+          "read"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants manage_transform cluster privileges, which enable you to manage transforms. This role also includes all Kibana privileges for the machine learning features."
+  },
+  "apm_system": {
+    "cluster": [
+      "monitor",
+      "cluster:admin/xpack/monitoring/bulk"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".monitoring-beats-*"
+        ],
+        "privileges": [
+          "create_index",
+          "create_doc"
+        ],
+        "allow_restricted_indices": false
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Grants access necessary for the APM system user to send system-level data (such as monitoring) to Elasticsearch.\n"
+  },
+  "watcher_admin": {
+    "cluster": [
+      "manage_watcher"
+    ],
+    "indices": [
+      {
+        "names": [
+          ".watches",
+          ".triggered_watches",
+          ".watcher-history-*"
+        ],
+        "privileges": [
+          "read"
+        ],
+        "allow_restricted_indices": true
+      }
+    ],
+    "applications": [],
+    "run_as": [],
+    "metadata": {
+      "_reserved": true
+    },
+    "transient_metadata": {
+      "enabled": true
+    },
+    "description": "Allows users to create and execute all Watcher actions. Grants read access to the .watches index. Also grants read access to the watch history and the triggered watches index."
+  }
+}
