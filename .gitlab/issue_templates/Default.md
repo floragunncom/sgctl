@@ -1,3 +1,7 @@
+👤 User Story Reference
+
+Add the user story that is being implemented by this task.
+
 📝 Description
 
 Briefly describe what needs to be implemented or changed.  
