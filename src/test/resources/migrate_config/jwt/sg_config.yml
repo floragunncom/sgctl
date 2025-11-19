@@ -1,0 +1,24 @@
+_sg_meta:
+  type: "config"
+  config_version: 2
+
+sg_config:
+  dynamic:
+    authc:
+      jwt_auth_domain:
+        http_enabled: true
+        order: 1
+        http_authenticator:
+          type: jwt
+          challenge: false
+          config:
+            signing_key: |-
+              -----BEGIN PUBLIC KEY-----
+              MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA2WDCucZF9dVw9j0T6SpWnoAPYBXWjGRQo6ICx2mB1RS28Dhwfx6/otnuf2o0W2QH5u4467UKT76INzn2KpmwqJJs8QC0xZIecVEsfafY7r5nnoY0bzVwfAS2bu7BIxstcA6ox2FNcnJWGLkxqdb9MXqEIWAG8NBW/l3dKveJ6SvUODWbwXFWvO6OINEu+hUo/ddDvXMh3OLOHPevVNXpRQkEMf9ZG+rz0KdFbwBEdEBDDlZIR37e1n301bgqwYA+l2ZIevO7ZePC0D7ZL2IgmpGntRhMQsxa6bpI+d++0nHD+7XIWeQgMyK6dHwkDi1ORtR9Wp5p6A3jQITl08oFly5iXDIuCqLF9NPP2K0p8pI3FKHLBO06WIMCESzxFubmYIhEpoggzA7FcNW6kX5YWefz5gsV1T0Y2m+4wXUzaAD6nkngDm9u0Zjo1NtxhpSOTbdWKUe80moWS76rXoJWCn4J/8VfajUxoRfTn4ifg1BeZbiE+cz7iTuVy0lZHfH0NIo5h281MkwkrQg/fTtAyyp8+6UkAS4TBOett4hNP8zr+QlxP4giwPjjeeVGO/pDzC9dKhrTuqlWlJDK9EGWcZiV2dApb7PGDyyZrGwigYym3Qt2T5buy61Rq6xe0vUS6C6rliKSODrqcwkPOKUel3M6eBNDXaXiU48O2KVMgq8CAwEAAQ==
+              -----END PUBLIC KEY-----
+            jwt_header: "Authorization"
+            jwt_url_parameter: urltoken
+            roles_key: roles
+            subject_key: username
+        authentication_backend:
+          type: noop

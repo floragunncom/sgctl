@@ -1,0 +1,32 @@
+_sg_meta:
+  type: "config"
+  config_version: 2
+
+sg_config:
+  dynamic:
+    http:
+      xff:
+        enabled: true
+        internalProxies: '172.16.0.203' # nginx proxy
+    authc:
+      proxy_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 0
+        http_authenticator:
+          type: proxy
+          challenge: false
+          config:
+            user_header: "x-proxy-user"
+            roles_header: "x-proxy-roles"
+        authentication_backend:
+          type: noop
+      basic_internal_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 1
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: intern

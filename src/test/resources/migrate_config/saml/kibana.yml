@@ -1,0 +1,7 @@
+
+home.disableWelcomeScreen: true
+
+searchguard.auth.type: "saml"
+server.xsrf.whitelist: ["/searchguard/saml/acs", "/searchguard/saml/logout"]
+
+

@@ -1,0 +1,191 @@
+variables:
+  SG_JAVA_BUILD_VERSION: "21"
+  MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
+  MAVEN_CLI_OPTS: "--batch-mode"
+  DOCKER_DRIVER: overlay2
+image: "maven:3.9.9-amazoncorretto-21-debian"
+
+
+include:
+- local: 'ci/aikido.yml'  
+
+stages:
+  - build
+  - package
+  - "Aikido Scan"
+  - release
+  - "Deploy Docker Image"
+
+workflow:
+  rules:
+    - if: '$CI_PIPELINE_SOURCE == "push" && $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS'
+      when: never
+    - when: always
+
+build:
+  stage: build
+  interruptible: true
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+      when: never
+    - if: '$DOCKER_ONLY'
+      when: never            
+    - when: on_success
+  tags:
+    - build
+  script:
+    - mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS clean install
+  artifacts:
+    when: always
+    paths:
+      - "target"
+      - ".m2/repository/com/floragunn/*"
+    reports:
+      junit:
+        - "target/surefire-reports/TEST-*.xml"
+        - "target/failsafe-reports/TEST-*.xml"
+    expire_in: 12h
+  cache:
+    key: mavenrepo
+    paths:
+      - .m2/repository
+
+deploy_snapshot:
+  stage: package
+  interruptible: true
+  tags:
+    - build
+  needs:
+    - job: build
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+      when: never
+    - if: '$DOCKER_ONLY'
+      when: never      
+    - when: on_success
+  script:
+    - |
+      set -x
+      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -s settings.xml deploy
+  artifacts:
+    when: on_success
+    expire_in: 10d
+    reports:
+      dotenv: build.env
+  cache:
+    key: mavenrepopackage
+    paths:
+      - .m2/repository
+
+build_release:
+  stage: build
+  interruptible: true
+  rules:
+    - if: '$DOCKER_ONLY'
+      when: never          
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+      when: on_success
+  tags:
+    - build
+  script:
+    # $CI_COMMIT_TAG: sgctl-1.0.0-beta-1
+    - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
+    - mvn -Drevision=$SGCTL_RELEASE_VERSION $MAVEN_CLI_OPTS clean install
+  artifacts:
+    when: always
+    paths:
+      - "*/target"
+      - ".m2/repository/com/floragunn/*"
+    reports:
+      junit:
+        - "*/target/surefire-reports/TEST-*.xml"
+        - "*/target/failsafe-reports/TEST-*.xml"
+    expire_in: 12h
+  cache:
+    key: mavenrepo
+    paths:
+      - .m2/repository
+
+deploy_release:
+  stage: release
+  interruptible: true
+  tags:
+    - build
+  rules:
+    - if: '$DOCKER_ONLY'
+      when: never        
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+      when: on_success
+  script:
+    - set -x
+    - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
+    - mvn -Drevision=$SGCTL_RELEASE_VERSION $MAVEN_CLI_OPTS -DskipTests -s settings.xml deploy
+  artifacts:
+    when: on_success
+    expire_in: 10d
+    reports:
+      dotenv: build.env
+  cache:
+    key: mavenrepopackage
+    paths:
+      - .m2/repository
+
+coverage:
+  stage: package
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+      when: never
+    - when: always
+  image: registry.gitlab.com/haynes/jacoco2cobertura:1.0.9
+  needs: ["build"]
+  dependencies:
+    - build
+  script:
+    - python /opt/cover2cover.py target/site/jacoco/jacoco.xml src/main/java/ > target/site/cobertura.xml
+    - cat target/site/jacoco/index.html | grep -o '<tfoot>.*</tfoot>'
+  coverage: '/Total.*?([0-9]{1,3})%/'
+  artifacts:
+    reports:
+      coverage_report:
+        coverage_format: cobertura
+        path: target/site/cobertura.xml
+        
+        
+        
+deploy_docker_image:
+  stage: "Deploy Docker Image"
+  image: docker:20.10.17
+  services:
+    - docker:20.10.17-dind
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+      when: on_success
+    - if: '$DOCKER_ONLY'
+      when: on_success
+  tags:
+    - build
+  timeout: 1h
+  script:
+    - |
+      cd docker
+      apk update && apk add bash curl 
+
+      export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
+      echo "SGCTL_RELEASE_VERSION=$SGCTL_RELEASE_VERSION"
+      if [[ -z "$SGCTL_RELEASE_VERSION" ]]; then
+        echo "SGCTL_RELEASE_VERSION is empty"
+        exit 1
+      fi
+      echo "Docker logout"
+      docker logout 
+      
+      echo "Login in into Docker Hub"      
+      echo "$DOCKER_PASSWORD" | docker login --username floragunncom --password-stdin docker.io > /dev/null
+
+      echo ""
+      echo "Enable qemu-user-static to support docker multiarch builds with buildx"
+      docker run --rm --privileged multiarch/qemu-user-static --reset -p yes > /dev/null
+
+      ./build_and_push.sh "floragunncom" "docker.io" "search-guard-flx-sgctl" "$SGCTL_RELEASE_VERSION" "--build-arg SGCTL_VERSION="$SGCTL_RELEASE_VERSION" --build-arg JAVA_VERSION=$SG_JAVA_BUILD_VERSION"
+  allow_failure: false        

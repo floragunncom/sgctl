@@ -1,0 +1,20 @@
+_sg_meta:
+  type: "config"
+  config_version: 2
+
+sg_config:
+  dynamic:
+    auth_token_provider:
+      enabled: true
+      jwt_signing_key_hs512: "jnxqEv9c7AU-lWyFDxMGmLC1YYhA8r2CBv0czQC3NntsV_UcGvj4y-VPHjWQxIu0W4oR7Jg5nlfCyeqrlR38XA=="
+      max_tokens_per_user: 100
+    authc:
+      sg_issued_jwt_auth_domain:
+        http_enabled: true
+        transport_enabled: false
+        order: 1
+        http_authenticator:
+          type: sg_auth_token
+          challenge: false
+        authentication_backend:
+          type: sg_auth_token
