@@ -14,3 +14,4 @@ unittest.log
 .gitlab-ci-local/
 
 test_xpack
+test_searchguard

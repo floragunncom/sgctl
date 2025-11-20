@@ -4,7 +4,8 @@ import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
 import com.floragunn.searchguard.sgctl.SgctlException;
-import com.floragunn.searchguard.sgctl.config.xpack.Role;
+import com.floragunn.codova.documents.*;
+import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -24,6 +25,9 @@ public class XPackMigrate implements Callable<Integer> {
 
     @CommandLine.Option(names = { "-o", "--output-dir" }, description = "Directory where to write new sg configuration files", required = true)
     Path outputDir;
+    
+    @CommandLine.Option(names = { "--overwrite" }, description = "Whether existing output configuration files should be overwritten", defaultValue = "false")
+    boolean overwrite;
 
     private static final Map<String, Function<Map<String, Object>, Record>> configParsers = Map.of(
             // TODO: Add parsing functions here <filename>,Record::parse
@@ -36,10 +40,12 @@ public class XPackMigrate implements Callable<Integer> {
         }
         System.out.println("Welcome to the Search Guard X-pack security migration tool.\n\n");
         try {
-            final var configs = parseConfigs();
-            System.out.println(configs);
+            final var xPackConfigs = parseConfigs();
+            System.out.println(xPackConfigs);
             // TODO: More
 
+            final List<NamedConfig<?>> searchGuardConfigs = List.of(); // TODO: migrate to create configs
+            writeConfigs(searchGuardConfigs);
         } catch (SgctlException e) {
             System.err.println("Error: " + e.getMessage());
             return 1;
@@ -76,6 +82,26 @@ public class XPackMigrate implements Callable<Integer> {
             configs.put(configFileName, parsed);
         }
         return configs;
+    }
+
+    private void writeConfigs(List<NamedConfig<?>> configs)
+            throws IOException, SgctlException {
+
+        if (!Files.exists(outputDir)) {
+            Files.createDirectory(outputDir);
+        }
+
+        for (final var config : configs) {
+            final String configFileName = config.getFileName();
+            final Object configObj = config.toBasicObject();
+            final Path configPath = outputDir.resolve(config.getFileName());
+
+            if (Files.exists(configPath) && !overwrite) {
+                throw new SgctlException("Refusing to overwrite existing config file: " + configFileName);
+            }
+
+            DocWriter.yaml().write(configPath.toFile(), configObj);
+        }
     }
 
 }
