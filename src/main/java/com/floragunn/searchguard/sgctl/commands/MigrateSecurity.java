@@ -29,37 +29,39 @@ public class MigrateSecurity implements Callable<Integer> {
 
         String path = (inputDir != null) ? inputDir.getAbsolutePath() : "NULL";
 
+
         if (inputDir == null) {
-            throw new SgctlException("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
-        }
-        if (!inputDir.exists()) {
-            throw new SgctlException("Input path does not exist: " + inputDir.getAbsolutePath());
-        }
+            System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
+        }else{
+            if (!inputDir.exists()) {
+                System.err.println("Input path does not exist: " + inputDir.getAbsolutePath());
+            }
 
-        if (!inputDir.isDirectory()) {
-            throw new SgctlException("Input path is not a directory: " + inputDir.getAbsolutePath());
-        }
+            if (!inputDir.isDirectory()) {
+                System.err.println("Input path is not a directory: " + inputDir.getAbsolutePath());
+            }
 
-        if (!inputDir.canRead()) {
-            throw new SgctlException("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
-        }
+            if (!inputDir.canRead()) {
+                System.err.println("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
+            }
 
-        var files = inputDir.listFiles();
+            var files = inputDir.listFiles();
 
-        if (files == null) {
-            throw new SgctlException("Found unexpected null-value while listing files in input directory (I/O error).");
-        }
-
-        for (File file : files) {
-            switch (file.getName()) {
-                case "elasticsearch.yml":
-                    elasticsearch= file;
-                case "user.json":
-                    user = file;
-                case "role.json":
-                    role = file;
-                case "role_mapping.json":
-                    roleMapping = file;
+            if (files == null) {
+                System.err.println("Found unexpected null-value while listing files in input directory (I/O error).");
+            }else{
+                for (File file : files) {
+                    switch (file.getName()) {
+                        case "elasticsearch.yml":
+                            elasticsearch= file;
+                        case "user.json":
+                            user = file;
+                        case "role.json":
+                            role = file;
+                        case "role_mapping.json":
+                            roleMapping = file;
+                    }
+                }
             }
         }
 
