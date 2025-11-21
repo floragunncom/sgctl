@@ -1,14 +1,9 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
+import com.floragunn.codova.documents.DocReader;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
-
-import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.DocReader;
-import com.floragunn.codova.documents.Document;
-import com.floragunn.codova.documents.Format;
 
 public class XPackConfigReader {
 
