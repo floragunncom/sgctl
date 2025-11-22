@@ -68,12 +68,18 @@ public class XPackConfigReader {
                     if (value instanceof String) {
                         username = (String) value;
                     } else {
+                        if (value == null) {
+                            // TODO: Add MigrationReport entry
+                            printErr("Missing username for key " + key);
+                            return;
+                        }
                         // TODO: Add MigrationReport entry
                         printErr("Invalid value for username: " + value);
+                        return;
                     }
                     break;
                 case "email":
-                    if (value instanceof String) {
+                    if (value instanceof String || value == null) {
                         email = (String) value;
                     } else {
                         // TODO: Add MigrationReport entry
@@ -81,7 +87,7 @@ public class XPackConfigReader {
                     }
                     break;
                 case "full_name":
-                    if (value instanceof String) {
+                    if (value instanceof String || value == null) {
                         fullName = (String) value;
                     } else {
                         // TODO: Add MigrationReport entry
@@ -97,10 +103,6 @@ public class XPackConfigReader {
                     break;
             }
             print(key);
-        }
-        if (username == null) {
-            // TODO: Add MigrationReport entry
-            return;
         }
 
         ir.addUser(new User(username, null, fullName, email));
