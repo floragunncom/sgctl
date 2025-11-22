@@ -1,7 +1,6 @@
 package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.searchguard.sgctl.util.mapping.XPackConfigReader;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.InteremediateRepresentation;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
@@ -24,7 +23,6 @@ public class MigrateSecurity implements Callable<Integer> {
         File user = null;
         File role = null;
         File roleMapping = null;
-        InteremediateRepresentation ir = new InteremediateRepresentation();
 
         for (File file : inputDir.listFiles()) {
             switch(file.getName()) {
@@ -40,8 +38,8 @@ public class MigrateSecurity implements Callable<Integer> {
             }
         }
 
-        var reader = new XPackConfigReader(null, user, role, roleMapping, ir);
-        reader.generateIR();
+        var reader = new XPackConfigReader(null, user, role, roleMapping);
+        var ir = reader.generateIR();
         return 0;
     }
 }

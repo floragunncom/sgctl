@@ -14,18 +14,19 @@ public class XPackConfigReader {
     File roleMapping;
     InteremediateRepresentation ir;
 
-    public XPackConfigReader(File elasticsearch, File user, File role, File roleMapping, InteremediateRepresentation ir) {
+    public XPackConfigReader(File elasticsearch, File user, File role, File roleMapping) {
         this.elasticsearch = elasticsearch;
         this.userFile = user;
         this.roleFile = role;
         this.roleMapping = roleMapping;
-        this.ir = ir;
+        this.ir = new InteremediateRepresentation();
     }
 
-    public void generateIR() {
+    public InteremediateRepresentation generateIR() {
         readUser();
         readRole();
         readRoleMapping();
+        return ir;
     }
 
     private void readUser() {
@@ -66,16 +67,25 @@ public class XPackConfigReader {
                     // TODO: Checking for to us unknown keys
                     if (value instanceof String) {
                         username = (String) value;
+                    } else {
+                        // TODO: Add MigrationReport entry
+                        printErr("Invalid value for username: " + value);
                     }
                     break;
                 case "email":
                     if (value instanceof String) {
                         email = (String) value;
+                    } else {
+                        // TODO: Add MigrationReport entry
+                        printErr("Invalid value for email: " + value);
                     }
                     break;
                 case "full_name":
                     if (value instanceof String) {
                         fullName = (String) value;
+                    } else {
+                        // TODO: Add MigrationReport entry
+                        printErr("Invalid value for full_name: " + value);
                     }
                     break;
                 // TODO: Add handling for role key
