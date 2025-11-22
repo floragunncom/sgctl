@@ -4,7 +4,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.InteremediateRepresentati
 import com.floragunn.searchguard.sgctl.util.mapping.ir.User;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
 public class XPackConfigReader {
@@ -12,21 +11,21 @@ public class XPackConfigReader {
     File elasticsearch;
     File userFile;
     File roleFile;
-    File userMapping;
+    File roleMapping;
     InteremediateRepresentation ir;
 
-    public XPackConfigReader(File elasticsearch, File user, File role, File userMapping, InteremediateRepresentation ir) {
+    public XPackConfigReader(File elasticsearch, File user, File role, File roleMapping, InteremediateRepresentation ir) {
         this.elasticsearch = elasticsearch;
         this.userFile = user;
         this.roleFile = role;
-        this.userMapping = userMapping;
+        this.roleMapping = roleMapping;
         this.ir = ir;
     }
 
     public void generateIR() {
         readUser();
         readRole();
-        readUserMapping();
+        readRoleMapping();
     }
 
     private void readUser() {
@@ -44,33 +43,50 @@ public class XPackConfigReader {
                     // TODO: Add MigrationReport entry
                     continue;
                 }
+
                 var user = (LinkedHashMap<?, ?>)value;
-                if (user == null) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Missing user entry in config file");
-                    continue;
-                }
-                var username = (String) user.get("username");
-                if (username == null) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Missing username for user");
-                    continue;
-                }
-                var roles = (ArrayList<String>)user.get("roles");
-                // TODO: Compare roles with role file
-                var fullName = (String) user.get("full_name");
-                var email = (String) user.get("email");
-                var metadata = (LinkedHashMap<?, ?>)user.get("metadata");
-                metadata.forEach((k1,v1)->{
-                    // TODO: Add metadata interpretation
-                });
-                ir.addUser(new User(username, roles, fullName, email));
+                readSingleUser(user);
             }
 
         } catch (Exception e) {
             // TODO: Add proper error handling
             printErr(e.getMessage());
         }
+    }
+
+    private void readSingleUser(LinkedHashMap<?, ?> user) {
+        String username = null;
+        String email = null;
+        String fullName = null;
+        for (var entry : user.entrySet()) {
+            var key = (String) entry.getKey();
+            var value = entry.getValue();
+            switch (key) {
+                case "username":
+                    username = (String) value;
+                    break;
+                case "email":
+                    email = (String) value;
+                    break;
+                case "full_name":
+                    fullName = (String) value;
+                    break;
+                // TODO: Add handling for role key
+                // TODO: Add handling for metadata key
+                // TODO: Add handling for enabled key
+                default:
+                    // TODO: Add MigrationReport entry
+                    printErr("Unknown key" + key);
+                    break;
+            }
+            print(key);
+        }
+        if (username == null) {
+            // TODO: Add MigrationReport entry
+            return;
+        }
+
+        ir.addUser(new User(username, null, fullName, email));
     }
 
     private void readRole() {
@@ -85,7 +101,6 @@ public class XPackConfigReader {
             for (var entry : mapReader.entrySet()) {
                 var key = entry.getKey();
                 var value = entry.getValue();
-
             }
 
         } catch (Exception e) {
@@ -94,7 +109,7 @@ public class XPackConfigReader {
         }
     }
 
-    private void readUserMapping() {
+    private void readRoleMapping() {
 
     }
 
