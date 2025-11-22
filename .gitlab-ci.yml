@@ -161,13 +161,14 @@ spotless-apply-on-changed-java:
     - mvn -B spotless:apply -DspotlessFiles="$SPOTLESS_FILES"
     # push back
     - if [ -n "$(git status --porcelain)" ]; then
-        git add -A;
-        git commit -m "Apply Spotless [ci skip]" || true;
+        git add -A
+        git commit -m "Apply Spotless [ci skip]" || true
         REMOTE="https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-        git push "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:"${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}" || {
-          echo "Push failed. The runner may not have permission to push to the source branch. Exiting with non-zero.";
-          exit 2;
-        };
+        git push "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:"${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}"
+        if [ $? -ne 0 ]; then
+          echo "Push failed. The runner may not have permission to push to the source branch. Exiting with non-zero."
+          exit 2
+        fi
       else
         echo "No formatting changes produced by Spotless."
       fi
