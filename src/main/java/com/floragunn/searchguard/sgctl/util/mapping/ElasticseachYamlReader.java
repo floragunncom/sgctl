@@ -12,6 +12,19 @@ public class ElasticseachYamlReader extends ConfigReader {
     }
 
     public void toIR(Map<String, Object> map) {
+
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
+
+            String key = entry.getKey();
+            Object value = entry.getValue();
+
+            // filter out every non-xpack.security option
+            if (!key.startsWith("xpack.security.")) {
+                System.out.println("Could not resolve " + entry.getKey());
+            }
+
+        }
+
         return;
     }
 
