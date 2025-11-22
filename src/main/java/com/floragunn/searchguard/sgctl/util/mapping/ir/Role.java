@@ -1,15 +1,21 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir;
 
+import org.jspecify.annotations.NonNull;
+
 import java.util.List;
 
 public class Role {
-    String name;
+    @NonNull String name;
     List<Application>  applications;
     List<String> cluster;
     List<Index> indices;
 
+    public Role(@NonNull String name) {
+        this.name = name;
+    }
+
     // Getter-Methods
-    public String getName() { return name; }
+    public @NonNull String getName() { return name; }
 
     public List<Application> getApplications() { return applications; }
 
@@ -18,7 +24,7 @@ public class Role {
     public List<Index> getIndices() { return indices; }
 
     // Setter-Methods
-    public void setName(String name) { this.name = name; }
+    public void setName(@NonNull String name) { this.name = name; }
 
     public void setApplications(List<Application> applications) { this.applications = applications; }
 
@@ -27,29 +33,35 @@ public class Role {
     public void setIndices(List<Index> indices) { this.indices = indices; }
 
     public static class Application {
-        String name;
-        List<String> privileges;
-        List<String> resources;
+        @NonNull String name;
+        @NonNull List<String> privileges;
+        @NonNull List<String> resources;
+
+        public Application(@NonNull String name, @NonNull List<String> privileges, @NonNull List<String> resources) {
+            this.name = name;
+            this.privileges = privileges;
+            this.resources = resources;
+        }
 
         // Getter-Methods
-        public String getName() {
+        public @NonNull String getName() {
             return name;
         }
-        public List<String> getPrivileges() {
+        public @NonNull List<String> getPrivileges() {
             return privileges;
         }
-        public List<String> getResources() {
+        public @NonNull List<String> getResources() {
             return resources;
         }
 
         // Setter-Methods
-        public void  setName(String name) {
+        public void  setName(@NonNull String name) {
             this.name = name;
         }
-        public void  setPrivileges(List<String> privileges) {
+        public void  setPrivileges(@NonNull List<String> privileges) {
             this.privileges = privileges;
         }
-        public void  setResources(List<String> resources) {
+        public void  setResources(@NonNull List<String> resources) {
             this.resources = resources;
         }
 
@@ -60,21 +72,22 @@ public class Role {
     }
 
     public static class Index {
+        @NonNull List<String> names = List.of();
+        @NonNull List<String> privileges = List.of();
         FieldSecurity fieldSecurity;
-        List<String> names;
-        List<String> privileges;
         // TODO: Add query property
         boolean allowRestrictedIndices;
+
         // Getter-Methods
         public FieldSecurity getFieldSecurity() { return fieldSecurity; }
-        public List<String> getNames() { return names; }
-        public List<String> getPrivileges() { return privileges; }
+        public @NonNull List<String> getNames() { return names; }
+        public @NonNull List<String> getPrivileges() { return privileges; }
         public boolean isAllowRestrictedIndices() { return allowRestrictedIndices; }
 
         // Setter-Methods
         public void setFieldSecurity(FieldSecurity fieldSecurity) { this.fieldSecurity = fieldSecurity; }
-        public void setNames(List<String> names) { this.names = names; }
-        public void setPrivileges(List<String> privileges) { this.privileges = privileges; }
+        public void setNames(@NonNull List<String> names) { this.names = names; }
+        public void setPrivileges(@NonNull List<String> privileges) { this.privileges = privileges; }
         public void setAllowRestrictedIndices(boolean allowRestrictedIndices) { this.allowRestrictedIndices = allowRestrictedIndices; }
 
         @Override

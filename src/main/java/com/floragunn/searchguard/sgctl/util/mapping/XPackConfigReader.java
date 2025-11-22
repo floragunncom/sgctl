@@ -26,12 +26,10 @@ public class XPackConfigReader {
     }
 
     public IntermediateRepresentation generateIR() {
-//        readUser();
         readRole();
+        readUser();
 //        readRoleMapping();
-        ir.getRoles().forEach(role -> {
-            print(role.toString());
-        });
+        ir.getRoles().forEach(role -> print(role.toString()));
         return ir;
     }
 
@@ -52,7 +50,7 @@ public class XPackConfigReader {
                 }
 
                 if (value instanceof LinkedHashMap<?, ?> user) {
-                    readSingleUser(user);
+                    readSingleUser(user, (String) key);
                 } else {
                     // TODO: Add MigrationReport entry
                     printErr("Unexpected value for key " + key);
@@ -65,31 +63,27 @@ public class XPackConfigReader {
         }
     }
 
-    private void readSingleUser(LinkedHashMap<?, ?> user) {
-        String username = null;
-        String email = null;
-        String fullName = null;
-        for (var entry : user.entrySet()) {
+    private void readSingleUser(LinkedHashMap<?, ?> userMap, String name) {
+        var user = new User(name);
+        for (var entry : userMap.entrySet()) {
             var key = (String) entry.getKey();
             var value = entry.getValue();
             switch (key) {
                 case "username":
-                    if (value instanceof String) {
-                        username = (String) value;
-                    } else {
-                        if (value == null) {
+                    if (value instanceof String username) {
+                        // TODO: Check thoroughly if this is an actual requirement
+                        if (!name.equals(username)) {
                             // TODO: Add MigrationReport entry
-                            printErr("Missing username for key " + key);
+                            printErr("Username " + username + " is not equal to the path parameter " + name );
                             return;
                         }
+                    } else {
                         // TODO: Add MigrationReport entry
-                        printErr("Invalid value for username: " + value);
-                        return;
                     }
                     break;
                 case "email":
                     if (value instanceof String || value == null) {
-                        email = (String) value;
+                        user.setEmail((String) value);
                     } else {
                         // TODO: Add MigrationReport entry
                         printErr("Invalid value for email: " + value);
@@ -97,7 +91,7 @@ public class XPackConfigReader {
                     break;
                 case "full_name":
                     if (value instanceof String || value == null) {
-                        fullName = (String) value;
+                        user.setFullName((String) value);
                     } else {
                         // TODO: Add MigrationReport entry
                         printErr("Invalid value for full_name: " + value);
@@ -113,8 +107,7 @@ public class XPackConfigReader {
             }
             print(key);
         }
-
-        ir.addUser(new User(username, null, fullName, email));
+        ir.addUser(user);
     }
 
     private void readRole() {
@@ -152,8 +145,7 @@ public class XPackConfigReader {
     }
 
     private void readSingleRole(LinkedHashMap<?, ?> roleMap, String roleName) {
-        var role = new Role();
-        role.setName(roleName);
+        var role = new Role(roleName);
         for (var entry : roleMap.entrySet()) {
             var key = entry.getKey();
             var value = entry.getValue();
@@ -220,7 +212,9 @@ public class XPackConfigReader {
     }
 
     private Role.Application readApplication(LinkedHashMap<?, ?> applicationMap) {
-        var application = new Role.Application();
+        String name = null;
+        List<String> privileges = null;
+        List<String> resources = null;
         for (var entry : applicationMap.entrySet()) {
             var key = entry.getKey();
             var value = entry.getValue();
@@ -232,7 +226,7 @@ public class XPackConfigReader {
             switch ((String) key) {
                 case "application":
                     if (value instanceof String applicationName) {
-                        application.setName(applicationName);
+                        name = applicationName;
                     } else {
                         // TODO: Add MigrationReport entry
                         printErr("Invalid value type for application: " + value.getClass());
@@ -241,7 +235,7 @@ public class XPackConfigReader {
                     break;
                 case "privileges":
                     try {
-                        application.setPrivileges(toStringArrayList(value));
+                        privileges = toStringArrayList(value);
                     } catch (IllegalArgumentException e) {
                         // TODO: Add MigrationReport entry
                         printErr("Invalid type for privileges: " + value.getClass());
@@ -254,7 +248,7 @@ public class XPackConfigReader {
                     break;
                 case "resources":
                     try {
-                        application.setResources(toStringArrayList(value));
+                        resources = toStringArrayList(value);
                     } catch (IllegalArgumentException e) {
                         // TODO: Add MigrationReport entry
                         printErr("Invalid type for resources: " + value.getClass());
@@ -271,12 +265,12 @@ public class XPackConfigReader {
                     break;
             }
         }
-        if (application.getName() == null || application.getPrivileges() == null || application.getResources() == null) {
+        if (name == null || privileges == null || resources == null) {
             // TODO: Add MigrationReport entry
             printErr("Application missing required parameter.");
             return null;
         }
-        return application;
+        return new Role.Application(name, privileges, resources);
     }
 
     private List<Role.Index> readIndices(ArrayList<?> indexList) {
@@ -322,9 +316,9 @@ public class XPackConfigReader {
                 try {
                     index.setNames(toStringArrayList(value));
                 } catch (IllegalArgumentException e) {
-                    if (value instanceof String) {
+                    if (value instanceof String name) {
                         var names = new ArrayList<String>();
-                        names.add((String) value);
+                        names.add(name);
                         index.setNames(names);
                         break;
                     }
@@ -351,19 +345,20 @@ public class XPackConfigReader {
                 }
                 break;
             case "allow_restricted_indices":
-                if (value instanceof Boolean) {
-                    index.setAllowRestrictedIndices((Boolean) value);
+                if (value instanceof Boolean allowRestrictedIndices) {
+                    index.setAllowRestrictedIndices(allowRestrictedIndices);
                 } else {
                     // TODO: Add MigrationReport entry
                     printErr("Invalid type for allow_restricted_indices: " + key);
                 }
+                break;
             default:
                 // TODO: Add MigrationReport entry
                 printErr("Unknown key: " + key);
                 break;
             }
         }
-        if (index.getNames() == null || index.getNames().isEmpty() || index.getPrivileges() == null || index.getPrivileges().isEmpty()) {
+        if (index.getNames().isEmpty() || index.getPrivileges().isEmpty()) {
             // TODO: Add MigrationReport entry
             printErr("Index missing required parameter.");
             return null;
@@ -379,6 +374,7 @@ public class XPackConfigReader {
             if (!(key instanceof String)) {
                 // TODO: Add MigrationReport entry
                 printErr("Unexpected type for key: " + key);
+                return null;
             }
             switch ((String) key) {
             case "except":
@@ -399,6 +395,8 @@ public class XPackConfigReader {
                     // TODO: Add MigrationReport entry
                 }
                 break;
+            default:
+                // TODO: Add MigrationReport entry
             }
         }
         return fieldSecurity;
@@ -440,7 +438,7 @@ public class XPackConfigReader {
         return;
     }
 
-    public static ArrayList<String> toStringArrayList(Object obj) throws IllegalArgumentException, ClassCastException {
+    public static List<String> toStringArrayList(Object obj) throws IllegalArgumentException, ClassCastException {
         if (!(obj instanceof List<?> list)) {
             throw new IllegalArgumentException("Object is not a List");
         }
