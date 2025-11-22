@@ -63,13 +63,20 @@ public class XPackConfigReader {
             var value = entry.getValue();
             switch (key) {
                 case "username":
-                    username = (String) value;
+                    // TODO: Checking for to us unknown keys
+                    if (value instanceof String) {
+                        username = (String) value;
+                    }
                     break;
                 case "email":
-                    email = (String) value;
+                    if (value instanceof String) {
+                        email = (String) value;
+                    }
                     break;
                 case "full_name":
-                    fullName = (String) value;
+                    if (value instanceof String) {
+                        fullName = (String) value;
+                    }
                     break;
                 // TODO: Add handling for role key
                 // TODO: Add handling for metadata key
