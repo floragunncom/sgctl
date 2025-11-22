@@ -144,12 +144,28 @@ public class XPackConfigReader {
             for (var entry : mapReader.entrySet()) {
                 var key = entry.getKey();
                 var value = entry.getValue();
+                if (!(key instanceof String)) {
+                    // TODO: Add MigrationReport entry
+                    continue;
+                }
+
+                if ((value instanceof LinkedHashMap<?, ?> mapping)) {
+                    readSingleRoleMapping(mapping);
+                } else {
+                    // TODO: Add MigrationReport entry
+                    printErr("Unexpected value for key " + key);
+                }
             }
 
         } catch (Exception e) {
             // TODO: Add proper error handling
             printErr(e.getMessage());
         }
+    }
+
+    private void readSingleRoleMapping(LinkedHashMap<?, ?> mapping) {
+        // TODO: Implement role mapping reading
+        return;
     }
 
     static void print(Object line) {
