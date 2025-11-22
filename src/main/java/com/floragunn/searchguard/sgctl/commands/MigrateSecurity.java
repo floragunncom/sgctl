@@ -23,7 +23,7 @@ public class MigrateSecurity implements Callable<Integer> {
 
         File user = null;
         File role = null;
-        File userMapping = null;
+        File roleMapping = null;
         InteremediateRepresentation ir = new InteremediateRepresentation();
 
         for (File file : inputDir.listFiles()) {
@@ -34,13 +34,13 @@ public class MigrateSecurity implements Callable<Integer> {
             case "role.json":
                 role = file;
                 break;
-            case "user_mapping.json":
-                userMapping = file;
+            case "role_mapping.json":
+                roleMapping = file;
                 break;
             }
         }
 
-        var reader = new XPackConfigReader(null, user, role, userMapping, ir);
+        var reader = new XPackConfigReader(null, user, role, roleMapping, ir);
         reader.generateIR();
         return 0;
     }
