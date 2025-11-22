@@ -33,15 +33,19 @@ public class MigrateSecurity implements Callable<Integer> {
 
     public boolean checkOutputDir() {
         if(outputDir == null) {
+            System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> -o <Output Directory>");
             return true;
         }
         if(!outputDir.exists()) {
+            System.err.println("Output path does not exist: " + outputDir.getAbsolutePath());
             return false;
         }
         if(!outputDir.isDirectory()) {
+            System.err.println("Output path is not a directory: " + outputDir.getAbsolutePath());
             return false;
         }
         if(!outputDir.canWrite()) {
+            System.err.println("Output directory is not writeable. Check permissions: " + outputDir.getAbsolutePath());
             return false;
         }
         return true;
