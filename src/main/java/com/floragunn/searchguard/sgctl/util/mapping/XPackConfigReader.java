@@ -133,7 +133,23 @@ public class XPackConfigReader {
     }
 
     private void readRoleMapping() {
+        try {
+            var reader = DocReader.json().read(roleMapping);
 
+            if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
+                // TODO: Add MigrationReport entry
+                return;
+            }
+
+            for (var entry : mapReader.entrySet()) {
+                var key = entry.getKey();
+                var value = entry.getValue();
+            }
+
+        } catch (Exception e) {
+            // TODO: Add proper error handling
+            printErr(e.getMessage());
+        }
     }
 
     static void print(Object line) {
