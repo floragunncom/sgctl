@@ -142,6 +142,7 @@ spotless-apply-on-changed-java:
     - git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
   script:
     # get changed
+    - apt-get update && apt-get install -y git
     - |
       CHANGED_RAW=$(git diff --name-only "origin/$TARGET_BRANCH...HEAD" || true)
       echo "Changed files from origin/$TARGET_BRANCH to HEAD:"
