@@ -135,8 +135,6 @@ deploy_docker_image:
 spotless-apply-on-changed-java:
   image: maven:3.8.8-jdk11
   stage: format
-  only:
-    - merge_requests
   variables:
     MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
   before_script:
@@ -163,15 +161,16 @@ spotless-apply-on-changed-java:
     - mvn -B spotless:apply -DspotlessFiles="$SPOTLESS_FILES"
     # push back
     - if [ -n "$(git status --porcelain)" ]; then
-      git add -A;
-      git commit -m "Apply Spotless [ci skip]" || true;
-      REMOTE="https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
-      git push "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:"${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}" || {
-      echo "Push failed. The runner may not have permission to push to the source branch. Exiting with non-zero.";
-      exit 2;
-      };
+        git add -A;
+        git commit -m "Apply Spotless [ci skip]" || true;
+        REMOTE="https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
+        git push "https://gitlab-ci-token:${CI_JOB_TOKEN}@${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git" HEAD:"${CI_MERGE_REQUEST_SOURCE_BRANCH_NAME}" || {
+          echo "Push failed. The runner may not have permission to push to the source branch. Exiting with non-zero.";
+          exit 2;
+        };
       else
-      echo "No formatting changes produced by Spotless."
+        echo "No formatting changes produced by Spotless."
       fi
   rules:
     - if: '$CI_PIPELINE_SOURCE == "merge_request_event"'
+      when: always
