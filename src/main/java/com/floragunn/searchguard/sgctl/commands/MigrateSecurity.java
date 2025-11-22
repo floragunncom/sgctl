@@ -30,10 +30,13 @@ public class MigrateSecurity implements Callable<Integer> {
             switch(file.getName()) {
             case "user.json":
                 user = file;
+                break;
             case "role.json":
                 role = file;
+                break;
             case "user_mapping.json":
                 userMapping = file;
+                break;
             }
         }
 
