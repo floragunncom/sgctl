@@ -470,13 +470,30 @@ public class XPackConfigReader {
                     }
                     break;
 
+                case "users":
+                    try {
+                        roleMapping.setUsers(toStringArrayList(value));
+                    } catch (IllegalArgumentException e) {
+                        // TODO: Add MigrationReport entry
+                        printErr("Invalid type for users: " + value.getClass());
+                    } catch (ClassCastException e) {
+                        printErr("Invalid entry in 'users' for role mapping '" + mappingName + "': " + e.getMessage());
+                    }
+                    break;
+
+                case "rules":
+                    // TODO: Implement readRules()
+                    break;
+
+                case "metadata":
+                    // TODO: Implement readMetadata() if necessary
+                    break;
+
                 default:
                     // TODO: Add MigrationReport entry
                     printErr("Unknown key: " + key);
                     break;
             }
-        
-            return;
         }
     }
 
