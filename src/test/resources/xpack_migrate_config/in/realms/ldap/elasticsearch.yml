@@ -1,4 +1,4 @@
-cluster.name: secure-enterprise
+cluster.name: ldap-sec-cluster
 node.name: es-sec-01
 
 network.host: 192.168.10.10
@@ -8,10 +8,8 @@ xpack.security.enabled: true
 # Realms
 xpack.security.authc:
   realms:
-    native.native1:
-      order: 0
     ldap.corp_ldap:
-      order: 1
+      order: 0
       url: "ldaps://ldap.corp.local:636"
       bind_dn: "cn=elastic,ou=service,dc=corp,dc=local"
       bind_password: "secret_password"
