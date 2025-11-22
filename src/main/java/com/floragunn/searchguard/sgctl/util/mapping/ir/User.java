@@ -4,13 +4,19 @@ import java.util.List;
 
 public class User {
     String username;
-    List<String> roles; // TODO change datatype to be able reference the role datatype
+    List<String> roles; // TODO: change datatype to be able reference the role datatype
     String fullName;
     String email;
 
-    public User(String username, List<String> roles, String fullName, String email) {
-        this.username = username;
-        this.fullName = fullName;
-        this.email = email;
-    }
+    // Getter-Methods
+    public  String getUsername() { return username; }
+    public List<String> getRoles() { return roles; }
+    public String getFullName() { return fullName; }
+    public String getEmail() { return email; }
+
+    // Setter-Methods
+    public void setUsername(String username) { this.username = username; }
+    public void setRoles(List<String> roles) { this.roles = roles; }
+    public void setFullName(String fullName) { this.fullName = fullName; }
+    public void setEmail(String email) { this.email = email; }
 }
