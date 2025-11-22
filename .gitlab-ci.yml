@@ -160,7 +160,8 @@ spotless-apply-on-changed-java:
     # apply
     - mvn -B spotless:apply -DspotlessFiles="$SPOTLESS_FILES"
     # push back
-    - if [ -n "$(git status --porcelain)" ]; then
+    - |
+      if [ -n "$(git status --porcelain)" ]; then
         git add -A
         git commit -m "Apply Spotless [ci skip]" || true
         REMOTE="https://${CI_SERVER_HOST}/${CI_PROJECT_PATH}.git"
