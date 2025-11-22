@@ -1,10 +1,11 @@
 package com.floragunn.searchguard.sgctl.commands;
 
+import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
-import com.floragunn.codova.documents.DocumentParseException;
-import com.floragunn.codova.documents.UnexpectedDocumentStructureException;
+import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.codova.documents.Parser;
+import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
-import com.floragunn.codova.documents.*;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import picocli.CommandLine;
 
@@ -15,7 +16,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.function.Function;
 
 @CommandLine.Command(name = "migrate-security", description = "Converts X-Pack configs to Search Guard configs")
 public class XPackMigrate implements Callable<Integer> {
@@ -25,12 +25,12 @@ public class XPackMigrate implements Callable<Integer> {
 
     @CommandLine.Option(names = { "-o", "--output-dir" }, description = "Directory where to write new sg configuration files", required = true)
     Path outputDir;
-    
+
     @CommandLine.Option(names = { "--overwrite" }, description = "Whether existing output configuration files should be overwritten", defaultValue = "false")
     boolean overwrite;
 
-    private static final Map<String, Function<Map<String, Object>, Record>> configParsers = Map.of(
-            // TODO: Add parsing functions here <filename>,Record::parse
+    private static final Map<String, Parser<Object, Parser.Context>> configParsers = Map.of(
+        // TODO: Add parsing functions here <filename>,Record::parse
     );
 
     public Integer call() throws Exception {
@@ -40,7 +40,7 @@ public class XPackMigrate implements Callable<Integer> {
         }
         System.out.println("Welcome to the Search Guard X-pack security migration tool.\n\n");
         try {
-            final var xPackConfigs = parseConfigs();
+            final var xPackConfigs = parseConfigs(); // TODO: gracefully handle ConfigValidationException
             System.out.println(xPackConfigs);
             // TODO: More
 
@@ -53,9 +53,8 @@ public class XPackMigrate implements Callable<Integer> {
         return 0;
     }
 
-    private Map<String, Record> parseConfigs()
-            throws SgctlException, IOException, DocumentParseException, UnexpectedDocumentStructureException, IllegalArgumentException {
-        final Map<String, Record> configs = new HashMap<>();
+    private Map<String, Object> parseConfigs() throws SgctlException, IOException, ConfigValidationException {
+        final Map<String, Object> configs = new HashMap<>();
         for (final var entry : configParsers.entrySet()) {
             final var configFileName = entry.getKey();
             final var parserFunction = entry.getValue();
@@ -68,25 +67,23 @@ public class XPackMigrate implements Callable<Integer> {
                 throw new SgctlException("Config is a directory, but should be a file: " + configFileName);
             }
             // Read to Object
-            final Map<String, Object> config;
+            final DocNode config;
             if (configFileName.endsWith(".yaml") || configFileName.endsWith(".yml")) {
-                config = DocReader.yaml().readObject(configPath.toFile());
+                config = DocNode.wrap(DocReader.yaml().read(configPath.toFile()));
             } else if (configFileName.endsWith(".json")) {
-                config = DocReader.json().readObject(configPath.toFile());
+                config = DocNode.wrap(DocReader.json().read(configPath.toFile()));
             } else {
                 throw new SgctlException("Invalid config file extension: " + configFileName);
             }
 
             // Parse config
-            final Record parsed = parserFunction.apply(config);
+            final var parsed = parserFunction.parse(config, Parser.Context.get());
             configs.put(configFileName, parsed);
         }
         return configs;
     }
 
-    private void writeConfigs(List<NamedConfig<?>> configs)
-            throws IOException, SgctlException {
-
+    private void writeConfigs(List<NamedConfig<?>> configs) throws IOException, SgctlException {
         if (!Files.exists(outputDir)) {
             Files.createDirectory(outputDir);
         }
