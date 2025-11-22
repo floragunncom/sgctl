@@ -29,12 +29,9 @@ public class XPackConfigReader {
 //        readUser();
         readRole();
 //        readRoleMapping();
-//        ir.getRoles().forEach(role -> {
-//            print(role);
-//            role.getApplications().forEach(application -> {
-//                print(application.getName());
-//            });
-//        });
+        ir.getRoles().forEach(role -> {
+            print(role.toString());
+        });
         return ir;
     }
 
@@ -156,6 +153,7 @@ public class XPackConfigReader {
 
     private void readSingleRole(LinkedHashMap<?, ?> roleMap, String roleName) {
         var role = new Role();
+        role.setName(roleName);
         for (var entry : roleMap.entrySet()) {
             var key = entry.getKey();
             var value = entry.getValue();
@@ -185,7 +183,13 @@ public class XPackConfigReader {
                     printErr("Invalid type for cluster entry: " + value.getClass());
                 }
                 break;
-            case "":
+            case "indices":
+                if (value instanceof ArrayList<?> indices) {
+                    role.setIndices(readIndices(indices));
+                } else {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type for indices: " + value.getClass());
+                }
                 break;
             default:
                 // TODO: Add MigrationReport entry
@@ -198,15 +202,18 @@ public class XPackConfigReader {
 
     private List<Role.Application> readApplications(ArrayList<?> applicationList) {
         var applications = new ArrayList<Role.Application>();
-        for (var application : applicationList) {
-            if (application instanceof LinkedHashMap<?, ?> applicationMap) {
-                var app = readApplication(applicationMap);
-                if  (app != null) {
-                    applications.add(app);
+        for (var rawApplication : applicationList) {
+            if (rawApplication instanceof LinkedHashMap<?, ?> applicationMap) {
+                var application = readApplication(applicationMap);
+                if  (application != null) {
+                    applications.add(application);
                 } else {
                     // TODO: Add MigrationReport entry
                     printErr("Application was not presented correctly.");
                 }
+            } else {
+                // TODO: Add MigrationReport entry
+                printErr("Invalid type for application: " + rawApplication.getClass());
             }
         }
         return applications;
@@ -270,6 +277,131 @@ public class XPackConfigReader {
             return null;
         }
         return application;
+    }
+
+    private List<Role.Index> readIndices(ArrayList<?> indexList) {
+        var indices = new ArrayList<Role.Index>();
+        for (var rawIndex : indexList) {
+            if (rawIndex instanceof LinkedHashMap<?, ?> indexMap) {
+                var index = readIndex(indexMap);
+                if (index == null) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Index was presented correctly.");
+                    continue;
+                }
+                indices.add(index);
+            } else {
+                // TODO: Add MigrationReport entry
+                printErr("Invalid type for index: " + rawIndex.getClass());
+            }
+        }
+        return indices;
+    }
+
+    private Role.Index readIndex(LinkedHashMap<?, ?> indexMap) {
+        var index = new Role.Index();
+        for (var entry : indexMap.entrySet()) {
+            var key = entry.getKey();
+            var value = entry.getValue();
+            if (!(key instanceof String)) {
+                // TODO: Add MigrationReport entry
+                printErr("Unexpected type for key: " + key);
+                return null;
+            }
+
+            // TODO: Add query key
+            switch ((String) key) {
+            case "field_security":
+                if (value instanceof LinkedHashMap<?, ?> fieldSecurity) {
+                    index.setFieldSecurity(readFieldSecurity(fieldSecurity));
+                } else {
+                    // TODO: Add MigrationReport entry
+                }
+                break;
+            case "names":
+                try {
+                    index.setNames(toStringArrayList(value));
+                } catch (IllegalArgumentException e) {
+                    if (value instanceof String) {
+                        var names = new ArrayList<String>();
+                        names.add((String) value);
+                        index.setNames(names);
+                        break;
+                    }
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type for names: " + value.getClass());
+                    return null;
+                } catch (ClassCastException e) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type found in names: " + e.getMessage());
+                    return null;
+                }
+                break;
+            case "privileges":
+                try {
+                    index.setPrivileges(toStringArrayList(value));
+                } catch (IllegalArgumentException e) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type for privileges: " + value.getClass());
+                    return null;
+                } catch (ClassCastException e) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type found in privileges: " + e.getMessage());
+                    return null;
+                }
+                break;
+            case "allow_restricted_indices":
+                if (value instanceof Boolean) {
+                    index.setAllowRestrictedIndices((Boolean) value);
+                } else {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type for allow_restricted_indices: " + key);
+                }
+            default:
+                // TODO: Add MigrationReport entry
+                printErr("Unknown key: " + key);
+                break;
+            }
+        }
+        if (index.getNames() == null || index.getNames().isEmpty() || index.getPrivileges() == null || index.getPrivileges().isEmpty()) {
+            // TODO: Add MigrationReport entry
+            printErr("Index missing required parameter.");
+            return null;
+        }
+        return index;
+    }
+
+    private Role.FieldSecurity readFieldSecurity(LinkedHashMap<?, ?> fieldMap) {
+        var fieldSecurity = new Role.FieldSecurity();
+        for (var entry : fieldMap.entrySet()) {
+            var key = entry.getKey();
+            var value = entry.getValue();
+            if (!(key instanceof String)) {
+                // TODO: Add MigrationReport entry
+                printErr("Unexpected type for key: " + key);
+            }
+            switch ((String) key) {
+            case "except":
+                try {
+                    fieldSecurity.setExcept(toStringArrayList(value));
+                } catch (IllegalArgumentException e) {
+                    // TODO: Add MigrationReport entry
+                } catch (ClassCastException e) {
+                    // TODO: Add MigrationReport entry
+                }
+                break;
+            case "grant":
+                try {
+                    fieldSecurity.setGrant(toStringArrayList(value));
+                } catch (IllegalArgumentException e) {
+                    // TODO: Add MigrationReport entry
+                } catch (ClassCastException e) {
+                    // TODO: Add MigrationReport entry
+                }
+                break;
+            }
+        }
+        return fieldSecurity;
     }
 
     private void readRoleMapping() {
