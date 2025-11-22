@@ -144,7 +144,7 @@ spotless-apply-on-changed-java:
   script:
     # get changed
     - |
-      CHANGED_RAW=$(git diff --name-only "origin/$TARGET_BRANCH...HEAD" || true)
+      CHANGED_RAW=$(git diff --name-only --diff-filter=ACM origin/"$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"...HEAD | grep -E '\.java$' || true)
       echo "Changed files from origin/$TARGET_BRANCH to HEAD:"
       echo "$CHANGED_RAW"
       # select only .java files and convert to absolute paths expected by spotless
