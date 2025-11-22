@@ -133,7 +133,6 @@ deploy_docker_image:
 
 
 spotless-apply-on-changed-java:
-  image: maven:3.8.8-jdk11
   stage: format
   variables:
     MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
