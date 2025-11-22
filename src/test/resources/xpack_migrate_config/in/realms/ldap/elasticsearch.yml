@@ -1,0 +1,34 @@
+cluster.name: secure-enterprise
+node.name: es-sec-01
+
+network.host: 192.168.10.10
+
+xpack.security.enabled: true
+
+# Realms
+xpack.security.authc:
+  realms:
+    native.native1:
+      order: 0
+    ldap.corp_ldap:
+      order: 1
+      url: "ldaps://ldap.corp.local:636"
+      bind_dn: "cn=elastic,ou=service,dc=corp,dc=local"
+      bind_password: "secret_password"
+      user_search.base_dn: "dc=corp,dc=local"
+      group_search.base_dn: "dc=corp,dc=local"
+      files.role_mapping: "config/role_mapping.yml"
+
+# Token service (API Keys)
+xpack.security.authc.token.enabled: true
+
+# Transport layer TLS
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.client_authentication: required
+xpack.security.transport.ssl.keystore.path: certs/node-sec01.p12
+xpack.security.transport.ssl.truststore.path: certs/ca.p12
+
+# HTTP TLS
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.keystore.path: certs/node-sec01.p12
+xpack.security.http.ssl.truststore.path: certs/ca.p12
