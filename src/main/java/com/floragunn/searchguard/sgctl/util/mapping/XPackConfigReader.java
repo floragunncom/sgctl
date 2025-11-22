@@ -419,8 +419,10 @@ public class XPackConfigReader {
                     continue;
                 }
 
+                var mappingName = (String) key;
+
                 if ((value instanceof LinkedHashMap<?, ?> mapping)) {
-                    readSingleRoleMapping(mapping);
+                    readSingleRoleMapping(mapping, mappingName);
                 } else {
                     // TODO: Add MigrationReport entry
                     printErr("Unexpected value for key " + key);
@@ -433,7 +435,7 @@ public class XPackConfigReader {
         }
     }
 
-    private void readSingleRoleMapping(LinkedHashMap<?, ?> mapping) {
+    private void readSingleRoleMapping(LinkedHashMap<?, ?> mapping, String mappingName) {
         // TODO: Implement role mapping reading
         return;
     }
