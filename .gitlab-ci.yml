@@ -137,12 +137,12 @@ spotless-apply-on-changed-java:
   variables:
     MAVEN_OPTS: "-Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository"
   before_script:
+    - apt-get update && apt-get install -y git
     - git config --global user.email "gitlab-ci@git.se.uni-hannover.de"
     - git config --global user.name "GitLab CI"
     - git fetch --no-tags --prune origin +refs/heads/*:refs/remotes/origin/*
   script:
     # get changed
-    - apt-get update && apt-get install -y git
     - |
       CHANGED_RAW=$(git diff --name-only "origin/$TARGET_BRANCH...HEAD" || true)
       echo "Changed files from origin/$TARGET_BRANCH to HEAD:"
