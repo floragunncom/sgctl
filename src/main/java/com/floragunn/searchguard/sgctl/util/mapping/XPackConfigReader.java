@@ -45,8 +45,12 @@ public class XPackConfigReader {
                     continue;
                 }
 
-                var user = (LinkedHashMap<?, ?>)value;
-                readSingleUser(user);
+                if (value instanceof LinkedHashMap<?, ?> user) {
+                    readSingleUser(user);
+                } else {
+                    // TODO: Add MigrationReport entry
+                    printErr("Unexpected value for key " + key);
+                }
             }
 
         } catch (Exception e) {
