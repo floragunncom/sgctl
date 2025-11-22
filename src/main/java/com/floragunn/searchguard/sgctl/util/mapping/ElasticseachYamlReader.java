@@ -1,15 +1,18 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
 
-import com.floragunn.codova.documents.DocReader;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
 import java.io.File;
-import java.util.HashMap;
 import java.util.Map;
 
 public class ElasticseachYamlReader extends ConfigReader {
 
-    public ElasticseachYamlReader(File configFile) {
-        super(configFile);
+    public ElasticseachYamlReader(File configFile, IntermediateRepresentation ir) {
+        super(configFile, ir);
+    }
+
+    public void toIR(Map<String, Object> map) {
+        return;
     }
 
 
