@@ -1,5 +1,7 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
 import com.floragunn.codova.documents.DocReader;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.InteremediateRepresentation;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.User;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -11,12 +13,14 @@ public class XPackConfigReader {
     File userFile;
     File roleFile;
     File userMapping;
+    InteremediateRepresentation ir;
 
-    public XPackConfigReader(File elasticsearch, File user, File role, File userMapping) {
+    public XPackConfigReader(File elasticsearch, File user, File role, File userMapping, InteremediateRepresentation ir) {
         this.elasticsearch = elasticsearch;
         this.userFile = user;
         this.roleFile = role;
         this.userMapping = userMapping;
+        this.ir = ir;
     }
 
     public void generateIR() {
@@ -46,33 +50,23 @@ public class XPackConfigReader {
                     printErr("Missing user entry in config file");
                     continue;
                 }
-                var username = user.get("username");
+                var username = (String) user.get("username");
                 if (username == null) {
                     // TODO: Add MigrationReport entry
                     printErr("Missing username for user");
                     continue;
                 }
-                var roles = (ArrayList<?>)user.get("roles");
-                var fullName = (String)user.get("full_name");
-                var email = (String)user.get("email");
+                var roles = (ArrayList<String>)user.get("roles");
+                // TODO: Compare roles with role file
+                var fullName = (String) user.get("full_name");
+                var email = (String) user.get("email");
                 var metadata = (LinkedHashMap<?, ?>)user.get("metadata");
                 metadata.forEach((k1,v1)->{
                     // TODO: Add metadata interpretation
                 });
+                ir.addUser(new User(username, roles, fullName, email));
             }
 
-//            var node = DocNode.parse(Format.JSON).from(userFile);
-//            var users = node.findByJsonPath("$.*");
-//
-//            for (Object user : users) {
-//                if (user instanceof LinkedHashMap<?,?>) {
-//                    var mapUser = (LinkedHashMap<?,?>)user;
-//                    print(mapUser);
-//
-//                    print(mapUser.get("username"));
-//                    print(mapUser.get("roles"));
-//                }
-//            }
         } catch (Exception e) {
             printErr(e.getMessage());
         }
