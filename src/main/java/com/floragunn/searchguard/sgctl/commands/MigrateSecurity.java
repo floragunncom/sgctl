@@ -2,74 +2,99 @@ package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.util.mapping.XpackConfigReader;
+import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
+import picocli.CommandLine.Help;
 
 import java.io.File;
-import java.util.List;
 import java.util.concurrent.Callable;
 //names of files: user.json, role.json, role_mapping.json
-@Command(name = "migrate-security", description = "Converts Xpack configs to search guard config files with a given input.")
+@Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
 public class MigrateSecurity implements Callable<Integer> {
 
-    @Parameters(index = "0", description = "Path to the directory containing elasticsearch.yml.")
+    @Parameters(description = "Path to the directory containing elasticsearch.yml and possibly other X-Pack configuration files.")
     File inputDir;
 
-    @Option(names = { "-o", "--output-dir" }, description = "Directory where to write new configuration files")
+    @Option(names = { "-o", "--output-dir" }, description = "Directory where to write new configuration files.")
     File outputDir;
 
-    File elasticsearch = null;
-    File user = null;
-    File role = null;
-    File roleMapping = null;
+    private File elasticsearch = null;
+    private File user = null;
+    private File role = null;
+    private File roleMapping = null;
 
     @Override
     public Integer call() throws Exception {
+        if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
+            return 1;
+        }
+        var reader = new XpackConfigReader(elasticsearch, user, role, roleMapping);
+        return 0;
+    }
 
-        String path = (inputDir != null) ? inputDir.getAbsolutePath() : "NULL";
+    public boolean checkOutputDir() {
+        if(outputDir == null) {
+            return true;
+        }
+        if(!outputDir.exists()) {
+            return false;
+        }
+        if(!outputDir.isDirectory()) {
+            return false;
+        }
+        if(!outputDir.canWrite()) {
+            return false;
+        }
+        return true;
+    }
 
+    public boolean checkInputDirAndLoadConfig() {
 
         if (inputDir == null) {
             System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
+            return false;
+        }
+
+        if (!inputDir.exists()) {
+            System.err.println("Input path does not exist: " + inputDir.getAbsolutePath());
+            return false;
+        }
+
+        if (!inputDir.isDirectory()) {
+            System.err.println("Input path is not a directory: " + inputDir.getAbsolutePath());
+            return false;
+        }
+
+        if (!inputDir.canRead()) {
+            System.err.println("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
+            return false;
+        }
+
+        var files = inputDir.listFiles();
+
+        if (files == null) {
+            System.err.println("Found unexpected null-value while listing files in input directory (I/O error).");
+            return false;
         }else{
-            if (!inputDir.exists()) {
-                System.err.println("Input path does not exist: " + inputDir.getAbsolutePath());
-            }
-
-            if (!inputDir.isDirectory()) {
-                System.err.println("Input path is not a directory: " + inputDir.getAbsolutePath());
-            }
-
-            if (!inputDir.canRead()) {
-                System.err.println("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
-            }
-
-            var files = inputDir.listFiles();
-
-            if (files == null) {
-                System.err.println("Found unexpected null-value while listing files in input directory (I/O error).");
-            }else{
-                for (File file : files) {
-                    switch (file.getName()) {
-                        case "elasticsearch.yml":
-                            elasticsearch= file;
-                        case "user.json":
-                            user = file;
-                        case "role.json":
-                            role = file;
-                        case "role_mapping.json":
-                            roleMapping = file;
-                    }
+            for (File file : files) {
+                switch (file.getName()) {
+                    case "elasticsearch.yml":
+                        elasticsearch= file;
+                    case "user.json":
+                        user = file;
+                    case "role.json":
+                        role = file;
+                    case "role_mapping.json":
+                        roleMapping = file;
                 }
             }
         }
-
         if (elasticsearch == null) {
             System.err.println("Required file elasticsearch.yml not found.");
-            return 1;
+            return false;
         }
-
-        return 0;
+        return true;
     }
 }
