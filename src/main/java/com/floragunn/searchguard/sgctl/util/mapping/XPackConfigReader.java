@@ -29,29 +29,37 @@ public class XPackConfigReader {
         try {
             var reader = DocReader.json().read(userFile);
 
-            var mapReader = (LinkedHashMap<?, ?>)reader;
-            mapReader.forEach((k,v)->{
-                if (k instanceof String) {
-                    var user = (LinkedHashMap<?, ?>)v;
-                    if (user == null) {
-                        // TODO: Add MigrationReport entry
-                        printErr("Missing user entry in config file");
-                    }
-                    var username = user.get("username");
-                    if (username == null) {
-                        // TODO: Add MigrationReport entry
-                        printErr("Missing username for user");
-                    }
-                    var roles = (ArrayList<?>)user.get("roles");
-                    var fullName = (String)user.get("full_name");
-                    var email = (String)user.get("email");
-                    var metadata = (LinkedHashMap<?, ?>)user.get("metadata");
-                    metadata.forEach((k1,v1)->{
-                       // TODO: Add metadata interpretation
-                    });
-
+            if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
+                // TODO: Add MigrationReport entry
+                return;
+            }
+            for (var entry : mapReader.entrySet()) {
+                var key = entry.getKey();
+                var value = entry.getValue();
+                if (!(key instanceof String)) {
+                    // TODO: Add MigrationReport entry
+                    continue;
                 }
-            });
+                var user = (LinkedHashMap<?, ?>)value;
+                if (user == null) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Missing user entry in config file");
+                    continue;
+                }
+                var username = user.get("username");
+                if (username == null) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Missing username for user");
+                    continue;
+                }
+                var roles = (ArrayList<?>)user.get("roles");
+                var fullName = (String)user.get("full_name");
+                var email = (String)user.get("email");
+                var metadata = (LinkedHashMap<?, ?>)user.get("metadata");
+                metadata.forEach((k1,v1)->{
+                    // TODO: Add metadata interpretation
+                });
+            }
 
 //            var node = DocNode.parse(Format.JSON).from(userFile);
 //            var users = node.findByJsonPath("$.*");
