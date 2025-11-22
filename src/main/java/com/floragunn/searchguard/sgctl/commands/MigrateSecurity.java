@@ -1,12 +1,9 @@
 package com.floragunn.searchguard.sgctl.commands;
 
-import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.util.mapping.XpackConfigReader;
-import picocli.CommandLine;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
-import picocli.CommandLine.Help;
 
 import java.io.File;
 import java.util.concurrent.Callable;
