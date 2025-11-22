@@ -3,6 +3,7 @@ import com.floragunn.codova.documents.DocReader;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.User;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.RoleMapping;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -436,8 +437,47 @@ public class XPackConfigReader {
     }
 
     private void readSingleRoleMapping(LinkedHashMap<?, ?> mapping, String mappingName) {
-        // TODO: Implement role mapping reading
-        return;
+        var roleMapping = new RoleMapping(mappingName);
+        
+        for (var entry : mapping.entrySet()) {
+            var key = entry.getKey();
+            var value = entry.getValue();
+
+            if (!(key instanceof String)) {
+                // TODO: Add MigrationReport entry
+                printErr("Unexpected type for key: " + key);
+                continue;
+            }
+
+            switch ((String) key) {
+                case "enabled":
+                    if (value instanceof Boolean enabled) {
+                        roleMapping.setEnabled(enabled);
+                    } else {
+                        // TODO: Add MigrationReport entry
+                        printErr("Invalid type for enabled: " + value.getClass());
+                    }
+                    break;
+
+                case "roles":
+                    try {
+                        roleMapping.setRoles(toStringArrayList(value));
+                    } catch (IllegalArgumentException e) {
+                        // TODO: Add MigrationReport entry
+                        printErr("Invalid type for roles: " + value.getClass());
+                    } catch (ClassCastException e) {
+                        printErr("Invalid entry in 'roles' for role mapping '" + mappingName + "': " + e.getMessage());
+                    }
+                    break;
+
+                default:
+                    // TODO: Add MigrationReport entry
+                    printErr("Unknown key: " + key);
+                    break;
+            }
+        
+            return;
+        }
     }
 
     public static List<String> toStringArrayList(Object obj) throws IllegalArgumentException, ClassCastException {
