@@ -1,0 +1,46 @@
+# General security settings
+xpack.security.enabled: true
+xpack.security.autoconfiguration.enabled: true
+xpack.security.enrollment.enabled: false
+xpack.security.hide_settings: ""
+xpack.security.fips_mode.enabled: false
+xpack.security.fips_mode.required_providers: []
+
+# Password hashing settings
+xpack.security.authc.password_hashing.algorithm: bcrypt
+
+# Anonymous access settings
+xpack.security.authc.anonymous.username: _es_anonymous_user
+xpack.security.authc.anonymous.roles: []
+xpack.security.authc.anonymous.authz_exception: true
+
+# Automata settings
+xpack.security.automata.max_determinized_states: 100000
+xpack.security.automata.cache.enabled: true
+xpack.security.automata.cache.size: 10000
+xpack.security.automata.cache.ttl: 48h
+
+# Document and field level security settings
+xpack.security.dls_fls.enabled: true
+xpack.security.dls.bitset.cache.ttl: 2h
+xpack.security.dls.bitset.cache.size: 10%
+
+# Token service settings
+xpack.security.authc.token.enabled: true
+xpack.security.authc.token.timeout: 20m
+
+# API key service settings
+xpack.security.authc.api_key.enabled: true
+xpack.security.authc.api_key.cache.ttl: 1d
+xpack.security.authc.api_key.cache.max_keys: 10000
+xpack.security.authc.api_key.cache.hash_algo: ssha256
+xpack.security.authc.api_key.delete.retention_period: 7d
+xpack.security.authc.api_key.delete.interval: 24h
+xpack.security.authc.api_key.delete.timeout:
+xpack.security.authc.api_key.hashing.algorithm: ssha256
+
+# Security domain settings
+xpack.security.authc.domains: {}
+
+# Realm settings
+xpack.security.authc.realms: {}
