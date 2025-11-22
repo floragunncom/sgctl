@@ -28,7 +28,13 @@ public class XPackConfigReader {
     public IntermediateRepresentation generateIR() {
 //        readUser();
         readRole();
-        readRoleMapping();
+//        readRoleMapping();
+//        ir.getRoles().forEach(role -> {
+//            print(role);
+//            role.getApplications().forEach(application -> {
+//                print(application.getName());
+//            });
+//        });
         return ir;
     }
 
@@ -148,9 +154,9 @@ public class XPackConfigReader {
         }
     }
 
-    private void readSingleRole(LinkedHashMap<?, ?> role, String roleName) {
-
-        for (var entry : role.entrySet()) {
+    private void readSingleRole(LinkedHashMap<?, ?> roleMap, String roleName) {
+        var role = new Role();
+        for (var entry : roleMap.entrySet()) {
             var key = entry.getKey();
             var value = entry.getValue();
             if (!(key instanceof String)) {
@@ -161,12 +167,23 @@ public class XPackConfigReader {
 
             switch ((String) key) {
             case "applications":
-                print(value);
                 if (value instanceof ArrayList<?> applicationList) {
-                    var applications = readApplications(applicationList);
+                    role.setApplications(readApplications(applicationList));
+                } else {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type for applications: " + value.getClass());
                 }
                 break;
             case "cluster":
+                try {
+                    role.setCluster(toStringArrayList(value));
+                } catch (IllegalArgumentException e) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type for cluster: " + key.getClass());
+                } catch (ClassCastException e) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type for cluster entry: " + value.getClass());
+                }
                 break;
             case "":
                 break;
@@ -176,10 +193,9 @@ public class XPackConfigReader {
             }
         }
 
-        ir.addRole(new Role());
+        ir.addRole(role);
     }
 
-    // TODO: Change 'String' to 'Application'-Object
     private List<Role.Application> readApplications(ArrayList<?> applicationList) {
         var applications = new ArrayList<Role.Application>();
         for (var application : applicationList) {
@@ -245,14 +261,16 @@ public class XPackConfigReader {
                 default:
                     // TODO: Add MigrationReport entry
                     printErr("Unknown key: " + key);
+                    break;
             }
+        }
+        if (application.getName() == null || application.getPrivileges() == null || application.getResources() == null) {
+            // TODO: Add MigrationReport entry
+            printErr("Application missing required parameter.");
+            return null;
         }
         return application;
     }
-
-//    private List<String> readCluster(LinkedHashMap<?, ?> cluster) {
-//
-//    }
 
     private void readRoleMapping() {
         try {
