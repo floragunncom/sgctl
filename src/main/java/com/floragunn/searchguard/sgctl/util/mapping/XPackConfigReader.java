@@ -44,6 +44,7 @@ public class XPackConfigReader {
     }
 
     private void readUserFile() {
+        if (userFile == null) return;
         try {
             var reader = DocReader.json().read(userFile);
 
@@ -135,6 +136,7 @@ public class XPackConfigReader {
     }
 
     private void readRoleFile() {
+        if (roleFile == null) return;
         try {
             var reader = DocReader.json().read(roleFile);
 
@@ -428,6 +430,7 @@ public class XPackConfigReader {
     }
 
     private void readRoleMapping() {
+        if (roleMappingFile == null) return;
         try {
             var reader = DocReader.json().read(roleMappingFile);
 
