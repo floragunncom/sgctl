@@ -331,9 +331,9 @@ public class XPackConfigReader {
             case "field_security":
                 if (value instanceof LinkedHashMap<?, ?> fieldSecurity) {
                     index.setFieldSecurity(readFieldSecurity(fieldSecurity));
-                } else {
-                    // TODO: Add MigrationReport entry
+                    break;
                 }
+                // TODO: Add MigrationReport entry
                 break;
             case "names":
                 try {
@@ -345,47 +345,33 @@ public class XPackConfigReader {
                         index.setNames(names);
                         break;
                     }
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type for names: " + value.getClass());
-                    return null;
+                    printErr("Invalid type for names: " + value.getClass()); // TODO: Add MigrationReport entry
                 } catch (ClassCastException e) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type found in names: " + e.getMessage());
-                    return null;
+                    printErr("Invalid type found in names: " + e.getMessage()); // TODO: Add MigrationReport entry
                 }
                 break;
             case "privileges":
                 var privileges = toStringList(value, roleFileName, "", key);
-                if (privileges == null) {}
-                try {
-                    index.setPrivileges(toStringList(value));
-                } catch (IllegalArgumentException e) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type for privileges: " + value.getClass());
-                    return null;
-                } catch (ClassCastException e) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type found in privileges: " + e.getMessage());
-                    return null;
+                if (privileges == null) {
+                    printErr("Privileges are a required parameter."); // TODO: Add MigrationReport entry
+                    break;
                 }
+                index.setPrivileges(privileges);
                 break;
             case "allow_restricted_indices":
                 if (value instanceof Boolean allowRestrictedIndices) {
                     index.setAllowRestrictedIndices(allowRestrictedIndices);
-                } else {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type for allow_restricted_indices: " + key);
+                    break;
                 }
+                printErr("Invalid type for allow_restricted_indices: " + key); // TODO: Add MigrationReport entry
                 break;
             default:
-                // TODO: Add MigrationReport entry
-                printErr("Unknown key: " + key);
+                printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
                 break;
             }
         }
         if (index.getNames().isEmpty() || index.getPrivileges().isEmpty()) {
-            // TODO: Add MigrationReport entry
-            printErr("Index missing required parameter.");
+            printErr("Index missing required parameter."); // TODO: Add MigrationReport entry
             return null;
         }
         return index;
