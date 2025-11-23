@@ -11,6 +11,8 @@ import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings.RoleMapping.Templates.Template;
 
+import java.util.Objects;
+
 /**
  * Contains named role mappings.
  *
@@ -20,6 +22,10 @@ public record RoleMappings(
     ImmutableMap<String, RoleMapping> mappings
 ) {
 
+    public RoleMappings {
+        Objects.requireNonNull(mappings, "mappings must not be null");
+    }
+    
     /**
      * Role mappings define which roles are assigned to each user.
      * Each mapping has rules that identify users and a list of roles that are granted to those users.
@@ -60,6 +66,13 @@ public record RoleMappings(
             Rule rules,
             DocNode metadata
         ) implements RoleMapping {
+            
+            public Roles {
+                Objects.requireNonNull(roles, "roles must not be null");
+                Objects.requireNonNull(rules, "rules must not be null");
+                Objects.requireNonNull(metadata, "metadata must not be null");
+            }
+            
         }
 
         /**
@@ -77,6 +90,12 @@ public record RoleMappings(
             Rule rules,
             DocNode metadata
         ) implements RoleMapping {
+            
+            public Templates {
+                Objects.requireNonNull(roleTemplates, "roleTemplates must not be null");
+                Objects.requireNonNull(rules, "rules must not be null");
+                Objects.requireNonNull(metadata, "metadata must not be null");
+            }
 
             /**
              * A role template
@@ -88,6 +107,11 @@ public record RoleMappings(
                 Format format,
                 Script script
             ) {
+                
+                public Template {
+                    Objects.requireNonNull(format, "format must not be null");
+                    Objects.requireNonNull(script, "script must not be null");
+                }
 
                 /**
                  * A script
@@ -101,6 +125,12 @@ public record RoleMappings(
                     DocNode params,
                     Lang lang
                 ) {
+                    
+                    public Script {
+                        Objects.requireNonNull(source, "source must not be null");
+                        Objects.requireNonNull(params, "params must not be null");
+                        Objects.requireNonNull(lang, "lang must not be null");
+                    }
 
                     /**
                      * Scripting language
@@ -170,6 +200,11 @@ public record RoleMappings(
              * @param rules The rules
              */
             record Any(ImmutableList<Rule> rules) implements Rule {
+                
+                public Any {
+                    Objects.requireNonNull(rules, "rules must not be null");
+                }
+                
             }
 
             /**
@@ -178,6 +213,11 @@ public record RoleMappings(
              * @param rules
              */
             record All(ImmutableList<Rule> rules) implements Rule {
+                
+                public All {
+                    Objects.requireNonNull(rules, "rules must not be null");
+                }
+                
             }
 
             /**
@@ -186,6 +226,11 @@ public record RoleMappings(
              * @param rule The rule to negate
              */
             record Except(Rule rule) implements Rule {
+                
+                public Except {
+                    Objects.requireNonNull(rule, "rule must not be null");
+                }
+                
             }
 
             /**
@@ -194,6 +239,11 @@ public record RoleMappings(
              * @param data The data to match
              */
             record Field(DocNode data) implements Rule {
+                
+                public Field {
+                    Objects.requireNonNull(data, "data must not be null");
+                }
+                
             }
 
             /**
