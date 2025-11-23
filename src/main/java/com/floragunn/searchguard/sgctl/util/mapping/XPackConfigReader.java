@@ -503,6 +503,30 @@ public class XPackConfigReader {
                     break;
             }
         }
+
+        ir.addRoleMapping(roleMapping);
+    }
+
+    public void readRules(Object rulesObject, String mappingName) {
+        if (!(rulesObject instanceof LinkedHashMap<?, ?> rulesMap)) {
+            // TODO: Add MigrationReport entry
+            printErr("Invalid type for rules in role mapping '" + mappingName + "': " + rulesObject.getClass());
+            return;
+        }
+
+        var fieldObj = rulesMap.get("field");
+        if (fieldObj instanceof LinkedHashMap<?, ?> fieldMap) {
+            for (var entry : fieldMap.entrySet()) {
+                var key = entry.getKey();
+                var value = entry.getValue();
+                if (key instanceof String) {
+                    // TODO Add field rule to RoleMapping
+                } else {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid key type in field rules for role mapping '" + mappingName + "': " + key.getClass());
+                }
+            }
+        }
     }
 
     public static List<String> toStringArrayList(Object obj) throws IllegalArgumentException, ClassCastException {
