@@ -64,15 +64,14 @@ public class XPackConfigReader {
 
     private void readUsers(LinkedHashMap<?, ?> mapReader) {
         for (var entry : mapReader.entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-            if (!(key instanceof String)) {
-                // TODO: Add MigrationReport entry
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
                 continue;
             }
+            var value = entry.getValue();
 
             if (value instanceof LinkedHashMap<?, ?> user) {
-                readUser(user, (String) key);
+                readUser(user, key);
             } else {
                 printErr("Unexpected value for key " + key); // TODO: Add MigrationReport entry
             }
@@ -82,7 +81,10 @@ public class XPackConfigReader {
     private void readUser(LinkedHashMap<?, ?> userMap, String name) {
         var user = new User(name);
         for (var entry : userMap.entrySet()) {
-            var key = (String) entry.getKey();
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                continue;
+            }
             var value = entry.getValue();
             switch (key) {
                 case "username":
@@ -156,17 +158,14 @@ public class XPackConfigReader {
 
     private void readRoles(LinkedHashMap<?, ?> mapReader) {
         for (var entry : mapReader.entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-            if (!(key instanceof String)) {
-                printErr("Unexpected type for key: " + key); // TODO: Add MigrationReport entry
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
                 continue;
             }
-
-            var roleName = (String) entry.getKey();
+            var value = entry.getValue();
 
             if (value instanceof LinkedHashMap<?, ?> role) {
-                readRole(role, roleName);
+                readRole(role, key);
             } else {
                 printErr("Invalid value for role: " + value); // TODO: Add MigrationReport entry
             }
@@ -176,14 +175,13 @@ public class XPackConfigReader {
     private void readRole(LinkedHashMap<?, ?> roleMap, @NonNull String roleName) {
         var role = new Role(roleName);
         for (var entry : roleMap.entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-            if (!(key instanceof String)) {
-                printErr("Unexpected type for key: " + key); // TODO: Add MigrationReport entry
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
                 continue;
             }
+            var value = entry.getValue();
 
-            switch ((String) key) {
+            switch (key) {
             case "applications":
                 if (value instanceof ArrayList<?> applicationList) {
                     role.setApplications(readApplications(applicationList));
@@ -193,7 +191,7 @@ public class XPackConfigReader {
                 break;
             case "cluster":
                 try {
-                    role.setCluster(toStringArrayList(value));
+                    role.setCluster(toStringList(value));
                 } catch (IllegalArgumentException e) {
                     printErr("Invalid type for cluster: " + key.getClass()); // TODO: Add MigrationReport entry
                 } catch (ClassCastException e) {
@@ -253,13 +251,13 @@ public class XPackConfigReader {
         List<String> privileges = null;
         List<String> resources = null;
         for (var entry : applicationMap.entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-            if (!(key instanceof String)) {
-                printErr("Unexpected type for key: " + key); // TODO: Add MigrationReport entry
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
                 continue;
             }
-            switch ((String) key) {
+            var value = entry.getValue();
+
+            switch (key) {
                 case "application":
                     if (value instanceof String applicationName) {
                         name = applicationName;
@@ -270,7 +268,7 @@ public class XPackConfigReader {
                     break;
                 case "privileges":
                     try {
-                        privileges = toStringArrayList(value);
+                        privileges = toStringList(value);
                     } catch (IllegalArgumentException e) {
                         printErr("Invalid type for privileges: " + value.getClass()); // TODO: Add MigrationReport entry
                         return null;
@@ -281,7 +279,7 @@ public class XPackConfigReader {
                     break;
                 case "resources":
                     try {
-                        resources = toStringArrayList(value);
+                        resources = toStringList(value);
                     } catch (IllegalArgumentException e) {
                         printErr("Invalid type for resources: " + value.getClass()); // TODO: Add MigrationReport entry
                         return null;
@@ -322,16 +320,14 @@ public class XPackConfigReader {
     private Role.Index readIndex(LinkedHashMap<?, ?> indexMap) {
         var index = new Role.Index();
         for (var entry : indexMap.entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-            if (!(key instanceof String)) {
-                // TODO: Add MigrationReport entry
-                printErr("Unexpected type for key: " + key);
-                return null;
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                continue;
             }
+            var value = entry.getValue();
 
             // TODO: Add query key
-            switch ((String) key) {
+            switch (key) {
             case "field_security":
                 if (value instanceof LinkedHashMap<?, ?> fieldSecurity) {
                     index.setFieldSecurity(readFieldSecurity(fieldSecurity));
@@ -341,7 +337,7 @@ public class XPackConfigReader {
                 break;
             case "names":
                 try {
-                    index.setNames(toStringArrayList(value));
+                    index.setNames(toStringList(value));
                 } catch (IllegalArgumentException e) {
                     if (value instanceof String name) {
                         var names = new ArrayList<String>();
@@ -359,8 +355,10 @@ public class XPackConfigReader {
                 }
                 break;
             case "privileges":
+                var privileges = toStringList(value, roleFileName, "", key);
+                if (privileges == null) {}
                 try {
-                    index.setPrivileges(toStringArrayList(value));
+                    index.setPrivileges(toStringList(value));
                 } catch (IllegalArgumentException e) {
                     // TODO: Add MigrationReport entry
                     printErr("Invalid type for privileges: " + value.getClass());
@@ -396,17 +394,15 @@ public class XPackConfigReader {
     private Role.FieldSecurity readFieldSecurity(LinkedHashMap<?, ?> fieldMap) {
         var fieldSecurity = new Role.FieldSecurity();
         for (var entry : fieldMap.entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-            if (!(key instanceof String)) {
-                // TODO: Add MigrationReport entry
-                printErr("Unexpected type for key: " + key);
-                return null;
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                continue;
             }
-            switch ((String) key) {
+            var value = entry.getValue();
+            switch (key) {
             case "except":
                 try {
-                    fieldSecurity.setExcept(toStringArrayList(value));
+                    fieldSecurity.setExcept(toStringList(value));
                 } catch (IllegalArgumentException e) {
                     // TODO: Add MigrationReport entry
                 } catch (ClassCastException e) {
@@ -415,7 +411,7 @@ public class XPackConfigReader {
                 break;
             case "grant":
                 try {
-                    fieldSecurity.setGrant(toStringArrayList(value));
+                    fieldSecurity.setGrant(toStringList(value));
                 } catch (IllegalArgumentException e) {
                     // TODO: Add MigrationReport entry
                 } catch (ClassCastException e) {
@@ -440,17 +436,14 @@ public class XPackConfigReader {
             }
 
             for (var entry : mapReader.entrySet()) {
-                var key = entry.getKey();
-                var value = entry.getValue();
-                if (!(key instanceof String)) {
-                    // TODO: Add MigrationReport entry
+                if (!(entry.getKey() instanceof String key)) {
+                    printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
                     continue;
                 }
-
-                var mappingName = (String) key;
+                var value = entry.getValue();
 
                 if ((value instanceof LinkedHashMap<?, ?> mapping)) {
-                    readSingleRoleMapping(mapping, mappingName);
+                    readSingleRoleMapping(mapping, key);
                 } else {
                     // TODO: Add MigrationReport entry
                     printErr("Unexpected value for key " + key);
@@ -467,16 +460,13 @@ public class XPackConfigReader {
         var roleMapping = new RoleMapping(mappingName);
 
         for (var entry : mapping.entrySet()) {
-            var key = entry.getKey();
-            var value = entry.getValue();
-
-            if (!(key instanceof String)) {
-                // TODO: Add MigrationReport entry
-                printErr("Unexpected type for key: " + key);
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
                 continue;
             }
+            var value = entry.getValue();
 
-            switch ((String) key) {
+            switch (key) {
                 case "enabled":
                     if (value instanceof Boolean enabled) {
                         roleMapping.setEnabled(enabled);
@@ -488,7 +478,7 @@ public class XPackConfigReader {
 
                 case "roles":
                     try {
-                        roleMapping.setRoles(toStringArrayList(value));
+                        roleMapping.setRoles(toStringList(value));
                     } catch (IllegalArgumentException e) {
                         // TODO: Add MigrationReport entry
                         printErr("Invalid type for roles: " + value.getClass());
@@ -499,7 +489,7 @@ public class XPackConfigReader {
 
                 case "users":
                     try {
-                        roleMapping.setUsers(toStringArrayList(value));
+                        roleMapping.setUsers(toStringList(value));
                     } catch (IllegalArgumentException e) {
                         // TODO: Add MigrationReport entry
                         printErr("Invalid type for users: " + value.getClass());
@@ -535,30 +525,36 @@ public class XPackConfigReader {
         var fieldObj = rulesMap.get("field");
         if (fieldObj instanceof LinkedHashMap<?, ?> fieldMap) {
             for (var entry : fieldMap.entrySet()) {
-                var key = entry.getKey();
-                var value = entry.getValue();
-                if (key instanceof String) {
-                    // TODO Add field rule to RoleMapping
-                } else {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid key type in field rules for role mapping '" + mappingName + "': " + key.getClass());
+                if (!(entry.getKey() instanceof String key)) {
+                    printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                    continue;
                 }
+                var value = entry.getValue();
+                // TODO Add field rule to RoleMapping
             }
         }
     }
 
-    public static List<String> toStringList(Object obj, String originFile, String parameterOrigin, String key) {
+    private static String toString(Object obj, String originFile, String parameterOrigin, String key) {
+        if (obj instanceof String value) {
+            return value;
+        }
+        printErr("Issue at file: " + originFile + " and parameter: " + parameterOrigin + ". Invalid type " + obj.getClass() + " for key " + key); // TODO: Add MigrationReport entry
+        return null;
+    }
+
+    private static List<String> toStringList(Object obj, String originFile, String parameterOrigin, String key) {
         try {
-            return toStringArrayList(obj);
+            return toStringList(obj);
         } catch (IllegalArgumentException e) {
-            printErr("Issue at file: " + originFile + " and parameter: " + parameterOrigin + ". Invalid type" + obj.getClass() + " for key " + key); // TODO: Add MigrationReport entry
+            printErr("Issue at file: " + originFile + " and parameter: " + parameterOrigin + ". Invalid type " + obj.getClass() + " for key " + key); // TODO: Add MigrationReport entry
         } catch (ClassCastException e) {
             printErr("Issue at file: " + originFile + " and parameter: " + parameterOrigin + ". Expected 'String' for item in list for key" + key + " but got " + e.getMessage()); // TODO: Add MigrationReport entry
         }
         return null;
     }
 
-    public static List<String> toStringArrayList(Object obj) throws IllegalArgumentException, ClassCastException {
+    private static List<String> toStringList(Object obj) throws IllegalArgumentException, ClassCastException {
         if (!(obj instanceof List<?> list)) {
             throw new IllegalArgumentException("Object is not a List");
         }
