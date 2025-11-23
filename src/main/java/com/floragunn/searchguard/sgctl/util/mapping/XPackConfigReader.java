@@ -450,6 +450,15 @@ public class XPackConfigReader {
                     }
                     break;
 
+                case "role_templates":
+                    if (value instanceof ArrayList<?> templateList) {
+                        roleMapping.setRoleTemplates(readRoleTemplates(templateList, mappingName));
+                    } else {
+                        // TODO: MigrationReport entry
+                        printErr("Invalid type for role_templates: " + value.getClass());
+                    }
+                    break;
+
                 case "users":
                     try {
                         roleMapping.setUsers(toStringList(value));
@@ -501,9 +510,16 @@ public class XPackConfigReader {
                     continue;
                 }
                 var value = entry.getValue();
-                // TODO Add field rule to RoleMapping
+                // TODO: Add field rule to RoleMapping
             }
         }
+    }
+
+    private List<RoleMapping.RoleTemplate> readRoleTemplates(ArrayList<?> templateList, String mappingName) {
+        var templates = new ArrayList<RoleMapping.RoleTemplate>();
+
+        // TODO: Implement readRoleTemplates
+        return templates;
     }
 
     private static String toString(Object obj, String originFile, String parameterOrigin, String key) {
