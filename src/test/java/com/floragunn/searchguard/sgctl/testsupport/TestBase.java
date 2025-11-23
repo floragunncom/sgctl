@@ -7,18 +7,16 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-import org.junit.jupiter.api.Assertions;
-
 /**
- * Base class for JUnit tests with common helper methods.
+ * Base class for JUnit tests with resource helper methods.
  */
 public abstract class TestBase {
 
     /**
      * Resolves a classpath resource name to a file system path.
      *
-     * @param resourceName the relative resource name, e.g. "migrate/valid-config.yml"
-     * @return the resolved path of the resource
+     * @param resourceName the relative resource name, e.g. "testbase/example.txt"
+     * @return the resolved path
      */
     protected Path resolveResourcePath(String resourceName) {
         if (resourceName == null || resourceName.isBlank()) {
@@ -45,7 +43,7 @@ public abstract class TestBase {
     /**
      * Reads a classpath resource as a UTF-8 string.
      *
-     * @param resourceName the relative resource name, e.g. "migrate/valid-config.yml"
+     * @param resourceName the relative resource name, e.g. "testbase/example.txt"
      * @return the resource content as string
      */
     protected String readResourceAsString(String resourceName) {
@@ -70,23 +68,5 @@ public abstract class TestBase {
         }
         String withUnix = text.replace("\r\n", "\n");
         return withUnix.replace("\r", "\n");
-    }
-
-    /**
-     * Asserts that content matches a golden file.
-     *
-     * @param expectedResourceName the resource name of the golden file
-     * @param actualContent        the actual content to compare
-     */
-    protected void assertMatchesGoldenFile(String expectedResourceName, String actualContent) {
-        String expected = readResourceAsString(expectedResourceName);
-        String normalizedExpected = normalizeLineEndings(expected);
-        String normalizedActual = normalizeLineEndings(actualContent);
-
-        Assertions.assertEquals(
-                normalizedExpected,
-                normalizedActual,
-                "Actual content does not match golden file: " + expectedResourceName
-        );
     }
 }
