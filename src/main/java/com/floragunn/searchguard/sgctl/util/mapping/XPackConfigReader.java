@@ -19,18 +19,18 @@ public class XPackConfigReader {
     File elasticsearch;
     File userFile;
     File roleFile;
-    File roleMapping;
+    File roleMappingFile;
     IntermediateRepresentation ir;
 
     static final String roleFileName = "role.json";
     static final String userFileName = "user.json";
     static final String roleMappingFileName = "role_mapping.json";
 
-    public XPackConfigReader(File elasticsearch, File user, File role, File roleMapping) {
+    public XPackConfigReader(File elasticsearch, File user, File role, File roleMappingFile) {
         this.elasticsearch = elasticsearch;
         this.userFile = user;
         this.roleFile = role;
-        this.roleMapping = roleMapping;
+        this.roleMappingFile = roleMappingFile;
         this.ir = new IntermediateRepresentation();
     }
 
@@ -429,7 +429,7 @@ public class XPackConfigReader {
 
     private void readRoleMapping() {
         try {
-            var reader = DocReader.json().read(roleMapping);
+            var reader = DocReader.json().read(roleMappingFile);
 
             if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
                 // TODO: Add MigrationReport entry
