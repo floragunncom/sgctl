@@ -25,4 +25,9 @@ public class User {
     public void setRoles(List<String> roles) { this.roles = roles; }
     public void setFullName(String fullName) { this.fullName = fullName; }
     public void setEmail(String email) { this.email = email; }
+
+    @Override
+    public String toString() {
+        return "User [username=" + username + ", roles=" + roles + ", fullName=" + fullName + ", email=" + email + "]";
+    }
 }
