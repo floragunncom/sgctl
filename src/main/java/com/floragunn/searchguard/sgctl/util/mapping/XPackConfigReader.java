@@ -37,7 +37,7 @@ public class XPackConfigReader {
     public IntermediateRepresentation generateIR() {
         readRoleFile();
         readUserFile();
-        readRoleMapping();
+        readRoleMappingFile();
         ir.getUsers().forEach(user -> print(user.toString()));
         ir.getRoles().forEach(role -> print(role.toString()));
         return ir;
@@ -411,7 +411,7 @@ public class XPackConfigReader {
         return fieldSecurity;
     }
 
-    private void readRoleMapping() {
+    private void readRoleMappingFile() {
         if (roleMappingFile == null) return;
         try {
             var reader = DocReader.json().read(roleMappingFile);
@@ -421,28 +421,35 @@ public class XPackConfigReader {
                 return;
             }
 
-            for (var entry : mapReader.entrySet()) {
-                if (!(entry.getKey() instanceof String key)) {
-                    printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
-                    continue;
-                }
-                var value = entry.getValue();
+            readRoleMappings(mapReader);
 
-                if ((value instanceof LinkedHashMap<?, ?> mapping)) {
-                    readSingleRoleMapping(mapping, key);
-                } else {
-                    // TODO: Add MigrationReport entry
-                    printErr("Unexpected value for key " + key);
-                }
-            }
-
-        } catch (Exception e) {
-            // TODO: Add proper error handling
-            printErr(e.getMessage());
+        } catch (DocumentParseException e) {
+            printErr("Error while parsing file."); // TODO: Add MigrationReport entry
+        } catch (FileNotFoundException e) {
+            printErr("File not found."); // TODO: Add MigrationReport entry
+        } catch (IOException e) {
+            printErr("Unexpected Error while accessing file."); // TODO: Add MigrationReport entry
         }
     }
 
-    private void readSingleRoleMapping(LinkedHashMap<?, ?> mapping, String mappingName) {
+    private void readRoleMappings(LinkedHashMap<?, ?> mapReader) {
+        for (var entry : mapReader.entrySet()) {
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                continue;
+            }
+            var value = entry.getValue();
+
+            if ((value instanceof LinkedHashMap<?, ?> mapping)) {
+                readRoleMapping(mapping, key);
+            } else {
+                // TODO: Add MigrationReport entry
+                printErr("Unexpected value for key " + key);
+            }
+        }
+    }
+
+    private void readRoleMapping(LinkedHashMap<?, ?> mapping, String mappingName) {
         var roleMapping = new RoleMapping(mappingName);
 
         for (var entry : mapping.entrySet()) {
@@ -483,8 +490,16 @@ public class XPackConfigReader {
                         printErr("Invalid entry in 'users' for role mapping '" + mappingName + "': " + e.getMessage());
                     }
                     break;
+
+                case "run_as":
+                    var runAs = toStringList(value, roleMappingFileName, mappingName, "run_as");
+                    if (runAs != null) {
+                        roleMapping.setRunAs(runAs);
+                    }
+                    break;
+
                 case "rules":
-                    // TODO: Implement readRules()
+                    readRules(value, mappingName);
                     break;
 
                 case "metadata":

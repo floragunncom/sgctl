@@ -35,7 +35,7 @@ public class RoleMapping {
     public void setRoles(List<String> roles) { this.roles = roles; }
     public void setUsers(List<String> users) { this.users = users; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public void setRunAS(List<String> runAS) { this.runAs = runAS; }
+    public void setRunAs(List<String> runAS) { this.runAs = runAS; }
     public void setRules(Rules rules) { this.rules = rules; }
     public void setMetadata(Metadata metadata) { this.metadata = metadata; }
     public void setRoleTemplates(List<RoleTemplate> roleTemplates) { this.roleTemplates = roleTemplates; }
