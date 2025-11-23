@@ -478,7 +478,7 @@ public class XPackConfigReader {
                     break;
 
                 case "rules":
-                    readRules(value, mappingName);
+                    roleMapping.setRules(readRules(value, mappingName));
                     break;
 
                 case "metadata":
@@ -495,12 +495,14 @@ public class XPackConfigReader {
         ir.addRoleMapping(roleMapping);
     }
 
-    public void readRules(Object rulesObject, String mappingName) {
+    private RoleMapping.Rules readRules(Object rulesObject, String mappingName) {
         if (!(rulesObject instanceof LinkedHashMap<?, ?> rulesMap)) {
             // TODO: Add MigrationReport entry
             printErr("Invalid type for rules in role mapping '" + mappingName + "': " + rulesObject.getClass());
-            return;
+            return null;
         }
+
+        var rules = new RoleMapping.Rules();
 
         var fieldObj = rulesMap.get("field");
         if (fieldObj instanceof LinkedHashMap<?, ?> fieldMap) {
@@ -513,6 +515,7 @@ public class XPackConfigReader {
                 // TODO: Add field rule to RoleMapping
             }
         }
+        return rules;
     }
 
     private List<RoleMapping.RoleTemplate> readRoleTemplates(ArrayList<?> templateList, String mappingName) {
