@@ -3,12 +3,15 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir;
 import org.jspecify.annotations.NonNull;
 
 import java.util.List;
+import java.util.Objects;
 
 public class Role {
     @NonNull String name;
     List<Application>  applications;
     List<String> cluster;
     List<Index> indices;
+    List<String> runAs;
+    String description;
 
     public Role(@NonNull String name) {
         this.name = name;
@@ -23,6 +26,10 @@ public class Role {
 
     public List<Index> getIndices() { return indices; }
 
+    public List<String> getRunAs() { return runAs; }
+
+    public String getDescription() { return description; }
+
     // Setter-Methods
     public void setName(@NonNull String name) { this.name = name; }
 
@@ -31,6 +38,10 @@ public class Role {
     public void setCluster(List<String> cluster) { this.cluster = cluster; }
 
     public void setIndices(List<Index> indices) { this.indices = indices; }
+
+    public void setRunAs(List<String> runAs) { this.runAs = runAs; }
+
+    public void setDescription(String description) { this.description = description; }
 
     public static class Application {
         @NonNull String name;
@@ -117,5 +128,18 @@ public class Role {
     @Override
     public String toString() {
         return "Role[\n\tname=" + name + "\n\tapplications=" + applications + "\n\tcluster=" + cluster + "\n\tindices=" + indices + "\n]";
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Role role = (Role) o;
+        return name.equals(role.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 }
