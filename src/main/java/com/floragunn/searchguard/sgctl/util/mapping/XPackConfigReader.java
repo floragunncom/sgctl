@@ -43,6 +43,7 @@ public class XPackConfigReader {
         return ir;
     }
 
+    //region User
     private void readUserFile() {
         if (userFile == null) return;
         try {
@@ -136,7 +137,9 @@ public class XPackConfigReader {
         }
         ir.addUser(user);
     }
+    //endregion
 
+    //region Roles
     private void readRoleFile() {
         if (roleFile == null) return;
         try {
@@ -380,7 +383,9 @@ public class XPackConfigReader {
         }
         return fieldSecurity;
     }
+    //endregion
 
+    //region Role Mapping
     private void readRoleMappingFile() {
         if (roleMappingFile == null) return;
         try {
@@ -524,7 +529,9 @@ public class XPackConfigReader {
         // TODO: Implement readRoleTemplates
         return templates;
     }
+    //endregion
 
+    //region Helper Functions
     private static String toString(Object obj, String originFile, String parameterOrigin, String key) {
         if (obj instanceof String value) {
             return value;
@@ -568,4 +575,5 @@ public class XPackConfigReader {
     static void printErr(Object line) {
         System.err.println(line);
     }
+    //endregion
 }
