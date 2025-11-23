@@ -22,6 +22,10 @@ public class XPackConfigReader {
     File roleMapping;
     IntermediateRepresentation ir;
 
+    static final String roleFileName = "role.json";
+    static final String userFileName = "user.json";
+    static final String roleMappingFileName = "role_mapping.json";
+
     public XPackConfigReader(File elasticsearch, File user, File role, File roleMapping) {
         this.elasticsearch = elasticsearch;
         this.userFile = user;
@@ -33,7 +37,8 @@ public class XPackConfigReader {
     public IntermediateRepresentation generateIR() {
         readRoleFile();
         readUserFile();
-//        readRoleMapping();
+        readRoleMapping();
+        ir.getUsers().forEach(user -> print(user.toString()));
         ir.getRoles().forEach(role -> print(role.toString()));
         return ir;
     }
@@ -104,14 +109,27 @@ public class XPackConfigReader {
                         printErr("Invalid value for full_name: " + value); // TODO: Add MigrationReport entry
                     }
                     break;
-                // TODO: Add handling for role key
-                // TODO: Add handling for metadata key
+                case "metadata":
+                    printErr("Metadata is ignored for migration."); // TODO: Add MigrationReport entry
+                    break;
+                case "roles":
+                    var roles = toStringList(value, userFileName, name, key);
+                    if (roles == null) { break; }
+                    var checkedRoles = new ArrayList<String>();
+                    roles.forEach(role -> {
+                        if (ir.getRoles().contains(new Role(role))) {
+                            checkedRoles.add(role);
+                        } else {
+                            printErr("Role " + role + " does not exist in role.json."); // TODO: Add MigrationReport entry
+                        }
+                    });
+                    user.setRoles(checkedRoles);
+                    break;
                 // TODO: Add handling for enabled key
                 default:
                     printErr("Unknown key" + key); // TODO: Add MigrationReport entry
                     break;
             }
-            print(key);
         }
         ir.addUser(user);
     }
@@ -153,14 +171,13 @@ public class XPackConfigReader {
         }
     }
 
-    private void readRole(LinkedHashMap<?, ?> roleMap, String roleName) {
+    private void readRole(LinkedHashMap<?, ?> roleMap, @NonNull String roleName) {
         var role = new Role(roleName);
         for (var entry : roleMap.entrySet()) {
             var key = entry.getKey();
             var value = entry.getValue();
             if (!(key instanceof String)) {
-                // TODO: Add MigrationReport entry
-                printErr("Unexpected type for key: " + key);
+                printErr("Unexpected type for key: " + key); // TODO: Add MigrationReport entry
                 continue;
             }
 
@@ -169,32 +186,43 @@ public class XPackConfigReader {
                 if (value instanceof ArrayList<?> applicationList) {
                     role.setApplications(readApplications(applicationList));
                 } else {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type for applications: " + value.getClass());
+                    printErr("Invalid type for applications: " + value.getClass()); // TODO: Add MigrationReport entry
                 }
                 break;
             case "cluster":
                 try {
                     role.setCluster(toStringArrayList(value));
                 } catch (IllegalArgumentException e) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type for cluster: " + key.getClass());
+                    printErr("Invalid type for cluster: " + key.getClass()); // TODO: Add MigrationReport entry
                 } catch (ClassCastException e) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type for cluster entry: " + value.getClass());
+                    printErr("Invalid type for cluster entry: " + value.getClass()); // TODO: Add MigrationReport entry
                 }
                 break;
             case "indices":
                 if (value instanceof ArrayList<?> indices) {
                     role.setIndices(readIndices(indices));
                 } else {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type for indices: " + value.getClass());
+                    printErr("Invalid type for indices: " + value.getClass()); // TODO: Add MigrationReport entry
+                }
+                break;
+            case "metadata":
+                printErr("Metadata is ignored for migration."); // TODO: Add MigrationReport entry
+                break;
+            case "transient_metadata":
+                // TODO: Add support for transient metadata interpretation
+                break;
+            case "run_as":
+                role.setRunAs(toStringList(value, roleFileName, roleName, "runAs"));
+                break;
+            case "description":
+                if (value instanceof String description) {
+                    role.setDescription(description);
+                } else {
+                    printErr("Invalid type for description: " + value.getClass()); // TODO: Add MigrationReport entry
                 }
                 break;
             default:
-                // TODO: Add MigrationReport entry
-                printErr("Unknown key: " + key);
+                printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
             }
         }
 
@@ -209,12 +237,10 @@ public class XPackConfigReader {
                 if  (application != null) {
                     applications.add(application);
                 } else {
-                    // TODO: Add MigrationReport entry
-                    printErr("Application was not presented correctly.");
+                    printErr("Application was not presented correctly."); // TODO: Add MigrationReport entry
                 }
             } else {
-                // TODO: Add MigrationReport entry
-                printErr("Invalid type for application: " + rawApplication.getClass());
+                printErr("Invalid type for application: " + rawApplication.getClass()); // TODO: Add MigrationReport entry
             }
         }
         return applications;
@@ -228,8 +254,7 @@ public class XPackConfigReader {
             var key = entry.getKey();
             var value = entry.getValue();
             if (!(key instanceof String)) {
-                // TODO: Add MigrationReport entry
-                printErr("Unexpected type for key: " + key);
+                printErr("Unexpected type for key: " + key); // TODO: Add MigrationReport entry
                 continue;
             }
             switch ((String) key) {
@@ -237,8 +262,7 @@ public class XPackConfigReader {
                     if (value instanceof String applicationName) {
                         name = applicationName;
                     } else {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid value type for application: " + value.getClass());
+                        printErr("Invalid value type for application: " + value.getClass()); // TODO: Add MigrationReport entry
                         return null;
                     }
                     break;
@@ -246,12 +270,10 @@ public class XPackConfigReader {
                     try {
                         privileges = toStringArrayList(value);
                     } catch (IllegalArgumentException e) {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid type for privileges: " + value.getClass());
+                        printErr("Invalid type for privileges: " + value.getClass()); // TODO: Add MigrationReport entry
                         return null;
                     } catch (ClassCastException e) {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid type for value: " + e.getMessage());
+                        printErr("Invalid type for value: " + e.getMessage()); // TODO: Add MigrationReport entry
                         return null;
                     }
                     break;
@@ -259,24 +281,20 @@ public class XPackConfigReader {
                     try {
                         resources = toStringArrayList(value);
                     } catch (IllegalArgumentException e) {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid type for resources: " + value.getClass());
+                        printErr("Invalid type for resources: " + value.getClass()); // TODO: Add MigrationReport entry
                         return null;
                     } catch (ClassCastException e) {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid type for resources: " + e.getMessage());
+                        printErr("Invalid type for resources: " + e.getMessage()); // TODO: Add MigrationReport entry
                         return null;
                     }
                     break;
                 default:
-                    // TODO: Add MigrationReport entry
-                    printErr("Unknown key: " + key);
+                    printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
                     break;
             }
         }
         if (name == null || privileges == null || resources == null) {
-            // TODO: Add MigrationReport entry
-            printErr("Application missing required parameter.");
+            printErr("Application missing required parameter."); // TODO: Add MigrationReport entry
             return null;
         }
         return new Role.Application(name, privileges, resources);
@@ -288,14 +306,12 @@ public class XPackConfigReader {
             if (rawIndex instanceof LinkedHashMap<?, ?> indexMap) {
                 var index = readIndex(indexMap);
                 if (index == null) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Index was presented correctly.");
+                    printErr("Index was presented correctly."); // TODO: Add MigrationReport entry
                     continue;
                 }
                 indices.add(index);
             } else {
-                // TODO: Add MigrationReport entry
-                printErr("Invalid type for index: " + rawIndex.getClass());
+                printErr("Invalid type for index: " + rawIndex.getClass()); // TODO: Add MigrationReport entry
             }
         }
         return indices;
@@ -488,7 +504,6 @@ public class XPackConfigReader {
                         printErr("Invalid entry in 'users' for role mapping '" + mappingName + "': " + e.getMessage());
                     }
                     break;
-
                 case "rules":
                     // TODO: Implement readRules()
                     break;
@@ -529,6 +544,17 @@ public class XPackConfigReader {
         }
     }
 
+    public static List<String> toStringList(Object obj, String originFile, String parameterOrigin, String key) {
+        try {
+            return toStringArrayList(obj);
+        } catch (IllegalArgumentException e) {
+            printErr("Issue at file: " + originFile + " and parameter: " + parameterOrigin + ". Invalid type" + obj.getClass() + " for key " + key); // TODO: Add MigrationReport entry
+        } catch (ClassCastException e) {
+            printErr("Issue at file: " + originFile + " and parameter: " + parameterOrigin + ". Expected 'String' for item in list for key" + key + " but got " + e.getMessage()); // TODO: Add MigrationReport entry
+        }
+        return null;
+    }
+
     public static List<String> toStringArrayList(Object obj) throws IllegalArgumentException, ClassCastException {
         if (!(obj instanceof List<?> list)) {
             throw new IllegalArgumentException("Object is not a List");
@@ -538,7 +564,7 @@ public class XPackConfigReader {
 
         for (Object element : list) {
             if (!(element instanceof String)) {
-                throw new ClassCastException("" + element);
+                throw new ClassCastException("" + element.getClass());
             }
             result.add((String) element);
         }
