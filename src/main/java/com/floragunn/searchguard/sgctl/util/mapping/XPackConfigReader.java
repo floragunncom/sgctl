@@ -184,23 +184,17 @@ public class XPackConfigReader {
             switch (key) {
             case "applications":
                 if (value instanceof ArrayList<?> applicationList) {
-                    role.setApplications(readApplications(applicationList));
+                    role.setApplications(readApplications(applicationList, roleName));
                 } else {
                     printErr("Invalid type for applications: " + value.getClass()); // TODO: Add MigrationReport entry
                 }
                 break;
             case "cluster":
-                try {
-                    role.setCluster(toStringList(value));
-                } catch (IllegalArgumentException e) {
-                    printErr("Invalid type for cluster: " + key.getClass()); // TODO: Add MigrationReport entry
-                } catch (ClassCastException e) {
-                    printErr("Invalid type for cluster entry: " + value.getClass()); // TODO: Add MigrationReport entry
-                }
+                role.setCluster(toStringList(value, roleFileName, roleName, key));
                 break;
             case "indices":
                 if (value instanceof ArrayList<?> indices) {
-                    role.setIndices(readIndices(indices));
+                    role.setIndices(readIndices(indices, roleName));
                 } else {
                     printErr("Invalid type for indices: " + value.getClass()); // TODO: Add MigrationReport entry
                 }
@@ -229,11 +223,12 @@ public class XPackConfigReader {
         ir.addRole(role);
     }
 
-    private List<Role.Application> readApplications(ArrayList<?> applicationList) {
+    private List<Role.Application> readApplications(ArrayList<?> applicationList, String origin) {
+        origin = origin + "->applications";
         var applications = new ArrayList<Role.Application>();
         for (var rawApplication : applicationList) {
             if (rawApplication instanceof LinkedHashMap<?, ?> applicationMap) {
-                var application = readApplication(applicationMap);
+                var application = readApplication(applicationMap, origin);
                 if  (application != null) {
                     applications.add(application);
                 } else {
@@ -246,7 +241,7 @@ public class XPackConfigReader {
         return applications;
     }
 
-    private Role.Application readApplication(LinkedHashMap<?, ?> applicationMap) {
+    private Role.Application readApplication(LinkedHashMap<?, ?> applicationMap, String origin) {
         String name = null;
         List<String> privileges = null;
         List<String> resources = null;
@@ -267,26 +262,10 @@ public class XPackConfigReader {
                     }
                     break;
                 case "privileges":
-                    try {
-                        privileges = toStringList(value);
-                    } catch (IllegalArgumentException e) {
-                        printErr("Invalid type for privileges: " + value.getClass()); // TODO: Add MigrationReport entry
-                        return null;
-                    } catch (ClassCastException e) {
-                        printErr("Invalid type for value: " + e.getMessage()); // TODO: Add MigrationReport entry
-                        return null;
-                    }
+                    privileges = toStringList(value, roleFileName, origin, key);
                     break;
                 case "resources":
-                    try {
-                        resources = toStringList(value);
-                    } catch (IllegalArgumentException e) {
-                        printErr("Invalid type for resources: " + value.getClass()); // TODO: Add MigrationReport entry
-                        return null;
-                    } catch (ClassCastException e) {
-                        printErr("Invalid type for resources: " + e.getMessage()); // TODO: Add MigrationReport entry
-                        return null;
-                    }
+                    resources = toStringList(value, roleFileName, origin, key);
                     break;
                 default:
                     printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
@@ -300,13 +279,14 @@ public class XPackConfigReader {
         return new Role.Application(name, privileges, resources);
     }
 
-    private List<Role.Index> readIndices(ArrayList<?> indexList) {
+    private List<Role.Index> readIndices(ArrayList<?> indexList, String origin) {
+        origin = origin + "->indices";
         var indices = new ArrayList<Role.Index>();
         for (var rawIndex : indexList) {
             if (rawIndex instanceof LinkedHashMap<?, ?> indexMap) {
-                var index = readIndex(indexMap);
+                var index = readIndex(indexMap,  origin);
                 if (index == null) {
-                    printErr("Index was presented correctly."); // TODO: Add MigrationReport entry
+                    printErr("Index was not presented correctly."); // TODO: Add MigrationReport entry
                     continue;
                 }
                 indices.add(index);
@@ -317,7 +297,7 @@ public class XPackConfigReader {
         return indices;
     }
 
-    private Role.Index readIndex(LinkedHashMap<?, ?> indexMap) {
+    private Role.Index readIndex(LinkedHashMap<?, ?> indexMap, String origin) {
         var index = new Role.Index();
         for (var entry : indexMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
@@ -330,7 +310,7 @@ public class XPackConfigReader {
             switch (key) {
             case "field_security":
                 if (value instanceof LinkedHashMap<?, ?> fieldSecurity) {
-                    index.setFieldSecurity(readFieldSecurity(fieldSecurity));
+                    index.setFieldSecurity(readFieldSecurity(fieldSecurity, origin));
                     break;
                 }
                 // TODO: Add MigrationReport entry
@@ -351,7 +331,7 @@ public class XPackConfigReader {
                 }
                 break;
             case "privileges":
-                var privileges = toStringList(value, roleFileName, "", key);
+                var privileges = toStringList(value, roleFileName, origin, key);
                 if (privileges == null) {
                     printErr("Privileges are a required parameter."); // TODO: Add MigrationReport entry
                     break;
@@ -377,7 +357,8 @@ public class XPackConfigReader {
         return index;
     }
 
-    private Role.FieldSecurity readFieldSecurity(LinkedHashMap<?, ?> fieldMap) {
+    private Role.FieldSecurity readFieldSecurity(LinkedHashMap<?, ?> fieldMap, String origin) {
+        origin = origin + "->field_security";
         var fieldSecurity = new Role.FieldSecurity();
         for (var entry : fieldMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
@@ -387,25 +368,14 @@ public class XPackConfigReader {
             var value = entry.getValue();
             switch (key) {
             case "except":
-                try {
-                    fieldSecurity.setExcept(toStringList(value));
-                } catch (IllegalArgumentException e) {
-                    // TODO: Add MigrationReport entry
-                } catch (ClassCastException e) {
-                    // TODO: Add MigrationReport entry
-                }
+                fieldSecurity.setExcept(toStringList(value, roleFileName, origin, key));
                 break;
             case "grant":
-                try {
-                    fieldSecurity.setGrant(toStringList(value));
-                } catch (IllegalArgumentException e) {
-                    // TODO: Add MigrationReport entry
-                } catch (ClassCastException e) {
-                    // TODO: Add MigrationReport entry
-                }
+                fieldSecurity.setGrant(toStringList(value,  roleFileName, origin, key));
                 break;
             default:
                 // TODO: Add MigrationReport entry
+                break;
             }
         }
         return fieldSecurity;
