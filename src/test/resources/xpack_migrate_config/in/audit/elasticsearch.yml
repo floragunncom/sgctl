@@ -1,0 +1,14 @@
+cluster.name: auditcluster
+node.name: audit-node-1
+
+xpack.security.enabled: true
+
+# Audit logging
+xpack.security.audit.enabled: true
+xpack.security.audit.outputs: [index, logfile]
+xpack.security.audit.logfile.events.include: [authentication_success, access_denied, realm_authentication]
+
+# Minimal TLS
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.keystore.path: certs/audit-node.p12
+xpack.security.transport.ssl.truststore.path: certs/ca.p12
