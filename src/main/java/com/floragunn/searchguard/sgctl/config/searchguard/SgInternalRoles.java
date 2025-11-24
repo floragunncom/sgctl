@@ -5,6 +5,7 @@ import com.floragunn.fluent.collections.ImmutableMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 public record SgInternalRoles(ImmutableMap<String, Role> roles)
     implements NamedConfig<SgInternalRoles> {
@@ -19,6 +20,14 @@ public record SgInternalRoles(ImmutableMap<String, Role> roles)
       ImmutableList<Permission> alias,
       ImmutableList<Permission> dataStream,
       ImmutableList<Permission> tenant) {
+
+    public Role {
+      Objects.requireNonNull(cluster, "cluster must not be null");
+      Objects.requireNonNull(index, "index must not be null");
+      Objects.requireNonNull(alias, "alias must not be null");
+      Objects.requireNonNull(dataStream, "dataStream must not be null");
+      Objects.requireNonNull(tenant, "tenant must not be null");
+    }
 
     public record Permission(ImmutableList<String> patterns, ImmutableList<String> allowedActions) {
       public Map<String, Object> toMap(String prefix) {
