@@ -1,4 +1,4 @@
-**## 🔗 Related issue
+## 🔗 Related issue
 
 Link the GitLab issue(s) or task(s) that this merge request implements or relates to.
 
