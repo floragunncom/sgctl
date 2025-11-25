@@ -1,4 +1,4 @@
-package com.floragunn.searchguard.sgctl.util.mapping.ir.ssltls.tls;
+package com.floragunn.searchguard.sgctl.util.mapping.ir;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -30,9 +30,13 @@ public class Tls {
     List<String> supportedProtocols = new ArrayList<>();
     List<String> ciphers = new ArrayList<>();
 
+    public boolean assertType(Object object, Class<?> type) {
+        return type.isInstance(object);
+    }
+
     public void handleTlsOptions(String optionName, Object optionValue) {
         switch (optionName) { // all option names acc. to the xpack documentation, not all may be needed
-            case "enabled": break;
+            case "enabled":  break;
             case "supported_protocols": break;
             case "client_authentication": break;
             case "verification_mode": break;
