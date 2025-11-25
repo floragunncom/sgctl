@@ -8,7 +8,8 @@ import java.util.Map;
 
 /*
     Erste Idde den Migration Report zu strukturieren.
-    Von außen zu benutzen als addMigrated/Unmapped/Warning/ManualAction(String filename, String parameter, String message)
+    Von außen zu benutzen als addMigrated/Unmapped/Warning/ManualAction(String filename, String parameter, String message),
+    oder mit vordefinierten Messages in bspws. addInvalidValue/Type(String file, String parameter)
     Intern strukturiert als:
     file:
         Category:
@@ -40,6 +41,14 @@ public class MigrationReport {
         file(file).add(Category.MANUAL, new Entry(parameter, message));
     }
 
+    public void addInvalidType(String file, String parameter){
+        addTemplate(ReportTemplate.INVALID_TYPE, file, parameter);
+    }
+
+    public void addInvalidValue(String file, String parameter){
+        addTemplate(ReportTemplate.INVALID_VALUE, file, parameter);
+    }
+
     private FileReport file(String file){
         return files.computeIfAbsent(file, k -> new FileReport());
     }
@@ -64,6 +73,10 @@ public class MigrationReport {
         }  
         System.out.println("---------- Migration Report ----------");
     }
+    public void addTemplate(ReportTemplate rt, String file, String parameter){
+        String msg = rt.format(parameter);
+        file(file).add(rt.category, new Entry(parameter, msg));
+    }
 
     static class FileReport {
         private final EnumMap<Category, List<Entry>> buckets = new EnumMap<>(Category.class);
@@ -85,5 +98,18 @@ public class MigrationReport {
             this.parameter = parameter;
             this.message = message;
         }
+    }
+    public enum ReportTemplate{
+        INVALID_TYPE("Invalid type for key: '%s'", Category.WARNING),
+        INVALID_VALUE("Invalid value for key: '%s'", Category.WARNING);
+
+        final String template;
+        final Category category;
+
+        ReportTemplate(String template, Category cat){
+            this.category = cat;
+            this.template = template;
+        }
+        public String format(Object... args) { return String.format(template, args); }
     }
 }
