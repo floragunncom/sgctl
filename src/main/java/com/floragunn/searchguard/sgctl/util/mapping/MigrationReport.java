@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /*
     Erste Idde den Migration Report zu strukturieren.
@@ -43,14 +44,39 @@ public class MigrationReport {
         return files.computeIfAbsent(file, k -> new FileReport());
     }
 
-    public void printReport(){}
+    public void printReport(){
+        System.out.println("---------- Migration Report ----------");
+        System.out.println("TO DO?: Perhaps some description on how this thing is structured, and early on the hint that you might have to do some manual reworks.");
+        for (Map.Entry<String, FileReport> fe : files.entrySet()) {
+            System.out.println("File: " + fe.getKey());
+            FileReport fr = fe.getValue();
+
+            for (Category c : Category.values()) {
+                List<Entry> list = fr.get(c);
+                if (list.isEmpty()) continue;
+                System.out.printf("  %s (%d)%n", c.name(), list.size());
+                for (Entry e : list) {
+                    System.out.printf("    - %s%n      -> %s%n", e.parameter, e.message);
+                    
+                }
+                System.out.println();
+            }
+        }  
+        System.out.println("---------- Migration Report ----------");
+    }
 
     static class FileReport {
         private final EnumMap<Category, List<Entry>> buckets = new EnumMap<>(Category.class);
         FileReport(){
             for (Category c : Category.values()) buckets.put(c, new ArrayList<>());
         }
-        void add(Category c, Entry e){}
+        void add(Category c, Entry e){
+            buckets.get(c).add(e);
+        }
+
+        List<Entry> get(Category c){
+            return buckets.get(c);
+        }
     }
     static class Entry{
         private final String parameter;
