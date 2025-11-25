@@ -1,9 +1,11 @@
 variables:
-  SG_JAVA_BUILD_VERSION: "21"
+  SG_JAVA_BUILD_VERSION: "25"
+  SG_BUILD_IMAGE: "floragunncom/ubuntu-openjdk25:251125"
+  SG_DIND_IMAGE: "floragunncom/alpine-dind:251120"
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
   MAVEN_CLI_OPTS: "--batch-mode"
   DOCKER_DRIVER: overlay2
-image: "floragunncom/minimal-java:251106"
+image: "$SG_BUILD_IMAGE"
 #image: "maven:3.9.9-amazoncorretto-21-debian"
 
 
@@ -156,7 +158,7 @@ coverage:
         
 deploy_docker_image:
   stage: "Deploy Docker Image"
-  image: docker:20.10.17
+  image: "$SG_DIND_IMAGE"
   services:
     - docker:20.10.17-dind
   rules:
