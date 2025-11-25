@@ -23,6 +23,15 @@ public class ElasticseachYamlReader extends ConfigReader {
                 System.out.println("Could not resolve " + entry.getKey());
             }
 
+            // for each option name, propagate to responsible ir class method
+            else if (key.startsWith("xpack.security.transport.ssl")) {
+                // propagate to SslTlsIR.transport
+            }
+
+            else if (key.startsWith("xpack.security.http.ssl")) {
+                // propagate unchecked tail of name to SslTlsIR.http
+            }
+
         }
 
         return;
