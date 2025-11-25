@@ -50,7 +50,6 @@ public class Tls {
 
     // check an input option against all possible options acc. to the xpack docs
     public void handleTlsOptions(String optionName, Object optionValue) {
-
         boolean error = false;
 
         // Booleans
@@ -176,7 +175,7 @@ public class Tls {
         }
 
         if (error) {
-            System.out.println("Invalid option of type " + optionValue.getClass() + ": " + optionName);
+            System.out.println("Invalid option of type " + optionValue.getClass() + ": " + optionName + " = " + optionValue);
         }
     }
 }

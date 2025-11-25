@@ -13,25 +13,23 @@ public class ElasticseachYamlReader extends ConfigReader {
 
     public void toIR(Map<String, Object> map) {
 
-        for (Map.Entry<String, Object> entry : map.entrySet()) {
+        String transportPrefix = "xpack.security.transport.ssl.";
+        String httpPrefix = "xpack.security.http.ssl.";
 
+        for (Map.Entry<String, Object> entry : map.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            // filter out every non-xpack.security option
-            if (!key.startsWith("xpack.security.")) {
+            // for each option name, propagate to responsible ir class method
+            if (key.startsWith(transportPrefix)) {
+                ir.sslTls.transport.handleTlsOptions(key.substring(transportPrefix.length()), value);
+            } else if (key.startsWith(httpPrefix)) {
+                ir.sslTls.http.handleTlsOptions(key.substring(httpPrefix.length()), value);
+            }
+
+            else {
                 System.out.println("Could not resolve " + entry.getKey());
             }
-
-            // for each option name, propagate to responsible ir class method
-            else if (key.startsWith("xpack.security.transport.ssl")) {
-                // propagate to SslTlsIR.transport
-            }
-
-            else if (key.startsWith("xpack.security.http.ssl")) {
-                // propagate unchecked tail of name to SslTlsIR.http
-            }
-
         }
 
         return;

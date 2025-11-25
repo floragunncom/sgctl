@@ -10,11 +10,21 @@ import java.util.Map;
 public abstract class ConfigReader {
 
     private final File configFile;
-    private IntermediateRepresentation ir;
+    protected IntermediateRepresentation ir;
+    Map<String, Object> flattenedMap;
 
     public ConfigReader(File configFile, IntermediateRepresentation ir) {
         this.configFile = configFile;
         this.ir = ir;
+        try {
+            Map<String, Object> map = read();
+            flattenedMap = flattenMap(map);
+            toIR(flattenedMap);
+            System.out.println(flattenedMap);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
     // read a config and return its contents as a map

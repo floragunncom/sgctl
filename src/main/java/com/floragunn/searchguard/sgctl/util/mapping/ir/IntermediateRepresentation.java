@@ -3,10 +3,17 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir;
 
 public class IntermediateRepresentation {
 
-    GlobalIR global;
-    SslTlsIR sslTls;
-    AuthorizationIR authoIR;
-    AuthenticationIR authentIR;
+    public GlobalIR global;
+    public SslTlsIR sslTls;
+    public AuthorizationIR authoIR;
+    public AuthenticationIR authentIR;
+
+    public IntermediateRepresentation() {
+        global = new GlobalIR();
+        sslTls = new SslTlsIR();
+        authoIR = new AuthorizationIR();
+        authentIR = new AuthenticationIR();
+    }
 
     // before setting an option, check that its type matches
     public static boolean assertType(Object object, Class<?> type) {
