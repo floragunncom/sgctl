@@ -29,4 +29,29 @@ public class Tls {
     // Constraints
     List<String> supportedProtocols = new ArrayList<>();
     List<String> ciphers = new ArrayList<>();
+
+    public void handleTlsOptions(String optionName, Object optionValue) {
+        switch (optionName) { // all option names acc. to the xpack documentation, not all may be needed
+            case "enabled": break;
+            case "supported_protocols": break;
+            case "client_authentication": break;
+            case "verification_mode": break;
+            case "cipher_suites": break;
+            case "key": break;
+            case "key_passphrase": break;
+            case "secure_key_passphrase": break;
+            case "certificate": break;
+            case "certificate_authorities": break;
+            case "keystore.path": break;
+            case "keystore.password": break;
+            case "keystore.secure_password": break;
+            case "keystore.key_password": break;
+            case "keystore.secure_key_password": break;
+            case "truststore.path": break;
+            case "truststore.password": break;
+            case "truststore.secure_password": break;
+            case "keystore.type": break;
+            case "truststore.type": break;
+        }
+    }
 }
