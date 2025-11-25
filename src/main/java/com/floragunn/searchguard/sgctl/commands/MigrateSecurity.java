@@ -4,6 +4,8 @@ import com.floragunn.searchguard.sgctl.util.mapping.XPackConfigReader;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.concurrent.Callable;
@@ -21,6 +23,7 @@ public class MigrateSecurity implements Callable<Integer> {
     private File user = null;
     private File role = null;
     private File roleMapping = null;
+    private static final Logger log = LoggerFactory.getLogger(MigrateSecurity.class);
 
     @Override
     public Integer call() throws Exception {
@@ -33,23 +36,24 @@ public class MigrateSecurity implements Callable<Integer> {
 
     public boolean checkOutputDir() {
         if(outputDir == null) {
-            System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> -o <Output Directory>");
+            log.error("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> -o <Output Directory>");
             return true;
         }
         if(!outputDir.exists()) {
-            System.err.println("Output path does not exist: " + outputDir.getAbsolutePath());
+            log.error("Output path does not exist: {}", outputDir.getAbsolutePath());
             return false;
         }
         if(!outputDir.isDirectory()) {
-            System.err.println("Output path is not a directory: " + outputDir.getAbsolutePath());
+            log.error("Output path is not a directory: {}", outputDir.getAbsolutePath());
             return false;
         }
         if(!outputDir.canWrite()) {
-            System.err.println("Output directory is not writeable. Check permissions: " + outputDir.getAbsolutePath());
+            log.error("Output directory is not writeable. Check permissions: {}", outputDir.getAbsolutePath());
             return false;
         }
         return true;
     }
+
 
     public boolean checkInputDirAndLoadConfig() {
 
@@ -80,15 +84,16 @@ public class MigrateSecurity implements Callable<Integer> {
             return false;
         }else{
             for (File file : files) {
-                switch (file.getName()) {
-                    case "elasticsearch.yml":
-                        elasticsearch= file;
-                    case "user.json":
-                        user = file;
-                    case "role.json":
-                        role = file;
-                    case "role_mapping.json":
-                        roleMapping = file;
+                String name = file.getName();
+
+                if ("elasticsearch.yml".equals(name)) {
+                    elasticsearch = file;
+                } else if ("user.json".equals(name)) {
+                    user = file;
+                } else if ("role.json".equals(name)) {
+                    role = file;
+                } else if ("role_mapping.json".equals(name)) {
+                    roleMapping = file;
                 }
             }
         }
