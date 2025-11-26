@@ -1,106 +1,157 @@
 package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.searchguard.sgctl.util.mapping.XPackConfigReader;
-import picocli.CommandLine.Parameters;
-import picocli.CommandLine.Option;
-import picocli.CommandLine.Command;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+import com.floragunn.searchguard.sgctl.util.mapping.validation.XPackConfigValidator;
+import com.floragunn.searchguard.sgctl.util.mapping.validation.XPackValidationIssue;
+import com.floragunn.searchguard.sgctl.util.mapping.validation.XPackValidationResult;
+import com.floragunn.searchguard.sgctl.util.mapping.validation.XPackValidationSeverity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import picocli.CommandLine;
+import picocli.CommandLine.Parameters;
 
 import java.io.File;
 import java.util.concurrent.Callable;
-//names of files: user.json, role.json, role_mapping.json
-@Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
+
 public class MigrateSecurity implements Callable<Integer> {
 
     @Parameters(description = "Path to the directory containing elasticsearch.yml and possibly other X-Pack configuration files.")
     File inputDir;
 
-    @Option(names = { "-o", "--output-dir" }, description = "Directory where to write new configuration files.")
+    @CommandLine.Option(names = { "-o", "--output-dir" }, description = "Directory where to write new configuration files.")
     File outputDir;
 
     private File elasticsearch = null;
     private File user = null;
     private File role = null;
     private File roleMapping = null;
+
     private static final Logger log = LoggerFactory.getLogger(MigrateSecurity.class);
+    private static final String VALIDATION_ISSUE_PREFIX = " - {}";
 
     @Override
     public Integer call() throws Exception {
-        if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
+        if (!checkInputDirAndLoadConfig() || !checkOutputDir()) {
             return 1;
         }
-        var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
+
+        IntermediateRepresentation ir = readIntermediateRepresentation();
+
+        XPackValidationResult validationResult = XPackConfigValidator.validate(ir);
+
+        if (!validationResult.isEmpty()) {
+            logValidationResult(validationResult);
+        }
+
+        if (validationResult.hasErrors()) {
+            log.error("X-Pack configuration contains validation errors. Aborting migration.");
+            // No writer / further processing if validation failed
+            return 2;
+        }
+
+        // XR3 / XR4: generate SG YAML and write / print here
+
         return 0;
     }
 
+    /**
+     * Reads the X-Pack configuration and builds the intermediate representation.
+     * Separated into a protected method to allow test stubbing.
+     */
+    protected IntermediateRepresentation readIntermediateRepresentation() {
+        XPackConfigReader reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
+        return reader.generateIR();
+    }
+
     public boolean checkOutputDir() {
-        if(outputDir == null) {
-            log.error("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> -o <Output Directory>");
+        if (outputDir == null) {
+            // Currently: output dir optional (XR2 only validates and does not write)
+            // If -o später Pflicht wird, hier return false setzen.
+            log.debug("No output directory specified; skipping output directory checks.");
             return true;
         }
-        if(!outputDir.exists()) {
+
+        if (!outputDir.exists()) {
             log.error("Output path does not exist: {}", outputDir.getAbsolutePath());
             return false;
         }
-        if(!outputDir.isDirectory()) {
+        if (!outputDir.isDirectory()) {
             log.error("Output path is not a directory: {}", outputDir.getAbsolutePath());
             return false;
         }
-        if(!outputDir.canWrite()) {
+        if (!outputDir.canWrite()) {
             log.error("Output directory is not writeable. Check permissions: {}", outputDir.getAbsolutePath());
             return false;
         }
         return true;
     }
 
-
     public boolean checkInputDirAndLoadConfig() {
-
         if (inputDir == null) {
-            System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
+            log.error("Basic usage of migrate-security: ./sgctl.sh migrate-security <input directory>");
             return false;
         }
 
         if (!inputDir.exists()) {
-            System.err.println("Input path does not exist: " + inputDir.getAbsolutePath());
+            log.error("Input path does not exist: {}", inputDir.getAbsolutePath());
             return false;
         }
 
         if (!inputDir.isDirectory()) {
-            System.err.println("Input path is not a directory: " + inputDir.getAbsolutePath());
+            log.error("Input path is not a directory: {}", inputDir.getAbsolutePath());
             return false;
         }
 
         if (!inputDir.canRead()) {
-            System.err.println("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
+            log.error("Input directory is not readable. Check permissions: {}", inputDir.getAbsolutePath());
             return false;
         }
 
-        var files = inputDir.listFiles();
+        File[] files = inputDir.listFiles();
 
         if (files == null) {
-            System.err.println("Found unexpected null-value while listing files in input directory (I/O error).");
+            log.error("Found unexpected null-value while listing files in input directory (I/O error).");
             return false;
-        }else{
-            for (File file : files) {
-                String name = file.getName();
+        }
 
-                if ("elasticsearch.yml".equals(name)) {
-                    elasticsearch = file;
-                } else if ("user.json".equals(name)) {
-                    user = file;
-                } else if ("role.json".equals(name)) {
-                    role = file;
-                } else if ("role_mapping.json".equals(name)) {
-                    roleMapping = file;
-                }
+        for (File file : files) {
+            String name = file.getName();
+
+            if ("elasticsearch.yml".equals(name)) {
+                elasticsearch = file;
+            } else if ("user.json".equals(name)) {
+                user = file;
+            } else if ("role.json".equals(name)) {
+                role = file;
+            } else if ("role_mapping.json".equals(name)) {
+                roleMapping = file;
             }
         }
+
         if (elasticsearch == null) {
-            System.err.println("Required file elasticsearch.yml not found.");
+            log.error("Required file elasticsearch.yml not found in input directory: {}", inputDir.getAbsolutePath());
             return false;
         }
+
         return true;
+    }
+
+    private void logValidationResult(XPackValidationResult result) {
+        log.info("Validation result for X-Pack configuration:");
+
+        for (XPackValidationIssue issue : result.getIssues()) {
+            XPackValidationSeverity severity = issue.severity();
+
+            if (severity == XPackValidationSeverity.ERROR) {
+                log.error(VALIDATION_ISSUE_PREFIX, issue);
+            } else if (severity == XPackValidationSeverity.WARNING) {
+                log.warn(VALIDATION_ISSUE_PREFIX, issue);
+            } else {
+                log.info(VALIDATION_ISSUE_PREFIX, issue);
+            }
+        }
+
+        log.info("");
     }
 }
