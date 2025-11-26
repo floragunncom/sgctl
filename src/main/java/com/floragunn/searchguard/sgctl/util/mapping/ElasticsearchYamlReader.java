@@ -5,15 +5,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.floragunn.codova.documents.DocReader;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentationElasticSearchYml;
 
 public class ElasticsearchYamlReader {
 
     private final File configFile;
-    protected IntermediateRepresentation ir;
+    protected IntermediateRepresentationElasticSearchYml ir;
     Map<String, Object> flattenedMap;
 
-    public ElasticsearchYamlReader(File configFile, IntermediateRepresentation ir) {
+    public ElasticsearchYamlReader(File configFile, IntermediateRepresentationElasticSearchYml ir) {
         this.configFile = configFile;
         this.ir = ir;
         try {
