@@ -1,8 +1,11 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class Tls {
     boolean enabled; // activation of TLS
@@ -31,6 +34,14 @@ public class Tls {
     // Constraints
     List<String> supportedProtocols = new ArrayList<>();
     List<String> ciphers = new ArrayList<>();
+
+    // IP filtering (https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/security-settings#ip-filtering-settings)
+    List<String> allowedIPs; // List of IP addresses to allow
+    List<String> deniedIPs; // List of IP addresses to deny
+    Map<String, List<String>> profileAllowedIPs = new HashMap<>(); // transport only: List of IP addresses (value) to allow for this profile (key)
+    Map<String, List<String>> profileDeniedIPs = new HashMap<>(); // transport only: List of IP addresses (value) to deny for this profile (key)
+    List<String> remoteClusterAllowedIPs; // List of IP addresses to allow for remote cluster
+    List<String> remoteClusterDeniedIPs; // List of IP addresses to deny remote cluster
 
     // check if possible constraints are satisfied -> is this checking needed??
     public boolean checkConstraints(Map<String, Object> options) {
@@ -152,8 +163,26 @@ public class Tls {
                 return;
             }
 
+            // Regex for profileAllowedIPs/profileDeniedIPs with optionName profiles.$PROFILE.xpack.security.filter. allow or deny
+            Pattern profileIPsPattern = Pattern.compile("^profiles\\.([^.]+)\\.xpack\\.security\\.filter\\.(allow|deny)$");
+            Matcher mProfileIPs = profileIPsPattern.matcher(optionName);
+
             if (!(value.get(0) instanceof String)) {
                 error = true;
+            } else if(mProfileIPs.find()) {
+                String profile = mProfileIPs.group(1);
+                String action  = mProfileIPs.group(2);
+
+                if ("allow".equals(action)) {
+                    profileAllowedIPs
+                        .computeIfAbsent(profile, k -> new ArrayList<>())
+                        .addAll((List<String>) value);
+
+                } else if ("deny".equals(action)) {
+                    profileDeniedIPs
+                        .computeIfAbsent(profile, k -> new ArrayList<>())
+                        .addAll((List<String>) value);
+                }
             } else {
                 switch (optionName) {
                     case "certificate_authorities":
@@ -167,6 +196,22 @@ public class Tls {
                     case "cipher_suites":
                         ciphers = (List<String>) value;
                         break;
+
+                    case "filter.allow":
+                        allowedIPs = (List<String>) value;
+                        break;
+
+                    case "filter.deny":
+                        deniedIPs = (List<String>) value;
+                        break;
+
+                    case "remote_cluster.filter.allow":
+                        remoteClusterAllowedIPs = (List<String>) value;
+                        break;
+                    
+                    case "remote_cluster.filter.deny":
+                        remoteClusterDeniedIPs = (List<String>) value;
+                        break;  
 
                     default:
                         error = true;
