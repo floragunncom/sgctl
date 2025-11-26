@@ -66,8 +66,6 @@ public class MigrateSecurity implements Callable<Integer> {
 
     public boolean checkOutputDir() {
         if (outputDir == null) {
-            // Currently: output dir optional (XR2 only validates and does not write)
-            // If -o später Pflicht wird, hier return false setzen.
             log.debug("No output directory specified; skipping output directory checks.");
             return true;
         }
