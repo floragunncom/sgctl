@@ -14,6 +14,11 @@ import picocli.CommandLine.Parameters;
 import java.io.File;
 import java.util.concurrent.Callable;
 
+@CommandLine.Command(
+        name = "migrate-security",
+        description = "Migrate X-Pack security configuration to Search Guard",
+        mixinStandardHelpOptions = true
+)
 public class MigrateSecurity implements Callable<Integer> {
 
     @Parameters(description = "Path to the directory containing elasticsearch.yml and possibly other X-Pack configuration files.")
