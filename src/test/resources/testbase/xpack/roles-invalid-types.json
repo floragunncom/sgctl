@@ -1,0 +1,56 @@
+{
+  "complex-role": {
+    "applications": [
+      {
+        "application": 42,
+        "privileges": ["read"],
+        "resources": ["*"]
+      },
+      {
+        "application": "incomplete",
+        "privileges": ["read"]
+      },
+      "not-an-object"
+    ],
+    "indices": [
+      {
+        "names": ["index-1"],
+        "privileges": ["read"],
+        "clusters": ["should-not-be-here"]
+      },
+      {
+        "privileges": ["read"]
+      },
+      {
+        "names": ["index-2"],
+        "field_security": "invalid"
+      },
+      {
+        "names": ["index-3"],
+        "privileges": ["read"],
+        "query": {}
+      },
+      {
+        "names": ["index-4"],
+        "privileges": ["read"],
+        "allow_restricted_indices": "invalid"
+      }
+    ],
+    "remote_indices": [
+      {
+        "names": ["remote-index-1"],
+        "privileges": ["read"]
+      },
+      {
+        "clusters": "remote-cluster",
+        "names": "remote-index-2",
+        "privileges": ["read"]
+      }
+    ],
+    "description": "Role with deliberately invalid structures for testing."
+  },
+  "roleWithInvalidApplicationsType": {
+    "applications": {},
+    "description": "Role whose applications field is not an array."
+  }
+}
