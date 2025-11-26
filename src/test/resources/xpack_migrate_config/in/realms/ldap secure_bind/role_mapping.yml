@@ -1,0 +1,18 @@
+
+admin:
+  # LDAP Admins
+  - "CN=ESAdmins,OU=Groups,DC=corp,DC=local"
+  # Native User
+  - "elastic_admin"
+
+dev_poweruser:
+  - "CN=DevOps,OU=Groups,DC=corp,DC=local"
+
+dev_readonly:
+  - "CN=Developers,OU=Groups,DC=corp,DC=local"
+
+audit_reader:
+  - "CN=SecurityTeam,OU=Groups,DC=corp,DC=local"
+
+kibana_system:
+  - "kibana_system"
