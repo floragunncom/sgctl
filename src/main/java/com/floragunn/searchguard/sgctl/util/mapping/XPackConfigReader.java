@@ -1,6 +1,6 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
 
-public class XpackConfigReader {
+public class XPackConfigReader {
     // add elasticsearch.yml reader ...
 
 }
