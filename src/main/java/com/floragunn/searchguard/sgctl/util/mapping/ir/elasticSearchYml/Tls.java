@@ -1,4 +1,6 @@
-package com.floragunn.searchguard.sgctl.util.mapping.ir;
+package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
+
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,7 +45,7 @@ public class Tls {
 
         if (options.containsKey("xpack.security.http.ssl.keystore.key_password")
             && options.containsKey("ssl.keystore.secure_password")) {
-            IntermediateRepresentation.errorLog(
+            IntermediateRepresentationElasticSearchYml.errorLog(
                     "You cannot use keystore.key_password and keystore.secure_password at the same time",
                     2
             );
@@ -59,7 +61,7 @@ public class Tls {
         boolean error = false;
 
         // Booleans
-        if (IntermediateRepresentation.assertType(optionValue, Boolean.class)) {
+        if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
             boolean value = (Boolean) optionValue;
             switch (optionName) {
                 case "enabled":
@@ -69,7 +71,7 @@ public class Tls {
             }
         }
 
-        else if (IntermediateRepresentation.assertType(optionValue, String.class)) {
+        else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
             String value = (String) optionValue;
             switch (optionName) {
                 case "keystore.path":
@@ -79,14 +81,14 @@ public class Tls {
                     keystorePassword = value; break;
 
                 case "keystore.secure_password": // can not be migrated since it is not visible
-                    IntermediateRepresentation.errorLog(optionName + " is not visible", 1);
+                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
                     break;
 
                 case "keystore.key_password":
                     keystoreKeyPassword = value; break;
 
                 case "keystore.secure_key_password":
-                    IntermediateRepresentation.errorLog(optionName + " is not visible", 1);
+                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
                     break;
 
                 case "truststore.path":
@@ -96,14 +98,14 @@ public class Tls {
                     truststorePassword = value; break;
 
                 case "truststore.secure_password":
-                    IntermediateRepresentation.errorLog(optionName + " is not visible", 1);
+                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
                     break;
 
                 case "keystore.type":
                     if (value.equals("jks") || value.equals("PKCS12")) {
                         keystoreType = value;
                     } else {
-                        IntermediateRepresentation.errorLog(optionName + " with type " + value + " is not known", 2);
+                        IntermediateRepresentationElasticSearchYml.errorLog(optionName + " with type " + value + " is not known", 2);
                         error = true;
                     }
                     break;
@@ -112,7 +114,7 @@ public class Tls {
                     if (value.equals("PKCS12")) {
                         truststoreType = value;
                     } else {
-                        IntermediateRepresentation.errorLog(optionName + " with type " + value + " is not known", 2);
+                        IntermediateRepresentationElasticSearchYml.errorLog(optionName + " with type " + value + " is not known", 2);
                         error = true;
                     }
                     break;
@@ -127,7 +129,7 @@ public class Tls {
                     privateKeyPassword = value; break;
 
                 case "secure_key_passphrase":
-                    IntermediateRepresentation.errorLog(optionName + " is not visible", 1);
+                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
                     break;
 
                 case "verification_mode":
@@ -151,7 +153,7 @@ public class Tls {
             }
         }
 
-        else if (IntermediateRepresentation.assertType(optionValue, List.class)) {
+        else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, List.class)) {
             List<?> value = (List<?>) optionValue;
 
             if (value.isEmpty()) {

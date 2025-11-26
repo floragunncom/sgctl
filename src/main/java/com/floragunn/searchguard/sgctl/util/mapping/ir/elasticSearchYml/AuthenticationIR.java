@@ -1,4 +1,6 @@
-package com.floragunn.searchguard.sgctl.util.mapping.ir;
+package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
+
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
 public class AuthenticationIR {
     // API Key
@@ -10,7 +12,7 @@ public class AuthenticationIR {
         boolean error = false;
 
         // Booleans
-        if (IntermediateRepresentation.assertType(optionValue, Boolean.class)) {
+        if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
             boolean value = (Boolean) optionValue;
             switch (optionName) {
                 case "api_key.enabled":
@@ -20,7 +22,7 @@ public class AuthenticationIR {
                 default:
                     error = true;
             }
-        } else if (IntermediateRepresentation.assertType(optionValue, String.class)) {
+        } else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
             String value = (String) optionValue;
             switch (optionName) {
                 case "api_key.cache.ttl":
