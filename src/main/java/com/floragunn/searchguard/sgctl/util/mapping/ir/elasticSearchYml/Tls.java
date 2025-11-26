@@ -40,22 +40,6 @@ public class Tls {
     List<String> remoteClusterAllowedIPs; // List of IP addresses to allow for remote cluster
     List<String> remoteClusterDeniedIPs; // List of IP addresses to deny remote cluster
 
-    // check if possible constraints are satisfied -> is this checking needed??
-    public boolean checkConstraints(Map<String, Object> options) {
-
-        if (options.containsKey("xpack.security.http.ssl.keystore.key_password")
-            && options.containsKey("ssl.keystore.secure_password")) {
-            IntermediateRepresentationElasticSearchYml.errorLog(
-                    "You cannot use keystore.key_password and keystore.secure_password at the same time",
-                    2
-            );
-            return false;
-        }
-
-        return true;
-
-    }
-
     // check an input option against all possible options acc. to the xpack docs
     public void handleTlsOptions(String optionName, Object optionValue) {
         boolean error = false;
