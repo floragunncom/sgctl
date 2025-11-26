@@ -1,0 +1,22 @@
+{
+  "john_doe": {
+    "hash": "$2a$12$QzOf63.lc/QaesXkvmk6DOrmmaL001QqMJ403CoDZPgPjLnag/PQC",
+    "opendistro_security_roles": [
+      "admin",
+      "other_role1"
+    ],
+    "attributes": {
+      "custom_attribute" : "xyz"
+    }
+  },
+  "not_john_doe": {
+    "hash": "different hash",
+    "opendistro_security_roles": [
+      "normal-user",
+      "other_role2"
+    ],
+    "attributes": {
+      "different_custom_attribute" : "zyx"
+    }
+  }
+}

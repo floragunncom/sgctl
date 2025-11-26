@@ -8,6 +8,7 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
+import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -32,7 +33,8 @@ public class XPackMigrate implements Callable<Integer> {
 
     private static final Map<String, Parser<Object, Parser.Context>> configParsers = Map.of(
         // TODO: Add parsing functions here <filename>,Record::parse
-        "role_mapping.json", RoleMappings::parse
+        "role_mapping.json", RoleMappings::parse,
+            "users.json", Users::parse
     );
 
     public Integer call() throws Exception {

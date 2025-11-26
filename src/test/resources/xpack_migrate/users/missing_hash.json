@@ -1,0 +1,11 @@
+{
+  "john_doe": {
+    "opendistro_security_roles": [
+      "admin",
+      "other_role1"
+    ],
+    "attributes": {
+      "custom_attribute" : "xyz"
+    }
+  }
+}

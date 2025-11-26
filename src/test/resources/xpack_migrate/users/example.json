@@ -1,0 +1,12 @@
+{
+  "john_doe": {
+    "hash": "$2a$12$QzOf63.lc/QaesXkvmk6DOrmmaL001QqMJ403CoDZPgPjLnag/PQC",
+    "opendistro_security_roles": [
+      "admin",
+      "other_role1"
+    ],
+    "attributes": {
+      "custom_attribute" : "xyz"
+    }
+  }
+}
