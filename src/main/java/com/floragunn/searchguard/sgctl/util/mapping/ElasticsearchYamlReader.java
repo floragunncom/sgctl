@@ -53,20 +53,34 @@ public class ElasticsearchYamlReader {
         }
     }
 
+    private static String stripPrefix(String key, String... prefixes) {
+        for (String p : prefixes) {
+            if (key.startsWith(p)) {
+                return key.substring(p.length());
+            }
+        }
+        return null;
+    }
+
     private void toIR(Map<String, Object> map) {
 
-        String transportPrefix = "xpack.security.transport.ssl.";
-        String httpPrefix = "xpack.security.http.ssl.";
+        String[] transportPrefixes = {"xpack.security.transport.ssl."};
+        String[] httpPrefixes = {"xpack.security.http.ssl."};
+        String[] sslTlsPrefixes = {"transport."};
+
+        String stripped;
 
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
 
             // for each option name, propagate to responsible ir class method
-            if (key.startsWith(transportPrefix)) {
-                ir.sslTls.transport.handleTlsOptions(key.substring(transportPrefix.length()), value);
-            } else if (key.startsWith(httpPrefix)) {
-                ir.sslTls.http.handleTlsOptions(key.substring(httpPrefix.length()), value);
+            if ((stripped = stripPrefix(key, transportPrefixes)) != null) {
+                ir.sslTls.transport.handleTlsOptions(stripped, value);
+            } else if ((stripped = stripPrefix(key, httpPrefixes)) != null) {
+                ir.sslTls.http.handleTlsOptions(stripped, value);
+            } else if ((stripped = stripPrefix(key, sslTlsPrefixes)) != null) {
+                ir.sslTls.handleOptions(stripped, value);
             }
 
             else {
