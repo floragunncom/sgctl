@@ -5,7 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.floragunn.codova.documents.DocReader;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentationElasticSearchYml;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 
 public class ElasticsearchYamlReader {
 

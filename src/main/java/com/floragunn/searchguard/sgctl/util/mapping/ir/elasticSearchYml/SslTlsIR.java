@@ -1,4 +1,7 @@
-package com.floragunn.searchguard.sgctl.util.mapping.ir;
+package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
+
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.*;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -24,7 +27,7 @@ public class SslTlsIR {
     public void handleOptions(String optionName, Object optionValue) {
         boolean error = false;
 
-        if (IntermediateRepresentation.assertType(optionValue, List.class)) {
+        if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, List.class)) {
             List<?> value = (List<?>) optionValue;
 
             if (value.isEmpty()) {
