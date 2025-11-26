@@ -1,19 +1,19 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
 
-import com.floragunn.codova.documents.DocReader;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ElasticseachYamlReader {
+import com.floragunn.codova.documents.DocReader;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+
+public class ElasticsearchYamlReader {
 
     private final File configFile;
     protected IntermediateRepresentation ir;
     Map<String, Object> flattenedMap;
 
-    public ElasticseachYamlReader(File configFile, IntermediateRepresentation ir) {
+    public ElasticsearchYamlReader(File configFile, IntermediateRepresentation ir) {
         this.configFile = configFile;
         this.ir = ir;
         try {
