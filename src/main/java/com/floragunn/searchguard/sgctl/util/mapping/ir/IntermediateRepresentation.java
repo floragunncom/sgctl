@@ -1,5 +1,9 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir;
 
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -17,6 +21,4 @@ public class IntermediateRepresentation {
     public List<User> getUsers() { return users; }
     public List<Role> getRoles() { return roles; }
     public List<RoleMapping> getRoleMappings() { return roleMappings; }
-
-
 }

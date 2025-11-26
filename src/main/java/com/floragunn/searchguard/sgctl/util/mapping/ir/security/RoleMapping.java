@@ -1,4 +1,4 @@
-package com.floragunn.searchguard.sgctl.util.mapping.ir;
+package com.floragunn.searchguard.sgctl.util.mapping.ir.security;
 
 import org.jspecify.annotations.NonNull;
 

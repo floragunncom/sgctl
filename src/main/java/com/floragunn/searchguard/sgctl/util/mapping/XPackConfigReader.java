@@ -3,9 +3,9 @@ package com.floragunn.searchguard.sgctl.util.mapping;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.Role;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.User;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.RoleMapping;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
@@ -42,6 +42,7 @@ public class XPackConfigReader {
         readRoleMappingFile();
         ir.getUsers().forEach(user -> print(user.toString()));
         ir.getRoles().forEach(role -> print(role.toString()));
+
         return ir;
     }
 
