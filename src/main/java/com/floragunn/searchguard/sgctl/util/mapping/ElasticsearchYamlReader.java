@@ -67,6 +67,7 @@ public class ElasticsearchYamlReader {
         String[] transportPrefixes = {"xpack.security.transport.ssl."};
         String[] httpPrefixes = {"xpack.security.http.ssl."};
         String[] sslTlsPrefixes = {"transport."};
+        String[] authenticationPrefixes = {"xpack.security.authc."};
 
         String stripped;
 
@@ -81,6 +82,8 @@ public class ElasticsearchYamlReader {
                 ir.sslTls.http.handleTlsOptions(stripped, value);
             } else if ((stripped = stripPrefix(key, sslTlsPrefixes)) != null) {
                 ir.sslTls.handleOptions(stripped, value);
+            } else if ((stripped = stripPrefix(key, authenticationPrefixes)) != null) {
+                ir.authoIR.handleOptions(stripped, value);
             }
 
             else {
