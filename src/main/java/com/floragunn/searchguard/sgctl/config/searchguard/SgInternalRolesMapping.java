@@ -6,7 +6,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-
+import java.util.ArrayList;
+import java.util.Arrays;
 
 public record SgInternalRolesMapping(ImmutableMap<String, RoleMapping> mappings)
     implements NamedConfig<SgInternalRolesMapping>{
@@ -31,6 +32,41 @@ public record SgInternalRolesMapping(ImmutableMap<String, RoleMapping> mappings)
             Objects.requireNonNull(hosts, "hosts must not be NULL");
             Objects.requireNonNull(ips, "ips must not be NULL");
         }
+
+        private static List<String> toBaseList(ImmutableList<String> list){
+            List<String> result = new ArrayList<>();
+            list.forEach((e) -> result.add(e));
+           return result;
+        }
+
+        public Map<String, Object> toBasicObject(){
+            Map<String, Object> result = new LinkedHashMap<>();
+            if(!users.isEmpty()){
+                result.put("users", toBaseList(users));
+            }
+
+            if(!backend_roles.isEmpty()){
+                result.put("backend_roles", toBaseList(backend_roles));
+            }
+
+            if(!hosts.isEmpty()){
+                result.put("hosts", toBaseList(hosts));
+            }
+
+            if(!ips.isEmpty()){
+                result.put("ips", toBaseList(ips));
+            }
+            return result;
+        }
+
+    }
+
+    @Override
+    public Object toBasicObject(){
+        Map<String, Object> result = new LinkedHashMap<>();
+        mappings.forEach((k, v) -> result.put(k, v.toBasicObject()));
+
+        return result;
     }
 
 }
