@@ -68,8 +68,4 @@ public record SgInternalRolesMapping(ImmutableMap<String, RoleMapping> mappings)
 
         return result;
     }
-
 }
-
-
-
