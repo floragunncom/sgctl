@@ -563,6 +563,20 @@ public class XPackConfigReader {
             }
         }
 
+        var roles = roleMapping.getRoles();
+        var templates = roleMapping.getRoleTemplates();
+
+        boolean hasRoles = roles != null && !roles.isEmpty();
+        boolean hasTemplates = templates != null && !templates.isEmpty();
+
+        if (!hasRoles && !hasTemplates) {
+            printErr("Role mapping '" + mappingName + "' must define either 'roles' or 'role_templates'.");
+            //  TODO: migrationReport.addMissingParameter
+        } else if (hasRoles && hasTemplates) {
+            printErr("Role mapping '" + mappingName + "' defines both 'roles' and 'role_templates'. Only one is allowed.");
+            //  TODO: migrationReport.addInvalidType
+        }
+
         ir.addRoleMapping(roleMapping);
     }
 
