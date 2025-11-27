@@ -179,6 +179,11 @@ public class XPackConfigReader {
             printErr("Missing required parameter 'roles'"); // TODO: Add MigrationReport entry
             return;
         }
+        if (attributes == null) {
+            printErr("Missing required parameter 'attributes'"); // TODO: Add MigrationReport entry
+            return;
+        }
+
         var user = new User(name, roles, fullName, email, enabled, profileUID, attributes);
         ir.addUser(user);
     }
@@ -241,6 +246,9 @@ public class XPackConfigReader {
                     role.setCluster(toStringList(value, roleFileName, roleName, key));
                     break;
                 case "remote_cluster":
+                    if (value instanceof ArrayList<?> remoteClusterList) {
+                        role.setRemoteClusters(readList(remoteClusterList, map->readRemoteCluster(map, roleName+"->remoteClusters")));
+                    }
                     break;
                 case "indices":
                     if (value instanceof ArrayList<?> indices) {
@@ -278,6 +286,29 @@ public class XPackConfigReader {
         }
 
         ir.addRole(role);
+    }
+
+    private Role.RemoteCluster readRemoteCluster(LinkedHashMap<?, ?> map, String origin) {
+        var remoteCluster = new Role.RemoteCluster();
+        for (var entry : map.entrySet()) {
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                continue;
+            }
+            var value = entry.getValue();
+            switch (key) {
+                case "clusters":
+                    remoteCluster.setClusters(toStringList(value, roleFileName, origin, key));
+                    break;
+                case "privileges":
+                    remoteCluster.setPrivileges(toStringList(value, roleFileName, origin, key));
+                    break;
+                default:
+                    printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
+            }
+        }
+
+        return remoteCluster;
     }
 
     private Role.Application readApplication(LinkedHashMap<?, ?> applicationMap, String origin) {
