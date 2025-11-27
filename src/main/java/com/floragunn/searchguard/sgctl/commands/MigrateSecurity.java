@@ -1,6 +1,6 @@
 package com.floragunn.searchguard.sgctl.commands;
 
-import com.floragunn.searchguard.sgctl.util.mapping.XPackConfigReader;
+import com.floragunn.searchguard.sgctl.util.mapping.SearchGuardConfigWriter;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
@@ -30,7 +30,10 @@ public class MigrateSecurity implements Callable<Integer> {
         if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
             return 1;
         }
-        var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
+        //TODO Implement Reader fully
+
+        //Added this for testing
+        SearchGuardConfigWriter.generateAllConfigs(outputDir);
         return 0;
     }
 
@@ -58,29 +61,29 @@ public class MigrateSecurity implements Callable<Integer> {
     public boolean checkInputDirAndLoadConfig() {
 
         if (inputDir == null) {
-            System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
+            log.error("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
             return false;
         }
 
         if (!inputDir.exists()) {
-            System.err.println("Input path does not exist: " + inputDir.getAbsolutePath());
+            log.error("Input path does not exist: {}", inputDir.getAbsolutePath());
             return false;
         }
 
         if (!inputDir.isDirectory()) {
-            System.err.println("Input path is not a directory: " + inputDir.getAbsolutePath());
+            log.error("Input path is not a directory: {}", inputDir.getAbsolutePath());
             return false;
         }
 
         if (!inputDir.canRead()) {
-            System.err.println("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
+            log.error("Input directory is not readable. Check permissions: {}", inputDir.getAbsolutePath());
             return false;
         }
 
         var files = inputDir.listFiles();
 
         if (files == null) {
-            System.err.println("Found unexpected null-value while listing files in input directory (I/O error).");
+            log.error("Found unexpected null-value while listing files in input directory (I/O error).");
             return false;
         }else{
             for (File file : files) {
@@ -98,7 +101,7 @@ public class MigrateSecurity implements Callable<Integer> {
             }
         }
         if (elasticsearch == null) {
-            System.err.println("Required file elasticsearch.yml not found.");
+            log.error("Required file elasticsearch.yml not found.");
             return false;
         }
         return true;
