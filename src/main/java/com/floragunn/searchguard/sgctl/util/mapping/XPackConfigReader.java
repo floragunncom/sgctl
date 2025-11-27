@@ -581,23 +581,31 @@ public class XPackConfigReader {
     }
 
     private RoleMapping.Rules readRules(Object rulesObject, String mappingName) {
+        return readRulesInternal(rulesObject, mappingName, "rules");
+    }
+
+    private RoleMapping.Rules readRulesInternal(Object rulesObject, String mappingName, String originPath) {
         if (!(rulesObject instanceof LinkedHashMap<?, ?> rulesMap)) {
+            printErr("Invalid type " + rulesObject.getClass() + " for key.");
             // TODO: Add MigrationReport entry
-            printErr("Invalid type for rules in role mapping '" + mappingName + "': " + rulesObject.getClass());
             return null;
         }
 
         var rules = new RoleMapping.Rules();
 
-        var fieldObj = rulesMap.get("field");
-        if (fieldObj instanceof LinkedHashMap<?, ?> fieldMap) {
-            for (var entry : fieldMap.entrySet()) {
-                if (!(entry.getKey() instanceof String key)) {
-                    printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
-                    continue;
-                }
-                var value = entry.getValue();
-                // TODO: Add field rule to RoleMapping
+        for (var entry : rulesMap.entrySet()) {
+            if (!(entry.getKey() instanceof String key)) {
+                printErr("Invalid key type in " + originPath + " of " + mappingName
+                        + ": " + entry.getKey().getClass());
+                continue;
+            }
+            var value = entry.getValue();
+            var childOrigin = originPath + "->" + key;
+
+            switch (key) {
+                default:
+                    printErr("Unknown key in " + originPath + " for mapping " + mappingName + ": " + key);
+                    break;
             }
         }
         return rules;
