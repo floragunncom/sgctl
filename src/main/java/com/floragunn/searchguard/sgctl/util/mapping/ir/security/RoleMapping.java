@@ -40,23 +40,27 @@ public class RoleMapping {
 
     public static class Rules {
         Map<String, Object> field;
-        List<Map<String, Object>> any;
-        List<Map<String, Object>> all;
-        Map<String, Object> except;
+        List<Rules> any;
+        List<Rules> all;
+        Rules except;
 
+        // Getter
         public Map<String, Object> getField() { return field; }
-        public List<Map<String, Object>> getAny() { return any; }
-        public List<Map<String, Object>> getAll() { return all; }
-        public Map<String, Object> getExcept() { return except; }
+        public List<Rules> getAny() { return any; }
+        public List<Rules> getAll() { return all; }
+        public Rules getExcept() { return except; }
 
+        // Setter
         public void setField(Map<String, Object> field) { this.field = field; }
-        public void setAny(List<Map<String, Object>> any) { this.any = any; }
-        public void setAll(List<Map<String, Object>> all) { this.all = all; }
-        public void setExcept(Map<String, Object> except) { this.except = except; }
+        public void setAny(List<Rules> any) { this.any = any; }
+        public void setAll(List<Rules> all) { this.all = all; }
+        public void setExcept(Rules except) { this.except = except; }
 
         @Override
         public String toString() {
-            return "Rules[field=" + field + ", any=" + any + ", all=" + all +
+            return "Rules[field=" + field +
+                    ", any=" + any +
+                    ", all=" + all +
                     ", except=" + except + "]";
         }
     }
