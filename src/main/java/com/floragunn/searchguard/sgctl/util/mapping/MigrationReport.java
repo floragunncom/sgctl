@@ -6,76 +6,124 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/*
-    Erste Idde den Migration Report zu strukturieren.
-    Von außen zu benutzen als addMigrated/Unmapped/Warning/ManualAction(String filename, String parameter, String message),
-    oder mit vordefinierten Messages in bspws. addInvalidValue/Type(String file, String parameter)
-    Intern strukturiert als:
-    file:
-        Category:
-            Parameter: message
-        Category:
-        .
-        .
-        .
-    file:
-        .
-*/
+
 public class MigrationReport {
     private final LinkedHashMap<String, FileReport> files = new LinkedHashMap<>();
-    public enum Category {MIGRATED, UNMAPPED, WARNING, MANUAL}
+    public enum Category {MIGRATED, WARNING, MANUAL}
 
-    public void addMigrated(String file, String parameter, String message){
-        file(file).add(Category.MIGRATED, new Entry(parameter, message));
+    /* ----- public API ----- */
+    public void addUnknownKey(String file, String key, String path){
+        addPreset(ReportPreset.UNKNOWN_KEY, Category.WARNING, file, key, key, path);
     }
 
-    public void addUnmapped(String file, String parameter, String message){
-        file(file).add(Category.UNMAPPED, new Entry(parameter, message));
+    public void addInvalidType(String file, String path, String expectedType, String foundType){
+        addPreset(ReportPreset.INVALID_TYPE, Category.WARNING, file, path, expectedType, path, foundType);
+    }
+
+    public void addMissingParameter(String file, String parameter, String path){
+        addPreset(ReportPreset.MISSING_PARAMETER, Category.MANUAL, file, parameter, path, parameter);
+    }
+
+    public void addIgnoredKey(String file, String key, String path){
+        addPreset(ReportPreset.IGNORED_KEY, Category.WARNING, file, key, key, path);
+    }
+
+    public void addMigrated(String file, String oldParameter, String newParameter){
+        file(file).add(Category.MIGRATED, new Entry(oldParameter, null, newParameter, null));
+    }
+
+    public void addMigrated(String file, String parameter){
+        addMigrated(file, parameter, null);
     }
 
     public void addWarning(String file, String parameter, String message){
-        file(file).add(Category.WARNING, new Entry(parameter, message));
+        file(file).add(Category.WARNING, new Entry(parameter, message, null, null));
     }
 
     public void addManualAction(String file, String parameter, String message){
-        file(file).add(Category.MANUAL, new Entry(parameter, message));
+        file(file).add(Category.MANUAL, new Entry(parameter, message, null, null));
     }
 
-    public void addInvalidType(String file, String parameter){
-        addTemplate(ReportTemplate.INVALID_TYPE, file, parameter);
+
+    public void printReport(){
+        System.out.println("---------- Migration Report ----------");
+        for (Map.Entry<String, FileReport> fe : files.entrySet()) {
+            System.out.println("File: " + fe.getKey() + "\n");
+            FileReport fr = fe.getValue();
+
+            printMigrated(fr);
+            printWarnings(fr);
+            printManuals(fr);
+        }  
+        System.out.println("---------- End Migration Report ----------");
     }
 
-    public void addInvalidValue(String file, String parameter){
-        addTemplate(ReportTemplate.INVALID_VALUE, file, parameter);
-    }
-
+    /* ---------- internals ---------- */
+    private static final String DISPLAY_TEMPLATE = "    - %s%n      -> %s%n";
+    
     private FileReport file(String file){
         return files.computeIfAbsent(file, k -> new FileReport());
     }
 
-    public void printReport(){
-        System.out.println("---------- Migration Report ----------");
-        System.out.println("TO DO?: Perhaps some description on how this thing is structured, and early on the hint that you might have to do some manual reworks.");
-        for (Map.Entry<String, FileReport> fe : files.entrySet()) {
-            System.out.println("File: " + fe.getKey());
-            FileReport fr = fe.getValue();
-
-            for (Category c : Category.values()) {
-                List<Entry> list = fr.get(c);
-                if (list.isEmpty()) continue;
-                System.out.printf("  %s (%d)%n", c.name(), list.size());
-                for (Entry e : list) {
-                    System.out.printf("    - %s%n      -> %s%n", e.parameter, e.message);
-                    
+    private void addPreset(ReportPreset rp,Category category, String file, String parameter, Object... args){
+        String msg = rp.format(args);
+        file(file).add(category, new Entry(parameter, msg, null, rp));
+    }
+    void printMigrated(FileReport fr){
+        List<Entry> migrated = fr.get(Category.MIGRATED);
+        if(!migrated.isEmpty()){
+            System.out.printf("  MIGRATED (%d)%n  Parameters that have been successfully migrated%n%n", migrated.size());
+            for(Entry e : migrated){
+                if(e.newParameter != null){
+                    System.out.printf("    - %s -> %s%n", e.parameter, e.newParameter);
+                } else {
+                    System.out.printf("    - %s%n", e.parameter);
+                }
+            }
+            System.out.println();
+        } 
+    }
+    void printWarnings(FileReport fr){
+        List<Entry> warnings = fr.get(Category.WARNING);
+        if(!warnings.isEmpty()){
+            System.out.printf("  %s (%d)%n  Potentially problematic or ambiguous settings. Review them to ensure the migrated configuration behaves as expected%n%n", Category.WARNING.name(), warnings.size());
+            printPresets(warnings);
+            List<Entry> freeWarnings = new ArrayList<>();
+            for (Entry e : warnings) {
+                if (e.preset == null) freeWarnings.add(e);
+            }
+            if (!freeWarnings.isEmpty()) {
+                for (Entry e : freeWarnings) {
+                    System.out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
                 }
                 System.out.println();
             }
-        }  
-        System.out.println("---------- Migration Report ----------");
+        }
     }
-    public void addTemplate(ReportTemplate rt, String file, String parameter){
-        String msg = rt.format(parameter);
-        file(file).add(rt.category, new Entry(parameter, msg));
+    void printPresets(List<Entry> entries){
+        for (ReportPreset rp : ReportPreset.values()) {
+            List<Entry> presetWarnings = new ArrayList<>();
+            for (Entry e : entries) {
+                if (e.preset == rp) presetWarnings.add(e);
+            }
+            if (!presetWarnings.isEmpty()) {
+                for (Entry e : presetWarnings) {
+                    System.out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
+                }
+                System.out.println();
+            }
+        }
+    }
+
+    void printManuals(FileReport fr){
+        List<Entry> manuals = fr.get(Category.MANUAL);
+        if(!manuals.isEmpty()){
+            System.out.printf("  %s (%d)%n  Parameters that could not be automatically migrated and require manual review or adjustment%n%n", Category.MANUAL.name(), manuals.size());
+            for(Entry e : manuals){
+                System.out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
+            }
+            System.out.println();
+        }
     }
 
     static class FileReport {
@@ -91,23 +139,29 @@ public class MigrationReport {
             return buckets.get(c);
         }
     }
+
     static class Entry{
         private final String parameter;
         private final String message;
-        Entry(String parameter, String message){
+        private final String newParameter;
+        private final ReportPreset preset;
+        Entry(String parameter, String message, String newParameter, ReportPreset preset){
             this.parameter = parameter;
             this.message = message;
+            this.newParameter = newParameter;
+            this.preset = preset;
         }
     }
-    public enum ReportTemplate{
-        INVALID_TYPE("Invalid type for key: '%s'", Category.WARNING),
-        INVALID_VALUE("Invalid value for key: '%s'", Category.WARNING);
+
+    enum ReportPreset{
+        UNKNOWN_KEY("Encountered unknown key '%s' at path '%s'"),
+        INVALID_TYPE("Expected type '%s' for '%s', but found '%s'"),
+        MISSING_PARAMETER("'%s' missing required parameter '%s'"),
+        IGNORED_KEY("Key '%s' at path '%s' is ignored for migration");
 
         final String template;
-        final Category category;
 
-        ReportTemplate(String template, Category cat){
-            this.category = cat;
+        ReportPreset(String template){
             this.template = template;
         }
         public String format(Object... args) { return String.format(template, args); }
