@@ -1,6 +1,6 @@
 package com.floragunn.searchguard.sgctl.testsupport;
 
-import com.floragunn.searchguard.sgctl.util.mapping.XPackConfigReader;
+import com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;

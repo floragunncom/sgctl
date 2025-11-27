@@ -1,6 +1,7 @@
 package com.floragunn.searchguard.sgctl.commands;
 
-import com.floragunn.searchguard.sgctl.util.mapping.XPackConfigReader;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
+import com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
@@ -37,9 +38,10 @@ public class MigrateSecurity implements Callable<Integer> {
                 break;
             }
         }
-
-        var reader = new XPackConfigReader(null, user, role, roleMapping);
+        var report = new MigrationReport();
+        var reader = new XPackConfigReader(null, user, role, roleMapping, report);
         var ir = reader.generateIR();
+        report.printReport();
         return 0;
     }
 }
