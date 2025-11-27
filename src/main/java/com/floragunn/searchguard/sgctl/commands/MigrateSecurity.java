@@ -27,9 +27,12 @@ public class MigrateSecurity implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
-            return 1;
-        }
+        /* Commented for testing
+            if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
+                return 1;
+            }
+         */
+
         //TODO Implement Reader fully
 
         //Added this for testing
