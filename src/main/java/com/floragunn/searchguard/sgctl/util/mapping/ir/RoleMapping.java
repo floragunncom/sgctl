@@ -8,7 +8,6 @@ import java.util.Map;
 public class RoleMapping {
     @NonNull String mappingName;
     List<String> roles;
-    List<String> users;
     boolean enabled = true;
     List<String> runAs;
 
@@ -23,7 +22,6 @@ public class RoleMapping {
     // Getter-Methods
     public @NonNull String getMappingName() { return mappingName; }
     public List<String> getRoles() { return roles; }
-    public List<String> getUsers() { return users; }
     public boolean isEnabled() { return enabled; }
     public List<String> getRunAS() { return runAs; }
     public Rules getRules() { return rules; }
@@ -33,7 +31,6 @@ public class RoleMapping {
     // Setter-Methods
     public void setMappingName(@NonNull String mappingName) { this.mappingName = mappingName; }
     public void setRoles(List<String> roles) { this.roles = roles; }
-    public void setUsers(List<String> users) { this.users = users; }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public void setRunAs(List<String> runAS) { this.runAs = runAS; }
     public void setRules(Rules rules) { this.rules = rules; }
@@ -123,7 +120,6 @@ public class RoleMapping {
         return "RoleMapping[" +
                 "mappingName=" + mappingName +
                 ", roles=" + roles +
-                ", users=" + users +
                 ", enabled=" + enabled +
                 ", runAs=" + runAs +
                 ", rules=" + rules +

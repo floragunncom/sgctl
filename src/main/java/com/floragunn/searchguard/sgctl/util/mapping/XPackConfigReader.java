@@ -467,17 +467,6 @@ public class XPackConfigReader {
                     }
                     break;
 
-                case "users":
-                    try {
-                        roleMapping.setUsers(toStringList(value));
-                    } catch (IllegalArgumentException e) {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid type for users: " + value.getClass());
-                    } catch (ClassCastException e) {
-                        printErr("Invalid entry in 'users' for role mapping '" + mappingName + "': " + e.getMessage());
-                    }
-                    break;
-
                 case "run_as":
                     var runAs = toStringList(value, roleMappingFileName, mappingName, "run_as");
                     if (runAs != null) {
