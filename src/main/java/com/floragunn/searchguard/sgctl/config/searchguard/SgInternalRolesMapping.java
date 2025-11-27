@@ -33,28 +33,24 @@ public record SgInternalRolesMapping(ImmutableMap<String, RoleMapping> mappings)
             Objects.requireNonNull(ips, "ips must not be NULL");
         }
 
-        private static List<String> toBaseList(ImmutableList<String> list){
-            List<String> result = new ArrayList<>();
-            list.forEach((e) -> result.add(e));
-           return result;
-        }
+
 
         public Map<String, Object> toBasicObject(){
             Map<String, Object> result = new LinkedHashMap<>();
             if(!users.isEmpty()){
-                result.put("users", toBaseList(users));
+                result.put("users", users);
             }
 
             if(!backend_roles.isEmpty()){
-                result.put("backend_roles", toBaseList(backend_roles));
+                result.put("backend_roles", backend_roles);
             }
 
             if(!hosts.isEmpty()){
-                result.put("hosts", toBaseList(hosts));
+                result.put("hosts", hosts);
             }
 
             if(!ips.isEmpty()){
-                result.put("ips", toBaseList(ips));
+                result.put("ips", ips);
             }
             return result;
         }
