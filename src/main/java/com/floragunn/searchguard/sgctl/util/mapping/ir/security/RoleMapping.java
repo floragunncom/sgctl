@@ -23,7 +23,7 @@ public class RoleMapping {
     public @NonNull String getMappingName() { return mappingName; }
     public List<String> getRoles() { return roles; }
     public boolean isEnabled() { return enabled; }
-    public List<String> getRunAS() { return runAs; }
+    public List<String> getRunAs() { return runAs; }
     public Rules getRules() { return rules; }
     public Metadata getMetadata() { return metadata; }
     public List<RoleTemplate> getRoleTemplates() { return roleTemplates; }
