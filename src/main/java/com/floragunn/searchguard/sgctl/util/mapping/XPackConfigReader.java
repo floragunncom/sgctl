@@ -83,7 +83,13 @@ public class XPackConfigReader {
     }
 
     private void readUser(LinkedHashMap<?, ?> userMap, String name) {
-        var user = new User(name);
+        List<String> roles = null;
+        Boolean enabled = null;
+        String fullName = null;
+        String email = null;
+        String profileUID = null;
+        LinkedHashMap<String, Object> attributes = null;
+
         for (var entry : userMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
                 printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
@@ -104,42 +110,76 @@ public class XPackConfigReader {
                     break;
                 case "email":
                     if (value instanceof String || value == null) {
-                        user.setEmail((String) value);
+                        email = (String)  value;
                     } else {
                         printErr("Invalid value for email: " + value); // TODO: Add MigrationReport entry
                     }
                     break;
                 case "full_name":
                     if (value instanceof String || value == null) {
-                        user.setFullName((String) value);
+                        fullName = (String) value;
                     } else {
-                        printErr("Invalid value for full_name: " + value); // TODO: Add MigrationReport entry
+                        printErr("Invalid type for full_name: " + value); // TODO: Add MigrationReport entry
                     }
                     break;
                 case "metadata":
-                    printErr("Metadata is ignored for migration."); // TODO: Add MigrationReport entry
+                    if (value instanceof LinkedHashMap<?, ?> metadata) {
+                        if (metadata.keySet().stream().allMatch(metadataKey -> metadataKey instanceof String)) {
+                            @SuppressWarnings("unchecked") // Cast is logically checked to always be possible
+                            var safeMap = (LinkedHashMap<String, Object>) metadata;
+                            attributes = safeMap;
+                        } else {
+                            printErr("Invalid type for metadata: " + value); // TODO: Add MigrationReport entry
+                        }
+                    } else {
+                        // TODO: Add MigrationReport entry
+                    }
                     break;
                 case "roles":
-                    var roles = toStringList(value, userFileName, name, key);
-                    if (roles == null) {
+                    var uncheckedRoles = toStringList(value, userFileName, name, key);
+                    if (uncheckedRoles == null) {
+                        // TODO: Add MigrationReport entry
                         break;
                     }
                     var checkedRoles = new ArrayList<String>();
-                    roles.forEach(role -> {
+                    uncheckedRoles.forEach(role -> {
                         if (ir.getRoles().contains(new Role(role))) {
                             checkedRoles.add(role);
                         } else {
                             printErr("Role " + role + " does not exist in role.json."); // TODO: Add MigrationReport entry
                         }
                     });
-                    user.setRoles(checkedRoles);
+                    roles = checkedRoles;
                     break;
-                // TODO: Add handling for enabled key
+                case "enabled":
+                    if (value instanceof Boolean) {
+                        enabled = (Boolean) value;
+                        break;
+                    }
+                    // TODO: Add MigrationReport entry
+                    break;
+                case "profile_uid":
+                    if (value instanceof String uid) {
+                        profileUID = uid;
+                        break;
+                    }
+                    // TODO: Add MigrationReport entry
+                    break;
                 default:
                     printErr("Unknown key " + key); // TODO: Add MigrationReport entry
                     break;
             }
         }
+
+        if (enabled == null) {
+            printErr("Missing required parameter 'enabled'"); // TODO: Add MigrationReport entry
+            return;
+        }
+        if (roles == null) {
+            printErr("Missing required parameter 'roles'"); // TODO: Add MigrationReport entry
+            return;
+        }
+        var user = new User(name, roles, fullName, email, enabled, profileUID, attributes);
         ir.addUser(user);
     }
     //endregion
@@ -199,6 +239,8 @@ public class XPackConfigReader {
                     break;
                 case "cluster":
                     role.setCluster(toStringList(value, roleFileName, roleName, key));
+                    break;
+                case "remote_cluster":
                     break;
                 case "indices":
                     if (value instanceof ArrayList<?> indices) {
