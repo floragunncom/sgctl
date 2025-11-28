@@ -206,7 +206,7 @@ public class RoleMappingConfigReader {
 
     private List<RoleMapping.Rules> readRulesList(Object obj, String mappingName, String path) {
         if (!(obj instanceof List<?> list)) {
-            report.addInvalidType(FILE_NAME, path, List.class.getTypeName(), obj.getClass().getTypeName());
+            MigrationReport.shared.addInvalidType(FILE_NAME, path, List.class, obj.getClass().getTypeName());
             return null;
         }
 
@@ -280,7 +280,7 @@ public class RoleMappingConfigReader {
 
     private RoleMapping.Template readTemplate(Object obj, String mappingName, String path) {
         if (!(obj instanceof LinkedHashMap<?, ?> map)) {
-            report.addInvalidType(FILE_NAME, path, LinkedHashMap.class.getTypeName(), obj.getClass().getTypeName());
+            MigrationReport.shared.addInvalidType(FILE_NAME, path, LinkedHashMap.class, obj.getClass().getTypeName());
             return null;
         }
 
