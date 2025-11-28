@@ -24,8 +24,14 @@ public class Migrator {
     logger.info("Starting migration");
 
     final Map<String, NamedConfig<?>> migratedConfigs = new HashMap<>();
-
-    final List<SubMigrator> subMigrators = MigratorRegistry.getSubMigratorsStatic();
+    final List<SubMigrator> subMigrators;
+    try {
+      subMigrators = MigratorRegistry.getSubMigratorsStatic();
+    } catch (IllegalStateException e) {
+      // TODO: maybe better handling?
+      logger.warn("Migrator registry has not been finalized!");
+      throw e;
+    }
 
     for (final SubMigrator subMigrator : subMigrators) {
       logger.debug("Running migration with {}", subMigrator.getClass().getSimpleName());
