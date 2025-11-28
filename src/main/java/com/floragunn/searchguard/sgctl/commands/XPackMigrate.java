@@ -7,9 +7,9 @@ import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import picocli.CommandLine;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,22 +18,34 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-@CommandLine.Command(name = "migrate-security", description = "Converts X-Pack configs to Search Guard configs")
+@CommandLine.Command(
+        name = "migrate-security",
+        description = "Converts X-Pack configs to Search Guard configs")
 public class XPackMigrate implements Callable<Integer> {
 
-    @CommandLine.Option(names = { "-i", "--input-dir" }, description = "Location of the old x-pack configuration files", required = true)
+    @CommandLine.Option(
+            names = {"-i", "--input-dir"},
+            description = "Location of the old x-pack configuration files",
+            required = true)
     Path inputDir;
 
-    @CommandLine.Option(names = { "-o", "--output-dir" }, description = "Directory where to write new sg configuration files", required = true)
+    @CommandLine.Option(
+            names = {"-o", "--output-dir"},
+            description = "Directory where to write new sg configuration files",
+            required = true)
     Path outputDir;
 
-    @CommandLine.Option(names = { "--overwrite" }, description = "Whether existing output configuration files should be overwritten", defaultValue = "false")
+    @CommandLine.Option(
+            names = {"--overwrite"},
+            description = "Whether existing output configuration files should be overwritten",
+            defaultValue = "false")
     boolean overwrite;
 
-    private static final Map<String, Parser<Object, Parser.Context>> configParsers = Map.of(
-        // TODO: Add parsing functions here <filename>,Record::parse
-        "role_mapping.json", RoleMappings::parse
-    );
+    private static final Map<String, Parser<Object, Parser.Context>> configParsers =
+            Map.of(
+                    // TODO: Add parsing functions here <filename>,Record::parse
+                    "role_mapping.json", RoleMappings::parse,
+                    "roles.json", Roles::parse);
 
     public Integer call() throws Exception {
         if (!Files.isDirectory(inputDir)) {
@@ -55,7 +67,8 @@ public class XPackMigrate implements Callable<Integer> {
         return 0;
     }
 
-    private Map<String, Object> parseConfigs() throws SgctlException, IOException, ConfigValidationException {
+    private Map<String, Object> parseConfigs()
+            throws SgctlException, IOException, ConfigValidationException {
         final Map<String, Object> configs = new HashMap<>();
         for (final var entry : configParsers.entrySet()) {
             final var configFileName = entry.getKey();
@@ -102,5 +115,4 @@ public class XPackMigrate implements Callable<Integer> {
             DocWriter.yaml().write(configPath.toFile(), configObj);
         }
     }
-
 }
