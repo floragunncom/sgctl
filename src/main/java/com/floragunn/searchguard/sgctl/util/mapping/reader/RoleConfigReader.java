@@ -37,7 +37,7 @@ public class RoleConfigReader {
             var reader = DocReader.json().read(roleFile);
 
             if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
-                // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
                 return;
             }
             readRoles(mapReader);
@@ -53,7 +53,7 @@ public class RoleConfigReader {
     private void readRoles(LinkedHashMap<?, ?> mapReader) {
         for (var entry : mapReader.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, "origin", String.class, entry.getKey());
                 continue;
             }
             var value = entry.getValue();
@@ -61,7 +61,7 @@ public class RoleConfigReader {
             if (value instanceof LinkedHashMap<?, ?> role) {
                 readRole(role, key);
             } else {
-                printErr("Invalid value for role: " + value); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, value);
             }
         }
     }
@@ -70,17 +70,17 @@ public class RoleConfigReader {
         var role = new Role(roleName);
         for (var entry : roleMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, roleName, String.class, entry.getKey());
                 continue;
             }
             var value = entry.getValue();
-
+            var origin = roleName + "->" + key;
             switch (key) {
                 case "applications":
                     if (value instanceof ArrayList<?> applicationList) {
-                        role.setApplications(readList(applicationList, map->readApplication(map, roleName+"->applications")));
+                        role.setApplications(readList(applicationList, map->readApplication(map, roleName+"->applications"), FILE_NAME, origin));
                     } else {
-                        printErr("Invalid type for applications: " + value.getClass()); // TODO: Add MigrationReport entry
+                        report.addInvalidType(FILE_NAME, origin, ArrayList.class, value);
                     }
                     break;
                 case "cluster":
@@ -88,25 +88,27 @@ public class RoleConfigReader {
                     break;
                 case "remote_cluster":
                     if (value instanceof ArrayList<?> remoteClusterList) {
-                        role.setRemoteClusters(readList(remoteClusterList, map->readRemoteCluster(map, roleName+"->remoteClusters")));
+                        role.setRemoteClusters(readList(remoteClusterList, map->readRemoteCluster(map, roleName+"->remoteClusters"), FILE_NAME, origin));
+                    } else {
+                        report.addInvalidType(FILE_NAME, origin, ArrayList.class, value);
                     }
                     break;
                 case "indices":
                     if (value instanceof ArrayList<?> indices) {
-                        role.setIndices(readList(indices, map -> readIndex(map, false, roleName + "->indices", Role.Index.class)));
+                        role.setIndices(readList(indices, map -> readIndex(map, false, roleName + "->indices", Role.Index.class), FILE_NAME, origin));
                     } else {
-                        printErr("Invalid type for indices: " + value.getClass()); // TODO: Add MigrationReport entry
+                        report.addInvalidType(FILE_NAME, origin, ArrayList.class, value);
                     }
                     break;
                 case "remote_indices":
                     if (value instanceof ArrayList<?> indices) {
-                        role.setRemoteIndices(readList(indices, map -> readRemoteIndex(map, roleName + "->remote_indices")));
+                        role.setRemoteIndices(readList(indices, map -> readRemoteIndex(map, roleName + "->remote_indices"), FILE_NAME, origin));
                     } else {
-                        printErr("Invalid type for remote_indices: " + value.getClass()); // TODO: Add MigrationReport entry
+                        report.addInvalidType(FILE_NAME, origin, ArrayList.class, value);
                     }
                     break;
                 case "metadata":
-                    printErr("Metadata is ignored for migration."); // TODO: Add MigrationReport entry
+                    report.addIgnoredKey(FILE_NAME, key, origin);
                     break;
                 case "transient_metadata":
                     // TODO: Add support for transient metadata interpretation
@@ -118,11 +120,12 @@ public class RoleConfigReader {
                     if (value instanceof String description) {
                         role.setDescription(description);
                     } else {
-                        printErr("Invalid type for description: " + value.getClass()); // TODO: Add MigrationReport entry
+                        report.addInvalidType(FILE_NAME, origin, String.class, value);
                     }
                     break;
                 default:
-                    printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
+                    report.addUnknownKey(FILE_NAME, key, origin);
+                    break;
             }
         }
 
@@ -133,7 +136,7 @@ public class RoleConfigReader {
         var remoteCluster = new Role.RemoteCluster();
         for (var entry : map.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, origin, String.class, entry.getKey());
                 continue;
             }
             var value = entry.getValue();
@@ -145,7 +148,8 @@ public class RoleConfigReader {
                     remoteCluster.setPrivileges(toStringList(value, FILE_NAME, origin, key));
                     break;
                 default:
-                    printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
+                    report.addUnknownKey(FILE_NAME, key, origin);
+                    break;
             }
         }
 
@@ -158,7 +162,7 @@ public class RoleConfigReader {
         List<String> resources = null;
         for (var entry : applicationMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, origin, String.class, entry.getKey());
                 continue;
             }
             var value = entry.getValue();
@@ -168,8 +172,7 @@ public class RoleConfigReader {
                     if (value instanceof String applicationName) {
                         name = applicationName;
                     } else {
-                        printErr("Invalid value type for application: " + value.getClass()); // TODO: Add MigrationReport entry
-                        return null;
+                        report.addInvalidType(FILE_NAME, origin, String.class, value);
                     }
                     break;
                 case "privileges":
@@ -179,12 +182,20 @@ public class RoleConfigReader {
                     resources = toStringList(value, FILE_NAME, origin, key);
                     break;
                 default:
-                    printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
+                    report.addUnknownKey(FILE_NAME, key, origin);
                     break;
             }
         }
-        if (name == null || privileges == null || resources == null) {
-            printErr("Application missing required parameter."); // TODO: Add MigrationReport entry
+        if (name == null) {
+            report.addMissingParameter(FILE_NAME, "name", origin);
+            return null;
+        }
+        if (privileges == null) {
+            report.addMissingParameter(FILE_NAME, "privileges", origin);
+            return null;
+        }
+        if (resources == null) {
+            report.addMissingParameter(FILE_NAME, "resources", origin);
             return null;
         }
         return new Role.Application(name, privileges, resources);
@@ -203,7 +214,7 @@ public class RoleConfigReader {
         Boolean allowRestricted = null;
         for (var entry : indexMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, origin, String.class, entry.getKey());
                 continue;
             }
             var value = entry.getValue();
@@ -212,7 +223,7 @@ public class RoleConfigReader {
             switch (key) {
                 case "clusters":
                     if (!isRemote) {
-                        printErr("Found unexpected key clusters. In non remote index."); // TODO: Add MigrationReport entry
+                        report.addWarning(FILE_NAME, origin, "Found entry for key 'cluster', which is a remote-index property, in a non-remote index.");
                         break;
                     }
                     if (value instanceof String clusterName) {
@@ -226,8 +237,9 @@ public class RoleConfigReader {
                     if (value instanceof LinkedHashMap<?, ?> fieldSecurityMap) {
                         fieldSecurity = readFieldSecurity(fieldSecurityMap, origin);
                         break;
+                    } else {
+                        report.addInvalidType(FILE_NAME, origin, LinkedHashMap.class, value);
                     }
-                    // TODO: Add MigrationReport entry
                     break;
                 case "names":
                     if (value instanceof String name) {
@@ -244,33 +256,35 @@ public class RoleConfigReader {
                     if (value instanceof String) {
                         query = (String) value;
                         break;
+                    } else {
+                        report.addInvalidType(FILE_NAME, origin, String.class, value);
                     }
-                    printErr("Unsupported format for query."); // TODO: possibly add support for other formats see: https://www.elastic.co/docs/api/doc/elasticsearch/operation/operation-security-put-role#operation-security-put-role-body-application-json-indices-query
                     break;
                 case "allow_restricted_indices":
                     if (value instanceof Boolean allowRestrictedIndices) {
                         allowRestricted = allowRestrictedIndices;
                         break;
+                    } else {
+                        report.addInvalidType(FILE_NAME, origin, Boolean.class, value);
                     }
-                    printErr("Invalid type for allow_restricted_indices: " + key); // TODO: Add MigrationReport entry
                     break;
                 default:
-                    printErr("Unknown key: " + key); // TODO: Add MigrationReport entry
+                    report.addUnknownKey(FILE_NAME, key, origin);
                     break;
             }
         }
         if (names == null) {
-            printErr("Index missing required parameter 'names'"); // TODO: Add MigrationReport entry
+            report.addMissingParameter(FILE_NAME, "names", origin);
             return null;
         }
 
         if (privileges == null) {
-            printErr("Index missing required parameter 'names'"); // TODO: Add MigrationReport entry
+            report.addMissingParameter(FILE_NAME, "privileges", origin);
             return null;
         }
         if (isRemote) {
             if (cluster == null) {
-                printErr("Index missing required parameter 'clusters'"); // TODO: Add MigrationReport entry
+                report.addMissingParameter(FILE_NAME, "cluster", origin);
                 return null;
             }
             return type.cast(new Role.RemoteIndex(cluster, names, privileges, fieldSecurity, query, allowRestricted));
@@ -283,7 +297,7 @@ public class RoleConfigReader {
         var fieldSecurity = new Role.FieldSecurity();
         for (var entry : fieldMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, origin, String.class, entry.getKey());
                 continue;
             }
             var value = entry.getValue();
@@ -295,7 +309,7 @@ public class RoleConfigReader {
                     fieldSecurity.setGrant(toStringList(value, FILE_NAME, origin, key));
                     break;
                 default:
-                    // TODO: Add MigrationReport entry
+                    report.addUnknownKey(FILE_NAME, key, origin);
                     break;
             }
         }

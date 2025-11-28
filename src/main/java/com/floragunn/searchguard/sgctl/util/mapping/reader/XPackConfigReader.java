@@ -18,13 +18,13 @@ public class XPackConfigReader {
     IntermediateRepresentation ir;
     MigrationReport report;
 
-    public XPackConfigReader(File elasticsearch, File user, File role, File roleMappingFile, MigrationReport report) {
+    public XPackConfigReader(File elasticsearch, File user, File role, File roleMappingFile) {
         this.elasticsearch = elasticsearch;
         this.userFile = user;
         this.roleFile = role;
         this.roleMappingFile = roleMappingFile;
         this.ir = new IntermediateRepresentation();
-        this.report = report;
+        this.report = MigrationReport.shared;
     }
 
     public IntermediateRepresentation generateIR() {
@@ -39,20 +39,17 @@ public class XPackConfigReader {
         return ir;
     }
 
-    //region Helper Functions
-
-    static <R> List<R> readList(List<?> rawList, Function<LinkedHashMap<?, ?>, R> reader) {
-        var result = new ArrayList<R>();
+    static <T> List<T> readList(List<?> rawList, Function<LinkedHashMap<?, ?>, T> reader, String fileName, String origin) {
+        var result = new ArrayList<T>();
         for (var element : rawList) {
             if (element instanceof LinkedHashMap<?, ?> rawMap) {
                 var value = reader.apply(rawMap);
                 if (value == null) {
-                    printErr("Item was not presented correctly.");
                     continue;
                 }
                 result.add(value);
             } else {
-                printErr("Invalid type for item: " + element.getClass());
+                MigrationReport.shared.addInvalidType(fileName, origin, LinkedHashMap.class, element);
             }
         }
         return result;
@@ -62,9 +59,9 @@ public class XPackConfigReader {
         try {
             return toStringList(obj);
         } catch (IllegalArgumentException e) {
-            printErr("Issue at file: " + originFile + " and parameter: " + parameterOrigin + ". Invalid type " + obj.getClass() + " for key " + key); // TODO: Add MigrationReport entry
+            MigrationReport.shared.addInvalidType(originFile, parameterOrigin, List.class, obj);
         } catch (ClassCastException e) {
-            printErr("Issue at file: " + originFile + " and parameter: " + parameterOrigin + ". Expected 'String' for item in list for key" + key + " but got " + e.getMessage()); // TODO: Add MigrationReport entry
+            MigrationReport.shared.addWarning(originFile, parameterOrigin + "->key", "Expected type 'String' for all items in this array but found " + e.getMessage());
         }
         return null;
     }
@@ -78,7 +75,7 @@ public class XPackConfigReader {
 
         for (Object element : list) {
             if (!(element instanceof String)) {
-                throw new ClassCastException("" + element.getClass());
+                throw new ClassCastException();
             }
             result.add((String) element);
         }
@@ -93,5 +90,4 @@ public class XPackConfigReader {
     static void printErr(Object line) {
         System.err.println(line);
     }
-    //endregion
 }

@@ -36,7 +36,7 @@ public class UserConfigReader {
             var reader = DocReader.json().read(userFile);
 
             if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
-                // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
                 return;
             }
             readUsers(mapReader);
@@ -52,7 +52,7 @@ public class UserConfigReader {
     private void readUsers(LinkedHashMap<?, ?> mapReader) {
         for (var entry : mapReader.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, "origin", String.class, entry.getKey());
                 continue;
             }
             var value = entry.getValue();
@@ -60,7 +60,7 @@ public class UserConfigReader {
             if (value instanceof LinkedHashMap<?, ?> user) {
                 readUser(user, key);
             } else {
-                printErr("Unexpected value for key " + key); // TODO: Add MigrationReport entry
+                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, value);
             }
         }
     }
@@ -75,35 +75,36 @@ public class UserConfigReader {
 
         for (var entry : userMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
-                report.addInvalidType(FILE_NAME, name, String.class.getTypeName(), entry.getKey().getClass().getTypeName());
+                report.addInvalidType(FILE_NAME, name, String.class, entry.getKey());
                 continue;
             }
             var value = entry.getValue();
-            final var path = name + "->" + key;
+            final var origin = name + "->" + key;
             switch (key) {
                 case "username":
                     if (value instanceof String username) {
                         // TODO: Check thoroughly if this is an actual requirement
                         if (!name.equals(username)) {
-                            printErr("Username " + username + " is not equal to the path parameter " + name); // TODO: Add MigrationReport entry
+                            report.addWarning(FILE_NAME, origin, "The key: " + key + " does not match the username: " + username);
                             return;
                         }
                     } else {
-                        printErr("Invalid type for username:" + value.getClass());// TODO: Add MigrationReport entry
+                        report.addInvalidType(FILE_NAME, origin, String.class, value);
+                        return;
                     }
                     break;
                 case "email":
                     if (value instanceof String || value == null) {
                         email = (String) value;
                     } else {
-                        report.addInvalidType(FILE_NAME, path, String.class.getTypeName(), value.getClass().getTypeName());
+                        report.addInvalidType(FILE_NAME, origin, String.class, value);
                     }
                     break;
                 case "full_name":
                     if (value instanceof String || value == null) {
                         fullName = (String) value;
                     } else {
-                        report.addInvalidType(FILE_NAME, path, String.class.getTypeName(), value.getClass().getTypeName());
+                        report.addInvalidType(FILE_NAME, origin, String.class, value);
                     }
                     break;
                 case "metadata":
@@ -113,16 +114,15 @@ public class UserConfigReader {
                             var safeMap = (LinkedHashMap<String, Object>) metadata;
                             attributes = safeMap;
                         } else {
-                            printErr("Invalid type for metadata: " + value); // TODO: Add MigrationReport entry
+                            report.addInvalidType(FILE_NAME, origin, LinkedHashMap.class, value);
                         }
                     } else {
-                        report.addInvalidType(FILE_NAME, name + "->" + key, LinkedHashMap.class.getTypeName(), value.getClass().getTypeName());
+                        report.addInvalidType(FILE_NAME, origin, LinkedHashMap.class, value);
                     }
                     break;
                 case "roles":
                     var uncheckedRoles = toStringList(value, FILE_NAME, name, key);
                     if (uncheckedRoles == null) {
-                        // TODO: Add MigrationReport entry
                         break;
                     }
                     var checkedRoles = new ArrayList<String>();
@@ -130,7 +130,7 @@ public class UserConfigReader {
                         if (ir.getRoles().contains(new Role(role))) {
                             checkedRoles.add(role);
                         } else {
-                            printErr("Role " + role + " does not exist in role.json."); // TODO: Add MigrationReport entry
+                            report.addWarning(FILE_NAME, origin + "->roles", "Role '" + role + "' does not exist in the role.json file.");
                         }
                     });
                     roles = checkedRoles;
@@ -139,32 +139,32 @@ public class UserConfigReader {
                     if (value instanceof Boolean) {
                         enabled = (Boolean) value;
                     } else {
-                        report.addInvalidType(FILE_NAME, name + "->" + key, Boolean.class.getTypeName(), value.getClass().getTypeName());
+                        report.addInvalidType(FILE_NAME, origin, Boolean.class, value);
                     }
                     break;
                 case "profile_uid":
                     if (value instanceof String uid) {
                         profileUID = uid;
                     } else {
-                        report.addInvalidType(FILE_NAME, name + "->" + key, String.class.getTypeName(), value.getClass().getTypeName());
+                        report.addInvalidType(FILE_NAME, origin, String.class, value);
                     }
                     break;
                 default:
-                    printErr("Unknown key " + key); // TODO: Add MigrationReport entry
+                    report.addUnknownKey(FILE_NAME, key, origin);
                     break;
             }
         }
 
         if (enabled == null) {
-            printErr("Missing required parameter 'enabled'"); // TODO: Add MigrationReport entry
+            report.addMissingParameter(FILE_NAME, "enabled", name);
             return;
         }
         if (roles == null) {
-            printErr("Missing required parameter 'roles'"); // TODO: Add MigrationReport entry
+            report.addMissingParameter(FILE_NAME, "roles", name);
             return;
         }
         if (attributes == null) {
-            printErr("Missing required parameter 'attributes'"); // TODO: Add MigrationReport entry
+            report.addMissingParameter(FILE_NAME, "attributes", name);
             return;
         }
 

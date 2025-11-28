@@ -38,10 +38,9 @@ public class MigrateSecurity implements Callable<Integer> {
                 break;
             }
         }
-        var report = new MigrationReport();
-        var reader = new XPackConfigReader(null, user, role, roleMapping, report);
+        var reader = new XPackConfigReader(null, user, role, roleMapping);
         var ir = reader.generateIR();
-        report.printReport();
+        MigrationReport.shared.printReport();
         return 0;
     }
 }
