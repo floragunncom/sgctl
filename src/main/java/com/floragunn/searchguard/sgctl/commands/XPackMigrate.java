@@ -8,6 +8,8 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
+import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
+import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -15,102 +17,102 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import picocli.CommandLine;
 
 @CommandLine.Command(
-    name = "migrate-security",
-    description = "Converts X-Pack configs to Search Guard configs")
+        name = "migrate-security",
+        description = "Converts X-Pack configs to Search Guard configs")
 public class XPackMigrate implements Callable<Integer> {
 
-  @CommandLine.Option(
-      names = {"-i", "--input-dir"},
-      description = "Location of the old x-pack configuration files",
-      required = true)
-  Path inputDir;
+    @CommandLine.Option(
+            names = {"-i", "--input-dir"},
+            description = "Location of the old x-pack configuration files",
+            required = true)
+    Path inputDir;
 
-  @CommandLine.Option(
-      names = {"-o", "--output-dir"},
-      description = "Directory where to write new sg configuration files",
-      required = true)
-  Path outputDir;
+    @CommandLine.Option(
+            names = {"-o", "--output-dir"},
+            description = "Directory where to write new sg configuration files",
+            required = true)
+    Path outputDir;
 
-  @CommandLine.Option(
-      names = {"--overwrite"},
-      description = "Whether existing output configuration files should be overwritten",
-      defaultValue = "false")
-  boolean overwrite;
+    @CommandLine.Option(
+            names = {"--overwrite"},
+            description = "Whether existing output configuration files should be overwritten",
+            defaultValue = "false")
+    boolean overwrite;
 
-  private static final Map<String, Parser<Object, Parser.Context>> configParsers =
-      Map.of(
-          // TODO: Add parsing functions here <filename>,Record::parse
-          "roles.json", Roles::parse);
+    private static final Map<String, Parser<Object, Parser.Context>> configParsers =
+            Map.of(
+                    // TODO: Add parsing functions here <filename>,Record::parse
+                    "role_mapping.json", RoleMappings::parse,
+                    "roles.json", Roles::parse);
 
-  public Integer call() throws Exception {
-    if (!Files.isDirectory(inputDir)) {
-      System.err.println("Error: Input is not a directory: " + inputDir.toAbsolutePath());
-      return 1;
-    }
-    System.out.println("Welcome to the Search Guard X-pack security migration tool.\n\n");
-    try {
-      final var xPackConfigs = parseConfigs(); // TODO: gracefully handle ConfigValidationException
-      System.out.println(xPackConfigs);
-      // TODO: More
+    public Integer call() throws Exception {
+        if (!Files.isDirectory(inputDir)) {
+            System.err.println("Error: Input is not a directory: " + inputDir.toAbsolutePath());
+            return 1;
+        }
+        System.out.println("Welcome to the Search Guard X-pack security migration tool.\n\n");
+        try {
+            final var xPackConfigs = parseConfigs(); // TODO: gracefully handle ConfigValidationException
+            System.out.println(xPackConfigs);
+            // TODO: More
 
-      final List<NamedConfig<?>> searchGuardConfigs = List.of(); // TODO: migrate to create configs
-      writeConfigs(searchGuardConfigs);
-    } catch (SgctlException e) {
-      System.err.println("Error: " + e.getMessage());
-      return 1;
-    }
-    return 0;
-  }
-
-  private Map<String, Object> parseConfigs()
-      throws SgctlException, IOException, ConfigValidationException {
-    final Map<String, Object> configs = new HashMap<>();
-    for (final var entry : configParsers.entrySet()) {
-      final var configFileName = entry.getKey();
-      final var parserFunction = entry.getValue();
-      // Ensure valid path
-      final var configPath = inputDir.resolve(configFileName);
-      if (!Files.isReadable(configPath)) {
-        continue;
-      }
-      if (Files.isDirectory(configPath)) {
-        throw new SgctlException("Config is a directory, but should be a file: " + configFileName);
-      }
-      // Read to Object
-      final DocNode config;
-      if (configFileName.endsWith(".yaml") || configFileName.endsWith(".yml")) {
-        config = DocNode.wrap(DocReader.yaml().read(configPath.toFile()));
-      } else if (configFileName.endsWith(".json")) {
-        config = DocNode.wrap(DocReader.json().read(configPath.toFile()));
-      } else {
-        throw new SgctlException("Invalid config file extension: " + configFileName);
-      }
-
-      // Parse config
-      final var parsed = parserFunction.parse(config, Parser.Context.get());
-      configs.put(configFileName, parsed);
-    }
-    return configs;
-  }
-
-  private void writeConfigs(List<NamedConfig<?>> configs) throws IOException, SgctlException {
-    if (!Files.exists(outputDir)) {
-      Files.createDirectory(outputDir);
+            final List<NamedConfig<?>> searchGuardConfigs = List.of(); // TODO: migrate to create configs
+            writeConfigs(searchGuardConfigs);
+        } catch (SgctlException e) {
+            System.err.println("Error: " + e.getMessage());
+            return 1;
+        }
+        return 0;
     }
 
-    for (final var config : configs) {
-      final String configFileName = config.getFileName();
-      final Object configObj = config.toBasicObject();
-      final Path configPath = outputDir.resolve(config.getFileName());
+    private Map<String, Object> parseConfigs()
+            throws SgctlException, IOException, ConfigValidationException {
+        final Map<String, Object> configs = new HashMap<>();
+        for (final var entry : configParsers.entrySet()) {
+            final var configFileName = entry.getKey();
+            final var parserFunction = entry.getValue();
+            // Ensure valid path
+            final var configPath = inputDir.resolve(configFileName);
+            if (!Files.isReadable(configPath)) {
+                continue;
+            }
+            if (Files.isDirectory(configPath)) {
+                throw new SgctlException("Config is a directory, but should be a file: " + configFileName);
+            }
+            // Read to Object
+            final DocNode config;
+            if (configFileName.endsWith(".yaml") || configFileName.endsWith(".yml")) {
+                config = DocNode.wrap(DocReader.yaml().read(configPath.toFile()));
+            } else if (configFileName.endsWith(".json")) {
+                config = DocNode.wrap(DocReader.json().read(configPath.toFile()));
+            } else {
+                throw new SgctlException("Invalid config file extension: " + configFileName);
+            }
 
-      if (Files.exists(configPath) && !overwrite) {
-        throw new SgctlException("Refusing to overwrite existing config file: " + configFileName);
-      }
-
-      DocWriter.yaml().write(configPath.toFile(), configObj);
+            // Parse config
+            final var parsed = parserFunction.parse(config, Parser.Context.get());
+            configs.put(configFileName, parsed);
+        }
+        return configs;
     }
-  }
+
+    private void writeConfigs(List<NamedConfig<?>> configs) throws IOException, SgctlException {
+        if (!Files.exists(outputDir)) {
+            Files.createDirectory(outputDir);
+        }
+
+        for (final var config : configs) {
+            final String configFileName = config.getFileName();
+            final Object configObj = config.toBasicObject();
+            final Path configPath = outputDir.resolve(config.getFileName());
+
+            if (Files.exists(configPath) && !overwrite) {
+                throw new SgctlException("Refusing to overwrite existing config file: " + configFileName);
+            }
+
+            DocWriter.yaml().write(configPath.toFile(), configObj);
+        }
+    }
 }
