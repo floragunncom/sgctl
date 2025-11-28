@@ -38,7 +38,7 @@ public class RoleMappingConfigReader {
             var reader = DocReader.json().read(roleMappingFile);
 
             if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
-                // TODO: Add MigrationReport entry
+                MigrationReport.shared.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
                 return;
             }
 
@@ -55,17 +55,19 @@ public class RoleMappingConfigReader {
 
     private void readRoleMappings(LinkedHashMap<?, ?> mapReader) {
         for (var entry : mapReader.entrySet()) {
-            if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+            var rawKey = entry.getKey();
+
+            if (!(rawKey instanceof String key)) {
+                MigrationReport.shared.addInvalidType(FILE_NAME, "origin", String.class, rawKey);
                 continue;
             }
+
             var value = entry.getValue();
 
             if ((value instanceof LinkedHashMap<?, ?> mapping)) {
                 readRoleMapping(mapping, key);
             } else {
-                // TODO: Add MigrationReport entry
-                printErr("Unexpected value for key " + key);
+                MigrationReport.shared.addInvalidType(FILE_NAME, key, LinkedHashMap.class, value);
             }
         }
     }
