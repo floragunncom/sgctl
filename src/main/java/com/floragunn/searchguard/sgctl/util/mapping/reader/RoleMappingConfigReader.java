@@ -207,7 +207,7 @@ public class RoleMappingConfigReader {
 
     private List<RoleMapping.Rules> readRulesList(Object obj, String mappingName, String path) {
         if (!(obj instanceof List<?> list)) {
-            MigrationReport.shared.addInvalidType(FILE_NAME, path, List.class, obj.getClass().getTypeName());
+            MigrationReport.shared.addInvalidType(FILE_NAME, path, List.class, obj);
             return null;
         }
 
@@ -277,6 +277,11 @@ public class RoleMappingConfigReader {
                         // TODO: Add MigrationReport entry
                         printErr("Unknown key in " + mappingName + ": " + key);
                 }
+            }
+
+            if (roleTemplate.getTemplate() == null) {
+                MigrationReport.shared.addMissingParameter(FILE_NAME, "template", path);
+                continue;
             }
 
             result.add(roleTemplate);
