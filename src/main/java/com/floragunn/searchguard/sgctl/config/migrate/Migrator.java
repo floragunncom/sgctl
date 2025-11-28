@@ -8,10 +8,18 @@ import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/** Class for migrating parsed XPack config to SearchGuard configs using {@link SubMigrator}s. */
 public class Migrator {
 
   Logger logger = LoggerFactory.getLogger(Migrator.class);
 
+  /**
+   * Executes all {@link SubMigrator}s added to the {@link MigratorRegistry} using
+   * registerSubMigratorStatic()
+   *
+   * @param context All parsed XPackConfigs. Gets passed to the subMigrators
+   * @return A List of SearchGuard Configs
+   */
   public List<NamedConfig<?>> migrate(MigrationContext context) {
     logger.info("Starting migration");
 
@@ -28,7 +36,7 @@ public class Migrator {
         if (migratedConfigs.containsKey(migratedSubConfig.getFileName())) {
           throw new IllegalStateException(
               String.format(
-                  "Migrator %s attempted to output file '%s' that was already migrated by other subMigrator!",
+                  "Migrator %s attempted to output file '%s' that was already migrated by another subMigrator!",
                   subMigrator.getClass().getName(), migratedSubConfig.getFileName()));
         }
         migratedConfigs.put(migratedSubConfig.getFileName(), migratedSubConfig);
@@ -45,7 +53,13 @@ public class Migrator {
     return outputMigratedConfigsBuilder.build();
   }
 
+  /**
+   * All parsed XPack Configs
+   *
+   * @param roleMappings
+   * @param roles
+   */
   public record MigrationContext(Optional<RoleMappings> roleMappings, Optional<Roles> roles
-      // TODO: Add all XPack configs here 😀
+      // TODO: Add remaining XPack configs here 😀
       ) {}
 }
