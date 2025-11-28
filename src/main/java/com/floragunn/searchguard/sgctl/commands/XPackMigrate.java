@@ -9,6 +9,7 @@ import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
+import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import picocli.CommandLine;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -45,7 +46,8 @@ public class XPackMigrate implements Callable<Integer> {
             Map.of(
                     // TODO: Add parsing functions here <filename>,Record::parse
                     "role_mapping.json", RoleMappings::parse,
-                    "roles.json", Roles::parse);
+                    "roles.json", Roles::parse,
+                    "elasticsearch.yml", XPackElasticsearchConfig::parse);
 
     public Integer call() throws Exception {
         if (!Files.isDirectory(inputDir)) {

@@ -1,25 +1,18 @@
 package com.floragunn.searchguard.sgctl.config.searchguard;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.fluent.collections.ImmutableMap;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.AuthTokenProvider;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.AuthcDomain;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.Authenticator;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.AuthzDomain;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.Backend;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.Dynamic;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.Http;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.Kibana;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.SearchGuard;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.Xff;
+import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.*;
+import org.junit.jupiter.api.Test;
+
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class SgConfigTest {
 
@@ -139,13 +132,13 @@ class SgConfigTest {
             : null);
   }
 
-  private static Authenticator parseAuthenticator(Map<String, Object> authenticator) {
+  private static HttpAuthenticator parseAuthenticator(Map<String, Object> authenticator) {
     if (authenticator == null) {
       throw new IllegalArgumentException("Authenticator config missing in sample config");
     }
 
-    return new Authenticator(
-        (String) authenticator.get("type"),
+    return new HttpAuthenticator(
+        HttpAuthenticator.Type.valueOf(authenticator.get("type").toString().toUpperCase(Locale.ROOT)),
         booleanValue(authenticator.get("challenge")),
         immutableOrEmpty(asMap(authenticator.get("config"))));
   }
@@ -156,7 +149,8 @@ class SgConfigTest {
     }
 
     return new Backend(
-        (String) backend.get("type"), immutableOrEmpty(asMap(backend.get("config"))));
+        Backend.Type.valueOf(backend.get("type").toString().toUpperCase(Locale.ROOT)),
+        immutableOrEmpty(asMap(backend.get("config"))));
   }
 
   private static ImmutableMap<String, AuthzDomain> parseAuthz(Map<String, Object> authz) {

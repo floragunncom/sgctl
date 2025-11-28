@@ -1,7 +1,9 @@
 package com.floragunn.searchguard.sgctl.config.searchguard;
 
+import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
@@ -183,9 +185,9 @@ public record SgConfig(ImmutableMap<String, Object> sgMeta, SearchGuard searchGu
       boolean httpEnabled,
       boolean transportEnabled,
       int order,
-      Authenticator httpAuthenticator,
-      Backend authenticationBackend,
-      Backend authorizationBackend) {
+      HttpAuthenticator httpAuthenticator,
+      AuthenticationBackend authenticationBackend,
+      AuthorizationBackend authorizationBackend) {
 
     public AuthcDomain {
       Objects.requireNonNull(httpAuthenticator, "httpAuthenticator must not be null");
@@ -207,7 +209,7 @@ public record SgConfig(ImmutableMap<String, Object> sgMeta, SearchGuard searchGu
   }
 
   public record AuthzDomain(
-      boolean httpEnabled, boolean transportEnabled, Backend authorizationBackend) {
+      boolean httpEnabled, boolean transportEnabled, AuthorizationBackend authorizationBackend) {
 
     public AuthzDomain {
       Objects.requireNonNull(authorizationBackend, "authorizationBackend must not be null");
@@ -222,7 +224,178 @@ public record SgConfig(ImmutableMap<String, Object> sgMeta, SearchGuard searchGu
     }
   }
 
-  public record Authenticator(String type, boolean challenge, ImmutableMap<String, Object> config) {
+  public interface HttpAuthenticator {
+
+    Map<String, Object> toBasicObject();
+
+    boolean challenge();
+
+    record Basic(boolean challenge) implements HttpAuthenticator {
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "basic");
+        result.put("challenge", challenge);
+        return result;
+      }
+    }
+
+    record Kerberos(boolean challenge, boolean krbDebug, boolean stripRealmFromPrincipal)
+        implements HttpAuthenticator {
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "kerberos");
+        result.put("challenge", challenge);
+        result.put("krb_debug", krbDebug);
+        result.put("strip_realm_from_principal", stripRealmFromPrincipal);
+        return result;
+      }
+    }
+
+    record Jwt(
+        boolean challenge,
+        String signingKey,
+        String jwtHeader, // optional, defaults to Authorization
+        String jwtUrlParameter,
+        String subjectKey, // optional, exclusive with subjectPath
+        String subjectPath, // optional, exclusive with subjectKey
+        String rolesKey, // optional, exclusive with rolesPath
+        String rolesPath, // optional, exclusive with rolesKey
+        String subjectPattern // optional
+        ) implements HttpAuthenticator {
+
+      public Jwt {
+        Objects.requireNonNull(signingKey, "signingKey must not be null");
+        Objects.requireNonNull(jwtUrlParameter, "jwtUrlParameter must not be null");
+      }
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "jwt");
+        result.put("challenge", challenge);
+        result.put("signing_key", signingKey);
+        if (jwtHeader != null) {
+          result.put("jwt_header", jwtHeader);
+        }
+        result.put("jwt_url_parameter", jwtUrlParameter);
+        if (subjectKey != null) {
+          result.put("subject_key", subjectKey);
+        }
+        if (subjectPath != null) {
+          result.put("subject_path", subjectPath);
+        }
+        if (rolesKey != null) {
+          result.put("roles_key", rolesKey);
+        }
+        if (rolesPath != null) {
+          result.put("roles_path", rolesPath);
+        }
+        if (subjectPattern != null) {
+          result.put("subject_pattern", subjectPattern);
+        }
+        return result;
+      }
+    }
+
+    record Openid(
+        boolean challenge,
+        String openidConnectUrl,
+        String jwtHeader, // optional, defaults to Authorization
+        String jwtUrlParameter, // optional
+        String subjectKey, // optional
+        String rolesKey, // optional
+        String subjectPattern, // optional
+        String proxy // optional
+        ) implements HttpAuthenticator {
+
+      public Openid {
+        Objects.requireNonNull(openidConnectUrl, "openidConnectUrl must not be null");
+      }
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "openid");
+        result.put("challenge", challenge);
+        result.put("openid_connect_url", openidConnectUrl);
+        if (jwtHeader != null) {
+          result.put("jwt_header", jwtHeader);
+        }
+        if (jwtUrlParameter != null) {
+          result.put("jwt_url_parameter", jwtUrlParameter);
+        }
+        if (subjectKey != null) {
+          result.put("subject_key", subjectKey);
+        }
+        if (rolesKey != null) {
+          result.put("roles_key", rolesKey);
+        }
+        if (subjectPattern != null) {
+          result.put("subject_pattern", subjectPattern);
+        }
+        if (proxy != null) {
+          result.put("proxy", proxy);
+        }
+        return result;
+      }
+    }
+
+    // TODO: saml (stretch goal)
+
+    record Clientcert(boolean challenge, String usernameAttribute) implements HttpAuthenticator {
+      public Clientcert {
+        Objects.requireNonNull(usernameAttribute, "usernameAttribute must not be null");
+      }
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "clientcert");
+        result.put("challenge", challenge);
+
+        Map<String, Object> config = new LinkedHashMap<>();
+        if (usernameAttribute != null) {
+          config.put("username_attribute", usernameAttribute);
+        }
+        result.put("config", config);
+        return result;
+      }
+    }
+
+    record Proxy(boolean challenge, String userHeader, String rolesHeader, String rolesSeparator)
+        implements HttpAuthenticator {
+
+      public Proxy {
+        Objects.requireNonNull(userHeader, "userHeader must not be null");
+      }
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "proxy");
+        result.put("challenge", challenge);
+
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("user_header", userHeader);
+        if (rolesHeader != null) {
+          config.put("roles_header", rolesHeader);
+        }
+        if (rolesSeparator != null) {
+          config.put("roles_separator", rolesSeparator);
+        }
+        if (!config.isEmpty()) {
+          result.put("config", config);
+        }
+        return result;
+      }
+    }
+  }
+
+  public record Authenticator(Type type, boolean challenge, ImmutableMap<String, Object> config) {
 
     public Authenticator {
       Objects.requireNonNull(type, "type must not be null");
@@ -231,29 +404,159 @@ public record SgConfig(ImmutableMap<String, Object> sgMeta, SearchGuard searchGu
 
     public Map<String, Object> toBasicObject() {
       Map<String, Object> result = new LinkedHashMap<>();
-      result.put("type", type);
+      result.put("type", type.name().toLowerCase(Locale.ROOT));
       result.put("challenge", challenge);
       if (!config.isEmpty()) {
         result.put("config", config);
       }
       return result;
     }
+
+    public enum Type {
+      BASIC,
+      KERBEROS,
+      JWT,
+      OPENID,
+      SAML,
+      PROXY,
+      CLIENTCERT
+    }
   }
 
-  public record Backend(String type, ImmutableMap<String, Object> config) {
+  public interface AuthenticationBackend {
 
-    public Backend {
-      Objects.requireNonNull(type, "type must not be null");
-      config = config == null ? ImmutableMap.empty() : config;
+    Map<String, Object> toBasicObject();
+
+    record Noop() implements AuthenticationBackend {
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        return Map.of("type", "noop");
+      }
     }
 
-    public Map<String, Object> toBasicObject() {
-      Map<String, Object> result = new LinkedHashMap<>();
-      result.put("type", type);
-      if (!config.isEmpty()) {
-        result.put("config", config);
+    record Internal() implements AuthenticationBackend {
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        return Map.of("type", "internal");
       }
-      return result;
+    }
+
+    record Ldap(
+        boolean enableSsl,
+        boolean enableStartTls,
+        boolean enableSslClientAuth,
+        boolean verifyHostnames,
+        ImmutableList<String> hosts,
+        String bindDn,
+        String password,
+        String userbase,
+        String usersearch,
+        String usernameAttribute)
+        implements AuthenticationBackend {
+
+      public Ldap {
+        Objects.requireNonNull(hosts, "hosts must not be null");
+        Objects.requireNonNull(bindDn, "bindDn must not be null");
+        Objects.requireNonNull(password, "password must not be null");
+        Objects.requireNonNull(userbase, "userbase must not be null");
+        Objects.requireNonNull(usersearch, "usersearch must not be null");
+        Objects.requireNonNull(usernameAttribute, "usernameAttribute must not be null");
+      }
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "ldap");
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("enable_ssl", enableSsl);
+        config.put("enable_start_tls", enableStartTls);
+        config.put("enable_ssl_client_auth", enableSslClientAuth);
+        config.put("verify_hostnames", verifyHostnames);
+        config.put("hosts", hosts);
+        config.put("bind_dn", bindDn);
+        config.put("password", password);
+        config.put("userbase", userbase);
+        config.put("usersearch", usersearch);
+        config.put("username_attribute", usernameAttribute);
+        result.put("config", config);
+        return result;
+      }
+    }
+  }
+
+  public interface AuthorizationBackend {
+
+    Map<String, Object> toBasicObject();
+
+    record Noop() implements AuthorizationBackend {
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        return Map.of("type", "noop");
+      }
+    }
+
+    record Ldap(
+        boolean enableSsl,
+        boolean enableStartTls,
+        boolean enableSslClientAuth,
+        boolean verifyHostnames,
+        ImmutableList<String> hosts,
+        String bindDn,
+        String password,
+        String userbase,
+        String usersearch,
+        String usernameAttribute,
+        String rolebase,
+        String rolesearch,
+        String userroleattribute,
+        String userrolename,
+        String rolename,
+        boolean resolveNestedRoles,
+        ImmutableList<String> skipUsers)
+        implements AuthorizationBackend {
+
+      public Ldap {
+        Objects.requireNonNull(hosts, "hosts must not be null");
+        Objects.requireNonNull(bindDn, "bindDn must not be null");
+        Objects.requireNonNull(password, "password must not be null");
+        Objects.requireNonNull(userbase, "userbase must not be null");
+        Objects.requireNonNull(usersearch, "usersearch must not be null");
+        Objects.requireNonNull(usernameAttribute, "usernameAttribute must not be null");
+        Objects.requireNonNull(rolebase, "rolebase must not be null");
+        Objects.requireNonNull(rolesearch, "rolesearch must not be null");
+        Objects.requireNonNull(userroleattribute, "userroleattribute must not be null");
+        Objects.requireNonNull(userrolename, "userrolename must not be null");
+        Objects.requireNonNull(rolename, "rolename must not be null");
+        Objects.requireNonNull(skipUsers, "skipUsers must not be null");
+      }
+
+      @Override
+      public Map<String, Object> toBasicObject() {
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("type", "ldap");
+        Map<String, Object> config = new LinkedHashMap<>();
+        config.put("enable_ssl", enableSsl);
+        config.put("enable_start_tls", enableStartTls);
+        config.put("enable_ssl_client_auth", enableSslClientAuth);
+        config.put("verify_hostnames", verifyHostnames);
+        config.put("hosts", hosts);
+        config.put("bind_dn", bindDn);
+        config.put("password", password);
+        config.put("userbase", userbase);
+        config.put("usersearch", usersearch);
+        config.put("username_attribute", usernameAttribute);
+        config.put("rolebase", rolebase);
+        config.put("rolesearch", rolesearch);
+        config.put("userroleattribute", userroleattribute);
+        config.put("rolename", rolename);
+        config.put("resolve_nested_roles", resolveNestedRoles);
+        config.put("skip_users", skipUsers);
+        result.put("config", config);
+        return result;
+      }
     }
   }
 }

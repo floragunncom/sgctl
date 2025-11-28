@@ -48,6 +48,7 @@ sg_config:
           config:
             user_header: "x-proxy-user"
             roles_header: "x-proxy-roles"
+            role_separator: ","
         authentication_backend:
           type: noop
       jwt_auth_domain:

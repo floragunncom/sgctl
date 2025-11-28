@@ -17,6 +17,7 @@ _searchguard:
           config:
             user_header: "x-proxy-user"
             roles_header: "x-proxy-roles"
+            roles_separator: ";"
         authentication_backend:
           type: noop
       basic_internal_auth_domain:
