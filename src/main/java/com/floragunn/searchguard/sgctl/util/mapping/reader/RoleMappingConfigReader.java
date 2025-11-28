@@ -13,6 +13,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.readList;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
@@ -168,12 +169,58 @@ public class RoleMappingConfigReader {
             var childOrigin = originPath + "->" + key;
 
             switch (key) {
+                case "field":
+                    if (value instanceof LinkedHashMap<?, ?> fieldMap) {
+                        if (fieldMap.keySet().stream().allMatch(k -> k instanceof String)) {
+                            var safe = (Map<String, Object>) fieldMap;
+                            rules.setField(safe);
+                        } else {
+                            // TODO: Add MigrationReport entry
+                            printErr("Map with no String key");
+                        }
+                    } else {
+                        // TODO: Add MigrationReport entry
+                        printErr("Invalid key type in " + originPath + " of " + mappingName);
+                    }
+                    break;
+
+                case "any":
+                    rules.setAny(readRulesList(value, mappingName, childOrigin));
+                    break;
+
+                case "all":
+                    rules.setAll(readRulesList(value, mappingName, childOrigin));
+                    break;
+
+                case "except":
+                    rules.setExcept(readRulesInternal(value, mappingName, childOrigin));
+                    break;
+
                 default:
                     printErr("Unknown key in " + originPath + " for mapping " + mappingName + ": " + key);
                     break;
             }
         }
         return rules;
+    }
+
+    private List<RoleMapping.Rules> readRulesList(Object obj, String mappingName, String path) {
+        if (!(obj instanceof List<?> list)) {
+            report.addInvalidType(FILE_NAME, path, List.class.getTypeName(), obj.getClass().getTypeName());
+            return null;
+        }
+
+        var result = new ArrayList<RoleMapping.Rules>();
+        for (int i = 0; i < list.size(); i++) {
+            var element = list.get(i);
+            var elementPath = path + "[" + i + "]";
+
+            var childRules = readRulesInternal(element, mappingName, elementPath);
+            if (childRules != null) {
+                result.add(childRules);
+            }
+        }
+        return result;
     }
 
     private List<RoleMapping.RoleTemplate> readRoleTemplates(ArrayList<?> templateList, String mappingName) {
