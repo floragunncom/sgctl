@@ -13,9 +13,12 @@ fi
 GIT_ROOT=$(git rev-parse --show-toplevel)
 JAVA_FILES_ABS=""
 for FILE in "$@"; do
-    if [[ "$FILE" == *.java ]]; then
+    # skip if no change (why the helli does this happen?)
+    if git diff --cached --name-only --ignore-space-at-eol -- "$FILE" | grep -q .; then
         # Append the absolute path, using comma as separator
         JAVA_FILES_ABS="${JAVA_FILES_ABS}$GIT_ROOT/$FILE,"
+    else
+        echo "[Spotless] Skipping $FILE (only EOL/ending-whitespace changes staged)"
     fi
 done
 
