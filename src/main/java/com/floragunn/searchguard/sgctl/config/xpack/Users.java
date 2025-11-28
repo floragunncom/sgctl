@@ -1,6 +1,8 @@
 package com.floragunn.searchguard.sgctl.config.xpack;
 
+import com.fasterxml.jackson.core.JsonFactory;
 import com.floragunn.codova.documents.DocNode;
+import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidatingDocNode;
@@ -15,45 +17,43 @@ public record Users(
         ImmutableMap<String, User> mappings
 ) {
 
-    //TODO: jq search query von sg blog 3 hier umsetzen, damit Nutzer nicht jq nutzen muss ?
-    //username ist der key, wird aber auch an User parse übergeben, damit User ein username attribut hat, vielleicht leichter zum migrieren
-    public static Users parse(DocNode config, Parser.Context parserContext) throws ConfigValidationException {
-        ValidatingDocNode vNode = new ValidatingDocNode(config, new ValidationErrors(), parserContext);
 
-        var builder = new ImmutableMap.Builder<String, User>(config.size());
-        for(String name: config.keySet()) {
-            //testen ob das funktioniert, ansonsten hat User kein username attribut und beim migrieren muss darauf geachtet werden (ist dann der key selbst)
-            User user = vNode.get(name).by(node -> User.parse(node, parserContext, name));
-            builder.with(name, user);
+    public static Users parse(DocNode config, Parser.Context parserContext) throws ConfigValidationException {
+        DocNode filteredConfig = config.getAsNode("hits","hits");
+        ValidationErrors sharedErrors = new ValidationErrors();
+        ValidatingDocNode rootVNode = new ValidatingDocNode(filteredConfig, sharedErrors, parserContext);
+        var builder = new ImmutableMap.Builder<String, User>(filteredConfig.toListOfNodes().size());
+
+        for(DocNode entry: filteredConfig.toListOfNodes()) {
+            ValidatingDocNode sourceNode = new ValidatingDocNode(entry,sharedErrors,parserContext);
+            User user = sourceNode.get("_source").by(User::parse);
+            if(user != null) builder.with(user.username(), user);
         }
 
-        vNode.throwExceptionForPresentErrors();
+        rootVNode.throwExceptionForPresentErrors();
         return new Users(builder.build());
-
     }
 
     public record User(
             String username,
             String password,
             ImmutableList<String> roles,
-            ImmutableMap<String, Object> attributes
-
-            //String email,
-            //String full_name,
-            //boolean enabled,
-            //String profile_uid
+            ImmutableMap<String, Object> metadata,
+            String email
     ) {
 
-        //TODO: brauchen vielleicht beispiele, falls ein attribut vielleicht doch nicht required ist
-        public static User parse(DocNode config, Parser.Context parserContext, String username) throws ConfigValidationException{
+        public static User parse(DocNode config, Parser.Context parserContext) throws ConfigValidationException{
             ValidationErrors vErrors = new ValidationErrors();
             ValidatingDocNode vNode = new ValidatingDocNode(config, vErrors, parserContext);
 
+            if(!vNode.get("enabled").asBoolean()) return null;
+
             User user = new User(
-                    username,
-                    vNode.get("hash").required().asString(),
-                    vNode.get("opendistro_security_roles").required().asListOfStrings(),
-                    vNode.get("attributes").required().asMap()
+                    vNode.get("username").required().asString(),
+                    vNode.get("password").required().asString(),
+                    vNode.get("roles").required().asListOfStrings(),
+                    vNode.get("metadata").required().asMap(),
+                    vNode.get("email").asString()
             );
 
             vErrors.throwExceptionForPresentErrors();
