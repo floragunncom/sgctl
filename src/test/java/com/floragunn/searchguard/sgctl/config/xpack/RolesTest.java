@@ -6,54 +6,35 @@ import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.codova.documents.Format;
 import com.floragunn.codova.validation.ConfigValidationException;
+import java.io.IOException;
+import java.io.InputStream;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 class RolesTest {
 
+  private static DocNode testCases;
+
+  // Loads all test data from external JSON
+  @BeforeAll
+  static void loadRolesTests() throws IOException {
+    String jsonPath = "/xpack_migrate/roles/roles_test_cases.json";
+
+    try (InputStream is = RolesTest.class.getResourceAsStream(jsonPath)) {
+      assertNotNull(is, "Test Cases not found!");
+      testCases = DocNode.parse(Format.JSON).from(is);
+    } catch (DocumentParseException e) {
+      throw new RuntimeException(e);
+    }
+  }
+
+  // Tests parsing a fully populated role
   @Test
   void testRoleParsing() throws Exception {
-    String json =
-        """
-            {
-              "complex_role": {
-                "run_as": ["user1"],
-                "cluster": ["monitor"],
-                "global": { "test1": "test2" },
-                "indices": [
-                  {
-                    "names": ["admin"],
-                    "privileges": ["read"],
-                    "query": "{\\"test\\": {}}",
-                    "allow_restricted_indices": true
-                  }
-                ],
-                "applications": [
-                  {
-                    "application": "kibana",
-                    "privileges": ["read"],
-                    "resources": ["*"]
-                  }
-                ],
-                "remote_indices": [
-                  {
-                    "clusters": ["test-cluster1"],
-                    "names": ["boss2"],
-                    "privileges": ["read"]
-                  }
-                ],
-                "remote_cluster": [
-                   {
-                     "clusters": ["test-cluster2"],
-                     "privileges": ["all"]
-                   }
-                ],
-                "metadata": {"version": 1},
-                "description": "Beautiful description"
-              }
-            }
-            """;
 
-    DocNode docNode = DocNode.parse(Format.JSON).from(json);
+    DocNode docNode = testCases.getAsNode("complex_role_case");
+    assertNotNull(docNode, "complex_role_case not found!");
+
     Roles result = Roles.parse(docNode, null);
 
     assertNotNull(result);
@@ -91,21 +72,12 @@ class RolesTest {
     assertEquals("Beautiful description", role.description().get());
   }
 
+  // Tests parsing a role, missing all optional fields
   @Test
   void testSmallRoleParsing() throws Exception {
-    String json =
-        """
-            {
-              "minimal_role": {
-                "cluster": ["all"],
-                "indices": [],
-                "applications": [],
-                "metadata": {}
-              }
-            }
-            """;
 
-    DocNode docNode = DocNode.parse(Format.JSON).from(json);
+    DocNode docNode = testCases.getAsNode("minimal_role_case");
+    assertNotNull(docNode, "minimal_role_case not found!");
     Roles result = Roles.parse(docNode, null);
 
     var role = result.roles().get("minimal_role");
@@ -117,9 +89,11 @@ class RolesTest {
     assertTrue(role.description().isEmpty());
   }
 
+  // Tests if an empty document will throw an exception
   @Test
   void testEmptyDocumentParsing() throws Exception {
-    DocNode docNode = DocNode.parse(Format.JSON).from("{}");
+    DocNode docNode = testCases.getAsNode("empty_case");
+    assertNotNull(docNode, "empty_case not found!");
     Roles result = Roles.parse(docNode, null);
 
     assertNotNull(result);
@@ -127,51 +101,21 @@ class RolesTest {
   }
 
   @Test
-  void testMissingRequiredFields() throws DocumentParseException {
-    // indices and applications (required) missing
-    String json =
-        """
-            {
-              "broken_role": {
-                "cluster": ["all"],
-                "metadata": {}
-              }
-            }
-            """;
+  void testMissingRequiredFields() {
+    DocNode docNode = testCases.getAsNode("missing_required_fields_case");
 
-    DocNode docNode = DocNode.parse(Format.JSON).from(json);
+    assertNotNull(docNode, "missing_required_fields_case not found!");
 
-    assertThrows(
-        ConfigValidationException.class,
-        () -> {
-          Roles.parse(docNode, null);
-        });
+    assertThrows(ConfigValidationException.class, () -> Roles.parse(docNode, null));
   }
 
+  // Tests if a missing empty nested required field throws an exception
   @Test
-  void testMissingNestedRequiredField() throws DocumentParseException {
-    // applications.privileges (required) missing
-    String json =
-        """
-            {
-              "broken_nested_role": {
-                "cluster": [], "indices": [], "metadata": {},
-                "applications": [
-                  {
-                    "application": "kibana",
-                    "resources": ["*"]
-                  }
-                ]
-              }
-            }
-            """;
+  void testMissingNestedRequiredField() {
 
-    DocNode docNode = DocNode.parse(Format.JSON).from(json);
+    DocNode docNode = testCases.getAsNode("missing_nested_required_field_case");
+    assertNotNull(docNode, "missing_nested_required_field_case not found!");
 
-    assertThrows(
-        ConfigValidationException.class,
-        () -> {
-          Roles.parse(docNode, null);
-        });
+    assertThrows(ConfigValidationException.class, () -> Roles.parse(docNode, null));
   }
 }

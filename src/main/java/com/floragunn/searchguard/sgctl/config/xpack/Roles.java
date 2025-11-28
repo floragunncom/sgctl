@@ -5,7 +5,6 @@ import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
-import com.floragunn.codova.validation.errors.MissingAttribute;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import java.util.Optional;
@@ -43,48 +42,50 @@ public record Roles(ImmutableMap<String, Role> roles) {
       ValidationErrors errors = new ValidationErrors();
       ValidatingDocNode v = new ValidatingDocNode(node, errors, context);
 
-      // Required. If missing, an error will be registered
-      if (!node.containsKey("cluster")) errors.add(new MissingAttribute("cluster", node));
-      if (!node.containsKey("indices")) errors.add(new MissingAttribute("indices", node));
-      if (!node.containsKey("applications")) errors.add(new MissingAttribute("applications", node));
-      if (!node.containsKey("metadata")) errors.add(new MissingAttribute("metadata", node));
+      var runAs = v.get("run_as").asList().withEmptyListAsDefault().ofStrings();
+      var cluster = v.get("cluster").required().asList().ofStrings();
+      var global =
+          Optional.ofNullable(node.containsKey("global") ? v.get("global").asDocNode() : null);
 
-      Role role =
-          new Role(
-              v.get("run_as").asList().withEmptyListAsDefault().ofStrings(),
-              node.containsKey("cluster")
-                  ? v.get("cluster").asList().ofStrings()
-                  : ImmutableList.empty(),
-              Optional.ofNullable(node.containsKey("global") ? v.get("global").asDocNode() : null),
+      // Parsed by other functions
+      var indices = v.get("indices").required().asList().ofObjectsParsedBy(Index::parse);
+      var applications =
+          v.get("applications").required().asList().ofObjectsParsedBy(Application::parse);
+      var remoteIndices =
+          v.get("remote_indices")
+              .asList()
+              .withEmptyListAsDefault()
+              .ofObjectsParsedBy(RemoteIndex::parse);
+      var remoteCluster =
+          v.get("remote_cluster")
+              .asList()
+              .withEmptyListAsDefault()
+              .ofObjectsParsedBy(RemoteCluster::parse);
 
-              // Parsed by other functions
-              node.containsKey("indices")
-                  ? v.get("indices").asList().ofObjectsParsedBy(Index::parse)
-                  : ImmutableList.empty(),
-              node.containsKey("applications")
-                  ? v.get("applications").asList().ofObjectsParsedBy(Application::parse)
-                  : ImmutableList.empty(),
-              v.get("remote_indices")
-                  .asList()
-                  .withEmptyListAsDefault()
-                  .ofObjectsParsedBy(RemoteIndex::parse),
-              v.get("remote_cluster")
-                  .asList()
-                  .withEmptyListAsDefault()
-                  .ofObjectsParsedBy(RemoteCluster::parse),
-
-              // Metadata is required
-              node.containsKey("metadata") ? v.get("metadata").asMap() : ImmutableMap.empty(),
-
-              // Is Optional, becomes an empty map if missing
-              node.containsKey("transient_metadata")
-                  ? v.get("transient_metadata").asMap()
-                  : ImmutableMap.empty(),
-              Optional.ofNullable(
-                  node.containsKey("description") ? v.get("description").asString() : null));
+      // Metadata is required
+      var metadata = v.get("metadata").asMap();
+      // Is Optional, becomes an empty map if missing
+      var transientMetadata =
+          node.containsKey("transient_metadata")
+              ? v.get("transient_metadata").asMap()
+              : ImmutableMap.<String, Object>empty();
+      var description =
+          Optional.ofNullable(
+              node.containsKey("description") ? v.get("description").asString() : null);
 
       v.throwExceptionForPresentErrors();
-      return role;
+
+      return new Role(
+          runAs,
+          cluster,
+          global,
+          indices,
+          applications,
+          remoteIndices,
+          remoteCluster,
+          metadata,
+          transientMetadata,
+          description);
     }
   }
 
@@ -97,29 +98,24 @@ public record Roles(ImmutableMap<String, Role> roles) {
       boolean allowRestrictedIndices) {
     public static Index parse(DocNode node, Parser.Context context)
         throws ConfigValidationException {
+
       ValidationErrors errors = new ValidationErrors();
       ValidatingDocNode v = new ValidatingDocNode(node, errors, context);
 
       // Required keys
-      if (!node.containsKey("names")) errors.add(new MissingAttribute("names", node));
-      if (!node.containsKey("privileges")) errors.add(new MissingAttribute("privileges", node));
+      var names = v.get("names").required().asList().ofStrings();
+      var privileges = v.get("privileges").required().asList().ofStrings();
 
-      Index index =
-          new Index(
-              node.containsKey("names")
-                  ? v.get("names").asList().ofStrings()
-                  : ImmutableList.empty(),
-              node.containsKey("privileges")
-                  ? v.get("privileges").asList().ofStrings()
-                  : ImmutableList.empty(),
-              Optional.ofNullable(
-                  node.containsKey("field_security") ? v.get("field_security").asDocNode() : null),
-              Optional.ofNullable(node.containsKey("query") ? v.get("query").asString() : null),
-              node.containsKey("allow_restricted_indices")
-                  ? v.get("allow_restricted_indices").asBoolean()
-                  : false);
+      var field_security =
+          Optional.ofNullable(
+              node.containsKey("field_security") ? v.get("field_security").asDocNode() : null);
+      var query = Optional.ofNullable(node.containsKey("query") ? v.get("query").asString() : null);
+      var allow_restricted_indices =
+          v.get("allow_restricted_indices").withDefault(false).asBoolean();
+
       v.throwExceptionForPresentErrors();
-      return index;
+
+      return new Index(names, privileges, field_security, query, allow_restricted_indices);
     }
   }
 
@@ -136,30 +132,22 @@ public record Roles(ImmutableMap<String, Role> roles) {
       ValidationErrors errors = new ValidationErrors();
       ValidatingDocNode v = new ValidatingDocNode(node, errors, context);
 
-      // Required keys
-      if (!node.containsKey("clusters")) errors.add(new MissingAttribute("clusters", node));
-      if (!node.containsKey("names")) errors.add(new MissingAttribute("names", node));
-      if (!node.containsKey("privileges")) errors.add(new MissingAttribute("privileges", node));
+      var clusters = v.get("clusters").required().asList().ofStrings();
+      var names = v.get("names").required().asList().ofStrings();
+      var privileges = v.get("privileges").required().asList().ofStrings();
 
-      RemoteIndex remoteindex =
-          new RemoteIndex(
-              node.containsKey("clusters")
-                  ? v.get("clusters").asList().ofStrings()
-                  : ImmutableList.empty(),
-              node.containsKey("names")
-                  ? v.get("names").asList().ofStrings()
-                  : ImmutableList.empty(),
-              node.containsKey("privileges")
-                  ? v.get("privileges").asList().ofStrings()
-                  : ImmutableList.empty(),
-              Optional.ofNullable(
-                  node.containsKey("field_security") ? v.get("field_security").asDocNode() : null),
-              Optional.ofNullable(node.containsKey("query") ? v.get("query").asString() : null),
-              node.containsKey("allow_restricted_indices")
-                  ? v.get("allow_restricted_indices").asBoolean()
-                  : false);
+      var field_security =
+          Optional.ofNullable(
+              node.containsKey("field_security") ? v.get("field_security").asDocNode() : null);
+      var query = Optional.ofNullable(node.containsKey("query") ? v.get("query").asString() : null);
+      var allow_restricted_indices =
+          (node.containsKey("allow_restricted_indices")
+              ? v.get("allow_restricted_indices").asBoolean()
+              : false);
+
       v.throwExceptionForPresentErrors();
-      return remoteindex;
+      return new RemoteIndex(
+          clusters, names, privileges, field_security, query, allow_restricted_indices);
     }
   }
 
@@ -171,22 +159,12 @@ public record Roles(ImmutableMap<String, Role> roles) {
       ValidationErrors errors = new ValidationErrors();
       ValidatingDocNode v = new ValidatingDocNode(node, errors, context);
 
-      // Required keys
-      if (!node.containsKey("application")) errors.add(new MissingAttribute("application", node));
-      if (!node.containsKey("privileges")) errors.add(new MissingAttribute("privileges", node));
-      if (!node.containsKey("resources")) errors.add(new MissingAttribute("resources", node));
+      var application = v.get("application").required().asString();
+      var privileges = v.get("privileges").required().asList().ofStrings();
+      var resources = v.get("resources").required().asList().ofStrings();
 
-      Application application =
-          new Application(
-              node.containsKey("application") ? v.get("application").asString() : "",
-              node.containsKey("privileges")
-                  ? v.get("privileges").asList().ofStrings()
-                  : ImmutableList.empty(),
-              node.containsKey("resources")
-                  ? v.get("resources").asList().ofStrings()
-                  : ImmutableList.empty());
       v.throwExceptionForPresentErrors();
-      return application;
+      return new Application(application, privileges, resources);
     }
   }
 
@@ -197,12 +175,11 @@ public record Roles(ImmutableMap<String, Role> roles) {
       ValidationErrors errors = new ValidationErrors();
       ValidatingDocNode v = new ValidatingDocNode(node, errors, context);
 
-      RemoteCluster remoteCluster =
-          new RemoteCluster(
-              v.get("clusters").asList().withEmptyListAsDefault().ofStrings(),
-              v.get("privileges").asList().withEmptyListAsDefault().ofStrings());
+      var clusters = v.get("clusters").required().asList().ofStrings();
+      var privileges = v.get("privileges").required().asList().ofStrings();
+
       v.throwExceptionForPresentErrors();
-      return remoteCluster;
+      return new RemoteCluster(clusters, privileges);
     }
   }
 }
