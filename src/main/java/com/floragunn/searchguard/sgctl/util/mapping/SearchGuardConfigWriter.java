@@ -10,33 +10,33 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.*;
 
-
 /**
- * Top-level configuration object for sg_authc.yml.
+ * Top-level configuration writer for Search Guard.
+ * Generates sg_authc.yml with LDAP, SAML, OIDC realms mapped.
  */
 public class SearchGuardConfigWriter {
 
-        private SearchGuardConfigWriter() {
-
-        }
+    private SearchGuardConfigWriter() { }
 
     /**
-     * Coordinates the generation and writing of all Search Guard configuration files.
-     * @throws IOException If an error occurs during file writing.
+     * Generates all Search Guard configuration files into the given directory.
+     *
+     * @param outputDir The directory where config files will be written.
+     * @throws IOException If writing fails.
      */
     public static void generateAllConfigs(File outputDir) throws IOException {
-       IntermediateRepresentationElasticSearchYml ir = new IntermediateRepresentationElasticSearchYml();
+        IntermediateRepresentationElasticSearchYml ir = new IntermediateRepresentationElasticSearchYml();
 
-        Object authcConfigObject = createAuthcConfig(ir);
+        SgAuthc authcConfig = createAuthcConfig(ir);
 
-        writeYamlConfig(authcConfigObject, outputDir, "sg_authc.yml");
+        writeYamlConfig(authcConfig, outputDir, "sg_authc.yml");
     }
 
     /**
-     * Implements the core logic for mapping X-Pack Authentication realms (LDAP, SAML, OIDC)
-     * to the Search Guard sg_authc.yml configuration structure.
-     * @param ir The Intermediate Representation.
-     * @return The fully populated SearchGuardAuthcConfig object.
+     * Maps LDAP configuration from intermediate representation to Search Guard's sg_authc.yml format.
+     *
+     * @param ir The intermediate representation.
+     * @return Populated SgAuthc object.
      */
     private static SgAuthc createAuthcConfig(IntermediateRepresentationElasticSearchYml ir) {
         SgAuthc config = new SgAuthc();
@@ -44,27 +44,59 @@ public class SearchGuardConfigWriter {
         config.internalProxies = "";
         config.remoteIpHeader = "";
 
-        HashMap<String, Object> testFrontEndConfig = new HashMap<>();
-        List<Object> hosts = new ArrayList<>();
-        hosts.add("ldap.example.com");
-        hosts.add("other.example.com");
-        testFrontEndConfig.put("ldap.idp.hosts", hosts);
+        config.authDomains.add(createLdapDomain());
 
-        config.authDomains.add(new MigrateConfig.NewAuthDomain("basic/ldap", null, null, null, testFrontEndConfig, null));
+        config.authDomains.add(createOidcDomain());
+
         return config;
     }
 
     /**
-     * Serializes a Java object (the target configuration model) into a YAML file using Jackson.
-     * @param configObject The Java object to serialize (e.g., SearchGuardAuthcConfig).
-     * @param outputDir The target directory (MS8).
-     * @param filename The output filename (e.g., "sg_authc.yml").
-     * @throws IOException If an I/O error occurs.
+     * Erstellt die LDAP-Auth-Domain für sg_authc.yml
      */
-    private static void writeYamlConfig(Object configObject, File outputDir, String filename) throws IOException {
-        Files.writeString(new File(outputDir, filename).toPath(),
-                DocWriter.yaml().writeAsString(configObject));
+    private static MigrateConfig.NewAuthDomain createLdapDomain() {
+        Map<String, Object> ldapConfig = new HashMap<>();
+        List<String> ldapHosts = Arrays.asList("ldap.example.com", "other.example.com");
+        ldapConfig.put("ldap.idp.hosts", ldapHosts);
 
+        return new MigrateConfig.NewAuthDomain(
+                "basic/ldap",
+                null,
+                null,
+                null,
+                ldapConfig,
+                null
+        );
     }
 
+    /**
+     * Erstellt die OIDC-Auth-Domain für sg_authc.yml
+     */
+    private static MigrateConfig.NewAuthDomain createOidcDomain() {
+        Map<String, Object> oidcConfig = new HashMap<>();
+
+
+        return new MigrateConfig.NewAuthDomain(
+                "oidc",
+                null,
+                null,
+                null,
+                oidcConfig,
+                null
+        );
+    }
+
+
+    /**
+     * Serializes a Java object into a YAML file.
+     *
+     * @param configObject The object to serialize.
+     * @param outputDir    Target directory.
+     * @param filename     Name of the output YAML file.
+     * @throws IOException If writing fails.
+     */
+    private static void writeYamlConfig(Object configObject, File outputDir, String filename) throws IOException {
+        File outputFile = new File(outputDir, filename);
+        Files.writeString(outputFile.toPath(), DocWriter.yaml().writeAsString(configObject));
+    }
 }
