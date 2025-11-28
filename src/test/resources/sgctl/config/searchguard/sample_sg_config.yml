@@ -1,0 +1,132 @@
+_searchguard:
+  dynamic:
+    kibana:
+      multitenancy_enabled: true
+    http:
+      anonymous_auth_enabled: false
+      xff:
+        enabled: false
+    authc:
+      kibana_authentication_proxy:
+        http_enabled: false
+        transport_enabled: false
+        order: 0
+        http_authenticator:
+          type: proxy
+          challenge: false
+          config:
+            user_header: "x-proxy-user"
+            roles_header: "x-proxy-roles"
+        authentication_backend:
+          type: noop
+      basic_internal_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 1
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: internal
+      ldap:
+        http_enabled: false
+        transport_enabled: false
+        order: 2
+        http_authenticator:
+          type: basic
+          challenge: false
+        authentication_backend:
+          type: ldap
+          config:
+            hosts:
+              - localhost:8389
+            bind_dn: 'cn=admin,dc=example,dc=com'
+            password: 'password'
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(uid={0})'
+        authorization_backend:
+          type: ldap
+          config:
+            hosts:
+              - localhost:8389
+            bind_dn: 'cn=admin,dc=example,dc=com'
+            password: 'password'
+            rolebase: 'ou=groups,dc=example,dc=com'
+            rolesearch: '(member={0})'
+            rolename: 'cn'
+            resolve_nested_roles: true
+      jwt_auth_domain:
+        http_enabled: false
+        transport_enabled: false
+        order: 3
+        http_authenticator:
+          type: jwt
+          challenge: false
+          config:
+            signing_key: 'base64encodedHMACorPEMorRSAPublicKey'
+            subject_key: 'sub'
+            roles_key: 'roles'
+            jwt_url_parameter: jwt
+        authentication_backend:
+          type: noop
+      clientcert_auth_domain:
+        http_enabled: false
+        transport_enabled: false
+        order: 4
+        http_authenticator:
+          type: clientcert
+          challenge: false
+          config:
+            username_attribute: cn
+        authentication_backend:
+          type: noop
+      kerberos_auth_domain:
+        http_enabled: false
+        transport_enabled: false
+        order: 5
+        http_authenticator:
+          type: kerberos
+          challenge: true
+          config:
+            krb_debug: false
+            strip_realm_from_principal: true
+        authentication_backend:
+          type: noop
+      proxy_auth_domain:
+        http_enabled: false
+        transport_enabled: false
+        order: 6
+        http_authenticator:
+          type: proxy
+          challenge: false
+          config:
+            user_header: x-proxy-user
+            roles_header: x-proxy-roles
+        authentication_backend:
+          type: noop
+      config_update:
+        http_enabled: false
+        transport_enabled: true
+        order: 7
+        http_authenticator:
+          type: clientcert
+          challenge: false
+          config:
+            username_attribute: cn
+        authentication_backend:
+          type: noop
+    authz:
+      ldap_authz:
+        http_enabled: false
+        transport_enabled: false
+        authorization_backend:
+          type: ldap
+          config:
+            hosts:
+              - localhost:8389
+            bind_dn: 'cn=admin,dc=example,dc=com'
+            password: 'password'
+            rolebase: 'ou=groups,dc=example,dc=com'
+            rolesearch: '(member={0})'
+            rolename: 'cn'
+            resolve_nested_roles: true
