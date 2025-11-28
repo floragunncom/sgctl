@@ -42,7 +42,6 @@ public class XPackMigrate implements Callable<Integer> {
             defaultValue = "false")
     boolean overwrite;
 
-<<<<<<< src/main/java/com/floragunn/searchguard/sgctl/commands/XPackMigrate.java
     private static final Map<String, Parser<Object, Parser.Context>> configParsers = 
     Map.of(
         // TODO: Add parsing functions here <filename>,Record::parse
@@ -50,13 +49,6 @@ public class XPackMigrate implements Callable<Integer> {
         "users.json", Users::parse,
         "roles.json", Roles::parse
     );
-=======
-    private static final Map<String, Parser<Object, Parser.Context>> configParsers =
-            Map.of(
-                    // TODO: Add parsing functions here <filename>,Record::parse
-                    "role_mapping.json", RoleMappings::parse,
-                    "roles.json", Roles::parse);
->>>>>>> src/main/java/com/floragunn/searchguard/sgctl/commands/XPackMigrate.java
 
     public Integer call() throws Exception {
         if (!Files.isDirectory(inputDir)) {
