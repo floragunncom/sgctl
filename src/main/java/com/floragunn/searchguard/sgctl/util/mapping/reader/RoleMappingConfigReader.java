@@ -223,11 +223,72 @@ public class RoleMappingConfigReader {
         return result;
     }
 
-    private List<RoleMapping.RoleTemplate> readRoleTemplates(ArrayList<?> templateList, String mappingName) {
-        var templates = new ArrayList<RoleMapping.RoleTemplate>();
+    private List<RoleMapping.RoleTemplate> readRoleTemplates(List<?> templateList, String mappingName) {
+        var result = new ArrayList<RoleMapping.RoleTemplate>();
 
-        // TODO: Implement readRoleTemplates
-        return templates;
+        for (int i = 0; i < templateList.size(); i++) {
+            var raw = templateList.get(i);
+            var path = mappingName + "->role_template[" + i + "]";
+
+            if (!(raw instanceof LinkedHashMap<?, ?> rawMap)) {
+                // TODO: Add MigrationReport entry
+                printErr("Invalid type " + raw.getClass() + " for key.");
+                continue;
+            }
+
+            var roleTemplate = new RoleMapping.RoleTemplate();
+
+            for (var entry : rawMap.entrySet()) {
+                if (!(entry.getKey() instanceof String key)) {
+                    // TODO: Add MigrationReport entry
+                    printErr("Invalid type " + entry.getKey().getClass() + " for key.");
+                    continue;
+                }
+                var value = entry.getValue();
+
+                switch (key) {
+                    case "format":
+                        if (value instanceof String f) {
+                            roleTemplate.setFormat(f);
+                        } else {
+                            // TODO: Add MigrationReport entry
+                            printErr("Invalid type " + value.getClass() + " for key.");
+                        }
+                        break;
+
+                    case "template":
+                        var template = readTemplate(value, mappingName, path + "->template");
+                        roleTemplate.setTemplate(template);
+                        break;
+
+                    default:
+                        // TODO: Add MigrationReport entry
+                        printErr("Unknown key in " + mappingName + ": " + key);
+                }
+            }
+            if (roleTemplate.getTemplate() == null) {
+                // TODO: Add MigrationReport entry
+                printErr("Missing key in " + mappingName + ": " + path);
+                continue;
+            }
+
+            result.add(roleTemplate);
+        }
+
+        return result;
+    }
+
+    private RoleMapping.Template readTemplate(Object obj, String mappingName, String path) {
+        if (!(obj instanceof LinkedHashMap<?, ?> map)) {
+            report.addInvalidType(FILE_NAME, path, LinkedHashMap.class.getTypeName(), obj.getClass().getTypeName());
+            return null;
+        }
+
+        var template = new RoleMapping.Template();
+
+        // TODO: Implement readTemplate cases
+
+        return template;
     }
 
     static void print(Object line) {
