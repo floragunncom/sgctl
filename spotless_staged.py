@@ -28,7 +28,9 @@ for f in sys.argv[1:]:
         text=True
     ).stdout.strip()
     if diff:
-        files_to_process.append(str(Path(git_root) / f))
+        path = Path(f).as_posix()
+        pattern = ".*" + path.replace("/", r"[\\/]") # windows hates us
+        files_to_process.append(pattern)
     else:
         print(f"[Spotless] Skipping {f} (only EOL/whitespace changes)")
 
