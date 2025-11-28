@@ -78,14 +78,31 @@ public class RoleMapping {
     }
 
     public static class RoleTemplate {
-        String format;
-        Template template;
 
-        public String getFormat() { return format; }
-        public Template getTemplate() { return template; }
+        public enum Format {
+            STRING,
+            JSON;
 
-        public void setFormat(String format) { this.format = format; }
-        public void setTemplate(Template template) { this.template = template; }
+            public static Format fromString(String value) {
+                if (value == null) {
+                    return null;
+                }
+                return switch (value.toLowerCase()) {
+                    case "string" -> STRING;
+                    case "json" -> JSON;
+                    default -> null;
+                };
+            }
+        }
+
+        Format format;
+        String template;
+
+        public Format getFormat() { return format; }
+        public String getTemplate() { return template; }
+
+        public void setFormat(Format format) { this.format = format; }
+        public void setTemplate(String template) { this.template = template; }
 
         @Override
         public String toString() {
@@ -93,31 +110,7 @@ public class RoleMapping {
         }
     }
 
-    public static class Template {
-        Object source;
-        String id;
-        Map<String, Object> params;
-        String lang;
-        Map<String, Object> options;
 
-        public Object getSource() { return source; }
-        public String getId() { return id; }
-        public Map<String, Object> getParams() { return params; }
-        public String getLang() { return lang; }
-        public Map<String, Object> getOptions() { return options; }
-
-        public void setSource(Object source) { this.source = source; }
-        public void setId(String id) { this.id = id; }
-        public void setParams(Map<String, Object> params) { this.params = params; }
-        public void setLang(String lang) { this.lang = lang; }
-        public void setOptions(Map<String, Object> options) { this.options = options; }
-
-        @Override
-        public String toString() {
-            return "Template[source=" + source + ", id=" + id + ", params=" + params +
-                    ", lang=" + lang + ", options=" + options + "]";
-        }
-    }
 
     @Override
     public String toString() {

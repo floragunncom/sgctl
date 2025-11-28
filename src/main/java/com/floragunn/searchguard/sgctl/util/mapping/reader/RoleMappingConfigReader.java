@@ -245,20 +245,31 @@ public class RoleMappingConfigReader {
                     continue;
                 }
                 var value = entry.getValue();
+                var childPath = path + "->" + key;
 
                 switch (key) {
                     case "format":
                         if (value instanceof String f) {
-                            roleTemplate.setFormat(f);
+                            var fmt = RoleMapping.RoleTemplate.Format.fromString(f);
+                            if (fmt == null) {
+                                // TODO: MigrationReport entry
+                                printErr("Unknown format '" + f + "' in " + childPath);
+                            } else {
+                                roleTemplate.setFormat(fmt);
+                            }
                         } else {
-                            // TODO: Add MigrationReport entry
-                            printErr("Invalid type " + value.getClass() + " for key.");
+                            // TODO: MigrationReport entry
+                            printErr("Invalid type " + value.getClass() + " for " + childPath + ". Expected String.");
                         }
                         break;
 
                     case "template":
-                        var template = readTemplate(value, mappingName, path + "->template");
-                        roleTemplate.setTemplate(template);
+                        if (value instanceof String s) {
+                            roleTemplate.setTemplate(s);
+                        } else {
+                            // TODO: Add MigrationReport entry
+                            printErr("Invalid type " + value.getClass() + " for " + childPath + ". Expected String.");
+                        }
                         break;
 
                     default:
@@ -266,29 +277,11 @@ public class RoleMappingConfigReader {
                         printErr("Unknown key in " + mappingName + ": " + key);
                 }
             }
-            if (roleTemplate.getTemplate() == null) {
-                // TODO: Add MigrationReport entry
-                printErr("Missing key in " + mappingName + ": " + path);
-                continue;
-            }
 
             result.add(roleTemplate);
         }
 
         return result;
-    }
-
-    private RoleMapping.Template readTemplate(Object obj, String mappingName, String path) {
-        if (!(obj instanceof LinkedHashMap<?, ?> map)) {
-            MigrationReport.shared.addInvalidType(FILE_NAME, path, LinkedHashMap.class, obj.getClass().getTypeName());
-            return null;
-        }
-
-        var template = new RoleMapping.Template();
-
-        // TODO: Implement readTemplate cases
-
-        return template;
     }
 
     static void print(Object line) {
