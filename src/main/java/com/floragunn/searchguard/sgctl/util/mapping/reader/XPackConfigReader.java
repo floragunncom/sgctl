@@ -45,7 +45,7 @@ public class XPackConfigReader {
             if (element instanceof LinkedHashMap<?, ?> rawMap) {
                 var value = reader.apply(rawMap);
                 if (value == null) {
-                    continue;
+                    continue; // TODO: Discard whole list or return partial
                 }
                 result.add(value);
             } else {
@@ -56,26 +56,17 @@ public class XPackConfigReader {
     }
 
     static List<String> toStringList(Object obj, String originFile, String parameterOrigin, String key) {
-        try {
-            return toStringList(obj);
-        } catch (IllegalArgumentException e) {
-            MigrationReport.shared.addInvalidType(originFile, parameterOrigin, List.class, obj);
-        } catch (ClassCastException e) {
-            MigrationReport.shared.addWarning(originFile, parameterOrigin + "->key", "Expected type 'String' for all items in this array but found " + e.getMessage());
-        }
-        return null;
-    }
-
-    private static List<String> toStringList(Object obj) throws IllegalArgumentException, ClassCastException {
         if (!(obj instanceof List<?> list)) {
-            throw new IllegalArgumentException("Object is not a List");
+            MigrationReport.shared.addInvalidType(originFile, parameterOrigin, List.class, obj);
+            return null;
         }
 
-        ArrayList<String> result = new ArrayList<>();
+        ArrayList<String> result = new ArrayList<>(list.size());
 
         for (Object element : list) {
             if (!(element instanceof String)) {
-                throw new ClassCastException();
+                MigrationReport.shared.addInvalidType(originFile, parameterOrigin + "->" + key, String.class, element);
+                return null;
             }
             result.add((String) element);
         }

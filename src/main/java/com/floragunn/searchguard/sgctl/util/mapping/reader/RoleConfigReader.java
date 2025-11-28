@@ -236,7 +236,6 @@ public class RoleConfigReader {
                 case "field_security":
                     if (value instanceof LinkedHashMap<?, ?> fieldSecurityMap) {
                         fieldSecurity = readFieldSecurity(fieldSecurityMap, origin);
-                        break;
                     } else {
                         report.addInvalidType(FILE_NAME, origin, LinkedHashMap.class, value);
                     }
@@ -255,7 +254,6 @@ public class RoleConfigReader {
                 case "query":
                     if (value instanceof String) {
                         query = (String) value;
-                        break;
                     } else {
                         report.addInvalidType(FILE_NAME, origin, String.class, value);
                     }
@@ -263,7 +261,6 @@ public class RoleConfigReader {
                 case "allow_restricted_indices":
                     if (value instanceof Boolean allowRestrictedIndices) {
                         allowRestricted = allowRestrictedIndices;
-                        break;
                     } else {
                         report.addInvalidType(FILE_NAME, origin, Boolean.class, value);
                     }
