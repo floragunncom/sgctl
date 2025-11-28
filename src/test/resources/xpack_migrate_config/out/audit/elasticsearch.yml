@@ -1,0 +1,12 @@
+#NOT FINAL
+cluster.name: auditcluster
+node.name: audit-node-1
+
+
+xpack.security.enabled: false
+
+searchguard.ssl.transport.enabled: true
+searchguard.ssl.transport.keystore_filepath: certs/audit-node.p12
+searchguard.ssl.transport.truststore_filepath: certs/ca.p12
+searchguard.ssl.transport.keystore_password: changeit #not sure 
+searchguard.ssl.transport.truststore_password: changeit
