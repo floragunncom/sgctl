@@ -172,6 +172,7 @@ public class RoleMappingConfigReader {
                 case "field":
                     if (value instanceof LinkedHashMap<?, ?> fieldMap) {
                         if (fieldMap.keySet().stream().allMatch(k -> k instanceof String)) {
+                            @SuppressWarnings("unchecked")
                             var safe = (Map<String, Object>) fieldMap;
                             rules.setField(safe);
                         } else {

@@ -85,7 +85,7 @@ public class RoleMapping {
 
             public static Format fromString(String value) {
                 if (value == null) {
-                    return null;
+                    return STRING;
                 }
                 return switch (value.toLowerCase()) {
                     case "string" -> STRING;
@@ -95,7 +95,7 @@ public class RoleMapping {
             }
         }
 
-        Format format;
+        Format format = Format.STRING;
         String template;
 
         public Format getFormat() { return format; }
