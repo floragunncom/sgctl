@@ -1,14 +1,9 @@
 package com.floragunn.searchguard.sgctl.util.mapping.reader;
 
-import com.floragunn.codova.documents.DocReader;
-import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -45,13 +40,6 @@ public class XPackConfigReader {
     }
 
     //region Helper Functions
-    <R> R toType(Object value, Class<R> expectedType, String fileName, String path) {
-        if (expectedType.isInstance(value)) {
-            return expectedType.cast(value);
-        }
-        report.addInvalidType(fileName, path, expectedType.getTypeName(), value.getClass().getTypeName());
-        return null;
-    }
 
     static <R> List<R> readList(List<?> rawList, Function<LinkedHashMap<?, ?>, R> reader) {
         var result = new ArrayList<R>();
