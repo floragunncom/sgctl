@@ -1,7 +1,15 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
+import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import java.util.List;
+import org.slf4j.Logger;
+
+/** A sub part for the Migrator (SubMigrator) */
 public interface SubMigrator {
-
-  // TODO: Add migrate function etc.
-
+  /**
+   * @param context Contains all the parsed XPack configs
+   * @param logger Logger for logging
+   * @return Migrated SearchGuard configs
+   */
+  List<NamedConfig<?>> migrate(Migrator.MigrationContext context, Logger logger);
 }

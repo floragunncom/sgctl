@@ -37,6 +37,17 @@ public class MigratorRegistry {
   }
 
   /**
+   * Gets the list of sub-migrators statically. Throws an exception if the registry has not been
+   * finalized.
+   *
+   * @return The list of sub-migrators.
+   */
+  public static List<SubMigrator> getSubMigratorsStatic() {
+    instance = MigratorRegistry.getInstance();
+    return instance.getSubMigrators();
+  }
+
+  /**
    * Registers a sub-migrator statically.
    *
    * @param subMigrator The sub-migrator to register.
