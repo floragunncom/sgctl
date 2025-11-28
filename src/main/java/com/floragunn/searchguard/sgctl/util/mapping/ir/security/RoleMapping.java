@@ -115,13 +115,13 @@ public class RoleMapping {
     @Override
     public String toString() {
         return "RoleMapping[" +
-                "mappingName=" + mappingName +
-                ", roles=" + roles +
-                ", enabled=" + enabled +
-                ", runAs=" + runAs +
-                ", rules=" + rules +
-                ", metadata=" + metadata +
-                ", roleTemplates=" + roleTemplates +
-                "]";
+                "\n\tmappingName=" + mappingName +
+                "\n\troles=" + roles +
+                "\n\tenabled=" + enabled +
+                "\n\trunAs=" + runAs +
+                "\n\trules=" + rules +
+                "\n\tmetadata=" + metadata +
+                "\n\troleTemplates=" + roleTemplates +
+                "\n]";
     }
 }
