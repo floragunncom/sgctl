@@ -67,10 +67,38 @@ public class Migrator {
    * @param roles
    */
   public record MigrationContext(
-      @NotNull Optional<RoleMappings> roleMappings, @NotNull Optional<Roles> roles
+      @NotNull Optional<RoleMappings> roleMappings,
+      @NotNull Optional<Roles> roles,
+      @NotNull Optional<?> users,
+      @NotNull Optional<?> elasticSearch,
+      @NotNull Optional<?> kibana)
+      implements IMigrationContext {
 
-      // TODO: Add remaining XPack configs here 😀
-      ) {}
+    @Override
+    public Optional<RoleMappings> getRoleMappings() {
+      return roleMappings;
+    }
+
+    @Override
+    public Optional<Roles> getRoles() {
+      return roles;
+    }
+
+    @Override
+    public Optional<?> getUsers() {
+      return users;
+    }
+
+    @Override
+    public Optional<?> getElasticsearch() {
+      return elasticSearch;
+    }
+
+    @Override
+    public Optional<?> getKibana() {
+      return kibana;
+    }
+  }
 
   public interface IMigrationContext {
 

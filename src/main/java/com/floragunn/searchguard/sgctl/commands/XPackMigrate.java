@@ -7,6 +7,7 @@ import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
+import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
@@ -16,6 +17,7 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.Callable;
 import picocli.CommandLine;
 
@@ -49,24 +51,45 @@ public class XPackMigrate implements Callable<Integer> {
           "roles.json", Roles::parse);
 
   public Integer call() throws Exception {
+    registerSubMigrators();
+
     if (!Files.isDirectory(inputDir)) {
       System.err.println("Error: Input is not a directory: " + inputDir.toAbsolutePath());
       return 1;
     }
     System.out.println("Welcome to the Search Guard X-pack security migration tool.\n\n");
     try {
+      // deserialize
       final var xPackConfigs = parseConfigs(); // TODO: gracefully handle ConfigValidationException
       System.out.println(xPackConfigs);
-      // TODO: More
+      // migrate
       final Migrator migrator = new Migrator();
-
-      final List<NamedConfig<?>> searchGuardConfigs = List.of(); // TODO: migrate to create configs
+      final Migrator.MigrationContext context = getMigrationContext(xPackConfigs);
+      final List<NamedConfig<?>> searchGuardConfigs = migrator.migrate(context);
+      // serialize
       writeConfigs(searchGuardConfigs);
     } catch (SgctlException e) {
       System.err.println("Error: " + e.getMessage());
       return 1;
     }
     return 0;
+  }
+
+  private Migrator.MigrationContext getMigrationContext(Map<String, Object> xPackConfigs) {
+    return new Migrator.MigrationContext(
+        Optional.ofNullable((RoleMappings) xPackConfigs.get("role_mappings.json")),
+        Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
+        Optional.empty(), // TODO: Get real config
+        Optional.empty(), // TODO: Get real config
+        Optional.empty() // TODO: Get real config
+        );
+  }
+
+  private void registerSubMigrators() {
+    // TODO: Add sub migrators example:
+    // MigratorRegistry.registerSubMigratorStatic(...);
+
+    MigratorRegistry.finalizeMigratorsStatic(); // Never forget
   }
 
   private Map<String, Object> parseConfigs()
