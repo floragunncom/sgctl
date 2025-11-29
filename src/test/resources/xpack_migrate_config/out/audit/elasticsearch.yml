@@ -10,3 +10,13 @@ searchguard.ssl.transport.keystore_filepath: certs/audit-node.p12
 searchguard.ssl.transport.truststore_filepath: certs/ca.p12
 searchguard.ssl.transport.keystore_password: changeit #not sure 
 searchguard.ssl.transport.truststore_password: changeit
+
+searchguard.audit.type: internal_elasticsearch
+searchguard.audit.config.enable_rest: true
+searchguard.audit.config.enable_transport: true
+
+searchguard.audit.config.log4j.logger_name: "sg_audit"
+
+searchguard.audit.config.disabled_rest_categories: FAILED_LOGIN, SSL_EXCEPTION, BAD_HEADERS, BLOCKED_USER, BLOCKED_IP, KIBANA_LOGIN, KIBANA_LOGOUT
+
+searchguard.audit.config.disabled_transport_categories: FAILED_LOGIN, GRANTED_PRIVILEGES, SSL_EXCEPTION, SG_INDEX_ATTEMPT, BAD_HEADERS, BLOCKED_USER, BLOCKED_IP, INDEX_TEMPLATE_WRITE, INDEX_WRITE
