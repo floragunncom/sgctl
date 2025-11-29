@@ -3,8 +3,8 @@ repos:
     hooks:
       - id: spotless-java-staged
         name: Spotless Format Staged Java
-        entry: ./spotless-staged.sh
-        language: script
+        entry: python spotless_staged.py
+        language: system
         files: \.java$
         description: Automatically formats staged Java files using mvnw and Spotless.
         verbose: true
