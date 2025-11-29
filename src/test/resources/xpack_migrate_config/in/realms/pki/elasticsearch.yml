@@ -1,0 +1,22 @@
+# NOT FINAL
+
+cluster.name: my-secure-cluster
+node.name: node-1
+xpack.security.enabled: true
+
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/http.crt
+xpack.security.http.ssl.key: /etc/elasticsearch/certs/http.key
+xpack.security.http.ssl.client_authentication: required
+xpack.security.http.ssl.certificate_authorities: [ "/etc/elasticsearch/certs/ca.crt" ]
+
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.keystore.path: certs/elastic-certificates.p12
+xpack.security.transport.ssl.truststore.path: certs/elastic-certificates.p12
+
+xpack.security.authc.realms.pki.pki1:
+
+  order: 0
+  username_pattern: "EMAILADDRESS=(.*?)(?:,|$)"
+  truststore:
+    path: "pki1_truststore.jks"

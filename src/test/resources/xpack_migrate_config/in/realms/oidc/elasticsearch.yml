@@ -1,0 +1,13 @@
+# NOT FINAL
+
+xpack.security.authc.realms.oidc.oidc1:
+  order: 2
+  rp.client_id: "my-client-id"
+  rp.client_secret: "my-client-secret"
+  rp.response_type: code
+  rp.redirect_uri: "https://kibana.example.com/api/security/oidc/callback"
+  op.issuer: "https://accounts.example-op.com"
+  op.authorization_endpoint: "https://accounts.example-op.com/authorize"
+  op.token_endpoint: "https://accounts.example-op.com/token"
+  op.jwkset_path: "https://accounts.example-op.com/v1/keys"
+  claims.principal: sub
