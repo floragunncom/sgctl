@@ -1,0 +1,39 @@
+# NOT FINAL
+
+xpack:
+  security:
+    authc:
+      realms:
+        file:
+          file1:
+            order: 0
+
+        native:
+          native1:
+            order: 1
+
+        active_directory:
+          ad1:
+            order: 2
+            domain_name: ad.example.com
+            url: ldaps://ad.example.com:636
+
+        ldap:
+          ldap1:
+            order: 3
+            url: "ldaps://ldap.example.com:636"
+            bind_dn: "cn=ldapuser,ou=users,dc=example,dc=com"
+            user_search:
+              base_dn: "dc=example,dc=com"
+              filter: "(cn={0})"
+
+        oidc:
+          oidc1:
+            order: 4
+            rp.client_id: "kibana"
+            rp.response_type: "code"
+            rp.redirect_uri: "https://kibana.example.com/api/"
+            op.issuer: "https://login.microsoftonlineexample.com/"
+            op.authorization_endpoint: "..."
+            op.token_endpoint: "..."
+            op.jwkset_path: "..."
