@@ -5,7 +5,6 @@ import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
-import org.jspecify.annotations.NonNull;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,7 +14,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.readList;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
 public class RoleMappingConfigReader {
@@ -76,30 +74,27 @@ public class RoleMappingConfigReader {
         var roleMapping = new RoleMapping(mappingName);
 
         for (var entry : mapping.entrySet()) {
-            if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid type " + entry.getKey().getClass() + " for key."); // TODO: Add MigrationReport entry
+            var rawKey = entry.getKey();
+            if (!(rawKey instanceof String key)) {
+                MigrationReport.shared.addInvalidType(FILE_NAME, mappingName, String.class, rawKey);
                 continue;
             }
             var value = entry.getValue();
+            var path = mappingName + "->" + key;
 
             switch (key) {
                 case "enabled":
                     if (value instanceof Boolean enabled) {
                         roleMapping.setEnabled(enabled);
                     } else {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid type for enabled: " + value.getClass());
+                        MigrationReport.shared.addInvalidType(FILE_NAME, path, Boolean.class, value);
                     }
                     break;
 
                 case "roles":
-                    try {
-                        roleMapping.setRoles(toStringList(value, FILE_NAME, mappingName, key));
-                    } catch (IllegalArgumentException e) {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid type for roles: " + value.getClass());
-                    } catch (ClassCastException e) {
-                        printErr("Invalid entry in 'roles' for role mapping '" + mappingName + "': " + e.getMessage());
+                    var roles = toStringList(value, FILE_NAME, mappingName, key);
+                    if (roles != null) {
+                        roleMapping.setRoles(roles);
                     }
                     break;
 
@@ -107,8 +102,7 @@ public class RoleMappingConfigReader {
                     if (value instanceof ArrayList<?> templateList) {
                         roleMapping.setRoleTemplates(readRoleTemplates(templateList, mappingName));
                     } else {
-                        // TODO: MigrationReport entry
-                        printErr("Invalid type for role_templates: " + value.getClass());
+                        MigrationReport.shared.addInvalidType(FILE_NAME, path, ArrayList.class, value);
                     }
                     break;
 
@@ -120,7 +114,10 @@ public class RoleMappingConfigReader {
                     break;
 
                 case "rules":
-                    roleMapping.setRules(readRules(value, mappingName));
+                    var rules = readRules(value, mappingName);
+                    if (rules != null) {
+                        roleMapping.setRules(rules);
+                    }
                     break;
 
                 case "metadata":
@@ -128,8 +125,7 @@ public class RoleMappingConfigReader {
                     break;
 
                 default:
-                    // TODO: Add MigrationReport entry
-                    printErr("Unknown key: " + key);
+                    MigrationReport.shared.addUnknownKey(FILE_NAME, key, path);
                     break;
             }
         }
@@ -140,9 +136,9 @@ public class RoleMappingConfigReader {
         boolean hasTemplates = templates != null && !templates.isEmpty();
 
         if (!hasRoles && !hasTemplates) {
-            // TODO: Add MigrationReport entry (Missing parameter)
+            MigrationReport.shared.addMissingParameter(FILE_NAME, "roles / role_templates", mappingName);
         } else if (hasRoles && hasTemplates) {
-            // TODO: Add MigrationReport entry (Only one Parameter)
+            MigrationReport.shared.addWarning(FILE_NAME, mappingName,"Both 'roles' and 'role_templates' are set. Exactly one must be specified.");
         }
 
         ir.addRoleMapping(roleMapping);
@@ -154,17 +150,17 @@ public class RoleMappingConfigReader {
 
     private RoleMapping.Rules readRulesInternal(Object rulesObject, String mappingName, String originPath) {
         if (!(rulesObject instanceof LinkedHashMap<?, ?> rulesMap)) {
-            printErr("Invalid type " + rulesObject.getClass() + " for key.");
-            // TODO: Add MigrationReport entry
+            MigrationReport.shared.addInvalidType(FILE_NAME, originPath, Map.class, rulesObject);
             return null;
         }
 
         var rules = new RoleMapping.Rules();
 
         for (var entry : rulesMap.entrySet()) {
-            if (!(entry.getKey() instanceof String key)) {
-                printErr("Invalid key type in " + originPath + " of " + mappingName
-                        + ": " + entry.getKey().getClass());
+            var rawKey = entry.getKey();
+
+            if (!(rawKey instanceof String key)) {
+                MigrationReport.shared.addInvalidType(FILE_NAME, originPath, String.class, rawKey);
                 continue;
             }
             var value = entry.getValue();
@@ -178,12 +174,10 @@ public class RoleMappingConfigReader {
                             var safe = (Map<String, Object>) fieldMap;
                             rules.setField(safe);
                         } else {
-                            // TODO: Add MigrationReport entry
-                            printErr("Map with no String key");
+                            MigrationReport.shared.addInvalidType(FILE_NAME, childOrigin, Map.class, value);
                         }
                     } else {
-                        // TODO: Add MigrationReport entry
-                        printErr("Invalid key type in " + originPath + " of " + mappingName);
+                        MigrationReport.shared.addInvalidType(FILE_NAME, childOrigin, Map.class, value);
                     }
                     break;
 
@@ -200,7 +194,7 @@ public class RoleMappingConfigReader {
                     break;
 
                 default:
-                    printErr("Unknown key in " + originPath + " for mapping " + mappingName + ": " + key);
+                    MigrationReport.shared.addUnknownKey(FILE_NAME, key, childOrigin);
                     break;
             }
         }
@@ -234,17 +228,18 @@ public class RoleMappingConfigReader {
             var path = mappingName + "->role_template[" + i + "]";
 
             if (!(raw instanceof LinkedHashMap<?, ?> rawMap)) {
-                // TODO: Add MigrationReport entry
-                printErr("Invalid type " + raw.getClass() + " for key.");
+                MigrationReport.shared.addInvalidType(FILE_NAME, path, Map.class, raw);
                 continue;
             }
 
             var roleTemplate = new RoleMapping.RoleTemplate();
 
             for (var entry : rawMap.entrySet()) {
-                if (!(entry.getKey() instanceof String key)) {
-                    // TODO: Add MigrationReport entry
-                    printErr("Invalid type " + entry.getKey().getClass() + " for key.");
+                var rawKey = entry.getKey();
+
+                if (!(rawKey instanceof String key)) {
+                    var keyPath = path + "-><key>";
+                    MigrationReport.shared.addInvalidType(FILE_NAME, keyPath, String.class, rawKey);
                     continue;
                 }
                 var value = entry.getValue();
@@ -255,14 +250,12 @@ public class RoleMappingConfigReader {
                         if (value instanceof String f) {
                             var fmt = RoleMapping.RoleTemplate.Format.fromString(f);
                             if (fmt == null) {
-                                // TODO: MigrationReport entry
-                                printErr("Unknown format '" + f + "' in " + childPath);
+                                MigrationReport.shared.addInvalidType(FILE_NAME, childPath, String.class, value);
                             } else {
                                 roleTemplate.setFormat(fmt);
                             }
                         } else {
-                            // TODO: MigrationReport entry
-                            printErr("Invalid type " + value.getClass() + " for " + childPath + ". Expected String.");
+                            MigrationReport.shared.addInvalidType(FILE_NAME, childPath, String.class, value);
                         }
                         break;
 
@@ -270,14 +263,13 @@ public class RoleMappingConfigReader {
                         if (value instanceof String s) {
                             roleTemplate.setTemplate(s);
                         } else {
-                            // TODO: Add MigrationReport entry
-                            printErr("Invalid type " + value.getClass() + " for " + childPath + ". Expected String.");
+                            MigrationReport.shared.addInvalidType(FILE_NAME, childPath, String.class, value);
                         }
                         break;
 
                     default:
-                        // TODO: Add MigrationReport entry
-                        printErr("Unknown key in " + mappingName + ": " + key);
+                        MigrationReport.shared.addUnknownKey(FILE_NAME, key, childPath);
+                        break;
                 }
             }
 
