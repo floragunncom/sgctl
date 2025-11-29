@@ -1,0 +1,4 @@
+xpack.security.authc.realms.kerberos.krb1:
+  order: 0
+  principal: "HTTP/es-node1.example.com@EXAMPLE.COM"
+  keytab.path: "es_kerberos.keytab"

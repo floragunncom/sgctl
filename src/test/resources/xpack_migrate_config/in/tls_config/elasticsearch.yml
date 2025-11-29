@@ -1,5 +1,4 @@
 # NOT FINAL
-
 xpack.security.enabled: true
 
 xpack.security.transport.ssl.enabled: true

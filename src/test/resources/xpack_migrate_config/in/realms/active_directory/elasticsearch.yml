@@ -1,0 +1,22 @@
+# NOT FINAL
+
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        native:
+          native1:
+            order: 0
+        file:
+          file1:
+            order: 1
+
+        active_directory:
+          my_ad:
+            order: 2
+            domain_name: ad.example.com 
+            url: ldaps://ad.example.com:636
+            bind_dn: es_svc_user@ad.example.com
+            ssl:
+              certificate_authorities: [ "ES_PATH_CONF/cacert.pem" ]
