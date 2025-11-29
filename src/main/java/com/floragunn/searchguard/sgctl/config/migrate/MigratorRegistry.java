@@ -118,6 +118,17 @@ public class MigratorRegistry {
     }
   }
 
+  /** Attempts to reset sub-migrator registry. */
+  public void reset() {
+    if (subMigrators.isEmpty() || !isFinalized) {
+      throw new IllegalStateException(
+          "Migrator registry can not be reset! Is already reset or not finalized!"
+              + "Did you forget to finalize?");
+    }
+    subMigrators.clear();
+    unfinalizeMigratorsStatic();
+  }
+
   /**
    * Checks if the migrators are finalized statically.
    *

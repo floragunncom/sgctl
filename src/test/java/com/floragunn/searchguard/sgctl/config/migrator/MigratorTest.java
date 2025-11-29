@@ -9,10 +9,17 @@ import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
-public class MigratorTest {
+class MigratorTest {
+  @AfterEach
+  public void testCleanup() {
+    // !!! DO NOT REMOVE !!! Needs to be called after every test, or they will fail !!!
+    final MigratorRegistry migratorRegistry = MigratorRegistry.getInstance();
+    migratorRegistry.reset();
+  }
 
   static class TestMigratorUsers implements SubMigrator {
 
