@@ -8,6 +8,7 @@ import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
@@ -15,7 +16,7 @@ public class MigratorTest {
 
   static class TestMigratorUsers implements SubMigrator {
 
-    public static class SgInteralUsersConfig implements NamedConfig<SgInteralUsersConfig> {
+    public static class SgInternalUsersConfig implements NamedConfig<SgInternalUsersConfig> {
       @Override
       public Object toBasicObject() {
         return Map.of("users", List.of("admin", "cthon98", "AzureDiamond"));
@@ -23,7 +24,7 @@ public class MigratorTest {
 
       @Override
       public String getFileName() {
-        return "sg_interal_users.yml";
+        return "sg_internal_users.yml";
       }
     }
 
@@ -31,7 +32,7 @@ public class MigratorTest {
     public List<NamedConfig<?>> migrate(Migrator.MigrationContext context, Logger logger) {
       logger.debug("TestMigratorUsers migrate start");
 
-      final SgInteralUsersConfig sgInternalUsersConfig = new SgInteralUsersConfig();
+      final SgInternalUsersConfig sgInternalUsersConfig = new SgInternalUsersConfig();
       final List<NamedConfig<?>> namedConfigs = List.of(sgInternalUsersConfig);
       return namedConfigs;
     }
@@ -39,7 +40,7 @@ public class MigratorTest {
 
   static class TestMigratorCombined implements SubMigrator {
 
-    public static class SgInteralUsersConfig implements NamedConfig<SgInteralUsersConfig> {
+    public static class SgInternalUsersConfig implements NamedConfig<SgInternalUsersConfig> {
       @Override
       public Object toBasicObject() {
         return Map.of("users", List.of("Bumbo", "Schr3in3r"));
@@ -47,11 +48,11 @@ public class MigratorTest {
 
       @Override
       public String getFileName() {
-        return "sg_interal_users.yml";
+        return "sg_internal_users.yml";
       }
     }
 
-    public static class SgKibanaConfig implements NamedConfig<SgInteralUsersConfig> {
+    public static class SgKibanaConfig implements NamedConfig<SgInternalUsersConfig> {
       @Override
       public Object toBasicObject() {
         return Map.of("setting", "null");
@@ -67,7 +68,7 @@ public class MigratorTest {
     public List<NamedConfig<?>> migrate(Migrator.MigrationContext context, Logger logger) {
       logger.debug("TestMigratorCombined migrate start");
 
-      final SgInteralUsersConfig sgInternalUsersConfig = new SgInteralUsersConfig();
+      final SgInternalUsersConfig sgInternalUsersConfig = new SgInternalUsersConfig();
       final SgKibanaConfig sgKibanaConfig = new SgKibanaConfig();
       final List<NamedConfig<?>> namedConfigs = List.of(sgInternalUsersConfig, sgKibanaConfig);
       return namedConfigs;
@@ -84,7 +85,8 @@ public class MigratorTest {
     final Migrator migrator = new Migrator();
 
     // Do the migration
-    Migrator.MigrationContext context = new Migrator.MigrationContext(null, null);
+    Migrator.MigrationContext context =
+        new Migrator.MigrationContext(Optional.empty(), Optional.empty());
     final List<NamedConfig<?>> migrationResult;
     try {
       migrationResult = migrator.migrate(context);
@@ -97,26 +99,18 @@ public class MigratorTest {
 
     // Migration should have worked
     assertNotNull(migrationResult);
-    // We expect one sg_interal_users.yml output file
+    // We expect one sg_internal_users.yml output file
     assertEquals(1, migrationResult.size());
 
     // Check coherence of output config
     final var config = migrationResult.get(0);
-    assertEquals("sg_interal_users.yml", config.getFileName());
+    assertEquals("sg_internal_users.yml", config.getFileName());
     // Also check for exact class, because theoretically a different class could also provide
-    // sg_interal_users.yml
-    if (config.getClass() == TestMigratorUsers.SgInteralUsersConfig.class) {
-      // all ok
-    } else {
-      throw new IllegalStateException(
-          String.format(
-              "Output config has wrong class (%s), should be %s",
-              config.getClass().getName(), TestMigratorUsers.class.getName()));
-    }
+    // sg_internal_users.yml
+    final var basicObject =
+        getBasicObjectFromNamedConfigAndCheckForExpectedClassAndNotNull(
+            config, TestMigratorUsers.SgInternalUsersConfig.class);
     // Check innards
-    final TestMigratorUsers.SgInteralUsersConfig testInteralUsersConfig =
-        (TestMigratorUsers.SgInteralUsersConfig) config;
-    final var basicObject = testInteralUsersConfig.toBasicObject();
     assertInstanceOf(Map.class, basicObject);
     final var configMap = (Map<?, ?>) basicObject;
     assertEquals(1, configMap.size());
@@ -134,6 +128,22 @@ public class MigratorTest {
     }
   }
 
+  private static Object getBasicObjectFromNamedConfigAndCheckForExpectedClassAndNotNull(
+      NamedConfig<?> config, Class<?> expectedClass) {
+    if (config.getClass() == expectedClass) {
+      // all ok
+    } else {
+      throw new IllegalStateException(
+          String.format(
+              "Output config has wrong class (%s), should be %s",
+              config.getClass().getName(), TestMigratorUsers.class.getName()));
+    }
+
+    final var basicObject = config.toBasicObject();
+    assertNotNull(basicObject);
+    return basicObject;
+  }
+
   @Test
   public void testMigrationFailureSameFileTwice() {
     // Register sub-migrators
@@ -145,7 +155,8 @@ public class MigratorTest {
     final Migrator migrator = new Migrator();
 
     // Do the migration
-    Migrator.MigrationContext context = new Migrator.MigrationContext(null, null);
+    Migrator.MigrationContext context =
+        new Migrator.MigrationContext(Optional.empty(), Optional.empty());
     assertThrows(IllegalStateException.class, () -> migrator.migrate(context));
   }
 
@@ -160,7 +171,8 @@ public class MigratorTest {
     final Migrator migrator = new Migrator();
 
     // Do the migration
-    Migrator.MigrationContext context = new Migrator.MigrationContext(null, null);
+    Migrator.MigrationContext context =
+        new Migrator.MigrationContext(Optional.empty(), Optional.empty());
     assertThrows(IllegalStateException.class, () -> migrator.migrate(context));
   }
 
@@ -174,7 +186,8 @@ public class MigratorTest {
     final Migrator migrator = new Migrator();
 
     // Do the migration
-    Migrator.MigrationContext context = new Migrator.MigrationContext(null, null);
+    Migrator.MigrationContext context =
+        new Migrator.MigrationContext(Optional.empty(), Optional.empty());
     final List<NamedConfig<?>> migrationResult;
     try {
       migrationResult = migrator.migrate(context);
@@ -192,12 +205,16 @@ public class MigratorTest {
 
     // Check coherence of output config
     final var config0 = migrationResult.get(0);
-    assertEquals("sg_interal_users.yml", config0.getFileName());
+    assertEquals("sg_internal_users.yml", config0.getFileName());
     final var config1 = migrationResult.get(1);
     assertEquals("kibana.yml", config1.getFileName());
 
-    final var convertedConfig0 = config0.toBasicObject();
-    final var convertedConfig1 = config1.toBasicObject();
+    final var convertedConfig0 =
+        getBasicObjectFromNamedConfigAndCheckForExpectedClassAndNotNull(
+            config0, TestMigratorCombined.SgInternalUsersConfig.class);
+    final var convertedConfig1 =
+        getBasicObjectFromNamedConfigAndCheckForExpectedClassAndNotNull(
+            config1, TestMigratorCombined.SgKibanaConfig.class);
 
     assertInstanceOf(Map.class, convertedConfig0);
     assertInstanceOf(Map.class, convertedConfig1);

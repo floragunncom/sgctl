@@ -5,6 +5,7 @@ import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.google.common.collect.ImmutableList;
 import java.util.*;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -65,7 +66,9 @@ public class Migrator {
    * @param roleMappings
    * @param roles
    */
-  public record MigrationContext(Optional<RoleMappings> roleMappings, Optional<Roles> roles
+  public record MigrationContext(
+      @NotNull Optional<RoleMappings> roleMappings, @NotNull Optional<Roles> roles
+
       // TODO: Add remaining XPack configs here 😀
       ) {}
 }
