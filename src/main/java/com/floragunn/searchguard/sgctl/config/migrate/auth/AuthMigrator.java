@@ -1,11 +1,11 @@
 package com.floragunn.searchguard.sgctl.config.migrate.auth;
 
-import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgConfig.*;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig.Realm;
+import java.util.Optional;
 import org.slf4j.Logger;
 
 public class AuthMigrator {
@@ -21,6 +21,10 @@ public class AuthMigrator {
       SgConfig.AuthcDomain domain;
       if (realm instanceof Realm.NativeRealm || realm instanceof Realm.FileRealm) {
         domain = migrateBasicRealm(realm);
+      } else if (realm instanceof Realm.LdapRealm ldapRealm) {
+        domain = migrateLdapRealm(ldapRealm);
+      } else if (realm instanceof Realm.ActiveDirectoryRealm adRealm) {
+        domain = migrateActiveDirectoryRealm(adRealm);
       } else {
         throw new UnsupportedOperationException();
       }
@@ -31,67 +35,67 @@ public class AuthMigrator {
     return new SgConfig(
         ImmutableMap.empty(),
         new SearchGuard(
-            false,
-            "",
+            Optional.empty(),
+            Optional.empty(),
             new Dynamic(
-                "",
-                null,
-                "",
-                null,
-                null,
-                new Kibana(false, null, null),
-                new Http(false, null),
-                new AuthTokenProvider(false, null, ImmutableMap.empty()),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
+                Optional.empty(),
                 authcDomains.build(),
                 ImmutableMap.empty())));
   }
 
   private SgConfig.AuthcDomain migrateBasicRealm(Realm realm) {
     return new SgConfig.AuthcDomain(
-        realm.enabled(),
-        realm.enabled(),
+        Optional.of(realm.enabled()),
+        Optional.of(realm.enabled()),
         realm.order(),
         new HttpAuthenticator.Basic(true),
-        new AuthenticationBackend.Internal(),
-        new AuthorizationBackend.Noop());
+        new AuthenticationBackend.Internal());
   }
 
   private SgConfig.AuthcDomain migrateLdapRealm(Realm.LdapRealm realm) {
     return new SgConfig.AuthcDomain(
-        realm.enabled(),
-        realm.enabled(),
+        Optional.of(realm.enabled()),
+        Optional.of(realm.enabled()),
         realm.order(),
         new HttpAuthenticator.Basic(true),
         new AuthenticationBackend.Ldap(
-            true,
-            false,
-            false,
-            true,
+            Optional.of(true),
+            Optional.of(false),
+            Optional.of(false),
+            Optional.of(true),
             realm.url(),
             realm.bindDn(),
             "", // TODO: password,
             realm.userSearchBaseDn(),
             realm.userSearchFilter(),
-            "" // TODO: usernameAttribute
-            ),
-        new AuthorizationBackend.Ldap(
-            true,
-            false,
-            false,
-            true,
+            Optional.of("") // TODO: usernameAttribute
+            ));
+  }
+
+  private SgConfig.AuthcDomain migrateActiveDirectoryRealm(Realm.ActiveDirectoryRealm realm) {
+    return new SgConfig.AuthcDomain(
+        Optional.of(realm.enabled()),
+        Optional.of(realm.enabled()),
+        realm.order(),
+        new HttpAuthenticator.Basic(true),
+        new AuthenticationBackend.Ldap(
+            Optional.of(true),
+            Optional.of(false),
+            Optional.of(false),
+            Optional.of(true),
             realm.url(),
             realm.bindDn(),
-            "", // TODO: password
+            "", // TODO: password,
             realm.userSearchBaseDn(),
-            realm.userSearchFilter(),
-            "", // TODO: usernameAttribute
-            realm.groupSearchBaseDn(),
-            "", // TODO: roleSearch
-            null,
-            "none", // TODO maybe ?
-            "", // TODO
-            true,
-            ImmutableList.empty()));
+            "", // realm.userSearchFilter(), TODO
+            Optional.of("") // TODO: usernameAttribute
+            ));
   }
-  
 }
