@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
+import com.floragunn.fluent.collections.ImmutableList;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -30,7 +31,7 @@ public class MigratorRegistry {
    */
   public List<SubMigrator> getSubMigrators() {
     if (isFinalized) {
-      return subMigrators;
+      return ImmutableList.of(subMigrators);
     } else {
       throw new IllegalStateException("Migrator registry has not been finalized!");
     }
