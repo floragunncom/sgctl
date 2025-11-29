@@ -9,6 +9,7 @@ import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MigratorTest {
   @Test
@@ -22,7 +23,6 @@ public class MigratorTest {
             return List.of();
           }
         };
-
     MigratorRegistry.registerSubMigratorStatic(subMigrator);
     MigratorRegistry.finalizeMigratorsStatic();
 
@@ -33,5 +33,17 @@ public class MigratorTest {
     migrator.migrate(context);
 
     assertTrue(true);
+  }
+
+  private static final Logger logger = LoggerFactory.getLogger(MigratorTest.class);
+
+  @Test
+  public void testLogging() {
+    System.out.println(
+        "ILoggerFactory class: " + LoggerFactory.getILoggerFactory().getClass().getName());
+    System.out.println("Logger impl class: " + logger.getClass().getName());
+    System.out.println("isDebugEnabled: " + logger.isDebugEnabled());
+    logger.debug("SLF4J debug message test");
+    logger.info("SLF4J info message test");
   }
 }
