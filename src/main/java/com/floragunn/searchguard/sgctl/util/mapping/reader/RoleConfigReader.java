@@ -8,7 +8,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -24,30 +23,22 @@ public class RoleConfigReader {
 
     static final String FILE_NAME = "role.json";
 
-    public RoleConfigReader(File roleFile, IntermediateRepresentation ir, MigrationReport report) {
+    public RoleConfigReader(File roleFile, IntermediateRepresentation ir, MigrationReport report) throws DocumentParseException, IOException {
         this.roleFile = roleFile;
         this.ir = ir;
         this.report = report;
         readRoleFile();
     }
 
-    private void readRoleFile() {
+    private void readRoleFile() throws DocumentParseException, IOException {
         if (roleFile == null) return;
-        try {
-            var reader = DocReader.json().read(roleFile);
+        var reader = DocReader.json().read(roleFile);
 
-            if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
-                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
-                return;
-            }
-            readRoles(mapReader);
-        } catch (DocumentParseException e) {
-            printErr("Error while parsing file."); // TODO: Add MigrationReport entry
-        } catch (FileNotFoundException e) {
-            printErr("File not found."); // TODO: Add MigrationReport entry
-        } catch (IOException e) {
-            printErr("Unexpected Error while accessing file."); // TODO: Add MigrationReport entry
+        if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
+            report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
+            return;
         }
+        readRoles(mapReader);
     }
 
     private void readRoles(LinkedHashMap<?, ?> mapReader) {
@@ -122,6 +113,9 @@ public class RoleConfigReader {
                     } else {
                         report.addInvalidType(FILE_NAME, origin, String.class, value);
                     }
+                    break;
+                case "global":
+                    report.addManualAction(FILE_NAME, origin, "Parameters for the key 'global' are not documented well enough for automatic migration.");
                     break;
                 default:
                     report.addUnknownKey(FILE_NAME, key, origin);

@@ -8,7 +8,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,30 +22,21 @@ public class UserConfigReader {
 
     static final String FILE_NAME = "user.json";
 
-    public UserConfigReader(File userFile, IntermediateRepresentation ir, MigrationReport report) {
+    public UserConfigReader(File userFile, IntermediateRepresentation ir, MigrationReport report) throws DocumentParseException, IOException {
         this.userFile = userFile;
         this.ir = ir;
         this.report = report;
         readUserFile();
     }
 
-    private void readUserFile() {
+    private void readUserFile() throws DocumentParseException, IOException {
         if (userFile == null) return;
-        try {
-            var reader = DocReader.json().read(userFile);
-
-            if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
-                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
-                return;
-            }
-            readUsers(mapReader);
-        } catch (DocumentParseException e) {
-            printErr("Error while parsing file."); // TODO: Add MigrationReport entry
-        } catch (FileNotFoundException e) {
-            printErr("File not found."); // TODO: Add MigrationReport entry
-        } catch (IOException e) {
-            printErr("Unexpected Error while accessing file."); // TODO: Add MigrationReport entry
+        var reader = DocReader.json().read(userFile);
+        if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
+            report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
+            return;
         }
+        readUsers(mapReader);
     }
 
     private void readUsers(LinkedHashMap<?, ?> mapReader) {
@@ -109,7 +99,7 @@ public class UserConfigReader {
                     break;
                 case "metadata":
                     if (value instanceof LinkedHashMap<?, ?> metadata) {
-                        if (metadata.keySet().stream().allMatch(metadataKey -> metadataKey instanceof String)) {
+                        if (metadata.keySet().stream().allMatch(String.class::isInstance)) {
                             @SuppressWarnings("unchecked") // Cast is logically checked to always be possible
                             var safeMap = (LinkedHashMap<String, Object>) metadata;
                             attributes = safeMap;

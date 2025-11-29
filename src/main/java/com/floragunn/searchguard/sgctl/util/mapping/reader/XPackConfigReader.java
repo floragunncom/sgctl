@@ -1,9 +1,11 @@
 package com.floragunn.searchguard.sgctl.util.mapping.reader;
 
+import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,7 +29,7 @@ public class XPackConfigReader {
         this.report = MigrationReport.shared;
     }
 
-    public IntermediateRepresentation generateIR() {
+    public IntermediateRepresentation generateIR() throws DocumentParseException, IOException {
         new RoleConfigReader(roleFile, ir, report);
         new UserConfigReader(userFile, ir, report);
         new RoleMappingConfigReader(roleMappingFile, ir, report);
