@@ -1,7 +1,6 @@
 cluster.name: ldap-sec-cluster
 node.name: es-sec-01
 
-network.host: 192.168.10.10
 
 xpack.security.enabled: true
 
@@ -17,8 +16,7 @@ xpack.security.authc:
       group_search.base_dn: "dc=corp,dc=local"
       files.role_mapping: "config/role_mapping.yml"
 
-# Token service (API Keys)
-xpack.security.authc.token.enabled: true
+
 
 # Transport layer TLS
 xpack.security.transport.ssl.enabled: true

@@ -1,3 +1,4 @@
+#NOT FINAL
 admin:
   cluster_permissions:
     - SGS_CLUSTER_ALL
