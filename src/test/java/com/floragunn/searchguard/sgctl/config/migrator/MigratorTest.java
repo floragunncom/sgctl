@@ -152,7 +152,7 @@ class MigratorTest {
   }
 
   @Test
-  public void testMigrationFailureSameFileTwice() {
+  public void testMigrationFailureSameFileTwiceAndSameSubMigratorTwice() {
     // Register sub-migrators
     MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
     MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
