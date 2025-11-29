@@ -36,14 +36,4 @@ public class MigratorTest {
   }
 
   private static final Logger logger = LoggerFactory.getLogger(MigratorTest.class);
-
-  @Test
-  public void testLogging() {
-    System.out.println(
-        "ILoggerFactory class: " + LoggerFactory.getILoggerFactory().getClass().getName());
-    System.out.println("Logger impl class: " + logger.getClass().getName());
-    System.out.println("isDebugEnabled: " + logger.isDebugEnabled());
-    logger.debug("SLF4J debug message test");
-    logger.info("SLF4J info message test");
-  }
 }
