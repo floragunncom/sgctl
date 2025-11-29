@@ -1,8 +1,6 @@
 
 admin:
-  # LDAP Admins
   - "CN=ESAdmins,OU=Groups,DC=corp,DC=local"
-  # Native User
   - "elastic_admin"
 
 dev_poweruser:

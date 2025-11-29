@@ -27,11 +27,3 @@ audit_reader:
   indices:
     - names: [ ".security-auditlog-*" ]
       privileges: [ "read" ]
-
-kibana_system:
-  cluster:
-    - monitor
-    - manage_own_api_key
-  indices:
-    - names: [ ".kibana*", ".kibana_security*" ]
-      privileges: [ "all" ]

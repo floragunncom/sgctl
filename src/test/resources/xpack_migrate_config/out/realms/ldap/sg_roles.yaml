@@ -1,0 +1,37 @@
+admin:
+  cluster_permissions:
+    - SGS_CLUSTER_ALL
+  index_permissions:
+    - index_patterns:
+        - '*'
+      allowed_actions:
+        - SGS_INDICES_ALL
+
+dev_readonly:
+  cluster_permissions:
+    - SGS_CLUSTER_MONITOR
+  index_permissions:
+    - index_patterns:
+        - 'app-logs-*'
+        - 'metrics-*'
+      allowed_actions:
+        - SGS_READ
+
+dev_poweruser:
+  cluster_permissions:
+    - SGS_CLUSTER_COMPOSITE_OPS
+  index_permissions:
+    - index_patterns:
+        - 'app-logs-*'
+        - 'metrics-*'
+      allowed_actions:
+        - SGS_INDICES_ALL
+
+audit_reader:
+  cluster_permissions:
+    - SGS_CLUSTER_MONITOR
+  index_permissions:
+    - index_patterns:
+        - '.security-auditlog-*'
+      allowed_actions:
+        - SGS_READ
