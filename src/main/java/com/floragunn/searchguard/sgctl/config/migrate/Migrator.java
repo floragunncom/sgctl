@@ -13,7 +13,7 @@ import org.slf4j.LoggerFactory;
 /** Class for migrating parsed XPack config to SearchGuard configs using {@link SubMigrator}s. */
 public class Migrator {
 
-  Logger logger = LoggerFactory.getLogger(Migrator.class);
+  private final Logger logger = LoggerFactory.getLogger(Migrator.class);
 
   /**
    * Executes all {@link SubMigrator}s added to the {@link MigratorRegistry} using
