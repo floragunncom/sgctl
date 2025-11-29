@@ -20,7 +20,7 @@ sg_config:
       anonymous_auth_enabled: true
       xff:
         enabled: true
-        internalProxies: '192\.168\.0\.10|192\.168\.0\.11's
+        internalProxies: '192\.168\.0\.10|192\.168\.0\.11'
         remoteIpHeader: 'x-forwarded-for'
     auth_token_provider:
       enabled: true
