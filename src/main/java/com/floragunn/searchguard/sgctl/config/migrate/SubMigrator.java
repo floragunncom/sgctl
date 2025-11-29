@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
+import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import java.util.List;
 import org.slf4j.Logger;
@@ -11,5 +12,6 @@ public interface SubMigrator {
    * @param logger Logger for logging
    * @return Migrated SearchGuard configs
    */
-  List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger);
+  List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
+      throws SgctlException;
 }

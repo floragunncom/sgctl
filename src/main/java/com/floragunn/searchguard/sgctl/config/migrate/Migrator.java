@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
+import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
@@ -21,7 +22,7 @@ public class Migrator {
    * @param context All parsed XPackConfigs. Gets passed to the subMigrators
    * @return A List of SearchGuard Configs
    */
-  public List<NamedConfig<?>> migrate(IMigrationContext context) {
+  public List<NamedConfig<?>> migrate(IMigrationContext context) throws SgctlException {
     logger.info("Starting migration");
 
     final Map<String, NamedConfig<?>> migratedConfigs = new HashMap<>();

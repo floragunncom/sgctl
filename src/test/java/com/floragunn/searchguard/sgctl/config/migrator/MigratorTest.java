@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.config.migrator;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
 import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
@@ -104,8 +105,18 @@ class MigratorTest {
     }
   }
 
+  static class FailingTestMigrator implements SubMigrator {
+
+    @Override
+    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
+        throws SgctlException {
+      logger.debug("FailingTestMigrator migrate start");
+      throw new SgctlException("Failed to migrate because of ...");
+    }
+  }
+
   @Test
-  public void testMigrationSimple() {
+  public void testMigrationSimple() throws SgctlException {
     // Register all sub-migrators
     MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
     // Finalize to prevent error
@@ -173,7 +184,7 @@ class MigratorTest {
   }
 
   @Test
-  public void testMigrationFailureSameFileTwiceAndSameSubMigratorTwice() {
+  public void testMigrationFailureSameFileTwiceAndSameSubMigratorTwice() throws SgctlException {
     // Register sub-migrators
     MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
     MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
@@ -188,7 +199,8 @@ class MigratorTest {
   }
 
   @Test
-  public void testMigrationFailureSameFileTwiceMultipleDifferentSubMigrators() {
+  public void testMigrationFailureSameFileTwiceMultipleDifferentSubMigrators()
+      throws SgctlException {
     // Register sub-migrators
     MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
     MigratorRegistry.registerSubMigratorStatic(new TestMigratorCombined());
@@ -203,7 +215,7 @@ class MigratorTest {
   }
 
   @Test
-  public void testMigrationComplex() {
+  public void testMigrationComplex() throws SgctlException {
     // Register sub-migrators
     MigratorRegistry.registerSubMigratorStatic(new TestMigratorCombined());
     // Finalize to prevent error
@@ -257,6 +269,20 @@ class MigratorTest {
     final var settingValue = convertedConfig1AsMap.get("setting");
     assertNotNull(settingValue);
     assertEquals("null", settingValue);
+  }
+
+  @Test
+  public void testFailingMigration() {
+    // Register sub-migrators
+    MigratorRegistry.registerSubMigratorStatic(new FailingTestMigrator());
+    // Finalize to prevent error
+    MigratorRegistry.finalizeMigratorsStatic();
+
+    final Migrator migrator = new Migrator();
+
+    // Do the migration
+    NullMigrationContext context = new NullMigrationContext();
+    assertThrows(SgctlException.class, () -> migrator.migrate(context));
   }
 
   @AfterEach
