@@ -6,6 +6,8 @@ import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
 import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
+import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -14,11 +16,31 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 
 class MigratorTest {
-  @AfterEach
-  public void testCleanup() {
-    // !!! DO NOT REMOVE !!! Needs to be called after every test, or they will fail !!!
-    final MigratorRegistry migratorRegistry = MigratorRegistry.getInstance();
-    migratorRegistry.reset();
+  record NullMigrationContext() implements Migrator.IMigrationContext {
+    @Override
+    public Optional<RoleMappings> getRoleMappings() {
+      return Optional.empty();
+    }
+
+    @Override
+    public Optional<Roles> getRoles() {
+      return Optional.empty();
+    }
+
+    @Override
+    public Optional<?> getUsers() {
+      return Optional.empty();
+    }
+
+    @Override
+    public Optional<?> getElasticsearch() {
+      return Optional.empty();
+    }
+
+    @Override
+    public Optional<?> getKibana() {
+      return Optional.empty();
+    }
   }
 
   static class TestMigratorUsers implements SubMigrator {
@@ -36,7 +58,7 @@ class MigratorTest {
     }
 
     @Override
-    public List<NamedConfig<?>> migrate(Migrator.MigrationContext context, Logger logger) {
+    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger) {
       logger.debug("TestMigratorUsers migrate start");
 
       final SgInternalUsersConfig sgInternalUsersConfig = new SgInternalUsersConfig();
@@ -72,7 +94,7 @@ class MigratorTest {
     }
 
     @Override
-    public List<NamedConfig<?>> migrate(Migrator.MigrationContext context, Logger logger) {
+    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger) {
       logger.debug("TestMigratorCombined migrate start");
 
       final SgInternalUsersConfig sgInternalUsersConfig = new SgInternalUsersConfig();
@@ -92,8 +114,7 @@ class MigratorTest {
     final Migrator migrator = new Migrator();
 
     // Do the migration
-    Migrator.MigrationContext context =
-        new Migrator.MigrationContext(Optional.empty(), Optional.empty());
+    NullMigrationContext context = new NullMigrationContext();
     final List<NamedConfig<?>> migrationResult;
     try {
       migrationResult = migrator.migrate(context);
@@ -162,8 +183,7 @@ class MigratorTest {
     final Migrator migrator = new Migrator();
 
     // Do the migration
-    Migrator.MigrationContext context =
-        new Migrator.MigrationContext(Optional.empty(), Optional.empty());
+    NullMigrationContext context = new NullMigrationContext();
     assertThrows(IllegalStateException.class, () -> migrator.migrate(context));
   }
 
@@ -178,8 +198,7 @@ class MigratorTest {
     final Migrator migrator = new Migrator();
 
     // Do the migration
-    Migrator.MigrationContext context =
-        new Migrator.MigrationContext(Optional.empty(), Optional.empty());
+    NullMigrationContext context = new NullMigrationContext();
     assertThrows(IllegalStateException.class, () -> migrator.migrate(context));
   }
 
@@ -193,8 +212,7 @@ class MigratorTest {
     final Migrator migrator = new Migrator();
 
     // Do the migration
-    Migrator.MigrationContext context =
-        new Migrator.MigrationContext(Optional.empty(), Optional.empty());
+    NullMigrationContext context = new NullMigrationContext();
     final List<NamedConfig<?>> migrationResult;
     try {
       migrationResult = migrator.migrate(context);
@@ -239,5 +257,12 @@ class MigratorTest {
     final var settingValue = convertedConfig1AsMap.get("setting");
     assertNotNull(settingValue);
     assertEquals("null", settingValue);
+  }
+
+  @AfterEach
+  public void testCleanup() {
+    // Needs to be called after every test, or they will fail
+    final MigratorRegistry migratorRegistry = MigratorRegistry.getInstance();
+    migratorRegistry.reset();
   }
 }

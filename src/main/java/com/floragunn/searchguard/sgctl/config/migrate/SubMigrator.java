@@ -11,5 +11,5 @@ public interface SubMigrator {
    * @param logger Logger for logging
    * @return Migrated SearchGuard configs
    */
-  List<NamedConfig<?>> migrate(Migrator.MigrationContext context, Logger logger);
+  List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger);
 }

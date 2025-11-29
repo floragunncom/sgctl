@@ -21,7 +21,7 @@ public class Migrator {
    * @param context All parsed XPackConfigs. Gets passed to the subMigrators
    * @return A List of SearchGuard Configs
    */
-  public List<NamedConfig<?>> migrate(MigrationContext context) {
+  public List<NamedConfig<?>> migrate(IMigrationContext context) {
     logger.info("Starting migration");
 
     final Map<String, NamedConfig<?>> migratedConfigs = new HashMap<>();
@@ -71,4 +71,17 @@ public class Migrator {
 
       // TODO: Add remaining XPack configs here 😀
       ) {}
+
+  public interface IMigrationContext {
+
+    Optional<RoleMappings> getRoleMappings();
+
+    Optional<Roles> getRoles();
+
+    Optional<?> getUsers(); // TODO: Add real type when merged
+
+    Optional<?> getElasticsearch(); // TODO: Add real type when merged
+
+    Optional<?> getKibana(); // TODO: Add real type or remove if unneeded
+  }
 }
