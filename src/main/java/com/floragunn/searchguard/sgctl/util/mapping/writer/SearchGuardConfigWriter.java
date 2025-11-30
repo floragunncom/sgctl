@@ -13,6 +13,6 @@ public class SearchGuardConfigWriter {
         this.ir = ir;
         userConfig = new UserConfigWriter(ir);
         roleConfig = new RoleConfigWriter(ir);
-        mappingWriter = new RoleMappingWriter();
+        mappingWriter = new RoleMappingWriter(ir);
     }
 }
