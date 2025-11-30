@@ -82,8 +82,6 @@ public class ElasticsearchYamlReader {
                 ir.sslTls.http.handleTlsOptions(stripped, value);
             } else if ((stripped = stripPrefix(key, sslTlsPrefixes)) != null) {
                 ir.sslTls.handleOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, authenticationPrefixes)) != null) {
-                //ir.authoIR.handleOptions(stripped, value);
             }
 
             else {
