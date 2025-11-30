@@ -13,5 +13,5 @@ public interface SubMigrator {
    * @return Migrated SearchGuard configs
    */
   List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
-      throws SgctlException;
+          throws SgctlException;
 }
