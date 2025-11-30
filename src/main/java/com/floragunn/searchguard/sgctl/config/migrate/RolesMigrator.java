@@ -1,10 +1,14 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
+import com.floragunn.fluent.collections.ImmutableList;
+import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalRoles;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.slf4j.Logger;
 
@@ -21,11 +25,46 @@ public class RolesMigrator implements SubMigrator {
       logger.warn("roles.json is empty");
       return List.of();
     }
-    // todo return
+    var internalRolesBuilder = new ImmutableList.Builder<SgInternalRoles.Role>(xpackRoles.get().roles().size());
+
+    //cluster -> translate straight, list of permissions
+    //index -> index group
+    //          allowed action
+
+    for (Map.Entry<String, Roles.Role> entry : xpackRoles.get().roles().entrySet()) {
+      var clusterBuilder = new ImmutableList.Builder<String>(entry.getValue().cluster().size());
+
+      for(String cluster : entry.getValue().cluster()){
+
+        if(clusterPrivileges().containsKey(cluster)){
+          clusterBuilder.add(
+            clusterPrivileges().get(cluster)
+          );
+        }else {
+          logger.warn("Could not migrate cluster privilege" + cluster + "for role" + entry.getKey());
+        }
+
+
+      }
+
+      internalRolesBuilder.add(
+              new SgInternalRoles.Role(
+                      clusterBuilder.build(),
+                      /**
+                       * immutable list cluster
+                       * immutable list index
+                       * immutable list alias -> leer lassen
+                       * immutable list dataStream -> leer lassen
+                       * immutable list tenant -> leer lassen
+                       */
+
+              )
+      );
+    }
     return null;
   }
 
-  private HashMap<String, String> clusterPrivileges() {
+  private static HashMap<String, String> clusterPrivileges() {
     HashMap<String, String> clusterPrivileges = new HashMap<>();
     clusterPrivileges.put("all", "SGS_CLUSTER_ALL");
     clusterPrivileges.put("createsnapshot", "SGS_MANAGE_SNAPSHOTS");
@@ -35,7 +74,7 @@ public class RolesMigrator implements SubMigrator {
     return clusterPrivileges;
   }
 
-  private HashMap<String, String> indicesPrivileges() {
+  private static HashMap<String, String> indicesPrivileges() {
     HashMap<String, String> indicesPrivileges = new HashMap<>();
     indicesPrivileges.put("all", "SGS_INDEX_ALL");
     indicesPrivileges.put("createindex", "SGS_CREATE_INDEX");
