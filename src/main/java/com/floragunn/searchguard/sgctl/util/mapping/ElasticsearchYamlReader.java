@@ -64,6 +64,7 @@ public class ElasticsearchYamlReader {
 
     private void toIR(Map<String, Object> map) {
 
+        String[] globalPrefixes = {"xpack.security."};
         String[] transportPrefixes = {"xpack.security.transport.ssl."};
         String[] httpPrefixes = {"xpack.security.http.ssl."};
         String[] sslTlsPrefixes = {"transport."};
@@ -82,6 +83,10 @@ public class ElasticsearchYamlReader {
                 ir.sslTls.http.handleTlsOptions(stripped, value);
             } else if ((stripped = stripPrefix(key, sslTlsPrefixes)) != null) {
                 ir.sslTls.handleOptions(stripped, value);
+            } else if ((stripped = stripPrefix(key, authenticationPrefixes)) != null) {
+                ir.authent.handleOptions(stripped, value);
+            } else if ((stripped = stripPrefix(key, globalPrefixes)) != null) {
+                ir.global.handleGlobalOptions(stripped, value);
             }
 
             else {
