@@ -15,7 +15,7 @@ import org.slf4j.Logger;
 public class RolesMigrator implements SubMigrator {
 
   HashMap<String, String> clusterPrivileges = clusterPrivileges();
-  HashMap<String, String> indicesPriviliges = indicesPrivileges();
+  HashMap<String, String> indicesPrivileges = indicesPrivileges();
 
   public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
       throws SgctlException {
@@ -25,43 +25,65 @@ public class RolesMigrator implements SubMigrator {
       logger.warn("roles.json is empty");
       return List.of();
     }
-    var internalRolesBuilder = new ImmutableList.Builder<SgInternalRoles.Role>(xpackRoles.get().roles().size());
+    var internalRolesBuilder =
+        new ImmutableMap.Builder<String, SgInternalRoles.Role>(xpackRoles.get().roles().size());
 
-    //cluster -> translate straight, list of permissions
-    //index -> index group
+    // cluster -> translate straight, list of permissions
+    // index -> index group
     //          allowed action
 
     for (Map.Entry<String, Roles.Role> entry : xpackRoles.get().roles().entrySet()) {
       var clusterBuilder = new ImmutableList.Builder<String>(entry.getValue().cluster().size());
 
-      for(String cluster : entry.getValue().cluster()){
+      for (String cluster : entry.getValue().cluster()) {
 
-        if(clusterPrivileges().containsKey(cluster)){
-          clusterBuilder.add(
-            clusterPrivileges().get(cluster)
-          );
-        }else {
-          logger.warn("Could not migrate cluster privilege" + cluster + "for role" + entry.getKey());
+        if (clusterPrivileges.containsKey(cluster)) {
+          clusterBuilder.add(clusterPrivileges.get(cluster));
+        } else {
+          logger.warn(
+              "Could not migrate cluster privilege" + cluster + "for role" + entry.getKey());
         }
-
-
       }
 
-      internalRolesBuilder.add(
-              new SgInternalRoles.Role(
-                      clusterBuilder.build(),
-                      /**
-                       * immutable list cluster
-                       * immutable list index
-                       * immutable list alias -> leer lassen
-                       * immutable list dataStream -> leer lassen
-                       * immutable list tenant -> leer lassen
-                       */
+      var indicesBuilder =
+          new ImmutableList.Builder<SgInternalRoles.Role.Permission>(
+              entry.getValue().indices().size());
 
-              )
-      );
+      for (Roles.Index index : entry.getValue().indices()) {
+        var actionsBuilder = new ImmutableList.Builder<String>(index.privileges().size());
+
+        for (String privilege : index.privileges()) {
+          if (indicesPrivileges.containsKey(privilege)) {
+            actionsBuilder.add(indicesPrivileges.get(privilege));
+          } else {
+            logger.warn(
+                "Could not migrate index privilege " + privilege + "for role" + entry.getKey());
+          }
+        }
+
+        SgInternalRoles.Role.Permission permission =
+            new SgInternalRoles.Role.Permission(index.names(), actionsBuilder.build());
+        indicesBuilder.add(permission);
+      }
+
+      var aliasBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
+      logger.warn("Alias permissions left empty.");
+      var dataStreamBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
+      logger.warn("Data stream permissions left empty.");
+      var tenantBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
+      logger.warn("Tenant permissions left empty.");
+
+      internalRolesBuilder.put(
+          entry.getKey(),
+          new SgInternalRoles.Role(
+              clusterBuilder.build(),
+              indicesBuilder.build(),
+              aliasBuilder.build(),
+              dataStreamBuilder.build(),
+              tenantBuilder.build()));
     }
-    return null;
+
+    return List.of(new SgInternalRoles(internalRolesBuilder.build()));
   }
 
   private static HashMap<String, String> clusterPrivileges() {
@@ -87,20 +109,4 @@ public class RolesMigrator implements SubMigrator {
     indicesPrivileges.put("write", "SGS_WRITE");
     return indicesPrivileges;
   }
-
-  // todo names -> index pattern
-  // todo priivileges -> allowed actions
-  // todo renaming cluster privileges content
-  /**
-   * all -> SGS_CLUSTER_ALL createsnapshot -> SGS\MANAGE_SNAPSHOTS manageindextemplates ->
-   * SGS_CLUSTER_MANAGE_INDEX_TEMPLATES manageingestpipelines -> SGS_CLUSTER_MANAGE_PIPELINES
-   * monitor -> SGS_CLUSTER_MONITOR
-   */
-
-  // todo renaming indices privileges content
-  /**
-   * all -> SGS_INDICES_ALL create -> SGS_CREATE_INDEX createindex -> SGS_CREATE_INDEX delete ->
-   * SGS_DELETE index -> SGS_WRITE manage -> SGS_MANAGE monitor -> SGS_INDICES_MONITOR read ->
-   * SGS_READ write -> SGS_WRITE
-   */
 }
