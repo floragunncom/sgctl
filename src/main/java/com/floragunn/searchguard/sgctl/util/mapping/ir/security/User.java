@@ -31,6 +31,7 @@ public class User {
     public String getEmail() { return email; }
     public @NonNull LinkedHashMap<String, Object> getAttributes() { return attributes; }
     public @NonNull Boolean getEnabled() { return enabled; }
+    public String getProfileUID() { return profileUID; }
 
     // Setter-Methods
     public void setUsername(@NonNull String username) { this.username = username; }
