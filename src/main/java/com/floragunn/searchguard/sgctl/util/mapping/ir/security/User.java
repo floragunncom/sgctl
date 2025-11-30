@@ -43,6 +43,6 @@ public class User {
 
     @Override
     public String toString() {
-        return "User [username=" + username + ", roles=" + roles + ", fullName=" + fullName + ", email=" + email + ", enabled=" + enabled + ", attributes=" + attributes + "]";
+        return "User [\n\tusername=" + username + "\n\troles=" + roles + "\n\tfullName=" + fullName + "\n\temail=" + email + "\n\tenabled=" + enabled + "\n\tattributes=" + attributes + "\n]";
     }
 }

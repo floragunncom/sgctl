@@ -47,7 +47,7 @@ public class XPackConfigReader {
             if (element instanceof LinkedHashMap<?, ?> rawMap) {
                 var value = reader.apply(rawMap);
                 if (value == null) {
-                    continue; // TODO: Discard whole list or return partial
+                    return null;
                 }
                 result.add(value);
             } else {
