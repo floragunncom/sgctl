@@ -1,8 +1,8 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
 
 import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig.SgAuthc;
+import com.floragunn.searchguard.sgctl.commands.MigrateConfig.NewAuthDomain;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.*;
 
 import java.io.File;
@@ -44,22 +44,24 @@ public class SearchGuardConfigWriter {
         config.internalProxies = "";
         config.remoteIpHeader = "";
 
-        config.authDomains.add(createLdapDomain());
+        config.authDomains.add(createLdapDomain(ir));
 
-        config.authDomains.add(createOidcDomain());
+        config.authDomains.add(createOidcDomain(ir));
 
         return config;
     }
 
     /**
-     * Erstellt die LDAP-Auth-Domain für sg_authc.yml
+     * Creates the LDAP-Auth-Domain for sg_authc.yml
+     * @param ir The IR that holds the config info
+     * @return NewAuthDomain
      */
-    private static MigrateConfig.NewAuthDomain createLdapDomain() {
+    private static NewAuthDomain createLdapDomain(IntermediateRepresentationElasticSearchYml ir) {
         Map<String, Object> ldapConfig = new HashMap<>();
         List<String> ldapHosts = Arrays.asList("ldap.example.com", "other.example.com");
         ldapConfig.put("ldap.idp.hosts", ldapHosts);
 
-        return new MigrateConfig.NewAuthDomain(
+        return new NewAuthDomain(
                 "basic/ldap",
                 null,
                 null,
@@ -70,13 +72,15 @@ public class SearchGuardConfigWriter {
     }
 
     /**
-     * Erstellt die OIDC-Auth-Domain für sg_authc.yml
+     * Creates the OIDC-Auth-Domain for sg_authc.yml
+     * @param ir The IR that holds the config info
+     * @return NewAuthDomain
      */
-    private static MigrateConfig.NewAuthDomain createOidcDomain() {
+    private static NewAuthDomain createOidcDomain(IntermediateRepresentationElasticSearchYml ir) {
         Map<String, Object> oidcConfig = new HashMap<>();
 
 
-        return new MigrateConfig.NewAuthDomain(
+        return new NewAuthDomain(
                 "oidc",
                 null,
                 null,
