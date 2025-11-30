@@ -5,13 +5,11 @@ public class IntermediateRepresentationElasticSearchYml {
 
     public GlobalIR global;
     public SslTlsIR sslTls;
-    public AuthorizationIR authoIR;
     public AuthenticationIR authentIR;
 
     public IntermediateRepresentationElasticSearchYml() {
         global = new GlobalIR();
         sslTls = new SslTlsIR();
-        authoIR = new AuthorizationIR();
         authentIR = new AuthenticationIR();
     }
 
