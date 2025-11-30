@@ -1,0 +1,61 @@
+{
+  "validMapping": {
+    "enabled": true,
+    "roles": ["admin"],
+    "users": ["test-user"],
+    "run_as": ["other-user"],
+    "rules": {
+      "field": {
+        "username": "*"
+      }
+    },
+    "metadata": {
+      "note": "this mapping is structurally valid"
+    }
+  },
+  "mappingWithInvalidRolesType": {
+    "enabled": true,
+    "roles": "admin",
+    "users": ["test-user"],
+    "rules": {
+      "field": {
+        "username": "test-user"
+      }
+    }
+  },
+  "mappingWithInvalidUsersType": {
+    "enabled": true,
+    "roles": ["admin"],
+    "users": "test-user",
+    "rules": {
+      "field": {
+        "username": "test-user"
+      }
+    }
+  },
+  "mappingWithInvalidEnabledType": {
+    "enabled": "true",
+    "roles": ["admin"],
+    "users": ["test-user"],
+    "rules": {
+      "field": {
+        "username": "test-user"
+      }
+    }
+  },
+  "mappingWithInvalidRulesType": {
+    "enabled": true,
+    "roles": ["admin"],
+    "users": ["test-user"],
+    "rules": "invalid-rules"
+  },
+  "mappingWithInvalidRoleTemplatesType": {
+    "enabled": true,
+    "role_templates": {},
+    "rules": {
+      "field": {
+        "username": "test-user"
+      }
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "test-user": {
+    "roles": "admin",
+    "full_name": "Test User",
+    "email": "test@example.com",
+    "enabled": true
+  }
+}
