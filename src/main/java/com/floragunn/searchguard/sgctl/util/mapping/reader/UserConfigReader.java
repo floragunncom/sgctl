@@ -22,10 +22,10 @@ public class UserConfigReader {
 
     static final String FILE_NAME = "user.json";
 
-    public UserConfigReader(File userFile, IntermediateRepresentation ir, MigrationReport report) throws DocumentParseException, IOException {
+    public UserConfigReader(File userFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
         this.userFile = userFile;
         this.ir = ir;
-        this.report = report;
+        this.report = MigrationReport.shared;
         readUserFile();
     }
 
@@ -73,9 +73,8 @@ public class UserConfigReader {
             switch (key) {
                 case "username":
                     if (value instanceof String username) {
-                        // TODO: Check thoroughly if this is an actual requirement
                         if (!name.equals(username)) {
-                            report.addWarning(FILE_NAME, origin, "The key: " + key + " does not match the username: " + username);
+                            report.addWarning(FILE_NAME, origin, "The key of the user does not match the username attribute. Key: '" + name + "' username: '" + username + "'");
                             return;
                         }
                     } else {

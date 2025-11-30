@@ -23,10 +23,10 @@ public class RoleConfigReader {
 
     static final String FILE_NAME = "role.json";
 
-    public RoleConfigReader(File roleFile, IntermediateRepresentation ir, MigrationReport report) throws DocumentParseException, IOException {
+    public RoleConfigReader(File roleFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
         this.roleFile = roleFile;
         this.ir = ir;
-        this.report = report;
+        this.report = MigrationReport.shared;
         readRoleFile();
     }
 
@@ -213,7 +213,6 @@ public class RoleConfigReader {
             }
             var value = entry.getValue();
 
-            // TODO: Add query key
             switch (key) {
                 case "clusters":
                     if (!isRemote) {

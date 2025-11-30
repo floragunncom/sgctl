@@ -18,7 +18,6 @@ public class XPackConfigReader {
     File roleFile;
     File roleMappingFile;
     IntermediateRepresentation ir;
-    MigrationReport report;
 
     public XPackConfigReader(File elasticsearch, File user, File role, File roleMappingFile) {
         this.elasticsearch = elasticsearch;
@@ -26,13 +25,12 @@ public class XPackConfigReader {
         this.roleFile = role;
         this.roleMappingFile = roleMappingFile;
         this.ir = new IntermediateRepresentation();
-        this.report = MigrationReport.shared;
     }
 
     public IntermediateRepresentation generateIR() throws DocumentParseException, IOException {
-        new RoleConfigReader(roleFile, ir, report);
-        new UserConfigReader(userFile, ir, report);
-        new RoleMappingConfigReader(roleMappingFile, ir, report);
+        new RoleConfigReader(roleFile, ir);
+        new UserConfigReader(userFile, ir);
+        new RoleMappingConfigReader(roleMappingFile, ir);
 
         ir.getUsers().forEach(user -> print(user.toString()));
         ir.getRoles().forEach(role -> print(role.toString()));

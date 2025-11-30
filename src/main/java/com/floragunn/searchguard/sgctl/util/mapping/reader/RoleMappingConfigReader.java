@@ -7,7 +7,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentatio
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -23,32 +22,24 @@ public class RoleMappingConfigReader {
 
     static final String FILE_NAME = "role_mapping.json";
 
-    public RoleMappingConfigReader(File roleMappingFile, IntermediateRepresentation ir, MigrationReport report) {
+    public RoleMappingConfigReader(File roleMappingFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
         this.roleMappingFile = roleMappingFile;
         this.ir = ir;
-        this.report = report;
+        this.report = MigrationReport.shared;
         readRoleMappingFile();
     }
 
-    private void readRoleMappingFile() {
+    private void readRoleMappingFile() throws DocumentParseException, IOException {
         if (roleMappingFile == null) return;
-        try {
-            var reader = DocReader.json().read(roleMappingFile);
 
-            if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
-                MigrationReport.shared.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
-                return;
-            }
+        var reader = DocReader.json().read(roleMappingFile);
 
-            readRoleMappings(mapReader);
-
-        } catch (DocumentParseException e) {
-            printErr("Error while parsing file."); // TODO: Add MigrationReport entry
-        } catch (FileNotFoundException e) {
-            printErr("File not found."); // TODO: Add MigrationReport entry
-        } catch (IOException e) {
-            printErr("Unexpected Error while accessing file."); // TODO: Add MigrationReport entry
+        if (!(reader instanceof LinkedHashMap<?, ?> mapReader)) {
+            MigrationReport.shared.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, reader);
+            return;
         }
+
+        readRoleMappings(mapReader);
     }
 
     private void readRoleMappings(LinkedHashMap<?, ?> mapReader) {
@@ -121,6 +112,7 @@ public class RoleMappingConfigReader {
                     break;
 
                 case "metadata":
+
                     // TODO: Implement readMetadata() if necessary
                     break;
 
