@@ -12,9 +12,6 @@ import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
-import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import picocli.CommandLine;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +20,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+
+import com.floragunn.searchguard.sgctl.config.xpack.Users;
+import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
+import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "migrate-security",
@@ -52,6 +53,7 @@ public class XPackMigrate implements Callable<Integer> {
           // TODO: Add parsing functions here <filename>,Record::parse
           "role_mapping.json", RoleMappings::parse,
           "roles.json", Roles::parse,
+          "users.json", Users::parse,
           "elasticsearch.yml", XPackElasticsearchConfig::parse);
 
   public Integer call() throws Exception {
@@ -83,7 +85,7 @@ public class XPackMigrate implements Callable<Integer> {
     return new Migrator.MigrationContext(
         Optional.ofNullable((RoleMappings) xPackConfigs.get("role_mappings.json")),
         Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
-        Optional.empty(), // TODO: Get real config
+        Optional.ofNullable((Users) xPackConfigs.get("users.json")),
         Optional.ofNullable((XPackElasticsearchConfig) xPackConfigs.get("elasticsearch.yml")),
         Optional.empty() // TODO: Get real config
         );
