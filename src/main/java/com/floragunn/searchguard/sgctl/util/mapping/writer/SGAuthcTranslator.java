@@ -19,7 +19,9 @@ public class SGAuthcTranslator {
         config.internalProxies = "";
         config.remoteIpHeader = "";
         ir.authent.realms.forEach((String realmName, RealmIR realm) -> {
-            switch (realm.getType()) {
+            String type = realm.getType();
+            //TODO Add Migration Report note on translated realm
+            switch (type) {
                 case "ldap":
                     config.authDomains.add(createLdapDomain(realmName, (RealmIR.LdapRealmIR) realm));
                     break;
