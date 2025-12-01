@@ -3,11 +3,14 @@ package com.floragunn.searchguard.sgctl.config.migrate;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
+import com.floragunn.searchguard.sgctl.SgctlException;
+import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalRolesMapping;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import java.util.*;
+import org.slf4j.Logger;
 
-public class RoleMappingsMigrator {
+public class RoleMappingsMigrator implements SubMigrator {
 
   // Collect unique users and roles
   private static class SgMappingBuilder {
@@ -17,7 +20,22 @@ public class RoleMappingsMigrator {
     Set<String> ips = new HashSet<>();
   }
 
-  public SgInternalRolesMapping convert(RoleMappings xpackRoleMappings) {
+  @Override
+  public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
+      throws SgctlException {
+    if (context.getRoleMappings().isEmpty()) {
+      logger.info("No X-Pack role mappings found. Skipping migration.");
+      return List.of();
+    }
+
+    RoleMappings source = context.getRoleMappings().get();
+
+    SgInternalRolesMapping result = convert(source, logger);
+
+    return List.of(result);
+  }
+
+  private SgInternalRolesMapping convert(RoleMappings xpackRoleMappings, Logger logger) {
     Map<String, SgMappingBuilder> builderMap = new HashMap<>();
 
     for (Map.Entry<String, RoleMappings.RoleMapping> entry :
@@ -26,7 +44,10 @@ public class RoleMappingsMigrator {
       RoleMappings.RoleMapping mapping = entry.getValue();
 
       if (mapping instanceof RoleMappings.RoleMapping.Templates) {
-        // TODO: Implement logic (if that's even possible)
+        // If it is possible: TODO: Implement
+        logger.warn(
+            "[{}] Skipping 'Role Templates'. Dynamic logic cannot be migrated to static YAML.",
+            mappingName);
         continue;
       }
 
@@ -36,10 +57,10 @@ public class RoleMappingsMigrator {
         }
 
         // Recursively extract a flat list from the rules tree
-        ExtractionResult extracted = extractIdentities(rolesMapping.rules(), mappingName);
+        ExtractionResult extracted = extractIdentities(rolesMapping.rules(), mappingName, logger);
 
         if (extracted.isEmpty()) {
-          System.out.println("INFO [" + mappingName + "]: No migratable users/roles found!");
+          logger.info("[{}] No migratable users/roles/hosts/ips found.", mappingName);
           continue;
         }
 
@@ -85,7 +106,7 @@ public class RoleMappingsMigrator {
   }
 
   private ExtractionResult extractIdentities(
-      RoleMappings.RoleMapping.Rule rule, String mappingName) {
+      RoleMappings.RoleMapping.Rule rule, String mappingName, Logger logger) {
     List<String> users = new ArrayList<>();
     List<String> backendRoles = new ArrayList<>();
     List<String> hosts = new ArrayList<>();
@@ -93,7 +114,7 @@ public class RoleMappingsMigrator {
 
     if (rule instanceof RoleMappings.RoleMapping.Rule.Any anyRule) {
       for (RoleMappings.RoleMapping.Rule subRule : anyRule.rules()) {
-        ExtractionResult subResult = extractIdentities(subRule, mappingName);
+        ExtractionResult subResult = extractIdentities(subRule, mappingName, logger);
         users.addAll(subResult.users);
         backendRoles.addAll(subResult.backendRoles);
         hosts.addAll(subResult.hosts);
@@ -102,11 +123,8 @@ public class RoleMappingsMigrator {
 
     } else if (rule instanceof RoleMappings.RoleMapping.Rule.All allRule) {
       // TODO: (If possible) Implement way to go from AND to OR logic without security problems
-      System.err.println(
-          "ERROR ["
-              + mappingName
-              + "]: Rule contains 'ALL' (AND logic). SKIPPED for security reasons.");
-
+      logger.error(
+          "[{}] Rule contains 'ALL' (AND logic). Skipped for security reasons.", mappingName);
     } else if (rule instanceof RoleMappings.RoleMapping.Rule.Field fieldRule) {
       DocNode data = fieldRule.data();
 
@@ -123,14 +141,14 @@ public class RoleMappingsMigrator {
         parseStringOrList(data.get("remote_ip"), ips);
       } else if (data.hasNonNull("realm.name")) {
         // Haven't found a way to implement realms in SearchGuard (yet?)
-        System.out.println("INFO [" + mappingName + "]: Ignoring 'realm.name' rule.");
+        logger.info("[{}] Ignoring 'realm.name' rule.", mappingName);
       } else {
-        System.out.println(
-            "WARNING [" + mappingName + "]: Unknown field in rule: " + data.toJsonString());
+        logger.warn("[{}] Unknown field in rule: {}", mappingName, data.toJsonString());
       }
       // Haven't found a way yet to automatically translate negations to SearchGuard (positive only)
     } else if (rule instanceof RoleMappings.RoleMapping.Rule.Except exceptRule) {
-      System.out.println("INFO [" + mappingName + "]: Ignoring negation.");
+      logger.error(
+          "[{}] Rule contains 'EXCEPT' (Negation). Skipped for security reasons.", mappingName);
     }
 
     return new ExtractionResult(users, backendRoles, hosts, ips);
