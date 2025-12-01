@@ -13,7 +13,7 @@ public class AuthenticationIR {
     String maxTokens; // Maximum number of API keys
 
     // realms collection
-    Map<String, RealmIR> realms = new HashMap<>();
+    public Map<String, RealmIR> realms = new HashMap<>();
 
     public void handleOptions(String optionName, Object optionValue) {
         boolean error = false;
@@ -35,6 +35,7 @@ public class AuthenticationIR {
             RealmIR realm = realms.computeIfAbsent(name, n -> RealmIR.create(type, n));
 
             realm.handleAttribute(attr, optionValue);
+            return;
         }
 
         // Booleans
