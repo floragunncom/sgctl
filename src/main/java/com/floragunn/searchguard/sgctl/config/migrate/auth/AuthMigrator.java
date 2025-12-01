@@ -6,10 +6,13 @@ import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
+import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap;
+import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap.*;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig.Realm;
 import org.slf4j.Logger;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 public class AuthMigrator implements SubMigrator {
@@ -29,9 +32,9 @@ public class AuthMigrator implements SubMigrator {
     for (var realm : realms.values()) {
       SgAuthC.AuthDomain<?> domain;
       if (realm instanceof Realm.NativeRealm || realm instanceof Realm.FileRealm) {
-        domain = migrateBasicRealm(realm);
+        domain = new SgAuthC.AuthDomain.Internal();
       } else if (realm instanceof Realm.LdapRealm ldapRealm) {
-        domain = migrateLdapRealm(ldapRealm);
+        domain = migrateLdapRealm(ldapRealm, logger);
       } else if (realm instanceof Realm.ActiveDirectoryRealm adRealm) {
         domain = migrateActiveDirectoryRealm(adRealm);
       } else {
@@ -44,44 +47,39 @@ public class AuthMigrator implements SubMigrator {
     return List.of(new SgAuthC(authcDomains.build()));
   }
 
-  private SgAuthC.AuthDomain<?> migrateBasicRealm(Realm realm) {
-    return new SgAuthC.AuthDomain.Internal();
-  }
-
-  private SgAuthC.AuthDomain<?> migrateLdapRealm(Realm.LdapRealm realm) {
+  private SgAuthC.AuthDomain<?> migrateLdapRealm(Realm.LdapRealm realm, Logger logger) {
     var identityProvider =
-        new SgAuthC.AuthDomain.Ldap.IdentityProvider(
+        new IdentityProvider(
             realm.url(),
             Optional.empty(),
             Optional.ofNullable(realm.bindDn()),
-            Optional.empty(),
+            Optional.ofNullable(realm.secureBindPassword()),
             Optional.empty(),
             Optional.empty());
 
     var userSearch =
         Optional.of(
-            new SgAuthC.AuthDomain.Ldap.UserSearch(
+            new UserSearch(
                 Optional.ofNullable(realm.userSearchBaseDn()),
-                Optional.empty(),
-                Optional.ofNullable(realm.userSearchFilter())
-                    .map(SgAuthC.AuthDomain.Ldap.Filter.Raw::new)));
+                migrateSearchScope(realm.userSearchScope(), logger),
+                Optional.ofNullable(realm.userSearchFilter()).map(Filter.Raw::new)));
 
     var groupSearch =
         realm.groupSearchBaseDn() == null
-            ? Optional.<SgAuthC.AuthDomain.Ldap.GroupSearch>empty()
+            ? Optional.<GroupSearch>empty()
             : Optional.of(
-                new SgAuthC.AuthDomain.Ldap.GroupSearch(
+                new GroupSearch(
                     realm.groupSearchBaseDn(),
-                    Optional.empty(),
+                    migrateSearchScope(realm.groupSearchScope(), logger),
                     Optional.empty(),
                     Optional.empty()));
 
-    return new SgAuthC.AuthDomain.Ldap(identityProvider, userSearch, groupSearch);
+    return new Ldap(identityProvider, userSearch, groupSearch);
   }
 
   private SgAuthC.AuthDomain<?> migrateActiveDirectoryRealm(Realm.ActiveDirectoryRealm realm) {
     var identityProvider =
-        new SgAuthC.AuthDomain.Ldap.IdentityProvider(
+        new IdentityProvider(
             realm.url(),
             Optional.empty(),
             Optional.ofNullable(realm.bindDn()),
@@ -90,8 +88,21 @@ public class AuthMigrator implements SubMigrator {
             Optional.empty());
     var userSearch =
         Optional.of(
-            new SgAuthC.AuthDomain.Ldap.UserSearch(
+            new UserSearch(
                 Optional.ofNullable(realm.userSearchBaseDn()), Optional.empty(), Optional.empty()));
-    return new SgAuthC.AuthDomain.Ldap(identityProvider, userSearch, Optional.empty());
+    return new Ldap(identityProvider, userSearch, Optional.empty());
+  }
+
+  private Optional<SearchScope> migrateSearchScope(String scope, Logger logger) {
+    return switch (scope.toLowerCase(Locale.ROOT)) {
+      case "sub_tree" -> Optional.of(SearchScope.SUB);
+      case "one_level" -> Optional.of(SearchScope.ONE);
+      default -> {
+        logger.warn(
+            "Cannot convert search scope '{}' as it is unrecognized or an equivalent scope doesn't exist",
+            scope);
+        yield Optional.empty();
+      }
+    };
   }
 }

@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.config.searchguard;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.OrderedImmutableMap;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -133,7 +134,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
         public Object toBasicObject() {
           var builder = new OrderedImmutableMap.Builder<String, Object>();
           baseDn.ifPresent(dn -> builder.put("base_dn", dn));
-          scope.ifPresent(s -> builder.put("scope", s.name().toLowerCase()));
+          scope.ifPresent(s -> builder.put("scope", s.name().toLowerCase(Locale.ROOT)));
           filter.ifPresent(f -> builder.put("filter." + f.key(), f.value()));
           return builder.build();
         }
@@ -151,7 +152,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
        */
       public record GroupSearch(
           String baseDn,
-          Optional<String> scope,
+          Optional<SearchScope> scope,
           Optional<Recursive> recursive,
           Optional<Cache> cache)
           implements Document<GroupSearch> {
@@ -160,7 +161,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
         public Object toBasicObject() {
           var builder = new OrderedImmutableMap.Builder<String, Object>();
           builder.put("base_dn", baseDn);
-          scope.ifPresent(s -> builder.put("scope", s));
+          scope.ifPresent(s -> builder.put("scope", s.name().toLowerCase(Locale.ROOT)));
           recursive.ifPresent(r -> builder.put("recursive", r.toBasicObject()));
           cache.ifPresent(c -> builder.put("cache", c.toBasicObject()));
           return builder.build();
