@@ -13,6 +13,8 @@ public class RoleMappingsMigrator {
   private static class SgMappingBuilder {
     Set<String> users = new HashSet<>();
     Set<String> backendRoles = new HashSet<>();
+    Set<String> hosts = new HashSet<>();
+    Set<String> ips = new HashSet<>();
   }
 
   public SgInternalRolesMapping convert(RoleMappings xpackRoleMappings) {
@@ -47,6 +49,8 @@ public class RoleMappingsMigrator {
 
           builder.users.addAll(extracted.users);
           builder.backendRoles.addAll(extracted.backendRoles);
+          builder.hosts.addAll(extracted.hosts);
+          builder.ips.addAll(extracted.ips);
         }
       }
     }
@@ -62,8 +66,8 @@ public class RoleMappingsMigrator {
           new SgInternalRolesMapping.RoleMapping(
               ImmutableList.of(b.users),
               ImmutableList.of(b.backendRoles),
-              ImmutableList.empty(),
-              ImmutableList.empty());
+              ImmutableList.of(b.hosts),
+              ImmutableList.of(b.ips));
 
       finalMap.put(entry.getKey(), sgMapping);
     }
@@ -73,9 +77,10 @@ public class RoleMappingsMigrator {
 
   // Internal Logic
 
-  private record ExtractionResult(List<String> users, List<String> backendRoles) {
+  private record ExtractionResult(
+      List<String> users, List<String> backendRoles, List<String> hosts, List<String> ips) {
     boolean isEmpty() {
-      return users.isEmpty() && backendRoles.isEmpty();
+      return users.isEmpty() && backendRoles.isEmpty() && hosts.isEmpty() && ips.isEmpty();
     }
   }
 
@@ -83,12 +88,16 @@ public class RoleMappingsMigrator {
       RoleMappings.RoleMapping.Rule rule, String mappingName) {
     List<String> users = new ArrayList<>();
     List<String> backendRoles = new ArrayList<>();
+    List<String> hosts = new ArrayList<>();
+    List<String> ips = new ArrayList<>();
 
     if (rule instanceof RoleMappings.RoleMapping.Rule.Any anyRule) {
       for (RoleMappings.RoleMapping.Rule subRule : anyRule.rules()) {
         ExtractionResult subResult = extractIdentities(subRule, mappingName);
         users.addAll(subResult.users);
         backendRoles.addAll(subResult.backendRoles);
+        hosts.addAll(subResult.hosts);
+        ips.addAll(subResult.ips);
       }
 
     } else if (rule instanceof RoleMappings.RoleMapping.Rule.All allRule) {
@@ -108,6 +117,10 @@ public class RoleMappingsMigrator {
         parseStringOrList(data.get("dn"), users);
       } else if (data.hasNonNull("groups")) {
         parseStringOrList(data.get("groups"), backendRoles);
+      } else if (data.hasNonNull("host")) {
+        parseStringOrList(data.get("host"), hosts);
+      } else if (data.hasNonNull("remote_ip")) {
+        parseStringOrList(data.get("remote_ip"), ips);
       } else if (data.hasNonNull("realm.name")) {
         // Haven't found a way to implement realms in SearchGuard (yet?)
         System.out.println("INFO [" + mappingName + "]: Ignoring 'realm.name' rule.");
@@ -120,7 +133,7 @@ public class RoleMappingsMigrator {
       System.out.println("INFO [" + mappingName + "]: Ignoring negation.");
     }
 
-    return new ExtractionResult(users, backendRoles);
+    return new ExtractionResult(users, backendRoles, hosts, ips);
   }
 
   // Needed, because field can be a String or List
