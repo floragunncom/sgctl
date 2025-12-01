@@ -8,7 +8,7 @@ import java.util.*;
 
 public class SGAuthcTranslator {
     /**
-     * Maps LDAP configuration from intermediate representation to Search Guard's sg_authc.yml format.
+     * Creates Authc Config
      *
      * @param ir The intermediate representation.
      * @return Populated SgAuthc object.
@@ -59,11 +59,15 @@ public class SGAuthcTranslator {
     private static MigrateConfig.NewAuthDomain createLdapDomain(String realmName, RealmIR.LdapRealmIR ir) {
         Map<String, Object> ldapConfig = new HashMap<>();
 
-        List<String> ldapHosts = Arrays.asList("ldap.example.com", "other.example.com");
+        List<String> ldapHosts = Arrays.asList(ir.getUrl());
         ldapConfig.put("ldap.idp.hosts", ldapHosts);
+        ldapConfig.put("ldap.idp.bind_dn", ir.getBindDn());
+        ldapConfig.put("ldap.user_search.base_dn", ir.getUserSearchBaseDn());
+        ldapConfig.put("ldap.user_search.filter.raw", ir.getUserSearchFilter());
+        ldapConfig.put("ldap.group_search.base_dn", ir.getGroupSearchBaseDn());
 
         return new MigrateConfig.NewAuthDomain(
-                "basic/ldap",
+                ir.getType(),
                 null,
                 null,
                 null,
