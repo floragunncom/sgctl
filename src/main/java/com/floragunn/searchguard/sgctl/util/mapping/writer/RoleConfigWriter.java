@@ -201,6 +201,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                     break;
             }
         }
+        return sgPrivileges;
     }
 
     @Override
