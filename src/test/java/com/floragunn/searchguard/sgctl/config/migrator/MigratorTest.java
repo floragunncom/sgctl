@@ -9,6 +9,7 @@ import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
+import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -34,7 +35,7 @@ class MigratorTest {
     }
 
     @Override
-    public Optional<?> getElasticsearch() {
+    public Optional<XPackElasticsearchConfig> getElasticsearch() {
       return Optional.empty();
     }
 

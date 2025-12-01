@@ -1,9 +1,14 @@
 package com.floragunn.searchguard.sgctl.config.migrate.auth;
 
 import com.floragunn.fluent.collections.ImmutableList;
+import com.floragunn.searchguard.sgctl.SgctlException;
+import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
+import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
+import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig.Realm;
+import java.util.List;
 import java.util.Optional;
 import org.slf4j.Logger;
 
@@ -83,5 +88,31 @@ public class AuthMigrator {
             new SgAuthC.AuthDomain.Ldap.UserSearch(
                 Optional.ofNullable(realm.userSearchBaseDn()), Optional.empty(), Optional.empty()));
     return new SgAuthC.AuthDomain.Ldap(identityProvider, userSearch, Optional.empty());
+  }
+
+  public static class AuthSubMigrator implements SubMigrator {
+
+    private final AuthMigrator authMigrator;
+
+    public AuthSubMigrator() {
+      this(new AuthMigrator());
+    }
+
+    AuthSubMigrator(AuthMigrator authMigrator) {
+      this.authMigrator = authMigrator;
+    }
+
+    @Override
+    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
+        throws SgctlException {
+      var elasticsearchConfig = context.getElasticsearch();
+      if (elasticsearchConfig.isEmpty()) {
+        logger.debug("Skipping auth migration: no elasticsearch configuration provided");
+        return List.of();
+      }
+
+      var sgAuthc = authMigrator.migrate(elasticsearchConfig.get(), logger);
+      return List.of(sgAuthc);
+    }
   }
 }

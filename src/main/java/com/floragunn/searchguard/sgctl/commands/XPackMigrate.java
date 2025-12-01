@@ -8,6 +8,7 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
+import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
@@ -82,14 +83,13 @@ public class XPackMigrate implements Callable<Integer> {
         Optional.ofNullable((RoleMappings) xPackConfigs.get("role_mappings.json")),
         Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
         Optional.empty(), // TODO: Get real config
-        Optional.empty(), // TODO: Get real config
+        Optional.ofNullable((XPackElasticsearchConfig) xPackConfigs.get("elasticsearch.yml")),
         Optional.empty() // TODO: Get real config
         );
   }
 
   private void registerSubMigrators() {
-    // TODO: Add sub migrators example:
-    // MigratorRegistry.registerSubMigratorStatic(...);
+    MigratorRegistry.registerSubMigratorStatic(new AuthMigrator.AuthSubMigrator());
 
     MigratorRegistry.finalizeMigratorsStatic(); // Never forget
   }
