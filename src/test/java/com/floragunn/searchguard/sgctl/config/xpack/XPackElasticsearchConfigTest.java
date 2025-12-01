@@ -60,6 +60,7 @@ public class XPackElasticsearchConfigTest {
         assertEquals(1, ldapRealm.url().size());
         assertEquals("ldaps://ldap.example.com:636", ldapRealm.url().get(0));
         assertEquals("cn=admin,dc=example,dc=com", ldapRealm.bindDn());
+        assertEquals("ldapsecret", ldapRealm.bindPassword());
         assertEquals("ou=users,dc=example,dc=com", ldapRealm.userSearchBaseDn());
         assertEquals("(uid={0})", ldapRealm.userSearchFilter());
         assertEquals("ou=groups,dc=example,dc=com", ldapRealm.groupSearchBaseDn());
@@ -122,6 +123,38 @@ public class XPackElasticsearchConfigTest {
         var native1 = config.security().authc().realms().get("native.native1");
         assertNotNull(native1);
         assertFalse(native1.enabled());
+    }
+
+    @Test
+    public void testLdapWithoutGroupSearch() throws IOException, ConfigValidationException {
+        String yaml = """
+            xpack:
+              security:
+                enabled: true
+                authc:
+                  realms:
+                    ldap:
+                      ldapNoGroups:
+                        order: 0
+                        enabled: true
+                        url: ["ldaps://ldap.example.com:636"]
+                        bind_dn: "cn=admin,dc=example,dc=com"
+                        bind_password: "secret"
+                        user_search:
+                          base_dn: "ou=users,dc=example,dc=com"
+            """;
+
+        var node = DocNode.wrap(DocReader.yaml().read(yaml));
+        var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+
+        var ldap = config.security().authc().realms().get("ldap.ldapNoGroups");
+        assertNotNull(ldap);
+        assertInstanceOf(Realm.LdapRealm.class, ldap);
+        var ldapRealm = (Realm.LdapRealm) ldap;
+        assertEquals("secret", ldapRealm.bindPassword());
+        assertNull(ldapRealm.groupSearchBaseDn());
+        assertNull(ldapRealm.groupSearchScope());
+        assertNull(ldapRealm.groupSearchFilter());
     }
 
     private DocNode read(String path) throws IOException, DocumentParseException {

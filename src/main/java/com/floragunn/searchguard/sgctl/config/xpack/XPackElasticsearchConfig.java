@@ -104,6 +104,7 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         boolean enabled,
         ImmutableList<String> url,
         String bindDn,
+        String bindPassword,
         String secureBindPassword,
         String userDnTemplates,
         String authorizationRealms,
@@ -183,6 +184,7 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         throws ConfigValidationException {
       var url = vDoc.get("url").asList().ofStrings();
       var bindDn = vDoc.get("bind_dn").asString();
+      var bindPassword = vDoc.get("bind_password").asString();
       var secureBindPassword = vDoc.get("secure_bind_password").asString();
       // TODO: Gotta look into whether a list is also possible
       var authorizationRealms = vDoc.get("authorization_realms").withDefault("").asString();
@@ -193,15 +195,18 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
 
       var userSearchNode = vDoc.get("user_search").asDocNode();
       var userSearchScope =
-          Objects.requireNonNullElse(userSearchNode.getAsString("scope"), "sub_tree");
-      var userSearchBaseDn = userSearchNode.getAsString("base_dn");
+          Objects.requireNonNullElse(
+              userSearchNode != null ? userSearchNode.getAsString("scope") : null, "sub_tree");
+      var userSearchBaseDn = userSearchNode != null ? userSearchNode.getAsString("base_dn") : null;
       var userSearchFilter =
-          Objects.requireNonNullElse(userSearchNode.getAsString("filter"), "(uid={0})");
+          Objects.requireNonNullElse(
+              userSearchNode != null ? userSearchNode.getAsString("filter") : null, "(uid={0})");
 
       var groupSearchNode = vDoc.get("group_search").asDocNode();
-      var groupSearchBaseDn = groupSearchNode.getAsString("base_dn");
-      var groupSearchScope = groupSearchNode.getAsString("scope");
-      var groupSearchFilter = groupSearchNode.getAsString("filter");
+      var groupSearchBaseDn =
+          groupSearchNode != null ? groupSearchNode.getAsString("base_dn") : null;
+      var groupSearchScope = groupSearchNode != null ? groupSearchNode.getAsString("scope") : null;
+      var groupSearchFilter = groupSearchNode != null ? groupSearchNode.getAsString("filter") : null;
 
       var unmappedGroupsAsRoles =
           vDoc.get("unmapped_groups_as_roles").withDefault(false).asBoolean();
@@ -227,6 +232,7 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
           enabled,
           url,
           bindDn,
+          bindPassword,
           secureBindPassword,
           userDnTemplates,
           authorizationRealms,
