@@ -1,0 +1,94 @@
+{
+  "took": 14,
+  "timed_out": false,
+  "_shards": {
+    "total": 1,
+    "successful": 1,
+    "skipped": 0,
+    "failed": 0
+  },
+  "hits": {
+    "total": { "value": 3, "relation": "eq" },
+    "max_score": 1.0,
+    "hits": [
+      {
+        "_index": ".security",
+        "_type": "_doc",
+        "_id": "user-john_doe",
+        "_score": 1.0,
+        "_source": {
+          "roles": ["admin","monitoring"],
+          "full_name": "John Doe",
+          "email": "john.doe@example.com",
+          "metadata": {"department": "IT","employee_id": "A1234"},
+          "enabled": true,
+          "type": "user"
+        }
+      },
+      {
+        "_index": ".security",
+        "_type": "_doc",
+        "_id": "user-jane_smith",
+        "_score": 1.0,
+        "_source": {
+          "username": "jane_smith",
+          "password": "$2a$12$oej89fF9fXQleZtlmZklrOk39uOcPu3dfsh9FJLpuaYDoG0k6npqG",
+          "roles": ["kibana_admin","other_role2"],
+          "full_name": "Jane Smith",
+          "email": "jane.smith@example.com",
+          "metadata": {"department": "Marketing","employee_id": "B8891"},
+          "enabled": true,
+          "type": "user"
+        }
+      },
+      {
+        "_index": ".security",
+        "_type": "_doc",
+        "_id": "user-pauls_lee",
+        "_score": 1.0,
+        "_source": {
+          "username": "pauls_lee",
+          "password": "$2a$12$xyz123456789abcdefghijklmnopqrs",
+          "roles": ["viewer"],
+          "full_name": "Paul Lee",
+          "email": "paul.lee@example.com",
+          "metadata": {"department": "Support","employee_id": "C3345"},
+          "enabled": true,
+          "type": "user"
+        }
+      },
+      {
+        "_index": ".security",
+        "_type": "_doc",
+        "_id": "user-lisa_kim",
+        "_score": 1.0,
+        "_source": {
+          "username": "lisa_kim",
+          "password": "$2a$12$abcd1234efgh5678ijklmnopqrstuv",
+          "roles": ["admin","kibana_admin"],
+          "full_name": "Lisa Kim",
+          "email": "lisa.kim@example.com",
+          "metadata": {"department": "IT","employee_id": "D5566"},
+          "enabled": true,
+          "type": "user"
+        }
+      },
+      {
+        "_index": ".security",
+        "_type": "_doc",
+        "_id": "user-mark_tan",
+        "_score": 1.0,
+        "_source": {
+          "username": "mark_tan",
+          "password": "$2a$12$mnop1234qrst5678uvwxabcdefghi",
+          "roles": ["developer"],
+          "full_name": "Mark Tan",
+          "email": "mark.tan@example.com",
+          "metadata": {"department": "R&D","employee_id": "E7788"},
+          "enabled": true,
+          "type": "user"
+        }
+      }
+    ]
+  }
+}
