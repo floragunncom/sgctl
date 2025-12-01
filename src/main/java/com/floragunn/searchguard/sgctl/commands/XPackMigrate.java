@@ -11,6 +11,7 @@ import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
+import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,8 +48,12 @@ public class XPackMigrate implements Callable<Integer> {
   private static final Map<String, Parser<Object, Parser.Context>> configParsers =
       Map.of(
           // TODO: Add parsing functions here <filename>,Record::parse
-          "role_mapping.json", RoleMappings::parse,
-          "roles.json", Roles::parse);
+          "role_mapping.json",
+          RoleMappings::parse,
+          "roles.json",
+          Roles::parse,
+          "users.json",
+          Users::parse);
 
   public Integer call() throws Exception {
     registerSubMigrators();
@@ -79,7 +84,7 @@ public class XPackMigrate implements Callable<Integer> {
     return new Migrator.MigrationContext(
         Optional.ofNullable((RoleMappings) xPackConfigs.get("role_mappings.json")),
         Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
-        Optional.empty(), // TODO: Get real config
+        Optional.ofNullable((Users) xPackConfigs.get("users.json")), //
         Optional.empty(), // TODO: Get real config
         Optional.empty() // TODO: Get real config
         );
