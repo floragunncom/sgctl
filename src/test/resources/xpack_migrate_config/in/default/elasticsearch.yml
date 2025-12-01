@@ -46,3 +46,4 @@ xpack.security.authc.domains: {}
 
 # Realm settings
 xpack.security.authc.realms: {}
+
