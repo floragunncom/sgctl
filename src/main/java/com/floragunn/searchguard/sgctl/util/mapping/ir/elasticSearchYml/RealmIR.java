@@ -273,7 +273,7 @@ import java.util.Map;
                     case "claims.principal": this.claimPrincipal = (String) value; break;
                     case "claims.name": this.claimName = (String) value; break;
                     case "claims.mail": this.claimMail = (String) value; break;
-                    case "claims.grpups": this.claimGroups = (String) value; break;
+                    case "claims.groups": this.claimGroups = (String) value; break;
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
                 switch (attribute) {
