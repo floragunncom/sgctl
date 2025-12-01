@@ -8,7 +8,9 @@ import java.util.List;
 import java.util.Map;
 
  public class RealmIR {
-    String type; // ldap, saml, oidc, ...
+
+
+     String type; // ldap, saml, oidc, ...
     String name;
     int order;
     boolean enabled;
@@ -17,6 +19,22 @@ import java.util.Map;
         this.type = type;
         this.name = name;
     }
+
+     public String getType() {
+         return type;
+     }
+
+     public String getName() {
+         return name;
+     }
+
+     public int getOrder() {
+         return order;
+     }
+
+     public boolean isEnabled() {
+         return enabled;
+     }
 
     // each realm type implements its own handler, attribute is suffix after xpack.security.authc.realms.<type>.<name>.
     public void handleAttribute(String attribute, Object value) {
@@ -44,6 +62,26 @@ import java.util.Map;
         String userSearchBaseDn;
         String userSearchFilter;
         String groupSearchBaseDn;
+
+        public String getUrl() {
+            return url;
+        }
+
+        public String getBindDn() {
+            return bindDn;
+        }
+
+        public String getUserSearchBaseDn() {
+            return userSearchBaseDn;
+        }
+
+        public String getUserSearchFilter() {
+            return userSearchFilter;
+        }
+
+        public String getGroupSearchBaseDn() {
+            return groupSearchBaseDn;
+        }
 
         LdapRealmIR(String name) {
             super("ldap", name);
@@ -82,6 +120,14 @@ import java.util.Map;
         String filesUsers;
         String filesUsersRoles;
 
+        public String getFilesUsers() {
+            return filesUsers;
+        }
+
+        public String getFilesUsersRoles() {
+            return filesUsersRoles;
+        }
+
         FileRealmIR(String name) {
             super("file", name);
         }
@@ -111,6 +157,14 @@ import java.util.Map;
 
         String cacheTtl;
         int cacheMaxUsers;
+
+        public String getCacheTtl() {
+            return cacheTtl;
+        }
+
+        public int getCacheMaxUsers() {
+            return cacheMaxUsers;
+        }
 
         NativeRealmIR(String name) {
             super("native", name);
@@ -143,6 +197,22 @@ import java.util.Map;
         String spEntityID;
         String spAcs;
         String attributesPrincipal;
+
+        public String getIdpMetadataPath() {
+            return idpMetadataPath;
+        }
+
+        public String getSpEntityID() {
+            return spEntityID;
+        }
+
+        public String getSpAcs() {
+            return spAcs;
+        }
+
+        public String getAttributesPrincipal() {
+            return attributesPrincipal;
+        }
 
         SamlRealmIR(String name) {
             super("saml", name);
@@ -178,11 +248,42 @@ import java.util.Map;
         String usernamePattern;
         String usernameAttribute;
         Boolean delegationEnabled;
-
         String truststorePath;
         String truststoreType;
         String truststorePassword;
         String truststoreSecretPassword;
+
+        public List<String> getCertificateAuthorities() {
+            return certificateAuthorities;
+        }
+
+        public String getUsernamePattern() {
+            return usernamePattern;
+        }
+
+        public String getUsernameAttribute() {
+            return usernameAttribute;
+        }
+
+        public Boolean getDelegationEnabled() {
+            return delegationEnabled;
+        }
+
+        public String getTruststorePath() {
+            return truststorePath;
+        }
+
+        public String getTruststoreType() {
+            return truststoreType;
+        }
+
+        public String getTruststorePassword() {
+            return truststorePassword;
+        }
+
+        public String getTruststoreSecretPassword() {
+            return truststoreSecretPassword;
+        }
 
         PkiRealmIR(String name) {
             super("pki", name);
@@ -250,6 +351,58 @@ import java.util.Map;
         String claimMail;
         String claimGroups;
 
+        public String getRpClientId() {
+            return rpClientId;
+        }
+
+        public String getRpClientSecret() {
+            return rpClientSecret;
+        }
+
+        public String getRpResponseType() {
+            return rpResponseType;
+        }
+
+        public String getRpRedirectUri() {
+            return rpRedirectUri;
+        }
+
+        public String getRpPostLogoutRedirectUri() {
+            return rpPostLogoutRedirectUri;
+        }
+
+        public String getOpIssuer() {
+            return opIssuer;
+        }
+
+        public String getOpAuthEndpoint() {
+            return opAuthEndpoint;
+        }
+
+        public String getOpTokenEndpoint() {
+            return opTokenEndpoint;
+        }
+
+        public String getOpJwkSetPath() {
+            return opJwkSetPath;
+        }
+
+        public String getClaimPrincipal() {
+            return claimPrincipal;
+        }
+
+        public String getClaimName() {
+            return claimName;
+        }
+
+        public String getClaimMail() {
+            return claimMail;
+        }
+
+        public String getClaimGroups() {
+            return claimGroups;
+        }
+
         OidcRealmIR(String name) {
             super("oidc", name);
         }
@@ -291,6 +444,22 @@ import java.util.Map;
         String principal;
         Boolean krbDebug;
         Boolean removeRealmName;
+
+        public String getKeytabPath() {
+            return keytabPath;
+        }
+
+        public String getPrincipal() {
+            return principal;
+        }
+
+        public Boolean getKrbDebug() {
+            return krbDebug;
+        }
+
+        public Boolean getRemoveRealmName() {
+            return removeRealmName;
+        }
 
         KerberosRealmIR(String name) {
             super("kerberos", name);
