@@ -21,25 +21,25 @@ public class SGAuthcTranslator {
         ir.authent.realms.forEach((String realmName, RealmIR realm) -> {
             switch (realm.getType()) {
                 case "ldap":
-                    config.authDomains.add(createLdapDomain(realmName, realm));
+                    config.authDomains.add(createLdapDomain(realmName, (RealmIR.LdapRealmIR) realm));
                     break;
                 case "file":
-                    config.authDomains.add(createFileDomain(realmName, realm));
+                    config.authDomains.add(createFileDomain(realmName, (RealmIR.FileRealmIR) realm));
                     break;
                 case "native":
-                    config.authDomains.add(createNativeDomain(realmName, realm));
+                    config.authDomains.add(createNativeDomain(realmName, (RealmIR.NativeRealmIR) realm));
                     break;
                 case "saml":
-                    config.authDomains.add(createSAMLDomain(realmName, realm));
+                    config.authDomains.add(createSAMLDomain(realmName, (RealmIR.SamlRealmIR) realm));
                     break;
                 case "pki":
-                    config.authDomains.add(createPkiDomain(realmName, realm));
+                    config.authDomains.add(createPkiDomain(realmName, (RealmIR.PkiRealmIR) realm));
                     break;
                 case "oidc":
-                    config.authDomains.add(createOidcDomain(realmName, realm));
+                    config.authDomains.add(createOidcDomain(realmName, (RealmIR.OidcRealmIR) realm));
                     break;
                 case "kerberos":
-                    config.authDomains.add(createkerebosDomain(realmName, realm));
+                    config.authDomains.add(createkerebosDomain(realmName, (RealmIR.KerberosRealmIR) realm));
                     break;
                 default:
                     //Skip Unknown Realms
@@ -56,8 +56,9 @@ public class SGAuthcTranslator {
      * @param ir The IR that holds the config info
      * @return NewAuthDomain
      */
-    private static MigrateConfig.NewAuthDomain createLdapDomain(String realmName, RealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createLdapDomain(String realmName, RealmIR.LdapRealmIR ir) {
         Map<String, Object> ldapConfig = new HashMap<>();
+
         List<String> ldapHosts = Arrays.asList("ldap.example.com", "other.example.com");
         ldapConfig.put("ldap.idp.hosts", ldapHosts);
 
@@ -71,19 +72,19 @@ public class SGAuthcTranslator {
         );
     }
     //TODO Implement these functions. They are just place holders for now
-    private static MigrateConfig.NewAuthDomain createFileDomain(String realmName, RealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createFileDomain(String realmName, RealmIR.FileRealmIR ir) {
         return null;
     }
-    private static MigrateConfig.NewAuthDomain createNativeDomain(String realmName, RealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createNativeDomain(String realmName, RealmIR.NativeRealmIR ir) {
         return null;
     }
-    private static MigrateConfig.NewAuthDomain createSAMLDomain(String realmName, RealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createSAMLDomain(String realmName, RealmIR.SamlRealmIR ir) {
         return null;
     }
-    private static MigrateConfig.NewAuthDomain createPkiDomain(String realmName, RealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createPkiDomain(String realmName, RealmIR.PkiRealmIR ir) {
         return null;
     }
-    private static MigrateConfig.NewAuthDomain createkerebosDomain(String realmName, RealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createkerebosDomain(String realmName, RealmIR.KerberosRealmIR ir) {
         return null;
     }
 
@@ -92,7 +93,7 @@ public class SGAuthcTranslator {
      * @param ir The IR that holds the config info
      * @return NewAuthDomain
      */
-    private static MigrateConfig.NewAuthDomain createOidcDomain(String realmName, RealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createOidcDomain(String realmName, RealmIR.OidcRealmIR ir) {
         Map<String, Object> oidcConfig = new HashMap<>();
 
 
