@@ -52,7 +52,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
             users.add(new SGInternalUser(user.getUsername(), "", attributes, user.getRoles()));
             report.addManualAction(
                     FILE_NAME,
-                    "hash",
+                    user.getUsername() + "->hash",
                     "Password hashes can not be exported from X-Pack. The hash has to be set manually at the field marked with 'change it'"
             );
         }
@@ -89,7 +89,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
             contents.put("search_guard_roles", roles);
             contents.put("attributes", attributes);
             contents.put("description", description);
-            return ImmutableMap.of(name, contents);
+            return contents;
         }
     }
 
