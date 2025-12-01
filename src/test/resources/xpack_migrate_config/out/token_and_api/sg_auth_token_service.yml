@@ -1,0 +1,3 @@
+# https://docs.search-guard.com/latest/search-guard-auth-tokens
+enabled: true
+jwt_signing_key_hs512: "NO_XPACK_EQUIVALENT_HERE"
