@@ -12,6 +12,7 @@ import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
+import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import picocli.CommandLine;
 
 import java.io.IOException;
@@ -54,7 +55,10 @@ public class XPackMigrate implements Callable<Integer> {
           "roles.json",
           Roles::parse,
           "users.json",
-          Users::parse);
+          Users::parse,
+          "elasticsearch.yml",
+          XPackElasticsearchConfig::parse
+      );
 
   public Integer call() throws Exception {
     registerSubMigrators();
