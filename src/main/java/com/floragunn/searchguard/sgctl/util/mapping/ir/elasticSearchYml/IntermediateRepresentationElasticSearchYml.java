@@ -5,14 +5,12 @@ public class IntermediateRepresentationElasticSearchYml {
 
     public GlobalIR global;
     public SslTlsIR sslTls;
-    public AuthorizationIR authoIR;
-    public AuthenticationIR authentIR;
+    public AuthenticationIR authent;
 
     public IntermediateRepresentationElasticSearchYml() {
         global = new GlobalIR();
         sslTls = new SslTlsIR();
-        authoIR = new AuthorizationIR();
-        authentIR = new AuthenticationIR();
+        authent = new AuthenticationIR();
     }
 
     // before setting an option, check that its type matches
@@ -36,27 +34,3 @@ public class IntermediateRepresentationElasticSearchYml {
     }
 
 }
-
-/*
-
-IR:
-global ...
-ssl/tls ...
-    - transport
-    - http
-authorization ...
-authentication ...
-    - Map<String, Object> users
-    for (String user : users)
-
-
-in searchguard:
-
-elasticsearch.yml:
-    - searchguard.nodes_dn: enumerate
-
-
-
-
-
-* */

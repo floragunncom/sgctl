@@ -2,14 +2,41 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 public class AuthenticationIR {
     // API Key
     boolean apiKeyEnabled; 
     String apiKeyCacheTtl; // Time-to-live for API Keys
     String maxTokens; // Maximum number of API keys
 
+    // realms collection
+    public Map<String, RealmIR> realms = new HashMap<>();
+
     public void handleOptions(String optionName, Object optionValue) {
         boolean error = false;
+
+        // realms, they have this pattern: xpack.security.authc.realms.<type>.<name>.<setting>
+        if (optionName.startsWith("realms.")) {
+            String substring = optionName.substring("realms.".length());
+            String[] parts = substring.split("\\.");
+
+            if (parts.length < 3) {
+                System.out.println("Invalid option: %s" + substring);
+                return;
+            }
+
+            String type = parts[0]; // ldap, ...
+            String name = parts[1]; // ldap1, ...
+            String attr = String.join(".", Arrays.copyOfRange(parts, 2, parts.length));
+
+            RealmIR realm = realms.computeIfAbsent(name, n -> RealmIR.create(type, n));
+
+            realm.handleAttribute(attr, optionValue);
+            return;
+        }
 
         // Booleans
         if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {

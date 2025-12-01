@@ -20,7 +20,6 @@ public class ElasticsearchYamlReader {
             Map<String, Object> map = read();
             flattenedMap = flattenMap(map);
             toIR(flattenedMap);
-            System.out.println(flattenedMap);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -64,6 +63,7 @@ public class ElasticsearchYamlReader {
 
     private void toIR(Map<String, Object> map) {
 
+        String[] globalPrefixes = {"xpack.security."};
         String[] transportPrefixes = {"xpack.security.transport.ssl."};
         String[] httpPrefixes = {"xpack.security.http.ssl."};
         String[] sslTlsPrefixes = {"transport."};
@@ -83,7 +83,9 @@ public class ElasticsearchYamlReader {
             } else if ((stripped = stripPrefix(key, sslTlsPrefixes)) != null) {
                 ir.sslTls.handleOptions(stripped, value);
             } else if ((stripped = stripPrefix(key, authenticationPrefixes)) != null) {
-                //ir.authoIR.handleOptions(stripped, value);
+                ir.authent.handleOptions(stripped, value);
+            } else if ((stripped = stripPrefix(key, globalPrefixes)) != null) {
+                ir.global.handleGlobalOptions(stripped, value);
             }
 
             else {
@@ -92,6 +94,22 @@ public class ElasticsearchYamlReader {
         }
 
         return;
+    }
+
+    public static String getFieldsAsString(Object o) {
+        String result = "";
+        try {
+            Class<?> c = o.getClass();
+            for (var field : c.getDeclaredFields()) {
+                field.setAccessible(true);
+                Object val = field.get(o);
+                result += field.getName() + ": " + val + '\n';
+            }
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
 

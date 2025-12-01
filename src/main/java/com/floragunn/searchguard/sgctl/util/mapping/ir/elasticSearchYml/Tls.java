@@ -55,6 +55,7 @@ public class Tls {
             }
         }
 
+        // Strings
         else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
             String value = (String) optionValue;
             switch (optionName) {
@@ -187,3 +188,5 @@ public class Tls {
         }
     }
 }
+
+
