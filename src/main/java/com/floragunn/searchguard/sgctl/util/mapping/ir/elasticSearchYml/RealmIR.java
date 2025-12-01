@@ -56,7 +56,7 @@ import java.util.Map;
         }
     }
 
-    static class LdapRealmIR extends RealmIR {
+    public static class LdapRealmIR extends RealmIR {
         String url;
         String bindDn;
         String userSearchBaseDn;
@@ -116,7 +116,7 @@ import java.util.Map;
         }
     }
 
-    static class FileRealmIR extends RealmIR {
+    public static class FileRealmIR extends RealmIR {
         String filesUsers;
         String filesUsersRoles;
 
@@ -153,7 +153,7 @@ import java.util.Map;
         }
     }
 
-    static class NativeRealmIR extends RealmIR {
+    public static class NativeRealmIR extends RealmIR {
 
         String cacheTtl;
         int cacheMaxUsers;
@@ -191,7 +191,7 @@ import java.util.Map;
         }
     }
 
-    static  class SamlRealmIR extends RealmIR {
+    public static class SamlRealmIR extends RealmIR {
 
         String idpMetadataPath;
         String spEntityID;
@@ -241,7 +241,7 @@ import java.util.Map;
         }
     }
 
-    static class PkiRealmIR extends RealmIR {
+    public static class PkiRealmIR extends RealmIR {
 
         List<String> certificateAuthorities = new ArrayList<>();
 
@@ -330,7 +330,7 @@ import java.util.Map;
         }
     }
 
-    static class OidcRealmIR extends RealmIR {
+    public static class OidcRealmIR extends RealmIR {
 
         // RP settings
         String rpClientId;
@@ -438,7 +438,7 @@ import java.util.Map;
         }
     }
 
-    static class KerberosRealmIR extends RealmIR {
+    public static class KerberosRealmIR extends RealmIR {
 
         String keytabPath;
         String principal;
@@ -488,7 +488,7 @@ import java.util.Map;
         }
     }
 
-    static class UnknownRealmIR extends RealmIR {
+    public static class UnknownRealmIR extends RealmIR {
         UnknownRealmIR(String type, String name) {
             super(type, name);
         }
