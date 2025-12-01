@@ -41,7 +41,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
      * @param userSearch Configuration of user search.
      * @param groupSearch Configuration of group search.
      */
-    record Ldap(
+    public record Ldap(
         IdentityProvider identityProvider,
         Optional<UserSearch> userSearch,
         Optional<GroupSearch> groupSearch)
@@ -71,7 +71,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
        * @param minPoolSize Minimum size of LDAP connection pool. Default: 3.
        * @param maxPoolSize Maximum size of LDAP connection pool. Default: 10.
        */
-      record IdentityProvider(
+      public record IdentityProvider(
           ImmutableList<String> hosts,
           Optional<ConnectionStrategy> connectionStrategy,
           Optional<String> bindDn,
@@ -99,7 +99,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
         }
 
         /** The behavior when which host will be connected to (if there are multiple). * */
-        enum ConnectionStrategy {
+        public enum ConnectionStrategy {
           /** cycles through all specified hosts * */
           ROUNDROBIN,
           /** Prefers the topmost entry * */
@@ -119,7 +119,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
        * @param scope Defines the scope of the search. Default: {@link SearchScope#SUB}
        * @param filter The filter to use for searching users.
        */
-      record UserSearch(
+      public record UserSearch(
           Optional<String> baseDn, Optional<SearchScope> scope, Optional<Filter> filter)
           implements Document<UserSearch> {
 
@@ -149,7 +149,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
        * @param recursive Configuration of recursive group search
        * @param cache Configuration of group search caching
        */
-      record GroupSearch(
+      public record GroupSearch(
           String baseDn,
           Optional<String> scope,
           Optional<Recursive> recursive,
@@ -174,7 +174,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
          * @param filter Filter to apply when searching for groups
          * @param maxDepth Maximum recursion depth. Default: 30
          */
-        record Recursive(
+        public record Recursive(
             boolean enabled,
             Optional<String> enabledFor,
             Optional<Filter> filter,
@@ -198,7 +198,8 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
          *     written. Default: 2m
          * @param maxSize Maximum number of entries to keep in the cache. Default: 1000 entries
          */
-        record Cache(boolean enabled, Optional<String> expireAfterWrite, Optional<Integer> maxSize)
+        public record Cache(
+            boolean enabled, Optional<String> expireAfterWrite, Optional<Integer> maxSize)
             implements Document<Cache> {
 
           @Override
@@ -212,7 +213,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
         }
       }
 
-      sealed interface Filter {
+      public sealed interface Filter {
 
         /**
          * @return The value of this filter *
@@ -230,7 +231,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
          *
          * @param value The attribute to filter by
          */
-        record ByAttribute(String value) implements Filter {
+        public record ByAttribute(String value) implements Filter {
 
           @Override
           public String key() {
@@ -252,7 +253,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
          *
          * @param value The raw filter
          */
-        record Raw(String value) implements Filter {
+        public record Raw(String value) implements Filter {
 
           @Override
           public String key() {
@@ -261,7 +262,7 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
         }
       }
 
-      enum SearchScope {
+      public enum SearchScope {
         /** The tree below {@code base_dn} is searched to any depth. */
         SUB,
         /** Only directly subordinated entries shall be searched. */
