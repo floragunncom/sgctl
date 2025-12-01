@@ -96,17 +96,20 @@ public class ElasticsearchYamlReader {
         return;
     }
 
-    public static void printFields(Object o) {
-       try {
-           Class<?> c = o.getClass();
-           for (var field : c.getDeclaredFields()) {
-               field.setAccessible(true);
-               Object val = field.get(o);
-               System.out.println(field.getName() + ": " + val);
-           }
-       } catch (Exception e) {
-           e.printStackTrace();
-       }
+    public static String getFieldsAsString(Object o) {
+        String result = "";
+        try {
+            Class<?> c = o.getClass();
+            for (var field : c.getDeclaredFields()) {
+                field.setAccessible(true);
+                Object val = field.get(o);
+                result += field.getName() + ": " + val + '\n';
+            }
+            return result;
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return result;
     }
 
 
