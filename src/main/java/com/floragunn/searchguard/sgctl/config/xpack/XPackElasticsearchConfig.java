@@ -107,7 +107,7 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         String bindPassword,
         String secureBindPassword,
         String userDnTemplates,
-        String authorizationRealms,
+        ImmutableList<String> authorizationRealms,
         String userGroupAttr,
         String userFullNameAttr,
         String userEmailAttr,
@@ -170,7 +170,7 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
       return switch (type) {
         case "native" -> new NativeRealm(type, name, order, enabled);
         case "file" -> new FileRealm(type, name, order, enabled);
-        case "ldap" -> parseLdapRealm(type, name, order, enabled, vDoc);
+        case "ldap" -> parseLdapRealm(type, name, order, enabled, doc, vDoc);
         case "active_directory" -> parseActiveDirectoryRealm(type, name, order, enabled, vDoc);
         // Stretch goals - store as generic for future implementation
         case "jwt", "saml", "oidc", "kerberos", "pki" ->
@@ -180,14 +180,30 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
     }
 
     private static LdapRealm parseLdapRealm(
-        String type, String name, int order, boolean enabled, ValidatingDocNode vDoc)
+        String type, String name, int order, boolean enabled, DocNode doc, ValidatingDocNode vDoc)
         throws ConfigValidationException {
       var url = vDoc.get("url").asList().ofStrings();
       var bindDn = vDoc.get("bind_dn").asString();
       var bindPassword = vDoc.get("bind_password").asString();
       var secureBindPassword = vDoc.get("secure_bind_password").asString();
-      // TODO: Gotta look into whether a list is also possible
-      var authorizationRealms = vDoc.get("authorization_realms").withDefault("").asString();
+      // authorization realms can be a string or list; normalize to a list
+      ImmutableList<String> authorizationRealms;
+      var authorizationRealmsList = doc.getAsListOfStrings("authorization_realms");
+      if (authorizationRealmsList != null && !authorizationRealmsList.isEmpty()) {
+        var builder = new ImmutableList.Builder<String>(authorizationRealmsList.size());
+        builder.addAll(authorizationRealmsList);
+        authorizationRealms = builder.build();
+      } else {
+        var authorizationRealmsString =
+            vDoc.get("authorization_realms").withDefault("").asString();
+        if (authorizationRealmsString.isEmpty()) {
+          authorizationRealms = new ImmutableList.Builder<String>(0).build();
+        } else {
+          var builder = new ImmutableList.Builder<String>(1);
+          builder.add(authorizationRealmsString);
+          authorizationRealms = builder.build();
+        }
+      }
       var userDnTemplates = vDoc.get("user_dn_templates").asString();
       var userGroupAttr = vDoc.get("user_group_attribute").withDefault("memberOf").asString();
       var userFullNameAttr = vDoc.get("user_full_name_attribute").asString();

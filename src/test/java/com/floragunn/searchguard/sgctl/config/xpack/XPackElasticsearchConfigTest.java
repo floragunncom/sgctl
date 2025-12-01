@@ -126,6 +126,39 @@ public class XPackElasticsearchConfigTest {
     }
 
     @Test
+    public void testLdapAuthorizationRealmsString() throws IOException, ConfigValidationException {
+        String yaml = """
+            xpack:
+              security:
+                enabled: true
+                authc:
+                  realms:
+                    ldap:
+                      ldap1:
+                        order: 0
+                        enabled: true
+                        url: ["ldaps://ldap.example.com:636"]
+                        bind_dn: "cn=admin,dc=example,dc=com"
+                        authorization_realms: "native1"
+            """;
+        var node = DocNode.wrap(DocReader.yaml().read(yaml));
+        var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+        var ldap = (Realm.LdapRealm) config.security().authc().realms().get("ldap.ldap1");
+        assertEquals(1, ldap.authorizationRealms().size());
+        assertEquals("native1", ldap.authorizationRealms().get(0));
+    }
+
+    @Test
+    public void testLdapAuthorizationRealmsList() throws IOException, ConfigValidationException {
+        var node = read("/xpack_migrate/elasticsearch/ldap_authorization_realms_list.yml");
+        var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+        var ldap = (Realm.LdapRealm) config.security().authc().realms().get("ldap.ldapList");
+        assertEquals(2, ldap.authorizationRealms().size());
+        assertEquals("file1", ldap.authorizationRealms().get(0));
+        assertEquals("native1", ldap.authorizationRealms().get(1));
+    }
+
+    @Test
     public void testLdapWithoutGroupSearch() throws IOException, ConfigValidationException {
         String yaml = """
             xpack:
