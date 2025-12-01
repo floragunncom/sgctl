@@ -150,17 +150,18 @@ public class RoleMappingsMigrator implements SubMigrator {
 
   // Needed, because field can be a String or List
   private void parseStringOrList(Object node, List<String> target) {
-
     if (node == null) {
       return;
     }
 
-    if (node instanceof List) {
-      for (Object item : (List<?>) node) {
-        target.add(item.toString());
+    if (node instanceof Collection<?>) {
+      for (Object item : (Collection<?>) node) {
+        if (item != null) {
+          target.add(String.valueOf(item));
+        }
       }
     } else {
-      target.add(node.toString());
+      target.add(String.valueOf(node));
     }
   }
 }
