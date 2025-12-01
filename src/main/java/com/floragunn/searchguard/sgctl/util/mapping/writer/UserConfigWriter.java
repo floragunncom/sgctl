@@ -33,7 +33,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
 //        } catch (IOException e) {
 //            printErr(e);
 //        }
-        print(DocWriter.yaml().writeAsString(this));
+//        print(DocWriter.yaml().writeAsString(this));
     }
 
     private void createSGInternalUser() {
