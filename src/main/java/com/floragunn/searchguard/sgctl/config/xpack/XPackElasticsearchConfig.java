@@ -112,10 +112,10 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         String userFullNameAttr,
         String userEmailAttr,
         String userSearchBaseDn,
-        String userSearchScope,
+        Scope userSearchScope,
         String userSearchFilter,
         String groupSearchBaseDn,
-        String groupSearchScope,
+        Scope groupSearchScope,
         String groupSearchFilter,
         boolean unmappedGroupsAsRoles,
         String sslKey,
@@ -127,6 +127,12 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         String sslKeystoreSecurePassword,
         String sslKeystoreSecureKeyPassword)
         implements Realm {
+      enum Scope {
+        SUB_TREE,
+        ONE_LEVEL,
+        BASE
+      }
+
       public LdapRealm {
         Objects.requireNonNull(type, "type must not be null");
         Objects.requireNonNull(name, "name must not be null");
@@ -183,9 +189,10 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         String type, String name, int order, boolean enabled, DocNode doc, ValidatingDocNode vDoc)
         throws ConfigValidationException {
       var url = vDoc.get("url").asList().ofStrings();
-      var bindDn = vDoc.get("bind_dn").asString();
-      var bindPassword = vDoc.get("bind_password").asString();
-      var secureBindPassword = vDoc.get("secure_bind_password").asString();
+      var bindDn = Objects.requireNonNullElse(vDoc.get("bind_dn").asString(), "");
+      var bindPassword = Objects.requireNonNullElse(vDoc.get("bind_password").asString(), "");
+      var secureBindPassword =
+          Objects.requireNonNullElse(vDoc.get("secure_bind_password").asString(), "");
       // authorization realms can be a string or list; normalize to a list
       ImmutableList<String> authorizationRealms;
       var authorizationRealmsList = doc.getAsListOfStrings("authorization_realms");
@@ -194,8 +201,7 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         builder.addAll(authorizationRealmsList);
         authorizationRealms = builder.build();
       } else {
-        var authorizationRealmsString =
-            vDoc.get("authorization_realms").withDefault("").asString();
+        var authorizationRealmsString = vDoc.get("authorization_realms").withDefault("").asString();
         if (authorizationRealmsString.isEmpty()) {
           authorizationRealms = new ImmutableList.Builder<String>(0).build();
         } else {
@@ -205,14 +211,19 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         }
       }
       var userDnTemplates = vDoc.get("user_dn_templates").asString();
-      var userGroupAttr = vDoc.get("user_group_attribute").withDefault("memberOf").asString();
-      var userFullNameAttr = vDoc.get("user_full_name_attribute").asString();
-      var userEmailAttr = vDoc.get("user_email_attribute").asString();
+      var userGroupAttr =
+          Objects.requireNonNullElse(
+              vDoc.get("user_group_attribute").withDefault("memberOf").asString(), "memberOf");
+      var userFullNameAttr =
+          Objects.requireNonNullElse(vDoc.get("user_full_name_attribute").asString(), "cn");
+      var userEmailAttr =
+          Objects.requireNonNullElse(vDoc.get("user_email_attribute").asString(), "mail");
 
       var userSearchNode = vDoc.get("user_search").asDocNode();
-      var userSearchScope =
+      var userSearchScopeString =
           Objects.requireNonNullElse(
               userSearchNode != null ? userSearchNode.getAsString("scope") : null, "sub_tree");
+      var userSearchScope = LdapRealm.Scope.valueOf(userSearchScopeString);
       var userSearchBaseDn = userSearchNode != null ? userSearchNode.getAsString("base_dn") : null;
       var userSearchFilter =
           Objects.requireNonNullElse(
@@ -221,8 +232,11 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
       var groupSearchNode = vDoc.get("group_search").asDocNode();
       var groupSearchBaseDn =
           groupSearchNode != null ? groupSearchNode.getAsString("base_dn") : null;
-      var groupSearchScope = groupSearchNode != null ? groupSearchNode.getAsString("scope") : null;
-      var groupSearchFilter = groupSearchNode != null ? groupSearchNode.getAsString("filter") : null;
+      var groupSearchScopeString =
+          groupSearchNode != null ? groupSearchNode.getAsString("scope") : null;
+      var groupSearchScope = LdapRealm.Scope.valueOf(groupSearchScopeString);
+      var groupSearchFilter =
+          groupSearchNode != null ? groupSearchNode.getAsString("filter") : null;
 
       var unmappedGroupsAsRoles =
           vDoc.get("unmapped_groups_as_roles").withDefault(false).asBoolean();
