@@ -10,8 +10,8 @@ xpack.security.authc.realms.jwt.jwt1:
   order: 0
   token_type: id_token
   client_authentication.type: shared_secret
-  allowed_issuer: "https://issuer.example.com/jwt/"
+  allowed_issuer: "https://EXAMPLE/jwt/"
   allowed_audiences: [ "my-elasticsearch-client-id" ]
   allowed_signature_algorithms: [ RS256, HS256 ]
-  pkc_jwkset_path: "jwt/jwkset.json"  
+  pkc_jwkset_path: "https://EXAMPLE/jwt/jwkset.json"
   claims.principal: sub
