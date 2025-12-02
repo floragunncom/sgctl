@@ -38,16 +38,19 @@ public class SGAuthcTranslator {
                     config.authDomains.add(createPkiDomain(realmName, (RealmIR.PkiRealmIR) realm));
                     break;
                 case "oidc":
+                    //This case do not belong in sg_authc.yml but sg_frontend_authc.yml. (Could be the same with other realms)
                     config.authDomains.add(createOidcDomain(realmName, (RealmIR.OidcRealmIR) realm));
                     break;
                 case "kerberos":
                     config.authDomains.add(createkerebosDomain(realmName, (RealmIR.KerberosRealmIR) realm));
                     break;
                 default:
+                    System.out.println("Invalid option");
                     //Skip Unknown Realms
                     //TODO add Migration Report Note
                     break;
             }
+
         });
 
         return config;
@@ -88,6 +91,7 @@ public class SGAuthcTranslator {
         return null;
     }
     private static MigrateConfig.NewAuthDomain createPkiDomain(String realmName, RealmIR.PkiRealmIR ir) {
+
         return null;
     }
     private static MigrateConfig.NewAuthDomain createkerebosDomain(String realmName, RealmIR.KerberosRealmIR ir) {
@@ -101,6 +105,24 @@ public class SGAuthcTranslator {
      */
     private static MigrateConfig.NewAuthDomain createOidcDomain(String realmName, RealmIR.OidcRealmIR ir) {
         Map<String, Object> oidcConfig = new HashMap<>();
+
+        // 1. RP settings
+        if (ir.getRpClientId() != null)
+            oidcConfig.put("rp.client_id", ir.getRpClientId());
+        if (ir.getRpResponseType() != null)
+            oidcConfig.put("rp.response_type", ir.getRpResponseType());
+        // 2. OP settings
+        if (ir.getOpIssuer() != null)
+            oidcConfig.put("op.issuer", ir.getOpIssuer());
+        if (ir.getOpAuthEndpoint() != null)
+            oidcConfig.put("op.authorization_endpoint", ir.getOpAuthEndpoint());
+        if (ir.getOpTokenEndpoint() != null)
+            oidcConfig.put("op.token_endpoint", ir.getOpTokenEndpoint());
+        if (ir.getOpJwkSetPath() != null)
+            oidcConfig.put("op.jwkset_path", ir.getOpJwkSetPath());
+
+        if (ir.getClaimPrincipal() != null)
+            oidcConfig.put("claims.principal", ir.getClaimPrincipal());
 
 
         return new MigrateConfig.NewAuthDomain(
