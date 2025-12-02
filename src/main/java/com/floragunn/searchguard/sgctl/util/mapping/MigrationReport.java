@@ -158,7 +158,7 @@ public class MigrationReport {
         private final String message;
         private final String newParameter;
         private final ReportPreset preset;
-        Entry(String parameter, String message, String newParameter, ReportPreset preset){
+        public Entry(String parameter, String message, String newParameter, ReportPreset preset){
             this.parameter = parameter;
             this.message = message;
             this.newParameter = newParameter;
