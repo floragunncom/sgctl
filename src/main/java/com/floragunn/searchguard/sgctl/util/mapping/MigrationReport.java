@@ -139,7 +139,7 @@ public class MigrationReport {
         }
     }
 
-    static class FileReport {
+    public static class FileReport {
         private final EnumMap<Category, List<Entry>> buckets = new EnumMap<>(Category.class);
         FileReport(){
             for (Category c : Category.values()) buckets.put(c, new ArrayList<>());
@@ -153,7 +153,7 @@ public class MigrationReport {
         }
     }
 
-    static class Entry{
+    public static class Entry{
         private final String parameter;
         private final String message;
         private final String newParameter;
@@ -196,7 +196,7 @@ public class MigrationReport {
         }
     }
 
-    enum ReportPreset{
+    public enum ReportPreset{
         UNKNOWN_KEY("Encountered unknown key '%s' at path '%s'"),
         INVALID_TYPE("Expected type '%s' for '%s', but found '%s'"),
         MISSING_PARAMETER("'%s' missing required parameter '%s'"),
