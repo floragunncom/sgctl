@@ -8,6 +8,8 @@ import java.util.Map;
 
 
 public class MigrationReport {
+    public static MigrationReport shared = new MigrationReport();
+    private MigrationReport() {}
     private final LinkedHashMap<String, FileReport> files = new LinkedHashMap<>();
     public enum Category {MIGRATED, WARNING, MANUAL}
 
@@ -16,7 +18,12 @@ public class MigrationReport {
         addPreset(ReportPreset.UNKNOWN_KEY, Category.WARNING, file, key, key, path);
     }
 
-    public void addInvalidType(String file, String path, String expectedType, String foundType){
+    public <T> void addInvalidType(String file, String path, Class<T> expectedObject, Object foundObject){
+        var expectedType = expectedObject.getTypeName();
+        var foundType = "null";
+        if (foundObject != null) {
+            foundType = foundObject.getClass().getTypeName();
+        }
         addPreset(ReportPreset.INVALID_TYPE, Category.WARNING, file, path, expectedType, path, foundType);
     }
 
@@ -167,3 +174,5 @@ public class MigrationReport {
         public String format(Object... args) { return String.format(template, args); }
     }
 }
+
+
