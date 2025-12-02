@@ -129,7 +129,7 @@ public class Role {
 
         @Override
         public String toString() {
-            return "Index [fieldSecurity=" + fieldSecurity + ", names=" + names + ", privileges=" + privileges + ", allowRestrictedIndices=" + allowRestrictedIndices + "]";
+            return "Index [fieldSecurity=" + fieldSecurity + ", names=" + names + ", privileges=" + privileges + ", query=" + query + ", allowRestrictedIndices=" + allowRestrictedIndices + "]";
         }
     }
 

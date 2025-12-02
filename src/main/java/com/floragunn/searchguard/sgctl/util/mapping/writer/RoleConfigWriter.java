@@ -1,13 +1,12 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
+import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
+import java.util.*;
 
 public class RoleConfigWriter implements Document<RoleConfigWriter> {
     private IntermediateRepresentation ir;
@@ -21,24 +20,57 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         this.report = MigrationReport.shared;
         this.roles = new ArrayList<>();
         createSGRoles();
+        print(DocWriter.yaml().writeAsString(this));
     }
 
-    public void createSGRoles() {
+    private void createSGRoles() {
         for (var role : ir.getRoles()) {
             var name = role.getName();
             var description = role.getDescription();
             var clusterPermissions = toSGClusterPrivileges(role);
-            var indexPermissions = toSGClusterPrivileges(role);
+            var index = toSGIndices(role);
+            var sgRole = new SGRole(name, description, clusterPermissions, index);
+            roles.add(sgRole);
         }
     }
 
-    public List<String> toSGClusterPrivileges(Role role) {
+    private List<SGRole.SGIndex> toSGIndices(Role role) {
+        List<SGRole.SGIndex> sgIndices = new ArrayList<>();
+        for (var index : role.getIndices()) {
+            var indexPatterns = index.getNames();
+            var indexPermissions = toSGIndexPrivileges(index.getPrivileges(), role);
+            var fls = toSGFLS(index, role);
+            var dls = toSGDLS(index, role);
+            var sgIndex = new SGRole.SGIndex(indexPatterns, indexPermissions, dls, fls);
+            sgIndices.add(sgIndex);
+        }
+        return sgIndices;
+    }
+
+    private List<String> toSGFLS(Role.Index index, Role role) {
+        // TODO: Check whether there is a restriction on the ~
+        if (index.getFieldSecurity() == null) {
+            return Collections.emptyList();
+        }
+        var fls = index.getFieldSecurity().getGrant();
+        for (var except : index.getFieldSecurity().getExcept()) {
+            fls.add("~" + except);
+        }
+        return fls;
+    }
+
+    private String toSGDLS(Role.Index index, Role role) {
+        return index.getQuery();
+    }
+
+    private List<String> toSGClusterPrivileges(Role role) {
         var privileges = role.getCluster();
         var sgPrivileges = new ArrayList<String>() ;
 
         for (var privilege : privileges) {
             switch (privilege) {
                 case "all":
+                    sgPrivileges.add("SGS_CLUSTER_ALL");
                     break;
                 case "cancel_task":
                     break;
@@ -67,10 +99,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 case "manage_ilm":
                     break;
                 case "manage_index_templates":
+                    sgPrivileges.add("SGS_CLUSTER_MANAGE_INDEX_TEMPLATES");
                     break;
                 case "manage_inference":
                     break;
                 case "manage_ingest_pipelines":
+                    sgPrivileges.add("SGS_CLUSTER_MANAGE_PIPELINES");
                     break;
                 case "manage_logstash_pipelines":
                     break;
@@ -105,6 +139,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 case "manage_watcher":
                     break;
                 case "monitor":
+                    sgPrivileges.add("SGS_CLUSTER_MONITOR");
                     break;
                 case "monitor_data_stream_global_retention": // Deprecated 8.16.0
                     break;
@@ -148,13 +183,15 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return sgPrivileges;
     }
 
-    public List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
+    private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
         var sgPrivileges = new ArrayList<String>() ;
         for (var privilege : privileges) {
             switch (privilege) {
                 case "all":
+                    sgPrivileges.add("SGS_INDICES_ALL");
                     break;
                 case "create":
+                    sgPrivileges.add("SGS_CREATE_INDEX");
                     break;
                 case "create_doc":
                     break;
@@ -165,14 +202,17 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 case "cross_cluster_replication_internal":
                     break;
                 case "delete":
+                    sgPrivileges.add("SGS_DELETE");
                     break;
                 case "delete_index":
                     break;
-                case "index":
+                case "index", "write":
+                    sgPrivileges.add("SGS_WRITE");
                     break;
                 case "maintenance":
                     break;
                 case "manage":
+                    sgPrivileges.add("SGS_MANAGE");
                     break;
                 case "manage_data_stream_lifecycle":
                     break;
@@ -185,16 +225,16 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 case "manage_leader_index":
                     break;
                 case "monitor":
+                    sgPrivileges.add("SGS_INDICES_MONITOR");
                     break;
                 case "read":
+                    sgPrivileges.add("SGS_READ");
                     break;
                 case "read_cross_cluster":
                     break;
                 case "read_failure_store":
                     break;
                 case "view_index_metadata":
-                    break;
-                case "write":
                     break;
                 default:
 
@@ -216,10 +256,47 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     static class SGRole implements Document<SGRole> {
         String name;
         String description;
+        List<String> clusterPermissions;
+        List<SGIndex> index;
+
+        public SGRole(String name, String description, List<String> clusterPermissions, List<SGIndex> index) {
+            this.name = name;
+            this.description = description;
+            this.clusterPermissions = clusterPermissions;
+            this.index = index;
+        }
 
         @Override
         public Object toBasicObject() {
-            return null;
+            var contents = new LinkedHashMap<String, Object>();
+            if (description != null) {
+                contents.put("description", description);
+            }
+            contents.put("cluster_permissions", clusterPermissions);
+            contents.put("index_permissions", index);
+            return contents;
+        }
+
+        static class SGIndex implements Document<SGIndex> {
+            List<String> indexPatterns;
+            List<String> allowedActions;
+            String dls;
+            List<String> fls;
+
+            public SGIndex(List<String> indexPatterns, List<String> allowedActions, String dls, List<String> fls) {
+                this.indexPatterns = indexPatterns;
+                this.allowedActions = allowedActions;
+                this.dls = dls;
+                this.fls = fls;
+            }
+
+            @Override
+            public Object toBasicObject() {
+                var contents = new LinkedHashMap<String, List<String>>();
+                contents.put("index_patterns", indexPatterns);
+                contents.put("allowed_actions", allowedActions);
+                return contents;
+            }
         }
     }
 
