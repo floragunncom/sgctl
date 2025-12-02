@@ -1,7 +1,5 @@
 # NOT FINAL
 
-cluster.name: my-secure-cluster
-node.name: node-1
 xpack.security.enabled: true
 
 xpack.security.http.ssl.enabled: true

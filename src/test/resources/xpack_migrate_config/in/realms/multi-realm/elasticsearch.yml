@@ -2,7 +2,10 @@
 
 xpack:
   security:
+    enabled: true
     authc:
+      token:
+      enabled: true   
       realms:
         file:
           file1:

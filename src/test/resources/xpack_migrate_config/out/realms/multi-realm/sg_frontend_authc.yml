@@ -1,0 +1,12 @@
+# https://docs.search-guard.com/latest/kibana-multiple-authentication-methods
+
+default:
+  auth_domains:
+    - type: basic
+      label: "Username / Password"
+
+    - type: oidc
+      label: "Login with OIDC"
+      oidc.client_id: "kibana"
+      oidc.client_secret: "changeit"
+      oidc.idp.openid_configuration_url: "https://login.microsoftonlineexample.com/.well-known/openid-configuration"
