@@ -1,10 +1,6 @@
 package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
-import com.floragunn.searchguard.sgctl.util.mapping.reader.ElasticsearchYamlReader;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.SearchGuardConfigWriter;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
@@ -34,19 +30,16 @@ public class MigrateSecurity implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
-            return 1;
-        }
+        /* Commented for testing
+            if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
+                return 1;
+            }
+         */
 
+        //TODO Implement Reader fully
 
-
-        IntermediateRepresentationElasticSearchYml irElasticSearchYml = new IntermediateRepresentationElasticSearchYml();
-        new ElasticsearchYamlReader(elasticsearch, irElasticSearchYml);
-        IntermediateRepresentation ir = new IntermediateRepresentation();
-        SearchGuardConfigWriter sgcw = new SearchGuardConfigWriter(irElasticSearchYml, ir);
-
-        writeYamlConfig(sgcw.getSg_frontend_authc(), outputDir, "sg_frontend_authc.yml");
-        MigrationReport.shared.printReport();
+        //Added this for testing
+        SearchGuardConfigWriter.generateAllConfigs(outputDir);
         return 0;
     }
 
