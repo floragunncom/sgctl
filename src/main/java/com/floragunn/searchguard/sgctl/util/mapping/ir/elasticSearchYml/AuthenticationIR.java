@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +16,7 @@ public class AuthenticationIR {
     // realms collection
     public Map<String, RealmIR> realms = new HashMap<>();
 
-    public void handleOptions(String optionName, Object optionValue) {
+    public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean error = false;
 
         // realms, they have this pattern: xpack.security.authc.realms.<type>.<name>.<setting>
@@ -34,7 +35,7 @@ public class AuthenticationIR {
 
             RealmIR realm = realms.computeIfAbsent(name, n -> RealmIR.create(type, n));
 
-            realm.handleAttribute(attr, optionValue);
+            realm.handleAttribute(attr, optionValue, keyPrefix, configFile);
             return;
         }
 

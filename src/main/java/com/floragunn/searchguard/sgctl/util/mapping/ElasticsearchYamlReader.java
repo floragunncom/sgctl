@@ -83,7 +83,7 @@ public class ElasticsearchYamlReader {
             } else if ((stripped = stripPrefix(key, sslTlsPrefix)) != null) {
                 ir.sslTls.handleOptions(stripped, value, sslTlsPrefix, configFile);
             } else if ((stripped = stripPrefix(key, authenticationPrefix)) != null) {
-                ir.authent.handleOptions(stripped, value);
+                ir.authent.handleOptions(stripped, value, authenticationPrefix, configFile);
             } else if ((stripped = stripPrefix(key, globalPrefix)) != null) {
                 ir.global.handleGlobalOptions(stripped, value, globalPrefix, configFile);
             }
