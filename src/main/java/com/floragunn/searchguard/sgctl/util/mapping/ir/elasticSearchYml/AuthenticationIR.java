@@ -3,10 +3,13 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
+
 public class AuthenticationIR {
+    private static final String THIS_FILE = "elasticsearch.yml";
+
     // Password hashing
     String passwordHashingAlgorithm;
 
@@ -29,19 +32,28 @@ public class AuthenticationIR {
     String apiKeyDeleteTimeout;
     String apiKeyHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.hashing.algorithm" (x-pack makes a distinction between in memory)
 
-    // Domains
-    Map<String, List<String>> domains = new HashMap<>();
-
     // realms collection
     Map<String, RealmIR> realms = new HashMap<>();
 
+    // Getter
+    public String getPasswordHashingAlgoritm() { return passwordHashingAlgorithm; }
+    public String getAnonymousUserName() { return anonymousUserName; }
+    public String getAnonymousRoles() { return  anonymousRoles; }
+    public boolean getAnonymousAuthzException() { return anonymousAuthzException; }
+    public boolean getTokenEnabled() { return tokenEnabled; }
+    public String getTokenTimeout() { return tokenTimeout; }
     public boolean getApiKeyEnabled() { return apiKeyEnabled; }
     public String getApiKeyCacheTtl() { return apiKeyCacheTtl; }
     public String getMaxTokens() { return maxKeys; }
+    public String getApiKeyInMemoryHashingAlgorithm() { return apiKeyInMemoryHashingAlgorithm; }
+    public String getApiKeyRetentionPeriod() { return apiKeyRetentionPeriod; }
+    public String getApiKeyDeleteInterval() { return apiKeyDeleteInterval; }
+    public String getApiKeyDeleteTimeout() { return apiKeyDeleteTimeout; }
+    public String getApiKeyHashingAlgorithm() { return apiKeyHashingAlgorithm; }
     public Map<String, RealmIR> getRealms() { return realms; }
 
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
-        boolean error = false;
+        boolean keyKnown = true;
 
         // realms, they have this pattern: xpack.security.authc.realms.<type>.<name>.<setting>
         if (optionName.startsWith("realms.")) {
@@ -79,7 +91,7 @@ public class AuthenticationIR {
                     break;
 
                 default:
-                    error = true;
+                    keyKnown = false;
             }
         // Strings
         } else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
@@ -130,12 +142,14 @@ public class AuthenticationIR {
                     break;
 
                 default:
-                    error = true;
+                    keyKnown = false;
             }
         }
 
-        if (error) {
-            System.out.println("Invalid option of type " + optionValue.getClass() + ": " + optionName + " = " + optionValue);
+        if (keyKnown) {
+            MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
+        } else {
+            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
         }
     }
 }
