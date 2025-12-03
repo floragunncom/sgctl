@@ -14,7 +14,12 @@ public class AuthenticationIR {
     String maxTokens; // Maximum number of API keys
 
     // realms collection
-    public Map<String, RealmIR> realms = new HashMap<>();
+    Map<String, RealmIR> realms = new HashMap<>();
+
+    public boolean getApiKeyEnabled() { return apiKeyEnabled; }
+    public String getApiKeyCacheTtl() { return apiKeyCacheTtl; }
+    public String getMaxTokens() { return maxTokens; }
+    public Map<String, RealmIR> getRealms() { return realms; }
 
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean error = false;

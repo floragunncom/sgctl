@@ -42,6 +42,28 @@ public class Tls {
     List<String> remoteClusterAllowedIPs; // List of IP addresses to allow for remote cluster
     List<String> remoteClusterDeniedIPs; // List of IP addresses to deny remote cluster
 
+    public List<String> getSupportedProtocols() { return supportedProtocols; }
+    public List<String> getCiphers() { return ciphers; }
+    public List<String> getAllowedIPs() { return allowedIPs; }
+    public List<String> getDeniedIPs() { return deniedIPs; }
+    public List<String> getRemoteClusterAllowedIPs() { return remoteClusterAllowedIPs; }
+    public List<String> getRemoteClusterDeniedIPs() { return remoteClusterDeniedIPs; }
+    public boolean getEnabled() { return enabled; }
+    public String getKeystorePath() { return keystorePath; }
+    public String getKeystoreType() { return keystoreType; }
+    public String getKeystorePassword() { return keystorePassword; }
+    public String getKeystoreKeyPassword() { return keystoreKeyPassword; }
+    public String getTruststorePath() { return truststorePath; }
+    public String getTruststoreType() { return truststoreType; }
+    public String getTruststorePassword() { return truststorePassword; }
+    public String getCertificatePath() { return certificatePath; }
+    public String getPrivateKeyPath() { return privateKeyPath; }
+    public String getPrivateKeyPassword() { return privateKeyPassword; }
+    public List<String> getCertificateAuthorities() { return certificateAuthorities; }
+    public String getVerificationMode() { return verificationMode; }
+    public String getClientAuthMode() { return clientAuthMode; }
+
+
     String THIS_FILE = "elasticsearch.yml";
     // check an input option against all possible options acc. to the xpack docs
     public void handleTlsOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {

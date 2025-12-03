@@ -13,12 +13,16 @@ import java.util.regex.Pattern;
 
 public class SslTlsIR {
 
-    public Tls transport;
-    public Tls http;
-
+    Tls transport;
+    Tls http;
 
     Map<String, List<String>> profileAllowedIPs = new HashMap<>(); // transport only: List of IP addresses (value) to allow for this profile (key)
     Map<String, List<String>> profileDeniedIPs = new HashMap<>(); // transport only: List of IP addresses (value) to deny for this profile (key)
+
+    public Tls getTransport() { return transport; }
+    public Tls getHttp() { return http; }
+    public Map<String, List<String>> getProfileAllowedIPs() { return profileAllowedIPs; }
+    public Map<String, List<String>> getProfileDeniedIPs() { return profileDeniedIPs; }
 
     public SslTlsIR() {
         transport = new Tls();
