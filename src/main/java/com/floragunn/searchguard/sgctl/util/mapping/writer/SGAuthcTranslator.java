@@ -1,23 +1,43 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
+import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
+import com.floragunn.searchguard.sgctl.commands.MigrateSecurity;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
+import com.google.common.collect.ImmutableMap;
 
 import java.util.*;
 
 public class SGAuthcTranslator {
+
+    public static class Configs{
+        public MigrateConfig.SgAuthc config;
+        public SgFrontEndAuthc fconfig;
+
+        public Configs(MigrateConfig.SgAuthc config, SgFrontEndAuthc fconfig){
+            this.config = config;
+            this.fconfig = fconfig;
+        }
+
+    }
     /**
      * Creates Authc Config
      *
      * @param ir The intermediate representation.
      * @return Populated SgAuthc object.
      */
-    public static MigrateConfig.SgAuthc createAuthcConfig(IntermediateRepresentationElasticSearchYml ir) {
+    public static Configs createAuthcConfig(IntermediateRepresentationElasticSearchYml ir) {
         MigrateConfig.SgAuthc config = new MigrateConfig.SgAuthc();
+        SgFrontEndAuthc fconfig = new SgFrontEndAuthc();
         config.authDomains = new ArrayList<>();
         config.internalProxies = "";
         config.remoteIpHeader = "";
+
+        fconfig.authDomains = new ArrayList<>();
+        fconfig.internalProxies = "";
+        fconfig.remoteIpHeader = "";
+
         ir.authent.realms.forEach((String realmName, RealmIR realm) -> {
             String type = realm.getType();
             //TODO Add Migration Report note on translated realm
@@ -39,7 +59,7 @@ public class SGAuthcTranslator {
                     break;
                 case "oidc":
                     //This case do not belong in sg_authc.yml but sg_frontend_authc.yml. (Could be the same with other realms)
-                    config.authDomains.add(createOidcDomain(realmName, (RealmIR.OidcRealmIR) realm));
+                    fconfig.authDomains.add(createOidcDomain(realmName, (RealmIR.OidcRealmIR) realm));
                     break;
                 case "kerberos":
                     config.authDomains.add(createkerebosDomain(realmName, (RealmIR.KerberosRealmIR) realm));
@@ -53,7 +73,7 @@ public class SGAuthcTranslator {
 
         });
 
-        return config;
+        return new Configs(config, fconfig);
     }
 
     /**
@@ -133,5 +153,36 @@ public class SGAuthcTranslator {
                 oidcConfig,
                 null
         );
+    }
+
+    public static class SgFrontEndAuthc extends MigrateConfig.SgAuthc implements Document<MigrateConfig.SgAuthc> {
+        public List<MigrateConfig.NewAuthDomain> authDomains;
+        public String internalProxies = null;
+        public String remoteIpHeader = null;
+
+        @Override
+        public Object toBasicObject() {
+            Map<String, Object> result = new LinkedHashMap<>();
+
+            result.put("auth_domains", authDomains);
+
+            if (internalProxies != null || remoteIpHeader != null) {
+
+                Map<String, Object> network = new LinkedHashMap<>();
+
+                if (internalProxies != null) {
+                    network.put("trusted_proxies_regex", internalProxies);
+                }
+
+                if (remoteIpHeader != null) {
+                    network.put("http", ImmutableMap.of("remote_ip_header", remoteIpHeader));
+                }
+
+                result.put("network", network);
+            }
+
+            return result;
+        }
+
     }
 }
