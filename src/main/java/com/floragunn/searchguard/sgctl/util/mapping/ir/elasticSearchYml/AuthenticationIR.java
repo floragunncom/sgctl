@@ -37,7 +37,7 @@ public class AuthenticationIR {
 
     public boolean getApiKeyEnabled() { return apiKeyEnabled; }
     public String getApiKeyCacheTtl() { return apiKeyCacheTtl; }
-    public String getMaxTokens() { return maxTokens; }
+    public String getMaxTokens() { return maxKeys; }
     public Map<String, RealmIR> getRealms() { return realms; }
 
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
