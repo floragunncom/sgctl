@@ -43,6 +43,7 @@ public class RoleMappingConfigReader {
     }
 
     private void readRoleMappings(LinkedHashMap<?, ?> mapReader) {
+        report.addWarning(FILE_NAME, "metadata", "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard");
         for (var entry : mapReader.entrySet()) {
             var rawKey = entry.getKey();
 
@@ -112,8 +113,6 @@ public class RoleMappingConfigReader {
                     break;
 
                 case "metadata":
-
-                    // TODO: Implement readMetadata() if necessary
                     break;
 
                 default:

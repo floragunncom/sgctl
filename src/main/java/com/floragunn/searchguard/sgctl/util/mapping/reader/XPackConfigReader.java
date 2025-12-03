@@ -32,10 +32,6 @@ public class XPackConfigReader {
         new UserConfigReader(userFile, ir);
         new RoleMappingConfigReader(roleMappingFile, ir);
 
-        ir.getUsers().forEach(user -> print(user.toString()));
-        ir.getRoles().forEach(role -> print(role.toString()));
-        ir.getRoleMappings().forEach(roleMapping -> print(roleMapping.toString()));
-
         return ir;
     }
 
