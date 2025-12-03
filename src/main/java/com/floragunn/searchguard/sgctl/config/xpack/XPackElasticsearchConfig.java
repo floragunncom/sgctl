@@ -127,7 +127,7 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
         String sslKeystoreSecurePassword,
         String sslKeystoreSecureKeyPassword)
         implements Realm {
-      enum Scope {
+      public enum Scope {
         SUB_TREE,
         ONE_LEVEL,
         BASE
