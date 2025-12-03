@@ -35,9 +35,21 @@ public class AuthenticationIR {
     // realms collection
     Map<String, RealmIR> realms = new HashMap<>();
 
+    // Getter
+    public String getPasswordHashingAlgoritm() { return passwordHashingAlgorithm; }
+    public String getAnonymousUserName() { return anonymousUserName; }
+    public String getAnonymousRoles() { return  anonymousRoles; }
+    public boolean getAnonymousAuthzException() { return anonymousAuthzException; }
+    public boolean getTokenEnabled() { return tokenEnabled; }
+    public String getTokenTimeout() { return tokenTimeout; }
     public boolean getApiKeyEnabled() { return apiKeyEnabled; }
     public String getApiKeyCacheTtl() { return apiKeyCacheTtl; }
     public String getMaxTokens() { return maxKeys; }
+    public String getApiKeyInMemoryHashingAlgorithm() { return apiKeyInMemoryHashingAlgorithm; }
+    public String getApiKeyRetentionPeriod() { return apiKeyRetentionPeriod; }
+    public String getApiKeyDeleteInterval() { return apiKeyDeleteInterval; }
+    public String getApiKeyDeleteTimeout() { return apiKeyDeleteTimeout; }
+    public String getApiKeyHashingAlgorithm() { return apiKeyHashingAlgorithm; }
     public Map<String, RealmIR> getRealms() { return realms; }
 
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
