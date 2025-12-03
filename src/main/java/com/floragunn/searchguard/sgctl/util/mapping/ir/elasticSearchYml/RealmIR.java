@@ -46,7 +46,7 @@ public class RealmIR {
         }
     }
 
-    static class LdapRealmIR extends RealmIR {
+    public static class LdapRealmIR extends RealmIR {
         String url;
         String bindDn;
         String userSearchBaseDn;
@@ -103,7 +103,7 @@ public class RealmIR {
         }
     }
 
-    static class FileRealmIR extends RealmIR {
+    public static class FileRealmIR extends RealmIR {
         String filesUsers;
         String filesUsersRoles;
 
@@ -146,7 +146,7 @@ public class RealmIR {
         }
     }
 
-    static class NativeRealmIR extends RealmIR {
+    public static class NativeRealmIR extends RealmIR {
 
         String cacheTtl;
         int cacheMaxUsers;
@@ -190,7 +190,7 @@ public class RealmIR {
         }
     }
 
-    static  class SamlRealmIR extends RealmIR {
+    public static class SamlRealmIR extends RealmIR {
 
         String idpMetadataPath;
         String spEntityID;
@@ -240,7 +240,7 @@ public class RealmIR {
         }
     }
 
-    static class PkiRealmIR extends RealmIR {
+    public static class PkiRealmIR extends RealmIR {
 
         List<String> certificateAuthorities = new ArrayList<>();
 
@@ -317,7 +317,7 @@ public class RealmIR {
         }
     }
 
-    static class OidcRealmIR extends RealmIR {
+    public static class OidcRealmIR extends RealmIR {
 
         // RP settings
         String rpClientId;
@@ -393,7 +393,7 @@ public class RealmIR {
         }
     }
 
-    static class KerberosRealmIR extends RealmIR {
+    public static class KerberosRealmIR extends RealmIR {
 
         String keytabPath;
         String principal;
