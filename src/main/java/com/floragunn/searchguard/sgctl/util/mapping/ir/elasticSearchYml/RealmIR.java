@@ -1,13 +1,11 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
-import com.floragunn.searchguard.sgctl.util.mapping.ElasticsearchYamlReader;
+import com.floragunn.searchguard.sgctl.util.mapping.reader.ElasticsearchYamlReader;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class RealmIR {
     String type; // ldap, saml, oidc, ...
@@ -25,7 +23,7 @@ public class RealmIR {
         this.name = name;
     }
 
-    String THIS_FILE = "elasticSearch.yml";
+    String THIS_FILE = "elasticsearch.yml";
     // each realm type implements its own handler, attribute is suffix after xpack.security.authc.realms.<type>.<name>.
     public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
         return;

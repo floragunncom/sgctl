@@ -1,10 +1,11 @@
-package com.floragunn.searchguard.sgctl.util.mapping;
+package com.floragunn.searchguard.sgctl.util.mapping.reader;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.floragunn.codova.documents.DocReader;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 
 public class ElasticsearchYamlReader {
@@ -90,11 +91,9 @@ public class ElasticsearchYamlReader {
             }
 
             else {
-                System.out.println("Could not resolve " + entry.getKey());
+                MigrationReport.shared.addUnknownKey("elasticsearch.yml", key, key);
             }
         }
-
-        return;
     }
 
     public static String getFieldsAsString(Object o) {

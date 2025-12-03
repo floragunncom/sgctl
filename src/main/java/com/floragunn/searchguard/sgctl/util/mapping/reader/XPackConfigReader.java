@@ -31,6 +31,7 @@ public class XPackConfigReader {
         new RoleConfigReader(roleFile, ir);
         new UserConfigReader(userFile, ir);
         new RoleMappingConfigReader(roleMappingFile, ir);
+        new ElasticsearchYamlReader(elasticsearch, ir.getElasticSearchYml());
 
         return ir;
     }
