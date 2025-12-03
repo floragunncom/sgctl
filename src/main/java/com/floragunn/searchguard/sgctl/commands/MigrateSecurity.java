@@ -1,6 +1,7 @@
 package com.floragunn.searchguard.sgctl.commands;
 
-import com.floragunn.searchguard.sgctl.util.mapping.SearchGuardConfigWriter;
+import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.searchguard.sgctl.util.mapping.writer.SearchGuardConfigWriter;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
@@ -8,6 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.Callable;
 //names of files: user.json, role.json, role_mapping.json
 @Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
@@ -108,5 +111,18 @@ public class MigrateSecurity implements Callable<Integer> {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Serializes a Java object into a YAML file.
+     *
+     * @param configObject The object to serialize.
+     * @param outputDir    Target directory.
+     * @param filename     Name of the output YAML file.
+     * @throws IOException If writing fails.
+     */
+    private void writeYamlConfig(Object configObject, File outputDir, String filename) throws IOException {
+        File outputFile = new File(outputDir, filename);
+        Files.writeString(outputFile.toPath(), DocWriter.yaml().writeAsString(configObject));
     }
 }
