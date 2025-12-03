@@ -31,8 +31,7 @@ public class SGAuthcTranslator {
         MigrateConfig.SgAuthc config = new MigrateConfig.SgAuthc();
         SgFrontEndAuthc fconfig = new SgFrontEndAuthc();
         config.authDomains = new ArrayList<>();
-        config.internalProxies = "";
-        config.remoteIpHeader = "";
+
 
         fconfig.authDomains = new ArrayList<>();
         fconfig.internalProxies = "";
@@ -108,7 +107,16 @@ public class SGAuthcTranslator {
         return null;
     }
     private static MigrateConfig.NewAuthDomain createSAMLDomain(String realmName, RealmIR.SamlRealmIR ir) {
-        return null;
+        Map<String, Object> samlConfig = new HashMap<>();
+
+        return new MigrateConfig.NewAuthDomain(
+                ir.getType(),
+                null,
+                null,
+                null,
+                samlConfig,
+                null
+        );
     }
     private static MigrateConfig.NewAuthDomain createPkiDomain(String realmName, RealmIR.PkiRealmIR ir) {
 
@@ -144,7 +152,6 @@ public class SGAuthcTranslator {
         if (ir.getClaimPrincipal() != null)
             oidcConfig.put("claims.principal", ir.getClaimPrincipal());
 
-
         return new MigrateConfig.NewAuthDomain(
                 "oidc",
                 null,
@@ -156,9 +163,6 @@ public class SGAuthcTranslator {
     }
 
     public static class SgFrontEndAuthc extends MigrateConfig.SgAuthc implements Document<MigrateConfig.SgAuthc> {
-        public List<MigrateConfig.NewAuthDomain> authDomains;
-        public String internalProxies = null;
-        public String remoteIpHeader = null;
 
         @Override
         public Object toBasicObject() {
