@@ -9,6 +9,7 @@ import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
 import com.floragunn.searchguard.sgctl.config.migrate.RoleMappingsMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.UserMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
@@ -94,8 +95,8 @@ public class XPackMigrate implements Callable<Integer> {
   private void registerSubMigrators() {
     // TODO: Add sub migrators example:
     // MigratorRegistry.registerSubMigratorStatic(...);
+    MigratorRegistry.registerSubMigratorStatic(new UserMigrator());
     MigratorRegistry.registerSubMigratorStatic(new RoleMappingsMigrator());
-
     MigratorRegistry.finalizeMigratorsStatic(); // Never forget
   }
 
