@@ -4,6 +4,7 @@ import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
+import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import com.google.common.collect.ImmutableList;
 import java.util.*;
 import org.jetbrains.annotations.NotNull;
@@ -70,7 +71,7 @@ public class Migrator {
   public record MigrationContext(
       @NotNull Optional<RoleMappings> roleMappings,
       @NotNull Optional<Roles> roles,
-      @NotNull Optional<?> users,
+      @NotNull Optional<Users> users,
       @NotNull Optional<?> elasticSearch,
       @NotNull Optional<?> kibana)
       implements IMigrationContext {
@@ -86,7 +87,7 @@ public class Migrator {
     }
 
     @Override
-    public Optional<?> getUsers() {
+    public Optional<Users> getUsers() {
       return users;
     }
 
@@ -107,7 +108,7 @@ public class Migrator {
 
     Optional<Roles> getRoles();
 
-    Optional<?> getUsers(); // TODO: Add real type when merged
+    Optional<Users> getUsers();
 
     Optional<?> getElasticsearch(); // TODO: Add real type when merged
 
