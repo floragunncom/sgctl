@@ -12,7 +12,6 @@ import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig.Rea
 import org.slf4j.Logger;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
 
 public class AuthMigrator implements SubMigrator {
@@ -93,14 +92,13 @@ public class AuthMigrator implements SubMigrator {
     return new Ldap(identityProvider, userSearch, Optional.empty());
   }
 
-  private Optional<SearchScope> migrateSearchScope(String scope, Logger logger) {
-    return switch (scope.toLowerCase(Locale.ROOT)) {
-      case "sub_tree" -> Optional.of(SearchScope.SUB);
-      case "one_level" -> Optional.of(SearchScope.ONE);
-      default -> {
-        logger.warn(
-            "Cannot convert search scope '{}' as it is unrecognized or an equivalent scope doesn't exist",
-            scope);
+  private Optional<SearchScope> migrateSearchScope(Realm.LdapRealm.Scope scope, Logger logger) {
+    if (scope == null) return Optional.empty();
+    return switch (scope) {
+      case SUB_TREE -> Optional.of(SearchScope.SUB);
+      case ONE_LEVEL -> Optional.of(SearchScope.ONE);
+      case BASE -> {
+        logger.warn("Cannot convert search scope '{}' as no equivalent scope exists", scope.name());
         yield Optional.empty();
       }
     };
