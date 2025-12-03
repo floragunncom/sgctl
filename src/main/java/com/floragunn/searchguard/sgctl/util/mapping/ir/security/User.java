@@ -7,7 +7,7 @@ import java.util.List;
 
 public class User {
     @NonNull String username;
-    @NonNull List<String> roles; // TODO: change datatype to be able reference the role datatype
+    @NonNull List<String> roles;
     @NonNull Boolean enabled;
     @NonNull LinkedHashMap<String, Object> attributes;
     String fullName;

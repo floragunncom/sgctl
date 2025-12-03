@@ -1,7 +1,7 @@
 package com.floragunn.searchguard.sgctl.commands;
 
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader;
-import com.floragunn.searchguard.sgctl.util.mapping.writer.SearchGuardConfigWriter;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
@@ -32,8 +32,8 @@ public class MigrateSecurity implements Callable<Integer> {
             return 1;
         }
         var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
-        var ir = reader.generateIR();
-        var writer = new SearchGuardConfigWriter(ir);
+        reader.generateIR();
+        MigrationReport.shared.printReport();
         return 0;
     }
 

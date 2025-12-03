@@ -42,6 +42,7 @@ public class RoleConfigReader {
     }
 
     private void readRoles(LinkedHashMap<?, ?> mapReader) {
+        report.addWarning(FILE_NAME, "metadata", "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard");
         for (var entry : mapReader.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
                 report.addInvalidType(FILE_NAME, "origin", String.class, entry.getKey());
@@ -99,7 +100,6 @@ public class RoleConfigReader {
                     }
                     break;
                 case "metadata":
-                    report.addIgnoredKey(FILE_NAME, key, origin);
                     break;
                 case "transient_metadata":
                     // TODO: Add support for transient metadata interpretation
@@ -237,9 +237,9 @@ public class RoleConfigReader {
                     if (value instanceof String name) {
                         names = new ArrayList<>();
                         names.add(name);
-                        break;
+                    } else {
+                        names = toStringList(value, FILE_NAME, origin, key);
                     }
-                    names = toStringList(value, FILE_NAME, origin, key);
                     break;
                 case "privileges":
                     privileges = toStringList(value, FILE_NAME, origin, key);
@@ -304,13 +304,5 @@ public class RoleConfigReader {
             }
         }
         return fieldSecurity;
-    }
-
-    static void print(Object line) {
-        System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
     }
 }

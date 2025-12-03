@@ -31,10 +31,7 @@ public class XPackConfigReader {
         new RoleConfigReader(roleFile, ir);
         new UserConfigReader(userFile, ir);
         new RoleMappingConfigReader(roleMappingFile, ir);
-
-//        ir.getUsers().forEach(user -> print(user.toString()));
-//        ir.getRoles().forEach(role -> print(role.toString()));
-//        ir.getRoleMappings().forEach(roleMapping -> print(roleMapping.toString()));
+        new ElasticsearchYamlReader(elasticsearch, ir.getElasticSearchYml());
 
         return ir;
     }
@@ -72,13 +69,5 @@ public class XPackConfigReader {
         }
 
         return result;
-    }
-
-    static void print(Object line) {
-        System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
     }
 }

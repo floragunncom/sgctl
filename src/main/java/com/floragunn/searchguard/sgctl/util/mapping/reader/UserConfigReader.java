@@ -160,12 +160,4 @@ public class UserConfigReader {
         var user = new User(name, roles, fullName, email, enabled, profileUID, attributes);
         ir.addUser(user);
     }
-
-    static void print(Object line) {
-        System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
-    }
 }
