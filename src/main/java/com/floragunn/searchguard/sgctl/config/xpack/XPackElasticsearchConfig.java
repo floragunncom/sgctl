@@ -7,6 +7,7 @@ import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -222,7 +223,7 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
       var userSearchNode = vDoc.get("user_search").asDocNode();
       var userSearchScopeString =
           Objects.requireNonNullElse(userSearchNode.getAsString("scope"), "sub_tree");
-      var userSearchScope = LdapRealm.Scope.valueOf(userSearchScopeString);
+      var userSearchScope = LdapRealm.Scope.valueOf(userSearchScopeString.toUpperCase(Locale.ROOT));
       var userSearchBaseDn = userSearchNode.getAsString("base_dn");
       var userSearchFilter =
           Objects.requireNonNullElse(userSearchNode.getAsString("filter"), "(uid={0})");
@@ -230,7 +231,10 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
       var groupSearchNode = vDoc.get("group_search").asDocNode();
       var groupSearchBaseDn = groupSearchNode.getAsString("base_dn");
       var groupSearchScopeString = groupSearchNode.getAsString("scope");
-      var groupSearchScope = LdapRealm.Scope.valueOf(groupSearchScopeString);
+      var groupSearchScope =
+          groupSearchScopeString != null
+              ? LdapRealm.Scope.valueOf(groupSearchScopeString.toUpperCase(Locale.ROOT))
+              : null;
       var groupSearchFilter = groupSearchNode.getAsString("filter");
 
       var unmappedGroupsAsRoles =
@@ -318,14 +322,13 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
    */
   public static XPackElasticsearchConfig parse(DocNode doc, Parser.Context context)
       throws ConfigValidationException {
-    var vDoc = new ValidatingDocNode(doc, new ValidationErrors(), context);
+    var errors = new ValidationErrors();
+    var vDoc = new ValidatingDocNode(doc, errors, context);
     var xpackNode = vDoc.get("xpack").required().asDocNode();
     var security =
-        new ValidatingDocNode(xpackNode, new ValidationErrors(), context)
-            .get("security")
-            .by(SecurityConfig::parse);
+        new ValidatingDocNode(xpackNode, errors, context).get("security").by(SecurityConfig::parse);
 
-    vDoc.throwExceptionForPresentErrors();
+    errors.throwExceptionForPresentErrors();
 
     return new XPackElasticsearchConfig(security);
   }
