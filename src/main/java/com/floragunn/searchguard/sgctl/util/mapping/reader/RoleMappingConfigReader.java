@@ -274,12 +274,4 @@ public class RoleMappingConfigReader {
 
         return result;
     }
-
-    static void print(Object line) {
-        System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
-    }
 }

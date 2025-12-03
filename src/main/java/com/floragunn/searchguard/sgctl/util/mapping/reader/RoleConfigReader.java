@@ -237,9 +237,9 @@ public class RoleConfigReader {
                     if (value instanceof String name) {
                         names = new ArrayList<>();
                         names.add(name);
-                        break;
+                    } else {
+                        names = toStringList(value, FILE_NAME, origin, key);
                     }
-                    names = toStringList(value, FILE_NAME, origin, key);
                     break;
                 case "privileges":
                     privileges = toStringList(value, FILE_NAME, origin, key);
@@ -304,13 +304,5 @@ public class RoleConfigReader {
             }
         }
         return fieldSecurity;
-    }
-
-    static void print(Object line) {
-        System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
     }
 }
