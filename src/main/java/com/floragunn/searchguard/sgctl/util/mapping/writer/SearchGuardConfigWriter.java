@@ -1,5 +1,7 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
+import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 
 /**
@@ -7,13 +9,16 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.Intermed
  * Generates sg_authc.yml with LDAP, SAML, OIDC realms mapped.
  */
 public class SearchGuardConfigWriter {
+    MigrateConfig.SgAuthc  sg_authc;
+    SGAuthcTranslator.SgFrontEndAuthc sg_frontend_authc;
 
-    private SGAuthcTranslator.Configs authcConfigs;
+    public SearchGuardConfigWriter(IntermediateRepresentationElasticSearchYml irElasticSearchYml, IntermediateRepresentation ir) {
+        sg_authc = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml).config;
+        sg_frontend_authc = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml).fconfig;
 
-    public SearchGuardConfigWriter(IntermediateRepresentationElasticSearchYml ir) {
-        authcConfigs = SGAuthcTranslator.createAuthcConfig(ir);
     }
 
-
-
+    public SGAuthcTranslator.SgFrontEndAuthc getSg_frontend_authc() {
+        return sg_frontend_authc;
+    }
 }
