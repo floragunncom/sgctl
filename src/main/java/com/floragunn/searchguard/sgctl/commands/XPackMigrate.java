@@ -11,6 +11,7 @@ import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
 import com.floragunn.searchguard.sgctl.config.migrate.RolesMigrator;
 import com.floragunn.searchguard.sgctl.config.migrate.RoleMappingsMigrator;
 import com.floragunn.searchguard.sgctl.config.migrate.UserMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
@@ -53,15 +54,10 @@ public class XPackMigrate implements Callable<Integer> {
   private static final Map<String, Parser<Object, Parser.Context>> configParsers =
       Map.of(
           // TODO: Add parsing functions here <filename>,Record::parse
-          "role_mapping.json",
-          RoleMappings::parse,
-          "roles.json",
-          Roles::parse,
-          "users.json",
-          Users::parse,
-          "elasticsearch.yml",
-          XPackElasticsearchConfig::parse
-      );
+          "role_mapping.json", RoleMappings::parse,
+          "roles.json", Roles::parse,
+          "users.json", Users::parse,
+          "elasticsearch.yml", XPackElasticsearchConfig::parse);
 
   public Integer call() throws Exception {
     registerSubMigrators();
@@ -92,8 +88,8 @@ public class XPackMigrate implements Callable<Integer> {
     return new Migrator.MigrationContext(
         Optional.ofNullable((RoleMappings) xPackConfigs.get("role_mappings.json")),
         Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
-        Optional.ofNullable((Users) xPackConfigs.get("users.json")), //
-        Optional.empty(), // TODO: Get real config
+        Optional.ofNullable((Users) xPackConfigs.get("users.json")),
+        Optional.ofNullable((XPackElasticsearchConfig) xPackConfigs.get("elasticsearch.yml")),
         Optional.empty() // TODO: Get real config
         );
   }
@@ -102,6 +98,7 @@ public class XPackMigrate implements Callable<Integer> {
     // TODO: Add sub migrators example:
     // MigratorRegistry.registerSubMigratorStatic(...);
     MigratorRegistry.registerSubMigratorStatic(new RolesMigrator());
+    MigratorRegistry.registerSubMigratorStatic(new AuthMigrator());
     MigratorRegistry.registerSubMigratorStatic(new UserMigrator());
     MigratorRegistry.registerSubMigratorStatic(new RoleMappingsMigrator());
     MigratorRegistry.finalizeMigratorsStatic(); // Never forget
