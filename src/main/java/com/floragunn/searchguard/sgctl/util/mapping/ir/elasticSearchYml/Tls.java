@@ -1,57 +1,264 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * Represents TLS/SSL configuration options as read from {@code elasticsearch.yml}.
+ * <p>
+ * This class collects all TLS-related settings (keystore, truststore, PEM, protocols,
+ * ciphers and IP filters) and provides a method {@link #handleTlsOptions(String, Object, String, File)}
+ * to map flat option names to the corresponding fields.
+ */
 public class Tls {
-    boolean enabled; // activation of TLS
+
+    /** Activation flag for TLS. */
+    boolean enabled;
 
     // Keystore
-    String keystorePath; // contains certificate and private key
-    String keystoreType; // format of the keystore
-    String keystorePassword; // pw of keystore -> NO PLAINTEXT!
-    String keystoreKeyPassword; // pw of key in the keystore
+    /** Path to the keystore containing certificate and private key. */
+    String keystorePath;
+    /** Type/format of the keystore (e.g. jks, PKCS12). */
+    String keystoreType;
+    /** Password of the keystore (plain value – secure_* variants are ignored). */
+    String keystorePassword;
+    /** Password of the key inside the keystore. */
+    String keystoreKeyPassword;
 
     // Truststore
+    /** Path to the truststore containing trusted CAs. */
     String truststorePath;
+    /** Type/format of the truststore (e.g. PKCS12). */
     String truststoreType;
+    /** Password of the truststore. */
     String truststorePassword;
 
     // PEM -> can be used instead of keystores
+    /** Path to the certificate in PEM format. */
     String certificatePath;
+    /** Path to the private key in PEM format. */
     String privateKeyPath;
+    /** Optional password for the private key. */
     String privateKeyPassword;
-    List<String> certificateAuthorities = new ArrayList<>(); // paths
+    /** List of certificate authority file paths. */
+    List<String> certificateAuthorities = new ArrayList<>();
 
     // TLS modes
-    String verificationMode; // // whether hostname in certificates must match the node name: full, certificate, or none
-    String clientAuthMode; // whether clients must present a client certificate: require, optional, or none
+    /**
+     * Verification mode defining how hostnames are validated in certificates.
+     * Valid values: {@code full}, {@code certificate}, {@code none}.
+     */
+    String verificationMode;
+    /**
+     * Client authentication mode defining if client certificates are required.
+     * Valid values: {@code required}, {@code optional}, {@code none}.
+     */
+    String clientAuthMode;
 
     // Constraints
+    /** Supported protocol versions (e.g. TLSv1.2, TLSv1.3). */
     List<String> supportedProtocols = new ArrayList<>();
+    /** List of cipher suites. */
     List<String> ciphers = new ArrayList<>();
 
     // IP filtering (https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/security-settings#ip-filtering-settings)
-    List<String> allowedIPs; // List of IP addresses to allow
-    List<String> deniedIPs; // List of IP addresses to deny
-    List<String> remoteClusterAllowedIPs; // List of IP addresses to allow for remote cluster
-    List<String> remoteClusterDeniedIPs; // List of IP addresses to deny remote cluster
+    /** List of allowed IP addresses for this TLS context. */
+    List<String> allowedIPs;
+    /** List of denied IP addresses for this TLS context. */
+    List<String> deniedIPs;
+    /** List of allowed IP addresses for remote clusters. */
+    List<String> remoteClusterAllowedIPs;
+    /** List of denied IP addresses for remote clusters. */
+    List<String> remoteClusterDeniedIPs;
 
-    // check an input option against all possible options acc. to the xpack docs
-    public void handleTlsOptions(String optionName, Object optionValue) {
-        boolean error = false;
+    private final String THIS_FILE = "elasticsearch.yml";
+
+    // region Getters
+
+    /**
+     * @return list of supported protocol versions.
+     */
+    public List<String> getSupportedProtocols() {
+        return supportedProtocols;
+    }
+
+    /**
+     * @return list of configured cipher suites.
+     */
+    public List<String> getCiphers() {
+        return ciphers;
+    }
+
+    /**
+     * @return list of allowed IP addresses for this TLS context, or {@code null} if none set.
+     */
+    public List<String> getAllowedIPs() {
+        return allowedIPs;
+    }
+
+    /**
+     * @return list of denied IP addresses for this TLS context, or {@code null} if none set.
+     */
+    public List<String> getDeniedIPs() {
+        return deniedIPs;
+    }
+
+    /**
+     * @return list of allowed IP addresses for remote clusters, or {@code null} if none set.
+     */
+    public List<String> getRemoteClusterAllowedIPs() {
+        return remoteClusterAllowedIPs;
+    }
+
+    /**
+     * @return list of denied IP addresses for remote clusters, or {@code null} if none set.
+     */
+    public List<String> getRemoteClusterDeniedIPs() {
+        return remoteClusterDeniedIPs;
+    }
+
+    /**
+     * @return {@code true} if TLS is enabled.
+     */
+    public boolean getEnabled() {
+        return enabled;
+    }
+
+    /**
+     * @return path to the keystore, or {@code null} if not configured.
+     */
+    public String getKeystorePath() {
+        return keystorePath;
+    }
+
+    /**
+     * @return keystore type (e.g. {@code jks}, {@code PKCS12}), or {@code null}.
+     */
+    public String getKeystoreType() {
+        return keystoreType;
+    }
+
+    /**
+     * @return keystore password (plain value), or {@code null}.
+     */
+    public String getKeystorePassword() {
+        return keystorePassword;
+    }
+
+    /**
+     * @return key password inside the keystore, or {@code null}.
+     */
+    public String getKeystoreKeyPassword() {
+        return keystoreKeyPassword;
+    }
+
+    /**
+     * @return path to the truststore, or {@code null}.
+     */
+    public String getTruststorePath() {
+        return truststorePath;
+    }
+
+    /**
+     * @return truststore type (e.g. {@code PKCS12}), or {@code null}.
+     */
+    public String getTruststoreType() {
+        return truststoreType;
+    }
+
+    /**
+     * @return truststore password, or {@code null}.
+     */
+    public String getTruststorePassword() {
+        return truststorePassword;
+    }
+
+    /**
+     * @return path to the PEM certificate file, or {@code null}.
+     */
+    public String getCertificatePath() {
+        return certificatePath;
+    }
+
+    /**
+     * @return path to the PEM private key file, or {@code null}.
+     */
+    public String getPrivateKeyPath() {
+        return privateKeyPath;
+    }
+
+    /**
+     * @return password for the PEM private key, or {@code null}.
+     */
+    public String getPrivateKeyPassword() {
+        return privateKeyPassword;
+    }
+
+    /**
+     * @return list of certificate authority paths, possibly empty but never {@code null}.
+     */
+    public List<String> getCertificateAuthorities() {
+        return certificateAuthorities;
+    }
+
+    /**
+     * @return verification mode (full, certificate, none), or {@code null}.
+     */
+    public String getVerificationMode() {
+        return verificationMode;
+    }
+
+    /**
+     * @return client authentication mode (required, optional, none), or {@code null}.
+     */
+    public String getClientAuthMode() {
+        return clientAuthMode;
+    }
+
+    /**
+     * Exposes the logical configuration file name used for reporting.
+     *
+     * @return {@code "elasticsearch.yml"}
+     */
+    public String getThisFileName() {
+        return THIS_FILE;
+    }
+
+    // endregion
+
+    /**
+     * Maps a flat TLS option to its corresponding field in this {@link Tls} instance.
+     * <p>
+     * This method is called by the Elasticsearch YAML reader and is responsible for:
+     * <ul>
+     *     <li>Type checking the provided {@code optionValue}</li>
+     *     <li>Assigning known options to fields</li>
+     *     <li>Recording migrated/ignored/unknown keys via {@link MigrationReport}</li>
+     * </ul>
+     *
+     * @param optionName the option name relative to the TLS prefix
+     *                   (e.g. {@code "keystore.path"}, {@code "enabled"}).
+     * @param optionValue the parsed value from the configuration file.
+     * @param keyPrefix a prefix used for reporting (e.g. {@code "xpack.security.transport.ssl."}).
+     * @param configFile the configuration file from which the option was read.
+     */
+    @SuppressWarnings("unchecked")
+    public void handleTlsOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
+        boolean keyKnown = true;
+        boolean keyIgnore = false; // ignore all secure_* keys since they are not even visible
 
         // Booleans
         if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
             boolean value = (Boolean) optionValue;
             switch (optionName) {
                 case "enabled":
-                    enabled = value; break;
+                    enabled = value;
+                    break;
                 default:
-                    error = true;
+                    keyKnown = false;
             }
         }
 
@@ -60,38 +267,48 @@ public class Tls {
             String value = (String) optionValue;
             switch (optionName) {
                 case "keystore.path":
-                    keystorePath = value; break;
+                    keystorePath = value;
+                    break;
 
                 case "keystore.password":
-                    keystorePassword = value; break;
+                    keystorePassword = value;
+                    break;
 
                 case "keystore.secure_password": // can not be migrated since it is not visible
-                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
+                    keyIgnore = true;
                     break;
 
                 case "keystore.key_password":
-                    keystoreKeyPassword = value; break;
+                    keystoreKeyPassword = value;
+                    break;
 
                 case "keystore.secure_key_password":
-                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
+                    keyIgnore = true;
                     break;
 
                 case "truststore.path":
-                    truststorePath = value; break;
+                    truststorePath = value;
+                    break;
 
                 case "truststore.password":
-                    truststorePassword = value; break;
+                    truststorePassword = value;
+                    break;
 
                 case "truststore.secure_password":
-                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
+                    keyIgnore = true;
                     break;
 
                 case "keystore.type":
                     if (value.equals("jks") || value.equals("PKCS12")) {
                         keystoreType = value;
                     } else {
-                        IntermediateRepresentationElasticSearchYml.errorLog(optionName + " with type " + value + " is not known", 2);
-                        error = true;
+                        MigrationReport.shared.addWarning(
+                                THIS_FILE,
+                                keyPrefix + optionName,
+                                value + " is unknown keystore type, only jks or PKCS12 are supported"
+                        );
+                        keyIgnore = true;
+                        keyKnown = false;
                     }
                     break;
 
@@ -99,45 +316,66 @@ public class Tls {
                     if (value.equals("PKCS12")) {
                         truststoreType = value;
                     } else {
-                        IntermediateRepresentationElasticSearchYml.errorLog(optionName + " with type " + value + " is not known", 2);
-                        error = true;
+                        MigrationReport.shared.addWarning(
+                                THIS_FILE,
+                                keyPrefix + optionName,
+                                value + " is unknown keystore type, only PKCS12 is supported"
+                        );
+                        keyIgnore = true;
+                        keyKnown = false;
                     }
                     break;
 
                 case "certificate":
-                    certificatePath = value; break;
+                    certificatePath = value;
+                    break;
 
                 case "key":
-                    privateKeyPath = value; break;
+                    privateKeyPath = value;
+                    break;
 
                 case "key_passphrase":
-                    privateKeyPassword = value; break;
+                    privateKeyPassword = value;
+                    break;
 
                 case "secure_key_passphrase":
-                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
+                    keyIgnore = true;
                     break;
 
                 case "verification_mode":
                     if (value.equals("full") || value.equals("certificate") || value.equals("none")) {
                         verificationMode = value;
                     } else {
-                        error = true;
+                        MigrationReport.shared.addWarning(
+                                THIS_FILE,
+                                keyPrefix + optionName,
+                                value + " is unknown verification mode, only full, certificate or none are supported"
+                        );
+                        keyIgnore = true;
+                        keyKnown = false;
                     }
                     break;
 
                 case "client_authentication":
-                    if (value.equals("required") || value.equals("optional") ||  value.equals("none")) {
+                    if (value.equals("required") || value.equals("optional") || value.equals("none")) {
                         clientAuthMode = value;
                     } else {
-                        error = true;
+                        MigrationReport.shared.addWarning(
+                                THIS_FILE,
+                                keyPrefix + optionName,
+                                value + " is unknown client authentication mode, only required, optional or none are supported"
+                        );
+                        keyIgnore = true;
+                        keyKnown = false;
                     }
                     break;
 
                 default:
-                    error = true;
+                    keyKnown = false;
             }
         }
 
+        // Lists
         else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, List.class)) {
             List<?> value = (List<?>) optionValue;
 
@@ -146,7 +384,13 @@ public class Tls {
             }
 
             if (!(value.get(0) instanceof String)) {
-                error = true;
+                MigrationReport.shared.addManualAction(
+                        THIS_FILE,
+                        keyPrefix + optionName,
+                        value + " is not a string but it should be"
+                );
+                keyIgnore = true;
+                keyKnown = false;
             } else {
                 switch (optionName) {
                     case "certificate_authorities":
@@ -172,21 +416,26 @@ public class Tls {
                     case "remote_cluster.filter.allow":
                         remoteClusterAllowedIPs = (List<String>) value;
                         break;
-                    
+
                     case "remote_cluster.filter.deny":
                         remoteClusterDeniedIPs = (List<String>) value;
-                        break;  
+                        break;
 
                     default:
-                        error = true;
+                        keyKnown = false;
                 }
             }
         }
 
-        if (error) {
-            System.out.println("Invalid option of type " + optionValue.getClass() + ": " + optionName + " = " + optionValue);
+        if (keyIgnore) {
+            MigrationReport.shared.addIgnoredKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
+            return;
+        }
+
+        if (keyKnown) {
+            MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
+        } else {
+            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
         }
     }
 }
-
-

@@ -1,0 +1,25 @@
+{
+  "mappingWithTemplates": {
+    "enabled": true,
+    "role_templates": [
+      {
+        "format": "string",
+        "template": {
+          "source": "sg_{{username}}"
+        }
+      },
+      {
+        "format": "json",
+        "template": {
+          "source": "[\"sg_base\",\"sg_{{username}}\"]",
+          "lang": "mustache"
+        }
+      }
+    ],
+    "rules": {
+      "field": {
+        "realm.name": "saml1"
+      }
+    }
+  }
+}

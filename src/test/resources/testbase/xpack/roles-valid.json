@@ -1,0 +1,34 @@
+{
+  "admin": {
+    "cluster": ["monitor"],
+    "indices": [
+      {
+        "names": ["logs-*"],
+        "privileges": ["read"],
+        "field_security": {
+          "grant": ["field1"],
+          "except": ["field2"]
+        },
+        "query": "user.name:test",
+        "allow_restricted_indices": false
+      }
+    ],
+    "remote_indices": [
+      {
+        "clusters": ["remote-cluster"],
+        "names": ["remote-*"],
+        "privileges": ["read"],
+        "allow_restricted_indices": true
+      }
+    ],
+    "run_as": ["other-user"],
+    "description": "Admin role with monitoring and read access to logs indices.",
+    "metadata": {
+      "_reserved": false,
+      "note": "used for sgctl tests"
+    },
+    "transient_metadata": {
+      "enabled": true
+    }
+  }
+}

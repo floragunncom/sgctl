@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.*;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,19 +13,23 @@ import java.util.regex.Pattern;
 
 public class SslTlsIR {
 
-    public Tls transport;
-    public Tls http;
-
+    Tls transport;
+    Tls http;
 
     Map<String, List<String>> profileAllowedIPs = new HashMap<>(); // transport only: List of IP addresses (value) to allow for this profile (key)
     Map<String, List<String>> profileDeniedIPs = new HashMap<>(); // transport only: List of IP addresses (value) to deny for this profile (key)
+
+    public Tls getTransport() { return transport; }
+    public Tls getHttp() { return http; }
+    public Map<String, List<String>> getProfileAllowedIPs() { return profileAllowedIPs; }
+    public Map<String, List<String>> getProfileDeniedIPs() { return profileDeniedIPs; }
 
     public SslTlsIR() {
         transport = new Tls();
         http = new Tls();
     }
 
-    public void handleOptions(String optionName, Object optionValue) {
+    public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean error = false;
 
         if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, List.class)) {

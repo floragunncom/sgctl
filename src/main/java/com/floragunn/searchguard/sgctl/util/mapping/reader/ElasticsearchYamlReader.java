@@ -1,10 +1,11 @@
-package com.floragunn.searchguard.sgctl.util.mapping;
+package com.floragunn.searchguard.sgctl.util.mapping.reader;
 
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.floragunn.codova.documents.DocReader;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 
 public class ElasticsearchYamlReader {
@@ -63,11 +64,11 @@ public class ElasticsearchYamlReader {
 
     private void toIR(Map<String, Object> map) {
 
-        String[] globalPrefixes = {"xpack.security."};
-        String[] transportPrefixes = {"xpack.security.transport.ssl."};
-        String[] httpPrefixes = {"xpack.security.http.ssl."};
-        String[] sslTlsPrefixes = {"transport."};
-        String[] authenticationPrefixes = {"xpack.security.authc."};
+        String globalPrefix = "xpack.security.";
+        String transportPrefix = "xpack.security.transport.ssl.";
+        String httpPrefix = "xpack.security.http.ssl.";
+        String sslTlsPrefix = "transport.";
+        String authenticationPrefix = "xpack.security.authc.";
 
         String stripped;
 
@@ -75,25 +76,24 @@ public class ElasticsearchYamlReader {
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            // for each option name, propagate to responsible ir class method
-            if ((stripped = stripPrefix(key, transportPrefixes)) != null) {
-                ir.sslTls.transport.handleTlsOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, httpPrefixes)) != null) {
-                ir.sslTls.http.handleTlsOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, sslTlsPrefixes)) != null) {
-                ir.sslTls.handleOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, authenticationPrefixes)) != null) {
-                ir.authent.handleOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, globalPrefixes)) != null) {
-                ir.global.handleGlobalOptions(stripped, value);
+            // for each option name, propagate to responsible ir class method, added prefixes and file because they are required by the report api
+            // Order matters
+            if ((stripped = stripPrefix(key, transportPrefix)) != null) {
+                ir.getSslTls().getTransport().handleTlsOptions(stripped, value, transportPrefix, configFile);
+            } else if ((stripped = stripPrefix(key, httpPrefix)) != null) {
+                ir.getSslTls().getHttp().handleTlsOptions(stripped, value, httpPrefix, configFile);
+            } else if ((stripped = stripPrefix(key, sslTlsPrefix)) != null) {
+                ir.getSslTls().handleOptions(stripped, value, sslTlsPrefix, configFile);
+            } else if ((stripped = stripPrefix(key, authenticationPrefix)) != null) {
+                ir.getAuthent().handleOptions(stripped, value, authenticationPrefix, configFile);
+            } else if ((stripped = stripPrefix(key, globalPrefix)) != null) {
+                ir.getGlobal().handleGlobalOptions(stripped, value, globalPrefix, configFile);
             }
 
             else {
-                System.out.println("Could not resolve " + entry.getKey());
+                MigrationReport.shared.addUnknownKey("elasticsearch.yml", key, key);
             }
         }
-
-        return;
     }
 
     public static String getFieldsAsString(Object o) {

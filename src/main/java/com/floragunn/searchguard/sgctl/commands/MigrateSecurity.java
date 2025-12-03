@@ -1,6 +1,7 @@
 package com.floragunn.searchguard.sgctl.commands;
 
-import com.floragunn.searchguard.sgctl.util.mapping.SearchGuardConfigWriter;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
+import com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
@@ -27,22 +28,17 @@ public class MigrateSecurity implements Callable<Integer> {
 
     @Override
     public Integer call() throws Exception {
-        /* Commented for testing
-            if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
-                return 1;
-            }
-         */
-
-        //TODO Implement Reader fully
-
-        //Added this for testing
-        SearchGuardConfigWriter.generateAllConfigs(outputDir);
+        if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
+            return 1;
+        }
+        var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
+        reader.generateIR();
+        MigrationReport.shared.printReport();
         return 0;
     }
 
     public boolean checkOutputDir() {
         if(outputDir == null) {
-            log.error("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> -o <Output Directory>");
             return true;
         }
         if(!outputDir.exists()) {
@@ -64,29 +60,29 @@ public class MigrateSecurity implements Callable<Integer> {
     public boolean checkInputDirAndLoadConfig() {
 
         if (inputDir == null) {
-            log.error("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
+            System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
             return false;
         }
 
         if (!inputDir.exists()) {
-            log.error("Input path does not exist: {}", inputDir.getAbsolutePath());
+            System.err.println("Input path does not exist: " + inputDir.getAbsolutePath());
             return false;
         }
 
         if (!inputDir.isDirectory()) {
-            log.error("Input path is not a directory: {}", inputDir.getAbsolutePath());
+            System.err.println("Input path is not a directory: " + inputDir.getAbsolutePath());
             return false;
         }
 
         if (!inputDir.canRead()) {
-            log.error("Input directory is not readable. Check permissions: {}", inputDir.getAbsolutePath());
+            System.err.println("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
             return false;
         }
 
         var files = inputDir.listFiles();
 
         if (files == null) {
-            log.error("Found unexpected null-value while listing files in input directory (I/O error).");
+            System.err.println("Found unexpected null-value while listing files in input directory (I/O error).");
             return false;
         }else{
             for (File file : files) {
@@ -104,7 +100,7 @@ public class MigrateSecurity implements Callable<Integer> {
             }
         }
         if (elasticsearch == null) {
-            log.error("Required file elasticsearch.yml not found.");
+            System.err.println("Required file elasticsearch.yml not found.");
             return false;
         }
         return true;

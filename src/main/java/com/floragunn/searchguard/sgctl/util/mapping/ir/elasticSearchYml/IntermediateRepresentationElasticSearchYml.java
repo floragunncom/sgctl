@@ -3,9 +3,13 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
 public class IntermediateRepresentationElasticSearchYml {
 
-    public GlobalIR global;
-    public SslTlsIR sslTls;
-    public AuthenticationIR authent;
+    GlobalIR global;
+    SslTlsIR sslTls;
+    AuthenticationIR authent;
+
+    public GlobalIR getGlobal() { return global; }
+    public SslTlsIR getSslTls() { return sslTls; }
+    public AuthenticationIR getAuthent() { return authent; }
 
     public IntermediateRepresentationElasticSearchYml() {
         global = new GlobalIR();
