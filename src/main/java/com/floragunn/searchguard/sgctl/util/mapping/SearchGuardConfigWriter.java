@@ -26,9 +26,10 @@ public class SearchGuardConfigWriter {
     public static void generateAllConfigs(File outputDir) throws IOException {
         IntermediateRepresentationElasticSearchYml ir = new IntermediateRepresentationElasticSearchYml();
 
-        MigrateConfig.SgAuthc authcConfig = SGAuthcTranslator.createAuthcConfig(ir);
+        SGAuthcTranslator.Configs authcConfigs = SGAuthcTranslator.createAuthcConfig(ir);
 
-        writeYamlConfig(authcConfig, outputDir, "sg_authc.yml");
+        writeYamlConfig(authcConfigs.config, outputDir, "sg_authc.yml");
+        writeYamlConfig(authcConfigs.fconfig, outputDir, "sg_frontend_authc.yml");
     }
 
 
