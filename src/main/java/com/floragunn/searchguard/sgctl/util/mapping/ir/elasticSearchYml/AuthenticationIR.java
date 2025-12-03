@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -32,9 +33,14 @@ public class AuthenticationIR {
     Map<String, List<String>> domains = new HashMap<>();
 
     // realms collection
-    public Map<String, RealmIR> realms = new HashMap<>();
+    Map<String, RealmIR> realms = new HashMap<>();
 
-    public void handleOptions(String optionName, Object optionValue) {
+    public boolean getApiKeyEnabled() { return apiKeyEnabled; }
+    public String getApiKeyCacheTtl() { return apiKeyCacheTtl; }
+    public String getMaxTokens() { return maxTokens; }
+    public Map<String, RealmIR> getRealms() { return realms; }
+
+    public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean error = false;
 
         // realms, they have this pattern: xpack.security.authc.realms.<type>.<name>.<setting>
@@ -53,7 +59,7 @@ public class AuthenticationIR {
 
             RealmIR realm = realms.computeIfAbsent(name, n -> RealmIR.create(type, n));
 
-            realm.handleAttribute(attr, optionValue);
+            realm.handleAttribute(attr, optionValue, keyPrefix + "realms." + type + "." + name + ".", configFile);
             return;
         }
         // Booleans

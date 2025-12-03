@@ -8,6 +8,8 @@ public class GlobalIR {
 
     boolean xpackSecEnabled;
 
+    public boolean getXpackSecEnabled() { return xpackSecEnabled; }
+
     String THIS_FILE = "elasticsearch.yml";
     public void handleGlobalOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         //boolean error = false;
