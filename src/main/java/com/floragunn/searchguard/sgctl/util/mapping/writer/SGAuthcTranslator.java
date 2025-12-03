@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.commands.MigrateSecurity;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 import com.google.common.collect.ImmutableMap;
@@ -37,37 +38,54 @@ public class SGAuthcTranslator {
         fconfig.internalProxies = "";
         fconfig.remoteIpHeader = "";
 
-        ir.authent.realms.forEach((String realmName, RealmIR realm) -> {
+        ir.getAuthent().getRealms().forEach((String realmName, RealmIR realm) -> {
             String type = realm.getType();
-            //TODO Add Migration Report note on translated realm
+            String keyPrefix = "xpack.security.authc.realms." + type + "." + realmName;
+            MigrateConfig.NewAuthDomain newDomain = null;
+            boolean isFrontendRealm = false;
+
             switch (type) {
                 case "ldap":
-                    config.authDomains.add(createLdapDomain(realmName, (RealmIR.LdapRealmIR) realm));
+                    newDomain = createLdapDomain(realmName, (RealmIR.LdapRealmIR) realm);
+                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "LDAP realm migration not yet implemented.");
                     break;
                 case "file":
-                    config.authDomains.add(createFileDomain(realmName, (RealmIR.FileRealmIR) realm));
+                    newDomain = createFileDomain(realmName, (RealmIR.FileRealmIR) realm);
+                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "File realm migration not yet implemented.");
                     break;
                 case "native":
-                    config.authDomains.add(createNativeDomain(realmName, (RealmIR.NativeRealmIR) realm));
+                    newDomain = createNativeDomain(realmName, (RealmIR.NativeRealmIR) realm);
+                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "Native realm migration not yet implemented.");
                     break;
                 case "saml":
-                    config.authDomains.add(createSAMLDomain(realmName, (RealmIR.SamlRealmIR) realm));
+                    newDomain = createSAMLDomain(realmName, (RealmIR.SamlRealmIR) realm);
+                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "SAML realm migration not yet implemented.");
                     break;
                 case "pki":
-                    config.authDomains.add(createPkiDomain(realmName, (RealmIR.PkiRealmIR) realm));
+                    newDomain = createPkiDomain(realmName, (RealmIR.PkiRealmIR) realm);
+                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "PKI realm migration not yet implemented.");
                     break;
                 case "oidc":
-                    //This case do not belong in sg_authc.yml but sg_frontend_authc.yml. (Could be the same with other realms)
-                    fconfig.authDomains.add(createOidcDomain(realmName, (RealmIR.OidcRealmIR) realm));
+                    newDomain = createOidcDomain(realmName, (RealmIR.OidcRealmIR) realm);
+                    isFrontendRealm = true;
                     break;
                 case "kerberos":
                     config.authDomains.add(createkerebosDomain(realmName, (RealmIR.KerberosRealmIR) realm));
                     break;
                 default:
                     System.out.println("Invalid option");
-                    //Skip Unknown Realms
                     //TODO add Migration Report Note
                     break;
+            }
+
+            if (newDomain != null) {
+                if (isFrontendRealm) {
+                    fconfig.authDomains.add(newDomain);
+                    MigrationReport.shared.addMigrated("elasticsearch.yml", keyPrefix, "Realm migrated to sg_frontend_authc.yml");
+                } else {
+                    config.authDomains.add(newDomain);
+                    MigrationReport.shared.addMigrated("elasticsearch.yml", keyPrefix, "Realm migrated to sg_authc.yml");
+                }
             }
 
         });
