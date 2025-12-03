@@ -221,22 +221,17 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
 
       var userSearchNode = vDoc.get("user_search").asDocNode();
       var userSearchScopeString =
-          Objects.requireNonNullElse(
-              userSearchNode != null ? userSearchNode.getAsString("scope") : null, "sub_tree");
+          Objects.requireNonNullElse(userSearchNode.getAsString("scope"), "sub_tree");
       var userSearchScope = LdapRealm.Scope.valueOf(userSearchScopeString);
-      var userSearchBaseDn = userSearchNode != null ? userSearchNode.getAsString("base_dn") : null;
+      var userSearchBaseDn = userSearchNode.getAsString("base_dn");
       var userSearchFilter =
-          Objects.requireNonNullElse(
-              userSearchNode != null ? userSearchNode.getAsString("filter") : null, "(uid={0})");
+          Objects.requireNonNullElse(userSearchNode.getAsString("filter"), "(uid={0})");
 
       var groupSearchNode = vDoc.get("group_search").asDocNode();
-      var groupSearchBaseDn =
-          groupSearchNode != null ? groupSearchNode.getAsString("base_dn") : null;
-      var groupSearchScopeString =
-          groupSearchNode != null ? groupSearchNode.getAsString("scope") : null;
+      var groupSearchBaseDn = groupSearchNode.getAsString("base_dn");
+      var groupSearchScopeString = groupSearchNode.getAsString("scope");
       var groupSearchScope = LdapRealm.Scope.valueOf(groupSearchScopeString);
-      var groupSearchFilter =
-          groupSearchNode != null ? groupSearchNode.getAsString("filter") : null;
+      var groupSearchFilter = groupSearchNode.getAsString("filter");
 
       var unmappedGroupsAsRoles =
           vDoc.get("unmapped_groups_as_roles").withDefault(false).asBoolean();
