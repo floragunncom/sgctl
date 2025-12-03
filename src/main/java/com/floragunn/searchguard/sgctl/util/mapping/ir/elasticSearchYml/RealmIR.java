@@ -74,6 +74,7 @@ public class RealmIR {
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
                 switch (attribute) {
+                    case "type": this.type = (String) value; break;
                     case "url": this.url = (String) value; break;
                     case "bindDn": this.bindDn = (String) value; break;
                     case "user_search.base_dn": this.userSearchBaseDn = (String) value; break;
@@ -125,6 +126,7 @@ public class RealmIR {
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
                 switch (attribute) {
+                    case "type": this.type = (String) value; break;
                     case "files.users": this.filesUsers = (String) value;break;
                     case "files.users_roles": this.filesUsersRoles = (String) value; break;
                     default: keyKnown = false; break;
@@ -169,6 +171,7 @@ public class RealmIR {
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
                 switch (attribute) {
+                    case "type": this.type = (String) value; break;
                     case "cache.ttl": this.cacheTtl = (String) value; break;
                     default: keyKnown = false; break;
                 }
@@ -217,6 +220,7 @@ public class RealmIR {
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
                 switch (attribute) {
+                    case "type": this.type = (String) value; break;
                     case "idp.metadata.path": this.idpMetadataPath = (String) value; break;
                     case "sp.entity_id": this.spEntityID = (String) value; break;
                     case "sp.acs": this.spAcs = (String) value; break;
@@ -276,6 +280,7 @@ public class RealmIR {
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
                 switch (attribute) {
+                    case "type": this.type = (String) value; break;
                     case "username_pattern": this.usernamePattern = (String) value; break;
                     case "username_attribute": this.usernameAttribute = (String) value; break;
                     case "truststore.path": this.truststorePath = (String) value; break;
@@ -363,6 +368,7 @@ public class RealmIR {
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
                 switch (attribute) {
+                    case "type": this.type = (String) value; break;
                     case "rp.client_id": this.rpClientId = (String) value; break;
                     case "rp.response_type": this.rpResponseType = (String) value; break;
                     case "rp.post_logout_redirect_uri": this.rpPostLogoutRedirectUri = (String) value; break;
@@ -422,6 +428,7 @@ public class RealmIR {
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
                 switch (attribute) {
+                    case "type": this.type = (String) value; break;
                     case "keytab.path": this.keytabPath = (String) value; break;
                     case "principal": this.principal = (String) value; break;
                     default: keyKnown = false; break;

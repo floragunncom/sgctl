@@ -40,7 +40,7 @@ public class AuthenticationIR {
 
             RealmIR realm = realms.computeIfAbsent(name, n -> RealmIR.create(type, n));
 
-            realm.handleAttribute(attr, optionValue, keyPrefix, configFile);
+            realm.handleAttribute(attr, optionValue, keyPrefix + "realms." + type + "." + name + ".", configFile);
             return;
         }
 
