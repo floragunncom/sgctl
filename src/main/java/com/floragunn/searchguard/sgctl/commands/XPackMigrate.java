@@ -14,6 +14,10 @@ import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
+import com.floragunn.searchguard.sgctl.config.xpack.Users;
+import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
+import picocli.CommandLine;
+
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -22,10 +26,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
-
-import com.floragunn.searchguard.sgctl.config.xpack.Users;
-import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "migrate-security",
@@ -94,7 +94,7 @@ public class XPackMigrate implements Callable<Integer> {
   }
 
   private void registerSubMigrators() {
-      MigratorRegistry.registerSubMigratorStatic(new AuthMigrator());
+    MigratorRegistry.registerSubMigratorStatic(new AuthMigrator());
     MigratorRegistry.registerSubMigratorStatic(new UserMigrator());
     MigratorRegistry.registerSubMigratorStatic(new RoleMappingsMigrator());
     MigratorRegistry.finalizeMigratorsStatic(); // Never forget
