@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -41,9 +42,11 @@ public class Tls {
     List<String> remoteClusterAllowedIPs; // List of IP addresses to allow for remote cluster
     List<String> remoteClusterDeniedIPs; // List of IP addresses to deny remote cluster
 
+    String THIS_FILE = "elasticsearch.yml";
     // check an input option against all possible options acc. to the xpack docs
-    public void handleTlsOptions(String optionName, Object optionValue, String keyPrefix) {
-        boolean error = false;
+    public void handleTlsOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
+        boolean keyKnown = true;
+        boolean keyIgnore = false; // ignore all secure_X keys since they are not even visible
 
         // Booleans
         if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
@@ -52,8 +55,7 @@ public class Tls {
                 case "enabled":
                     enabled = value; break;
                 default:
-                    // error = true;
-                    //MigrationReport.shared.addUnknownKey(, );
+                    keyKnown = false;
             }
         }
 
@@ -68,14 +70,14 @@ public class Tls {
                     keystorePassword = value; break;
 
                 case "keystore.secure_password": // can not be migrated since it is not visible
-                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
+                    keyIgnore = true;
                     break;
 
                 case "keystore.key_password":
                     keystoreKeyPassword = value; break;
 
                 case "keystore.secure_key_password":
-                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
+                    keyIgnore = true;
                     break;
 
                 case "truststore.path":
@@ -85,15 +87,16 @@ public class Tls {
                     truststorePassword = value; break;
 
                 case "truststore.secure_password":
-                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
+                    keyIgnore = true;
                     break;
 
                 case "keystore.type":
                     if (value.equals("jks") || value.equals("PKCS12")) {
                         keystoreType = value;
                     } else {
-                        IntermediateRepresentationElasticSearchYml.errorLog(optionName + " with type " + value + " is not known", 2);
-                        error = true;
+                        MigrationReport.shared.addWarning(THIS_FILE, keyPrefix + optionName, value + " is unknown keystore type, only jks or PKCS12 are supported");
+                        keyIgnore = true;
+                        keyKnown = false;
                     }
                     break;
 
@@ -101,8 +104,9 @@ public class Tls {
                     if (value.equals("PKCS12")) {
                         truststoreType = value;
                     } else {
-                        IntermediateRepresentationElasticSearchYml.errorLog(optionName + " with type " + value + " is not known", 2);
-                        error = true;
+                        MigrationReport.shared.addWarning(THIS_FILE, keyPrefix + optionName, value + " is unknown keystore type, only PKCS12 is supported");
+                        keyIgnore = true;
+                        keyKnown = false;
                     }
                     break;
 
@@ -116,14 +120,16 @@ public class Tls {
                     privateKeyPassword = value; break;
 
                 case "secure_key_passphrase":
-                    IntermediateRepresentationElasticSearchYml.errorLog(optionName + " is not visible", 1);
+                    keyIgnore = true;
                     break;
 
                 case "verification_mode":
                     if (value.equals("full") || value.equals("certificate") || value.equals("none")) {
                         verificationMode = value;
                     } else {
-                        error = true;
+                        MigrationReport.shared.addWarning(THIS_FILE, keyPrefix + optionName, value + " is unknown verification mode, only full, certificate or none are supported");
+                        keyIgnore = true;
+                        keyKnown = false;
                     }
                     break;
 
@@ -131,12 +137,14 @@ public class Tls {
                     if (value.equals("required") || value.equals("optional") ||  value.equals("none")) {
                         clientAuthMode = value;
                     } else {
-                        error = true;
+                        MigrationReport.shared.addWarning(THIS_FILE, keyPrefix + optionName, value + " is unknown client authentication mode, only required, optional or none are supported");
+                        keyIgnore = true;
+                        keyKnown = false;
                     }
                     break;
 
                 default:
-                    error = true;
+                    keyKnown = false;
             }
         }
 
@@ -148,7 +156,9 @@ public class Tls {
             }
 
             if (!(value.get(0) instanceof String)) {
-                error = true;
+                MigrationReport.shared.addManualAction(THIS_FILE, keyPrefix + optionName, value + " is not a string but it should be");
+                keyIgnore = true;
+                keyKnown = false;
             } else {
                 switch (optionName) {
                     case "certificate_authorities":
@@ -180,13 +190,20 @@ public class Tls {
                         break;  
 
                     default:
-                        error = true;
+                        keyKnown = false;
                 }
             }
         }
 
-        if (error) {
-            System.out.println("Invalid option of type " + optionValue.getClass() + ": " + optionName + " = " + optionValue);
+        if (keyIgnore) {
+            MigrationReport.shared.addIgnoredKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
+            return;
+        }
+
+        if (keyKnown) {
+            MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
+        } else {
+            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
         }
     }
 }

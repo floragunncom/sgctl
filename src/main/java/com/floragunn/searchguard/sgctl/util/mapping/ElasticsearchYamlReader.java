@@ -77,9 +77,9 @@ public class ElasticsearchYamlReader {
 
             // for each option name, propagate to responsible ir class method
             if ((stripped = stripPrefix(key, transportPrefix)) != null) {
-                ir.sslTls.transport.handleTlsOptions(stripped, value, transportPrefix);
+                ir.sslTls.transport.handleTlsOptions(stripped, value, transportPrefix, configFile);
             } else if ((stripped = stripPrefix(key, httpPrefix)) != null) {
-                ir.sslTls.http.handleTlsOptions(stripped, value, httpPrefix);
+                ir.sslTls.http.handleTlsOptions(stripped, value, httpPrefix, configFile);
             } else if ((stripped = stripPrefix(key, sslTlsPrefix)) != null) {
                 ir.sslTls.handleOptions(stripped, value);
             } else if ((stripped = stripPrefix(key, authenticationPrefix)) != null) {
