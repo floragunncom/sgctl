@@ -7,7 +7,7 @@ import java.util.List;
 
 public class User {
     @NonNull String username;
-    @NonNull List<String> roles; // TODO: change datatype to be able reference the role datatype
+    @NonNull List<String> roles;
     @NonNull Boolean enabled;
     @NonNull LinkedHashMap<String, Object> attributes;
     String fullName;
@@ -31,6 +31,7 @@ public class User {
     public String getEmail() { return email; }
     public @NonNull LinkedHashMap<String, Object> getAttributes() { return attributes; }
     public @NonNull Boolean getEnabled() { return enabled; }
+    public String getProfileUID() { return profileUID; }
 
     // Setter-Methods
     public void setUsername(@NonNull String username) { this.username = username; }
