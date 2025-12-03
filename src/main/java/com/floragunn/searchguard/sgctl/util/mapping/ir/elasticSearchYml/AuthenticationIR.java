@@ -3,10 +3,13 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
+
 public class AuthenticationIR {
+    private static final String THIS_FILE = "elasticsearch.yml";
+
     // Password hashing
     String passwordHashingAlgorithm;
 
@@ -29,9 +32,6 @@ public class AuthenticationIR {
     String apiKeyDeleteTimeout;
     String apiKeyHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.hashing.algorithm" (x-pack makes a distinction between in memory)
 
-    // Domains
-    Map<String, List<String>> domains = new HashMap<>();
-
     // realms collection
     Map<String, RealmIR> realms = new HashMap<>();
 
@@ -41,7 +41,7 @@ public class AuthenticationIR {
     public Map<String, RealmIR> getRealms() { return realms; }
 
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
-        boolean error = false;
+        boolean keyKnown = true;
 
         // realms, they have this pattern: xpack.security.authc.realms.<type>.<name>.<setting>
         if (optionName.startsWith("realms.")) {
@@ -79,7 +79,7 @@ public class AuthenticationIR {
                     break;
 
                 default:
-                    error = true;
+                    keyKnown = false;
             }
         // Strings
         } else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
@@ -130,12 +130,14 @@ public class AuthenticationIR {
                     break;
 
                 default:
-                    error = true;
+                    keyKnown = false;
             }
         }
 
-        if (error) {
-            System.out.println("Invalid option of type " + optionValue.getClass() + ": " + optionName + " = " + optionValue);
+        if (keyKnown) {
+            MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
+        } else {
+            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
         }
     }
 }
