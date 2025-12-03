@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
 import java.util.ArrayList;
@@ -41,7 +42,7 @@ public class Tls {
     List<String> remoteClusterDeniedIPs; // List of IP addresses to deny remote cluster
 
     // check an input option against all possible options acc. to the xpack docs
-    public void handleTlsOptions(String optionName, Object optionValue) {
+    public void handleTlsOptions(String optionName, Object optionValue, String keyPrefix) {
         boolean error = false;
 
         // Booleans
@@ -51,7 +52,8 @@ public class Tls {
                 case "enabled":
                     enabled = value; break;
                 default:
-                    error = true;
+                    // error = true;
+                    //MigrationReport.shared.addUnknownKey(, );
             }
         }
 

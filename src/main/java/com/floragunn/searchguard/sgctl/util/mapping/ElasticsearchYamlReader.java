@@ -63,11 +63,11 @@ public class ElasticsearchYamlReader {
 
     private void toIR(Map<String, Object> map) {
 
-        String[] globalPrefixes = {"xpack.security."};
-        String[] transportPrefixes = {"xpack.security.transport.ssl."};
-        String[] httpPrefixes = {"xpack.security.http.ssl."};
-        String[] sslTlsPrefixes = {"transport."};
-        String[] authenticationPrefixes = {"xpack.security.authc."};
+        String globalPrefix = "xpack.security.";
+        String transportPrefix = "xpack.security.transport.ssl.";
+        String httpPrefix = "xpack.security.http.ssl.";
+        String sslTlsPrefix = "transport.";
+        String authenticationPrefix = "xpack.security.authc.";
 
         String stripped;
 
@@ -76,15 +76,15 @@ public class ElasticsearchYamlReader {
             Object value = entry.getValue();
 
             // for each option name, propagate to responsible ir class method
-            if ((stripped = stripPrefix(key, transportPrefixes)) != null) {
-                ir.sslTls.transport.handleTlsOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, httpPrefixes)) != null) {
-                ir.sslTls.http.handleTlsOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, sslTlsPrefixes)) != null) {
+            if ((stripped = stripPrefix(key, transportPrefix)) != null) {
+                ir.sslTls.transport.handleTlsOptions(stripped, value, transportPrefix);
+            } else if ((stripped = stripPrefix(key, httpPrefix)) != null) {
+                ir.sslTls.http.handleTlsOptions(stripped, value, httpPrefix);
+            } else if ((stripped = stripPrefix(key, sslTlsPrefix)) != null) {
                 ir.sslTls.handleOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, authenticationPrefixes)) != null) {
+            } else if ((stripped = stripPrefix(key, authenticationPrefix)) != null) {
                 ir.authent.handleOptions(stripped, value);
-            } else if ((stripped = stripPrefix(key, globalPrefixes)) != null) {
+            } else if ((stripped = stripPrefix(key, globalPrefix)) != null) {
                 ir.global.handleGlobalOptions(stripped, value);
             }
 
