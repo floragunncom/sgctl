@@ -86,7 +86,7 @@ public class XPackMigrate implements Callable<Integer> {
     return new Migrator.MigrationContext(
         Optional.ofNullable((RoleMappings) xPackConfigs.get("role_mappings.json")),
         Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
-        Optional.ofNullable((Users) xPackConfigs.get("users.json")),
+        Optional.ofNullable((Users) xPackConfigs.get("users.json")), //
         Optional.empty(), // TODO: Get real config
         Optional.empty() // TODO: Get real config
         );
