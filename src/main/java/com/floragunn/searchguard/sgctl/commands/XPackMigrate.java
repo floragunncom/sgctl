@@ -8,6 +8,8 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
+import com.floragunn.searchguard.sgctl.config.migrate.RoleMappingsMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.UserMigrator;
 import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
@@ -92,8 +94,9 @@ public class XPackMigrate implements Callable<Integer> {
   }
 
   private void registerSubMigrators() {
-    MigratorRegistry.registerSubMigratorStatic(new AuthMigrator());
-
+      MigratorRegistry.registerSubMigratorStatic(new AuthMigrator());
+    MigratorRegistry.registerSubMigratorStatic(new UserMigrator());
+    MigratorRegistry.registerSubMigratorStatic(new RoleMappingsMigrator());
     MigratorRegistry.finalizeMigratorsStatic(); // Never forget
   }
 
