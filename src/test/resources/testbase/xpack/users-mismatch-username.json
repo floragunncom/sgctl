@@ -1,0 +1,9 @@
+{
+  "user-key": {
+    "username": "different-user",
+    "roles": ["admin"],
+    "full_name": "Inconsistent User",
+    "email": "inconsistent@example.com",
+    "enabled": true
+  }
+}
