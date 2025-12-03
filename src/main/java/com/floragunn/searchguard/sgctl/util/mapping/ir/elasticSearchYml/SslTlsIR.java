@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.*;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,7 @@ public class SslTlsIR {
         http = new Tls();
     }
 
-    public void handleOptions(String optionName, Object optionValue) {
+    public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean error = false;
 
         if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, List.class)) {

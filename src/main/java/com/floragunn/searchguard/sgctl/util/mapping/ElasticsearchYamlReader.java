@@ -75,17 +75,17 @@ public class ElasticsearchYamlReader {
             String key = entry.getKey();
             Object value = entry.getValue();
 
-            // for each option name, propagate to responsible ir class method
+            // for each option name, propagate to responsible ir class method, added prefixes and file because they are required by the report api
             if ((stripped = stripPrefix(key, transportPrefix)) != null) {
                 ir.sslTls.transport.handleTlsOptions(stripped, value, transportPrefix, configFile);
             } else if ((stripped = stripPrefix(key, httpPrefix)) != null) {
                 ir.sslTls.http.handleTlsOptions(stripped, value, httpPrefix, configFile);
             } else if ((stripped = stripPrefix(key, sslTlsPrefix)) != null) {
-                ir.sslTls.handleOptions(stripped, value);
+                ir.sslTls.handleOptions(stripped, value, sslTlsPrefix, configFile);
             } else if ((stripped = stripPrefix(key, authenticationPrefix)) != null) {
                 ir.authent.handleOptions(stripped, value);
             } else if ((stripped = stripPrefix(key, globalPrefix)) != null) {
-                ir.global.handleGlobalOptions(stripped, value);
+                ir.global.handleGlobalOptions(stripped, value, globalPrefix, configFile);
             }
 
             else {
