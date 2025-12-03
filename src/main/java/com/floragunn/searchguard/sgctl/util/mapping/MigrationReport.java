@@ -1,10 +1,13 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
 
+import java.io.PrintStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 
 public class MigrationReport {
@@ -51,18 +54,21 @@ public class MigrationReport {
         file(file).add(Category.MANUAL, new Entry(parameter, message, null, null));
     }
 
-
     public void printReport(){
-        System.out.println("---------- Migration Report ----------");
+        printReport(System.out);
+    }
+
+    public void printReport(PrintStream out){
+        out.println("---------- Migration Report ----------");
         for (Map.Entry<String, FileReport> fe : files.entrySet()) {
-            System.out.println("File: " + fe.getKey() + "\n");
+            out.println("File: " + fe.getKey() + "\n");
             FileReport fr = fe.getValue();
 
-            printMigrated(fr);
-            printWarnings(fr);
-            printManuals(fr);
+            printMigrated(fr, out);
+            printWarnings(fr, out);
+            printManuals(fr, out);
         }  
-        System.out.println("---------- End Migration Report ----------");
+        out.println("---------- End Migration Report ----------");
     }
 
     /* ---------- internals ---------- */
@@ -76,38 +82,38 @@ public class MigrationReport {
         String msg = rp.format(args);
         file(file).add(category, new Entry(parameter, msg, null, rp));
     }
-    void printMigrated(FileReport fr){
+    void printMigrated(FileReport fr, PrintStream out){
         List<Entry> migrated = fr.get(Category.MIGRATED);
         if(!migrated.isEmpty()){
-            System.out.printf("  MIGRATED (%d)%n  Parameters that have been successfully migrated%n%n", migrated.size());
+            out.printf("  MIGRATED (%d)%n  Parameters that have been successfully migrated%n%n", migrated.size());
             for(Entry e : migrated){
                 if(e.newParameter != null){
-                    System.out.printf("    - %s -> %s%n", e.parameter, e.newParameter);
+                    out.printf("    - %s -> %s%n", e.parameter, e.newParameter);
                 } else {
-                    System.out.printf("    - %s%n", e.parameter);
+                    out.printf("    - %s%n", e.parameter);
                 }
             }
-            System.out.println();
+            out.println();
         } 
     }
-    void printWarnings(FileReport fr){
+    void printWarnings(FileReport fr, PrintStream out){
         List<Entry> warnings = fr.get(Category.WARNING);
         if(!warnings.isEmpty()){
-            System.out.printf("  %s (%d)%n  Potentially problematic or ambiguous settings. Review them to ensure the migrated configuration behaves as expected%n%n", Category.WARNING.name(), warnings.size());
-            printPresets(warnings);
+            out.printf("  %s (%d)%n  Potentially problematic or ambiguous settings. Review them to ensure the migrated configuration behaves as expected%n%n", Category.WARNING.name(), warnings.size());
+            printPresets(warnings, out);
             List<Entry> freeWarnings = new ArrayList<>();
             for (Entry e : warnings) {
                 if (e.preset == null) freeWarnings.add(e);
             }
             if (!freeWarnings.isEmpty()) {
                 for (Entry e : freeWarnings) {
-                    System.out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
+                    out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
                 }
-                System.out.println();
+                out.println();
             }
         }
     }
-    void printPresets(List<Entry> entries){
+    void printPresets(List<Entry> entries, PrintStream out){
         for (ReportPreset rp : ReportPreset.values()) {
             List<Entry> presetWarnings = new ArrayList<>();
             for (Entry e : entries) {
@@ -115,25 +121,25 @@ public class MigrationReport {
             }
             if (!presetWarnings.isEmpty()) {
                 for (Entry e : presetWarnings) {
-                    System.out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
+                    out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
                 }
-                System.out.println();
+                out.println();
             }
         }
     }
 
-    void printManuals(FileReport fr){
+    void printManuals(FileReport fr, PrintStream out){
         List<Entry> manuals = fr.get(Category.MANUAL);
         if(!manuals.isEmpty()){
-            System.out.printf("  %s (%d)%n  Parameters that could not be automatically migrated and require manual review or adjustment%n%n", Category.MANUAL.name(), manuals.size());
+            out.printf("  %s (%d)%n  Parameters that could not be automatically migrated and require manual review or adjustment%n%n", Category.MANUAL.name(), manuals.size());
             for(Entry e : manuals){
-                System.out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
+                out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
             }
-            System.out.println();
+            out.println();
         }
     }
 
-    static class FileReport {
+    public static class FileReport {
         private final EnumMap<Category, List<Entry>> buckets = new EnumMap<>(Category.class);
         FileReport(){
             for (Category c : Category.values()) buckets.put(c, new ArrayList<>());
@@ -143,24 +149,54 @@ public class MigrationReport {
         }
 
         List<Entry> get(Category c){
-            return buckets.get(c);
+            return Collections.unmodifiableList(buckets.get(c));
         }
     }
 
-    static class Entry{
+    public static class Entry{
         private final String parameter;
         private final String message;
         private final String newParameter;
         private final ReportPreset preset;
-        Entry(String parameter, String message, String newParameter, ReportPreset preset){
+        public Entry(String parameter, String message, String newParameter, ReportPreset preset){
             this.parameter = parameter;
             this.message = message;
             this.newParameter = newParameter;
             this.preset = preset;
         }
+        public String getParameter() { return parameter; }
+        public String getMessage() { return message; }
+        public String getNewParameter() { return newParameter; }
+        public ReportPreset getPreset() { return preset; }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof Entry)) return false;
+            Entry other = (Entry) obj;
+            return Objects.equals(parameter, other.parameter)
+                && Objects.equals(message, other.message)
+                && Objects.equals(newParameter, other.newParameter)
+                && preset == other.preset;
+        }
+    
+        @Override
+        public int hashCode() {
+            return Objects.hash(parameter, message, newParameter, preset);
+        }
+    
+        @Override
+        public String toString() {
+            return "Entry{" +
+                "parameter='" + parameter + '\'' +
+                ", message='" + message + '\'' +
+                ", newParameter='" + newParameter + '\'' +
+                ", preset=" + preset +
+                '}';
+        }
     }
 
-    enum ReportPreset{
+    public enum ReportPreset{
         UNKNOWN_KEY("Encountered unknown key '%s' at path '%s'"),
         INVALID_TYPE("Expected type '%s' for '%s', but found '%s'"),
         MISSING_PARAMETER("'%s' missing required parameter '%s'"),
@@ -172,5 +208,35 @@ public class MigrationReport {
             this.template = template;
         }
         public String format(Object... args) { return String.format(template, args); }
+    }
+
+    public void clear(){
+        files.clear();
+    }
+
+    public Map<String, Map<Category, List<Entry>>> getSnapshot(){
+        var snapshot = new LinkedHashMap<String, Map<Category, List<Entry>>>();
+        for (var kv : files.entrySet()){
+            var map = new EnumMap<Category, List<Entry>>(Category.class);
+            for(Category c : Category.values()){
+                map.put(c, kv.getValue().get(c));
+            }
+            snapshot.put(kv.getKey(), map);
+        }
+        return Collections.unmodifiableMap(snapshot);
+    }
+
+    public List<Entry> getEntries(String file, Category c){
+        var fr = files.get(file);
+        return fr == null ? List.of() : List.copyOf(fr.get(c));
+    }
+
+    public int count(Category c){
+        return files.values().stream().mapToInt(fr -> fr.get(c).size()).sum();
+    }
+
+    public int count(String file, Category c){
+        var fr = files.get(file);
+        return fr == null ? 0 : fr.get(c).size();
     }
 }
