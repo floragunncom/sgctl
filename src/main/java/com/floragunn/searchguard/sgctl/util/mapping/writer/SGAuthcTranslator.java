@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.commands.MigrateSecurity;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
@@ -47,7 +48,6 @@ public class SGAuthcTranslator {
             switch (type) {
                 case "ldap":
                     newDomain = createLdapDomain(realmName, (RealmIR.LdapRealmIR) realm);
-                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "LDAP realm migration not yet implemented.");
                     break;
                 case "file":
                     newDomain = createFileDomain(realmName, (RealmIR.FileRealmIR) realm);
@@ -70,11 +70,11 @@ public class SGAuthcTranslator {
                     isFrontendRealm = true;
                     break;
                 case "kerberos":
-                    config.authDomains.add(createkerebosDomain(realmName, (RealmIR.KerberosRealmIR) realm));
+                    newDomain = createkerebosDomain(realmName, (RealmIR.KerberosRealmIR) realm);
+                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "Kereberos realm migration not yet implemented.");
                     break;
                 default:
-                    System.out.println("Invalid option");
-                    //TODO add Migration Report Note
+                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, String.format("Encountered Unknown Realm (Name: %s, Type: %s)", realmName, type));
                     break;
             }
 
@@ -94,19 +94,34 @@ public class SGAuthcTranslator {
     }
 
     /**
+     * Optionally adds a value to a config if value is not null
+     * @param config The config that the value gets added to
+     * @param key The Key which needs to be added
+     * @param value Optional value that gets added if present
+     */
+    private static void addOptionalConfigProperty(Map<String, Object> config, String key, Object value) {
+        if (value == null)
+            return;
+        config.put(key, value);
+        MigrationReport.shared.addMigrated("sg_authc.yml", key);
+    }
+
+    /**
      * Creates the LDAP-Auth-Domain for sg_authc.yml
      * @param ir The IR that holds the config info
      * @return NewAuthDomain
      */
     private static MigrateConfig.NewAuthDomain createLdapDomain(String realmName, RealmIR.LdapRealmIR ir) {
         Map<String, Object> ldapConfig = new HashMap<>();
-
-        List<String> ldapHosts = Arrays.asList(ir.getUrl());
-        ldapConfig.put("ldap.idp.hosts", ldapHosts);
-        ldapConfig.put("ldap.idp.bind_dn", ir.getBindDn());
-        ldapConfig.put("ldap.user_search.base_dn", ir.getUserSearchBaseDn());
-        ldapConfig.put("ldap.user_search.filter.raw", ir.getUserSearchFilter());
-        ldapConfig.put("ldap.group_search.base_dn", ir.getGroupSearchBaseDn());
+        String url = ir.getUrl();
+        if (url != null) {
+            List<String> ldapHosts = Arrays.asList(url);
+            ldapConfig.put("ldap.idp.hosts", ldapHosts);
+        }
+        addOptionalConfigProperty(ldapConfig, "ldap.idp.bind_dn", ir.getBindDn());
+        addOptionalConfigProperty(ldapConfig, "ldap.user_search.base_dn", ir.getUserSearchBaseDn());
+        addOptionalConfigProperty(ldapConfig, "ldap.user_search.filter.raw", ir.getUserSearchFilter());
+        addOptionalConfigProperty(ldapConfig, "ldap.group_search.base_dn", ir.getGroupSearchBaseDn());
 
         return new MigrateConfig.NewAuthDomain(
                 ir.getType(),
@@ -153,22 +168,14 @@ public class SGAuthcTranslator {
         Map<String, Object> oidcConfig = new HashMap<>();
 
         // 1. RP settings
-        if (ir.getRpClientId() != null)
-            oidcConfig.put("rp.client_id", ir.getRpClientId());
-        if (ir.getRpResponseType() != null)
-            oidcConfig.put("rp.response_type", ir.getRpResponseType());
+        addOptionalConfigProperty(oidcConfig, "rp.client_id", ir.getRpClientId());
+        addOptionalConfigProperty(oidcConfig, "rp.response_type", ir.getRpResponseType());
         // 2. OP settings
-        if (ir.getOpIssuer() != null)
-            oidcConfig.put("op.issuer", ir.getOpIssuer());
-        if (ir.getOpAuthEndpoint() != null)
-            oidcConfig.put("op.authorization_endpoint", ir.getOpAuthEndpoint());
-        if (ir.getOpTokenEndpoint() != null)
-            oidcConfig.put("op.token_endpoint", ir.getOpTokenEndpoint());
-        if (ir.getOpJwkSetPath() != null)
-            oidcConfig.put("op.jwkset_path", ir.getOpJwkSetPath());
-
-        if (ir.getClaimPrincipal() != null)
-            oidcConfig.put("claims.principal", ir.getClaimPrincipal());
+        addOptionalConfigProperty(oidcConfig, "op.issuer", ir.getOpIssuer());
+        addOptionalConfigProperty(oidcConfig, "op.authorization_endpoint", ir.getOpAuthEndpoint());
+        addOptionalConfigProperty(oidcConfig, "op.token_endpoint", ir.getOpTokenEndpoint());
+        addOptionalConfigProperty(oidcConfig, "op.jwkset_path", ir.getOpJwkSetPath());
+        addOptionalConfigProperty(oidcConfig, "claims.principal", ir.getClaimPrincipal());
 
         return new MigrateConfig.NewAuthDomain(
                 "oidc",

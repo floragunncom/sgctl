@@ -12,10 +12,10 @@ public class SearchGuardConfigWriter {
     MigrateConfig.SgAuthc  sg_authc;
     SGAuthcTranslator.SgFrontEndAuthc sg_frontend_authc;
 
+
     public SearchGuardConfigWriter(IntermediateRepresentationElasticSearchYml irElasticSearchYml, IntermediateRepresentation ir) {
         sg_authc = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml).config;
         sg_frontend_authc = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml).fconfig;
-
     }
 
     public SGAuthcTranslator.SgFrontEndAuthc getSg_frontend_authc() {
