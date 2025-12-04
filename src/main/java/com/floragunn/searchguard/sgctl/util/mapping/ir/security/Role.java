@@ -1,4 +1,4 @@
-package com.floragunn.searchguard.sgctl.util.mapping.ir;
+package com.floragunn.searchguard.sgctl.util.mapping.ir.security;
 
 import org.jspecify.annotations.NonNull;
 
@@ -9,6 +9,7 @@ public class Role {
     @NonNull String name;
     List<Application>  applications;
     List<String> cluster;
+    List<RemoteCluster> remoteClusters;
     List<Index> indices;
     List<RemoteIndex> remoteIndices;
     List<String> runAs;
@@ -26,6 +27,7 @@ public class Role {
     public List<String> getRunAs() { return runAs; }
     public String getDescription() { return description; }
     public List<RemoteIndex> getRemoteIndices() { return remoteIndices; }
+    public List<RemoteCluster> getRemoteClusters() { return remoteClusters; }
 
     // Setter-Methods
     public void setName(@NonNull String name) { this.name = name; }
@@ -35,6 +37,7 @@ public class Role {
     public void setRunAs(List<String> runAs) { this.runAs = runAs; }
     public void setDescription(String description) { this.description = description; }
     public void setRemoteIndices(List<RemoteIndex> remoteIndices) { this.remoteIndices = remoteIndices; }
+    public void setRemoteClusters(List<RemoteCluster> remoteClusters) { this.remoteClusters = remoteClusters; }
 
     public static class Application {
         @NonNull String name;
@@ -72,6 +75,24 @@ public class Role {
         @Override
         public String toString() {
             return "Application [name=" + name + ", privileges=" + privileges + ", resources=" + resources + "]";
+        }
+    }
+
+    public static class RemoteCluster {
+        List<String> clusters;
+        List<String> privileges;
+
+        // Getter-Methods
+        public List<String> getClusters() { return clusters; }
+        public List<String> getPrivileges() { return privileges; }
+
+        // Setter-Methods
+        public void setClusters(List<String> clusters) { this.clusters = clusters; }
+        public void setPrivileges(List<String> privileges) { this.privileges = privileges; }
+
+        @Override
+        public String toString() {
+            return "Remote Cluster [clusters=" + clusters + ", privileges=" + privileges + "]";
         }
     }
 
@@ -126,7 +147,7 @@ public class Role {
 
         @Override
         public String toString() {
-            return "Remote Index [cluster=" + cluster + fieldSecurity + ", names=" + names + ", privileges=" + privileges + ", allowRestrictedIndices=" + allowRestrictedIndices + "]";
+            return "Remote Index [cluster=" + cluster + ", fieldSecurity=" + fieldSecurity + ", names=" + names + ", privileges=" + privileges + ", allowRestrictedIndices=" + allowRestrictedIndices + "]";
         }
     }
 
@@ -150,7 +171,7 @@ public class Role {
 
     @Override
     public String toString() {
-        return "Role[\n\tname=" + name + "\n\tapplications=" + applications + "\n\tcluster=" + cluster + "\n\tindices=" + indices + "\n\tremote_indices=" + remoteIndices + "\n]";
+        return "Role[\n\tname=" + name + "\n\tapplications=" + applications + "\n\tcluster=" + cluster + "\n\tremoteCluster=" + remoteClusters + "\n\tindices=" + indices + "\n\tremote_indices=" + remoteIndices + "\n]";
     }
 
     @Override

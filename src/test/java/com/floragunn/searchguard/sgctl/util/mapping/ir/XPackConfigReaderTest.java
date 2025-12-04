@@ -1,10 +1,10 @@
-package com.floragunn.searchguard.sgctl.testsupport;
+package com.floragunn.searchguard.sgctl.util.mapping.ir;
 
-import com.floragunn.searchguard.sgctl.util.mapping.XPackConfigReader;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.Role;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.RoleMapping;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.User;
+import com.floragunn.searchguard.sgctl.testsupport.TestBase;
+import com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
