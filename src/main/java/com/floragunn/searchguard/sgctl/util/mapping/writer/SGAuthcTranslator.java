@@ -15,9 +15,9 @@ public class SGAuthcTranslator {
 
     public static class Configs{
         public MigrateConfig.SgAuthc config;
-        public SgFrontEndAuthc fconfig;
+        public MigrateConfig.SgAuthc fconfig;
 
-        public Configs(MigrateConfig.SgAuthc config, SgFrontEndAuthc fconfig){
+        public Configs(MigrateConfig.SgAuthc config, MigrateConfig.SgAuthc fconfig){
             this.config = config;
             this.fconfig = fconfig;
         }
@@ -31,7 +31,7 @@ public class SGAuthcTranslator {
      */
     public static Configs createAuthcConfig(IntermediateRepresentationElasticSearchYml ir) {
         MigrateConfig.SgAuthc config = new MigrateConfig.SgAuthc();
-        SgFrontEndAuthc fconfig = new SgFrontEndAuthc();
+        MigrateConfig.SgAuthc fconfig = new MigrateConfig.SgAuthc();
         config.authDomains = new ArrayList<>();
 
 
@@ -185,33 +185,5 @@ public class SGAuthcTranslator {
                 oidcConfig,
                 null
         );
-    }
-
-    public static class SgFrontEndAuthc extends MigrateConfig.SgAuthc implements Document<MigrateConfig.SgAuthc> {
-
-        @Override
-        public Object toBasicObject() {
-            Map<String, Object> result = new LinkedHashMap<>();
-
-            result.put("auth_domains", authDomains);
-
-            if (internalProxies != null || remoteIpHeader != null) {
-
-                Map<String, Object> network = new LinkedHashMap<>();
-
-                if (internalProxies != null) {
-                    network.put("trusted_proxies_regex", internalProxies);
-                }
-
-                if (remoteIpHeader != null) {
-                    network.put("http", ImmutableMap.of("remote_ip_header", remoteIpHeader));
-                }
-
-                result.put("network", network);
-            }
-
-            return result;
-        }
-
     }
 }

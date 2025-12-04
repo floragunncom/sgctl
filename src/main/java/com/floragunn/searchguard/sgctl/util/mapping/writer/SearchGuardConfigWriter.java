@@ -10,7 +10,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.Intermed
  */
 public class SearchGuardConfigWriter {
     MigrateConfig.SgAuthc  sg_authc;
-    SGAuthcTranslator.SgFrontEndAuthc sg_frontend_authc;
+    MigrateConfig.SgAuthc sg_frontend_authc;
 
 
     public SearchGuardConfigWriter(IntermediateRepresentationElasticSearchYml irElasticSearchYml, IntermediateRepresentation ir) {
@@ -18,7 +18,7 @@ public class SearchGuardConfigWriter {
         sg_frontend_authc = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml).fconfig;
     }
 
-    public SGAuthcTranslator.SgFrontEndAuthc getSg_frontend_authc() {
+    public MigrateConfig.SgAuthc getSg_frontend_authc() {
         return sg_frontend_authc;
     }
 }
