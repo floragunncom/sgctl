@@ -13,8 +13,9 @@ public class SearchGuardConfigWriter {
     SGAuthcTranslator.SgFrontEndAuthc sg_frontend_authc;
 
     public SearchGuardConfigWriter(IntermediateRepresentationElasticSearchYml irElasticSearchYml, IntermediateRepresentation ir) {
-        sg_authc = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml).config;
-        sg_frontend_authc = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml).fconfig;
+        var configs = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml);
+        sg_authc = configs.config;
+        sg_frontend_authc = configs.fconfig;
 
     }
 
