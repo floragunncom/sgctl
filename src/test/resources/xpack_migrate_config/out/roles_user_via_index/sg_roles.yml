@@ -1,0 +1,81 @@
+viewer:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "~(([.]|ilm-history-).*)"
+      allowed_actions:
+        - "READ_INDEX_GROUP"
+
+    - index_patterns:
+        - ".slo-observability.*"
+      allowed_actions:
+        - "READ_INDEX_GROUP"
+
+    - index_patterns:
+        - ".siem-signals*"
+        - ".lists-*"
+        - ".items-*"
+        - ".reindexed-v8-siem-signals*"
+        - ".reindexed-v8-lists-*"
+        - ".reindexed-v8-items-*"
+        - ".entities.v1.latest.security_*"
+        - ".entities.*.history.*"
+        - ".asset-criticality.asset-criticality-*"
+      allowed_actions:
+        - "READ_INDEX_GROUP"
+
+    - index_patterns:
+        - ".alerts*"
+        - ".preview.alerts*"
+        - ".adhoc.alerts*"
+      allowed_actions:
+        - "READ_INDEX_GROUP"
+
+    - index_patterns:
+        - "profiling-*"
+        - ".profiling-*"
+      allowed_actions:
+        - "READ_INDEX_GROUP"
+
+machine_learning_admin:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - ".ml-anomalies*"
+        - ".ml-notifications*"
+        - ".ml-state*"
+        - ".ml-meta*"
+        - ".ml-stats-*"
+      allowed_actions:
+        - "ML_READ_GROUP"
+
+    - index_patterns:
+        - ".ml-annotations*"
+      allowed_actions:
+        - "ML_READ_GROUP"
+        - "ML_WRITE_GROUP"
+
+monitoring_user:
+  cluster_permissions:
+    - "CLUSTER_MONITOR"
+    - "CLUSTER_COMPOSITE_OPS_RO"   
+  index_permissions:
+    - index_patterns:
+        - ".monitoring-*"
+      allowed_actions:
+        - "READ_INDEX_GROUP"
+
+    - index_patterns:
+        - "metrics-beats*"
+        - "metrics-elasticsearch*"
+        - "metrics-enterprisesearch*"
+        - "metrics-kibana*"
+        - "metrics-logstash*"
+        - "/metrics-(beats|elasticsearch|enterprisesearch|kibana|logstash).*/"
+      allowed_actions:
+        - "READ_INDEX_GROUP"
+
+    - index_patterns:
+        - "metricbeat-*"
+      allowed_actions:
+        - "READ_INDEX_GROUP"

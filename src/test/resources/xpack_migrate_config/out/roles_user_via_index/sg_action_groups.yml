@@ -6,15 +6,15 @@ READ_INDEX_GROUP:
       - "SCROLL"
       - "METADATA_READ"
 
-  ML_READ_GROUP:
-    allowed_actions:
-      - "READ"
-      - "GET"
-      - "SEARCH"
-      - "METADATA_READ"
+ML_READ_GROUP:
+  allowed_actions:
+    - "READ"
+    - "GET"
+    - "SEARCH"
+    - "METADATA_READ"
 
-  ML_WRITE_GROUP:
-    allowed_actions:
-      - "WRITE"
-      - "INDEX"
-      - "CREATE"
+ML_WRITE_GROUP:
+  allowed_actions:
+    - "WRITE"
+    - "INDEX"
+    - "CREATE"
