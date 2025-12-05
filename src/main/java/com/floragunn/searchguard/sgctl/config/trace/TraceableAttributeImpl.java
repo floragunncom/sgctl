@@ -67,6 +67,11 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
     }
 
     @Override
+    public TraceableDocNode asTraceableDocNode() {
+      return TraceableDocNode.of(node, source, new ValidationErrors(errors, source.name()));
+    }
+
+    @Override
     public <T> OptTraceable<ImmutableList<Traceable<T>>> asListOf(TraceableParser<T> parser) {
       if (node.isNull()) return OptTraceable.empty(source);
       return OptTraceable.of(source, parseList(parser));
@@ -99,6 +104,15 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         errors.add(source.pathPart(), e);
         return Traceable.validationErrors(e.getValidationErrors());
       }
+    }
+
+    @Override
+    public TraceableDocNode asTraceableDocNode() {
+      if (node.isNull()) {
+        var error = new MissingAttribute(source.pathPart(), node);
+        errors.add(error);
+      }
+      return TraceableDocNode.of(node, source, new ValidationErrors(errors, source.name()));
     }
 
     @Override

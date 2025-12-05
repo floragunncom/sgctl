@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
+import com.floragunn.codova.documents.DocNode;
 import com.floragunn.fluent.collections.ImmutableList;
 
 public interface TraceableAttribute {
@@ -7,6 +8,8 @@ public interface TraceableAttribute {
   Source getSource();
 
   void expected(String message);
+
+  TraceableDocNode asTraceableDocNode();
 
   interface Optional extends TraceableAttribute {
 
@@ -36,6 +39,10 @@ public interface TraceableAttribute {
 
     default <E extends Enum<E>> OptTraceable<E> asEnum(Class<E> enumClass) {
       return as(TraceableParser.enumeration(enumClass));
+    }
+
+    default OptTraceable<DocNode> asDocNode() {
+      return as(TraceableParser.DOC_NODE);
     }
 
     <T> OptTraceable<T> as(TraceableParser<T> parser);
@@ -189,6 +196,10 @@ public interface TraceableAttribute {
 
     default <E extends Enum<E>> Traceable<E> asEnum(Class<E> enumClass) {
       return as(TraceableParser.enumeration(enumClass));
+    }
+
+    default Traceable<DocNode> asDocNode() {
+      return as(TraceableParser.DOC_NODE);
     }
 
     <T> Traceable<T> as(TraceableParser<T> parser);

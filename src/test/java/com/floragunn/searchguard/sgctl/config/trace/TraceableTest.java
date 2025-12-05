@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
+import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import com.floragunn.codova.documents.DocNode;
@@ -61,28 +62,34 @@ public class TraceableTest {
     }
   }
 
-  private record Outer(Traceable<Inner> inner, Traceable<ImmutableList<Traceable<User>>> list) {
+  private record Outer(
+      Traceable<Inner> inner,
+      Traceable<ImmutableList<Traceable<User>>> list,
+      OptTraceable<DocNode> additional) {
 
     static Outer parse(DocNode doc, Source src) throws ConfigValidationException {
       var tDoc = TraceableDocNode.of(doc, src);
       var abc = tDoc.get("inner").required().as(Inner::parse);
       var users = tDoc.get("list").required().asListOf(User::parse);
+      var additional = tDoc.get("additional").asDocNode();
 
       tDoc.throwExceptionForPresentErrors();
 
-      return new Outer(abc, users);
+      return new Outer(abc, users, additional);
     }
 
     static Outer legacyParse(DocNode doc) throws ConfigValidationException {
       var vDoc = new ValidatingDocNode(doc, new ValidationErrors());
       var abc = vDoc.get("inner").required().by(Inner::legacyParse);
       var users = vDoc.get("list").required().asList().ofObjectsParsedBy(User::legacyParse);
+      var additional = vDoc.get("additional").asDocNode();
 
       vDoc.throwExceptionForPresentErrors();
 
       return new Outer(
           Traceable.of(Source.NONE, abc),
-          Traceable.of(Source.NONE, Traceable.ofList(Source.NONE, users)));
+          Traceable.of(Source.NONE, Traceable.ofList(Source.NONE, users)),
+          OptTraceable.ofNullable(Source.NONE, additional));
     }
   }
 
@@ -142,6 +149,33 @@ public class TraceableTest {
   }
 
   @Test
+  public void testAsTraceableDocNodeWorks() throws ConfigValidationException {
+    var yaml =
+        """
+        root:
+          stuff: "blah"
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var root = vDoc.get("root").required().asTraceableDocNode();
+    var stuff = root.get("stuff").required();
+    assertEquals("test.yml: root.stuff", stuff.getSource().fullPathString());
+  }
+
+  @Test
+  public void testAsTraceableDocNodeFails() throws ConfigValidationException {
+    var yaml =
+        """
+        blah:
+          stuff: "blah"
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    vDoc.get("root").required().asTraceableDocNode();
+    assertThrows(ConfigValidationException.class, vDoc::throwExceptionForPresentErrors);
+  }
+
+  @Test
   public void testTraceablePaths() throws ConfigValidationException {
     var yaml =
         """
@@ -156,28 +190,31 @@ public class TraceableTest {
                 name: "user1"
             - user:
                 name: "user2"
+            additional:
+              test: "lol"
         """;
 
     var node = DocNode.wrap(DocReader.yaml().read(yaml));
 
     var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
 
-    var subObject = vDoc.get("root.outer").required().as(Outer::parse);
+    var outer = vDoc.get("root.outer").required().as(Outer::parse);
     vDoc.throwExceptionForPresentErrors();
 
-    var abc = subObject.get().inner();
-    var enabled = abc.get().enabled();
-    var value = abc.get().value();
-    var list = subObject.get().list();
+    var inner = outer.get().inner();
+    var enabled = inner.get().enabled();
+    var value = inner.get().value();
+    var list = outer.get().list();
     var user1 = list.get().get(0);
     var user1Enabled = user1.get().enabled();
     var user1Name = user1.get().name();
     var user2 = list.get().get(1);
     var user2Enabled = user2.get().enabled();
     var user2Name = user2.get().name();
+    var additional = outer.get().additional();
 
-    assertEquals("test.yml: root.outer", subObject.getSource().fullPathString());
-    assertEquals("test.yml: root.outer.inner", abc.getSource().fullPathString());
+    assertEquals("test.yml: root.outer", outer.getSource().fullPathString());
+    assertEquals("test.yml: root.outer.inner", inner.getSource().fullPathString());
     assertEquals("test.yml: root.outer.inner.enabled", enabled.getSource().fullPathString());
     assertEquals("test.yml: root.outer.inner.value", value.getSource().fullPathString());
     assertEquals("test.yml: root.outer.list", list.getSource().fullPathString());
@@ -189,5 +226,6 @@ public class TraceableTest {
     assertEquals(
         "test.yml: root.outer.list.1.user.enabled", user2Enabled.getSource().fullPathString());
     assertEquals("test.yml: root.outer.list.1.user.name", user2Name.getSource().fullPathString());
+    assertEquals("test.yml: root.outer.additional", additional.getSource().fullPathString());
   }
 }

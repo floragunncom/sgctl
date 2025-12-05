@@ -89,6 +89,18 @@ public interface TraceableParser<R> {
         }
       };
 
+  TraceableParser<DocNode> DOC_NODE =
+      (doc, source) -> {
+        validateNotNull(doc);
+        return doc;
+      };
+
+  TraceableParser<TraceableDocNode> TRACEABLE_DOC_NODE =
+      (doc, source) -> {
+        validateNotNull(doc);
+        return TraceableDocNode.of(doc, source);
+      };
+
   static <E extends Enum<E>> TraceableParser<E> enumeration(Class<E> enumClass) {
     return (doc, source) -> {
       validateNotNull(doc);
