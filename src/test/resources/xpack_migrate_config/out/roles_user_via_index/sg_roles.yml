@@ -1,3 +1,5 @@
+#NOT FINAL
+
 viewer:
   cluster_permissions: []
   index_permissions:
@@ -58,24 +60,43 @@ machine_learning_admin:
 monitoring_user:
   cluster_permissions:
     - "CLUSTER_MONITOR"
-    - "CLUSTER_COMPOSITE_OPS_RO"   
+
   index_permissions:
     - index_patterns:
         - ".monitoring-*"
       allowed_actions:
-        - "READ_INDEX_GROUP"
+        - "INDEX_READ_WITH_CROSS_CLUSTER"
 
     - index_patterns:
-        - "metrics-beats*"
-        - "metrics-elasticsearch*"
-        - "metrics-enterprisesearch*"
-        - "metrics-kibana*"
-        - "metrics-logstash*"
         - "/metrics-(beats|elasticsearch|enterprisesearch|kibana|logstash).*/"
       allowed_actions:
-        - "READ_INDEX_GROUP"
+        - "INDEX_READ_WITH_CROSS_CLUSTER"
 
     - index_patterns:
         - "metricbeat-*"
       allowed_actions:
-        - "READ_INDEX_GROUP"
+        - "INDEX_READ_WITH_CROSS_CLUSTER"
+
+inference_admin:
+  cluster_permissions:
+    - "CLUSTER_MANAGE_INFERENCE"
+  index_permissions: []
+
+rollup_admin:
+  cluster_permissions:
+    - "CLUSTER_MANAGE_ROLLUP"
+  index_permissions: []
+
+transport_client:
+  cluster_permissions:
+    - "CLUSTER_TRANSPORT_CLIENT"
+  index_permissions: []
+
+kibana_admin:
+  cluster_permissions: []
+  
+  tenant_permissions:
+    - tenant_patterns:
+        - "global_tenant"
+      allowed_actions:
+        - "kibana_all_write"

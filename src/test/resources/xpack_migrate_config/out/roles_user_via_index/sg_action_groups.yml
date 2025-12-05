@@ -1,3 +1,5 @@
+#NOT FINAL
+
 READ_INDEX_GROUP:
     allowed_actions:
       - "READ"
@@ -18,3 +20,30 @@ ML_WRITE_GROUP:
     - "WRITE"
     - "INDEX"
     - "CREATE"
+
+CLUSTER_MONITOR:
+  allowed_actions:
+    - "cluster:monitor/main"
+    - "cluster:monitor/xpack/info"
+    - "cluster:monitor/remote/info"
+
+CLUSTER_MANAGE_INFERENCE:
+  allowed_actions:
+    - "cluster:admin/inference/*"
+
+CLUSTER_MANAGE_ROLLUP:
+  allowed_actions:
+    - "cluster:admin/xpack/rollup/*"
+
+CLUSTER_TRANSPORT_CLIENT:
+  allowed_actions:
+    - "cluster:monitor/state"
+    - "cluster:monitor/nodes/info"
+    - "cluster:monitor/nodes/stats"
+
+INDEX_READ_WITH_CROSS_CLUSTER:
+  allowed_actions:
+    - "indices:data/read/*"
+    - "indices:monitor/*"
+    - "read"
+    - "read_cross_cluster"
