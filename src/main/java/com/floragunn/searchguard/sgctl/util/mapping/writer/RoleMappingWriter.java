@@ -36,10 +36,41 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
     }
 
     static class SGRoleMapping implements Document<SGRoleMapping> {
+        String mappingName;
+        List<String> users = new ArrayList<>();
+        List<String> backendRoles = new ArrayList<>();
+        List<String> hosts = new ArrayList<>();
+        List<String> ips = new ArrayList<>();
+
+        SGRoleMapping(String mappingName, List<String> users, List<String> backendRoles, List<String> hosts, List<String> ips) {
+            this.mappingName = mappingName;
+            this.users = users;
+            this.backendRoles = backendRoles;
+            this.hosts = hosts;
+            this.ips = ips;
+        }
 
         @Override
         public Object toBasicObject() {
-            return null;
+            var contents = new LinkedHashMap<String, Object>();
+
+            if (users.isEmpty()) {
+                contents.put("users", users);
+            }
+
+            if (backendRoles.isEmpty()) {
+                contents.put("backend_roles", backendRoles);
+            }
+
+            if (hosts.isEmpty()) {
+                contents.put("hosts", hosts);
+            }
+
+            if (ips.isEmpty()) {
+                contents.put("ips", ips);
+            }
+
+            return contents;
         }
     }
 
