@@ -1,26 +1,22 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
-import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 
-public class TraceableDocNode {
+public interface TraceableDocNode {
 
-  private final ValidatingDocNode delegate;
-  private final Parser.Context ctx;
-
-  public TraceableDocNode(DocNode docNode, ValidationErrors errors, Parser.Context ctx) {
-    this.delegate = new ValidatingDocNode(docNode, errors, ctx);
-    this.ctx = ctx;
+  static TraceableDocNode of(DocNode doc, Source source, ValidationErrors errors) {
+    return new TraceableDocNodeImpl(doc, errors, source);
   }
 
-  public Traceable<ValidatingDocNode.Attribute> get(String attribute) {
-    return Traceable.of(delegate.get(attribute), ctx);
+  static TraceableDocNode of(DocNode doc, Source source) {
+    return of(doc, source, new ValidationErrors());
   }
 
-  public void throwExceptionForPresentErrors() throws ConfigValidationException {
-    delegate.throwExceptionForPresentErrors();
-  }
+  TraceableAttribute.Optional get(String attribute);
+
+  boolean hasNonNull(String attribute);
+
+  void throwExceptionForPresentErrors() throws ConfigValidationException;
 }

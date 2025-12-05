@@ -1,28 +1,33 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
-import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.Parser;
-import com.floragunn.codova.validation.ValidatingDocNode;
-import com.floragunn.searchguard.sgctl.util.ThrowingFunction;
-import java.util.Optional;
+import com.floragunn.codova.validation.ValidationErrors;
+import com.floragunn.fluent.collections.ImmutableList;
+import java.util.List;
 
 public interface Traceable<T> {
 
   Source getSource();
 
-  <R, E extends Throwable> Traceable<R> map(ThrowingFunction<? super T, ? extends R, E> transform)
-      throws E;
-
   T get();
 
-  sealed interface Source {
-
-    record None() implements Source {}
-
-    record Doc(String path, Optional<String> file, Optional<DocNode> rootNode) implements Source {}
+  static <T> Traceable<T> of(Source source, T value) {
+    return new TraceableImpl<>(source, value);
   }
 
-  static <T extends ValidatingDocNode.Attribute> Traceable<T> of(T attribute, Parser.Context ctx) {
-    return TraceableImpl.of(attribute, ctx);
+  static <T> ImmutableList<Traceable<T>> ofList(Source parent, T... values) {
+    return ofList(parent, List.of(values));
+  }
+
+  static <T> ImmutableList<Traceable<T>> ofList(Source parent, Iterable<? extends T> values) {
+    var builder = new ImmutableList.Builder<Traceable<T>>();
+    int i = 0;
+    for (var value : values) {
+      builder.add(Traceable.of(new Source.ListEntry(parent, i++), value));
+    }
+    return builder.build();
+  }
+
+  static <T> Traceable<T> validationErrors(ValidationErrors error) {
+    return new ErroneousTraceable<>(error);
   }
 }
