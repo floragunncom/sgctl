@@ -9,12 +9,12 @@ import java.util.Locale;
 
 // TODO: for numeric parsers, maybe check whether there is conversion loss
 @FunctionalInterface
-public interface TraceableParser<R> {
+public interface DocNodeParser<R> {
 
-  R parse(DocNode doc, Source source) throws ConfigValidationException;
+  R parse(DocNode doc) throws ConfigValidationException;
 
-  TraceableParser<String> STRING =
-      (doc, source) -> {
+  DocNodeParser<String> STRING =
+      doc -> {
         validateNotNull(doc);
         var obj = doc.get(null);
         if (obj instanceof String
@@ -29,8 +29,8 @@ public interface TraceableParser<R> {
         }
       };
 
-  TraceableParser<Integer> INT =
-      (doc, source) -> {
+  DocNodeParser<Integer> INT =
+      doc -> {
         validateNotNull(doc);
         var obj = doc.get(null);
         if (obj instanceof Number num) {
@@ -41,8 +41,8 @@ public interface TraceableParser<R> {
         }
       };
 
-  TraceableParser<Long> LONG =
-      (doc, source) -> {
+  DocNodeParser<Long> LONG =
+      doc -> {
         validateNotNull(doc);
         var obj = doc.get(null);
         if (obj instanceof Number num) {
@@ -53,8 +53,8 @@ public interface TraceableParser<R> {
         }
       };
 
-  TraceableParser<Float> FLOAT =
-      (doc, source) -> {
+  DocNodeParser<Float> FLOAT =
+      doc -> {
         validateNotNull(doc);
         var obj = doc.get(null);
         if (obj instanceof Number num) {
@@ -65,8 +65,8 @@ public interface TraceableParser<R> {
         }
       };
 
-  TraceableParser<Double> DOUBLE =
-      (doc, source) -> {
+  DocNodeParser<Double> DOUBLE =
+      doc -> {
         validateNotNull(doc);
         var obj = doc.get(null);
         if (obj instanceof Number num) {
@@ -77,8 +77,8 @@ public interface TraceableParser<R> {
         }
       };
 
-  TraceableParser<Boolean> BOOLEAN =
-      (doc, source) -> {
+  DocNodeParser<Boolean> BOOLEAN =
+      doc -> {
         validateNotNull(doc);
         var obj = doc.get(null);
         if (obj instanceof Boolean bool) {
@@ -89,20 +89,14 @@ public interface TraceableParser<R> {
         }
       };
 
-  TraceableParser<DocNode> DOC_NODE =
-      (doc, source) -> {
+  DocNodeParser<DocNode> DOC_NODE =
+      doc -> {
         validateNotNull(doc);
         return doc;
       };
 
-  TraceableParser<TraceableDocNode> TRACEABLE_DOC_NODE =
-      (doc, source) -> {
-        validateNotNull(doc);
-        return TraceableDocNode.of(doc, source);
-      };
-
-  static <E extends Enum<E>> TraceableParser<E> enumeration(Class<E> enumClass) {
-    return (doc, source) -> {
+  static <E extends Enum<E>> DocNodeParser<E> enumeration(Class<E> enumClass) {
+    return doc -> {
       validateNotNull(doc);
       var obj = doc.get(null);
 

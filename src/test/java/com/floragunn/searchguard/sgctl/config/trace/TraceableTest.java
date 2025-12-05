@@ -17,14 +17,8 @@ public class TraceableTest {
 
   private record Inner(Traceable<Boolean> enabled, OptTraceable<Integer> value) {
 
-    static Inner parse(DocNode doc, Source src) throws ConfigValidationException {
-      var tDoc = TraceableDocNode.of(doc, src);
-      var enabled = tDoc.get("enabled").required().asBoolean();
-      var value = tDoc.get("value").asInt();
-
-      tDoc.throwExceptionForPresentErrors();
-
-      return new Inner(enabled, value);
+    static Inner parse(TraceableDocNode tDoc) {
+      return new Inner(tDoc.get("enabled").required().asBoolean(), tDoc.get("value").asInt());
     }
 
     static Inner legacyParse(DocNode doc) throws ConfigValidationException {
@@ -41,14 +35,9 @@ public class TraceableTest {
 
   private record User(Traceable<Boolean> enabled, Traceable<String> name) {
 
-    static User parse(DocNode doc, Source src) throws ConfigValidationException {
-      var tDoc = TraceableDocNode.of(doc, src);
-      var enabled = tDoc.get("user.enabled").asBoolean(true);
-      var name = tDoc.get("user.name").required().asString();
-
-      tDoc.throwExceptionForPresentErrors();
-
-      return new User(enabled, name);
+    static User parse(TraceableDocNode tDoc) {
+      return new User(
+          tDoc.get("user.enabled").asBoolean(true), tDoc.get("user.name").required().asString());
     }
 
     static User legacyParse(DocNode doc) throws ConfigValidationException {
@@ -64,31 +53,31 @@ public class TraceableTest {
 
   private record Outer(
       Traceable<Inner> inner,
+      OptTraceable<Inner> inner2,
       Traceable<ImmutableList<Traceable<User>>> list,
       OptTraceable<DocNode> additional) {
 
-    static Outer parse(DocNode doc, Source src) throws ConfigValidationException {
-      var tDoc = TraceableDocNode.of(doc, src);
-      var abc = tDoc.get("inner").required().as(Inner::parse);
-      var users = tDoc.get("list").required().asListOf(User::parse);
-      var additional = tDoc.get("additional").asDocNode();
-
-      tDoc.throwExceptionForPresentErrors();
-
-      return new Outer(abc, users, additional);
+    static Outer parse(TraceableDocNode tDoc) {
+      return new Outer(
+          tDoc.get("inner").required().as(Inner::parse),
+          tDoc.get("inner2").as(Inner::parse),
+          tDoc.get("list").required().asListOf(User::parse),
+          tDoc.get("additional").asDocNode());
     }
 
     static Outer legacyParse(DocNode doc) throws ConfigValidationException {
       var vDoc = new ValidatingDocNode(doc, new ValidationErrors());
-      var abc = vDoc.get("inner").required().by(Inner::legacyParse);
-      var users = vDoc.get("list").required().asList().ofObjectsParsedBy(User::legacyParse);
+      var inner = vDoc.get("inner").required().by(Inner::legacyParse);
+      var inner2 = vDoc.get("inner2").by(Inner::legacyParse);
+      var list = vDoc.get("list").required().asList().ofObjectsParsedBy(User::legacyParse);
       var additional = vDoc.get("additional").asDocNode();
 
       vDoc.throwExceptionForPresentErrors();
 
       return new Outer(
-          Traceable.of(Source.NONE, abc),
-          Traceable.of(Source.NONE, Traceable.ofList(Source.NONE, users)),
+          Traceable.of(Source.NONE, inner),
+          OptTraceable.ofNullable(Source.NONE, inner2),
+          Traceable.of(Source.NONE, Traceable.ofList(Source.NONE, list)),
           OptTraceable.ofNullable(Source.NONE, additional));
     }
   }
@@ -100,6 +89,9 @@ public class TraceableTest {
             root:
               outer:
                 inner:
+                  enabled: maybe
+                  value: three
+                inner2:
                   enabled: maybe
                   value: three
                 list: []
@@ -124,6 +116,8 @@ public class TraceableTest {
             root:
               outer:
                 inner:
+                  enabled: true
+                inner2:
                   enabled: true
                 list:
                 - user:
