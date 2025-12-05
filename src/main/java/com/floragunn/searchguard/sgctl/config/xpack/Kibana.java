@@ -125,18 +125,32 @@ public record Kibana(SecurityConfig security) {
     private static ImmutableMap<String, Provider> parseProviders(
         DocNode doc, Parser.Context context) throws ConfigValidationException {
       var builder = new ImmutableMap.Builder<String, Provider>(doc.size());
+      var errors = new ValidationErrors();
 
       // structured as: xpack.security.authc.providers.<type>.<name>
-      for (var providerType : doc.keySet()) {
-        var typeNode = doc.getAsNode(providerType);
-        for (var providerName : typeNode.keySet()) {
-          var providerConfig = typeNode.getAsNode(providerName);
-          var vDoc = new ValidatingDocNode(providerConfig, new ValidationErrors(), context);
+      final var map = doc.toMapOfNodes();
+      for (var entry : map.entrySet()) {
+        var splitKey = entry.getKey().split("\\.", 2);
+        if (splitKey.length == 2) {
+          var providerType = splitKey[0];
+          var providerName = splitKey[1];
+          var providerConfig = entry.getValue();
+          var vDoc = new ValidatingDocNode(providerConfig, errors, context);
           var provider = Provider.parse(providerType, providerName, vDoc);
-          vDoc.throwExceptionForPresentErrors();
-          builder.with(providerType + "." + providerName, provider);
+          builder.with(entry.getKey(), provider);
+        } else {
+          var providerType = entry.getKey();
+          var typeNode = entry.getValue();
+          for (var providerName : typeNode.keySet()) {
+            var providerConfig = typeNode.getAsNode(providerName);
+            var vDoc = new ValidatingDocNode(providerConfig, new ValidationErrors(), context);
+            var provider = Provider.parse(providerType, providerName, vDoc);
+            builder.with(providerType + "." + providerName, provider);
+          }
         }
       }
+
+      errors.throwExceptionForPresentErrors();
 
       return builder.build();
     }

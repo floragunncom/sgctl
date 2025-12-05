@@ -10,20 +10,18 @@ xpack:
       selector.enabled: true
 
       providers:
-        anonymous:
-          anonymous1:
-            order: 0
-            description: "Anonymous access"
-            credentials.username: "anonymous_service_account"
-            credentials.password: "anonymous_service_account_password"
+        anonymous.anonymous1:
+          order: 0
+          description: "Anonymous access"
+          credentials:
+            username: "anonymous_service_account"
+            password: "anonymous_service_account_password"
 
-        basic:
-          basic1:
-            order: 1
-            origin: [http://localhost:5601, http://127.0.0.1:5601]
+        basic.basic1:
+          order: 1
+          origin: [http://localhost:5601, http://127.0.0.1:5601]
 
-        saml:
-          saml1:
+        saml.saml1:
             order: 2
             origin: https://elastic.co
             realm: "saml1"
