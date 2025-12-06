@@ -27,14 +27,19 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     public void createSGRoleMappings() {
         for (var rm : ir.getRoleMappings()) {
-            var mappingName = rm.getMappingName();
+            var roleName = getSGRole();
             var users = createSGUsers();
             var backendRoles = createSGBackendRoles();
             // TODO: hosts und ips nicht in XPack vorhanden
-            var sgMapping = new SGRoleMapping(mappingName, users, backendRoles, null, null);
+            var sgMapping = new SGRoleMapping(roleName, users, backendRoles, null, null);
             rolesMappings.add(sgMapping);
         }
 
+    }
+
+    public String getSGRole() {
+        String roleName = null;
+        return roleName;
     }
 
     public List<String> createSGUsers() {
