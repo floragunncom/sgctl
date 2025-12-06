@@ -100,3 +100,51 @@ kibana_admin:
         - "global_tenant"
       allowed_actions:
         - "kibana_all_write"
+
+watcher_user:
+  cluster_permissions:
+    - "CLUSTER_MONITOR_WATCHER"
+
+  index_permissions:
+    - index_patterns:
+        - ".watches"
+      allowed_actions:
+        - "INDEX_READ_WATCHER"
+
+    - index_patterns:
+        - ".watcher-history-*"
+      allowed_actions:
+        - "INDEX_READ_WATCHER"
+
+reporting_user:
+  cluster_permissions: []
+
+  index_permissions: []
+
+  tenant_permissions:
+    - tenant_patterns:
+        - "global_tenant"
+      allowed_actions:
+        - "KIBANA_REPORTING_USER"
+      
+snapshot_user:
+  cluster_permissions:
+    - "CLUSTER_CREATE_SNAPSHOT"
+
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - "INDEX_VIEW_METADATA"
+
+transform_user:
+  cluster_permissions:
+    - "CLUSTER_MONITOR_TRANSFORM"
+
+  index_permissions:
+    - index_patterns:
+        - ".transform-notifications-*"
+        - ".data-frame-notifications-*"
+        - ".transform-notifications-read"
+      allowed_actions:
+        - "READ_INDEX_GROUP"

@@ -47,3 +47,29 @@ INDEX_READ_WITH_CROSS_CLUSTER:
     - "indices:monitor/*"
     - "read"
     - "read_cross_cluster"
+
+CLUSTER_MONITOR_WATCHER:
+  allowed_actions:
+    - "cluster:monitor/xpack/watcher/*"
+
+INDEX_READ_WATCHER:
+  allowed_actions:
+    -"READ"
+
+KIBANA_REPORTING_USER:
+  allowed_actions:
+    - "kibana_read"
+    - "kibana_report_download"
+
+CLUSTER_CREATE_SNAPSHOT:
+  allowed_actions:
+    - "cluster:admin/snapshot/create"
+    - "cluster:admin/repository/get"
+
+INDEX_VIEW_METADATA:
+  allowed_actions:
+    - "METADATA_READ"
+  
+CLUSTER_MONITOR_TRANSFORM:
+  allowed_actions:
+    - "cluster:monitor/transform/*"
