@@ -1,7 +1,9 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
@@ -167,6 +169,55 @@ public class TraceableTest {
     var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
     vDoc.get("root").required().asTraceableDocNode();
     assertThrows(ConfigValidationException.class, vDoc::throwExceptionForPresentErrors);
+  }
+
+  @Test
+  public void testTraceableMap() throws ConfigValidationException {
+    var yaml =
+        """
+        root:
+          inners:
+            foo:
+              enabled: true
+              value: 3
+            bar:
+              enabled: false
+              value: 7
+          stringMap:
+            a: "lol"
+            b: "zzz"
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("map_test.yml"));
+
+    var innersOpt = vDoc.get("root.inners").asMapOf(Inner::parse);
+    // var stringMap = vDoc.get("root.stringMap").required().asMapOfStrings();
+    vDoc.throwExceptionForPresentErrors();
+
+    var inners = innersOpt.get().orElseThrow();
+    assertTrue(inners.containsInnerKey("foo"));
+    assertTrue(inners.containsInnerKey("bar"));
+    var foo = inners.getInner("foo");
+    var bar = inners.getInner("bar");
+    assertNotNull(foo);
+    assertNotNull(bar);
+    var enabled = bar.get().value;
+    var fooKey =
+        inners.keySet().stream().filter(k -> k.get().equals("foo")).findFirst().orElseThrow();
+
+    // var a = stringMap.get().getInner("a");
+    // var b = stringMap.get().getInner("b");
+    // assertNotNull(a);
+    // assertNotNull(b);
+
+    assertEquals("map_test.yml: root.inners", innersOpt.getSource().fullPathString());
+    assertEquals("map_test.yml: root.inners.foo", foo.getSource().fullPathString());
+    assertEquals("map_test.yml: root.inners.bar", bar.getSource().fullPathString());
+    assertEquals("map_test.yml: root.inners.bar.value", enabled.getSource().fullPathString());
+    assertEquals("map_test.yml: root.inners.foo", fooKey.getSource().fullPathString());
+    // assertEquals("map_test.yml: root.stringMap", stringMap.getSource().fullPathString());
+    // assertEquals("map_test.yml: root.stringMap.a", a.getSource().fullPathString());
+    // assertEquals("map_test.yml: root.stringMap.b", b.getSource().fullPathString());
   }
 
   @Test
