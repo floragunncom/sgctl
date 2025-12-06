@@ -177,12 +177,12 @@ public class TraceableTest {
         """
         root:
           inners:
+            foo.enabled: true
             foo:
-              enabled: true
               value: 3
             bar:
               enabled: false
-              value: 7
+            bar.value: 7
           stringMap:
             a: "lol"
             b: "zzz"
@@ -191,33 +191,30 @@ public class TraceableTest {
     var vDoc = TraceableDocNode.of(node, new Source.Config("map_test.yml"));
 
     var innersOpt = vDoc.get("root.inners").asMapOf(Inner::parse);
-    // var stringMap = vDoc.get("root.stringMap").required().asMapOfStrings();
+    var stringMap = vDoc.get("root.stringMap").required().asMapOfStrings();
     vDoc.throwExceptionForPresentErrors();
 
     var inners = innersOpt.get().orElseThrow();
-    assertTrue(inners.containsInnerKey("foo"));
-    assertTrue(inners.containsInnerKey("bar"));
-    var foo = inners.getInner("foo");
-    var bar = inners.getInner("bar");
+    assertTrue(inners.containsKey("foo"));
+    assertTrue(inners.containsKey("bar"));
+    var foo = inners.get("foo");
+    var bar = inners.get("bar");
     assertNotNull(foo);
     assertNotNull(bar);
     var enabled = bar.get().value;
-    var fooKey =
-        inners.keySet().stream().filter(k -> k.get().equals("foo")).findFirst().orElseThrow();
 
-    // var a = stringMap.get().getInner("a");
-    // var b = stringMap.get().getInner("b");
-    // assertNotNull(a);
-    // assertNotNull(b);
+    var a = stringMap.get().get("a");
+    var b = stringMap.get().get("b");
+    assertNotNull(a);
+    assertNotNull(b);
 
     assertEquals("map_test.yml: root.inners", innersOpt.getSource().fullPathString());
     assertEquals("map_test.yml: root.inners.foo", foo.getSource().fullPathString());
     assertEquals("map_test.yml: root.inners.bar", bar.getSource().fullPathString());
     assertEquals("map_test.yml: root.inners.bar.value", enabled.getSource().fullPathString());
-    assertEquals("map_test.yml: root.inners.foo", fooKey.getSource().fullPathString());
-    // assertEquals("map_test.yml: root.stringMap", stringMap.getSource().fullPathString());
-    // assertEquals("map_test.yml: root.stringMap.a", a.getSource().fullPathString());
-    // assertEquals("map_test.yml: root.stringMap.b", b.getSource().fullPathString());
+    assertEquals("map_test.yml: root.stringMap", stringMap.getSource().fullPathString());
+    assertEquals("map_test.yml: root.stringMap.a", a.getSource().fullPathString());
+    assertEquals("map_test.yml: root.stringMap.b", b.getSource().fullPathString());
   }
 
   @Test
