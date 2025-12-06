@@ -13,19 +13,38 @@ import java.util.ArrayList;
 public class RoleMappingWriter implements Document<RoleMappingWriter>{
     private IntermediateRepresentation ir;
     private MigrationReport report;
-    private List<SGRoleMapping> roles;
+    private List<SGRoleMapping> rolesMappings;
 
     private static final String FILE_NAME = "sg_roles_mapping.yml";
 
     public RoleMappingWriter(IntermediateRepresentation ir) {
         this.ir = ir;
         this.report = MigrationReport.shared;
+        this.rolesMappings = new ArrayList<>();
         createSGRoleMappings();
         print(DocWriter.yaml().writeAsString(this));
     }
 
     public void createSGRoleMappings() {
-        //TODO: implement
+        for (var rm : ir.getRoleMappings()) {
+            var mappingName = rm.getMappingName();
+            var users = createSGUsers();
+            var backendRoles = createSGBackendRoles();
+            // TODO: hosts und ips nicht in XPack vorhanden
+            var sgMapping = new SGRoleMapping(mappingName, users, backendRoles, null, null);
+            rolesMappings.add(sgMapping);
+        }
+
+    }
+
+    public List<String> createSGUsers() {
+        List<String> users = new ArrayList<>();
+        return users;
+    }
+
+    public List<String> createSGBackendRoles() {
+        List<String> backendRoles = new ArrayList<>();
+        return backendRoles;
     }
 
     @Override
