@@ -179,6 +179,30 @@ public interface TraceableAttribute {
       return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
     }
 
+    <T> OptTraceable<ImmutableMapTraceable<String, T>> asMapOf(DocNodeParser<T> parser);
+
+    <T> OptTraceable<ImmutableMapTraceable<String, T>> asMapOf(TraceableDocNodeParser<T> parser);
+
+    default OptTraceable<ImmutableMapTraceable<String, String>> asMapOfStrings() {
+      return asMapOf(DocNodeParser.STRING);
+    }
+
+    default OptTraceable<ImmutableMapTraceable<String, Integer>> asMapOfInts() {
+      return asMapOf(DocNodeParser.INT);
+    }
+
+    default OptTraceable<ImmutableMapTraceable<String, Double>> asMapOfDoubles() {
+      return asMapOf(DocNodeParser.DOUBLE);
+    }
+
+    default OptTraceable<ImmutableMapTraceable<String, Long>> asMapOfLongs() {
+      return asMapOf(DocNodeParser.LONG);
+    }
+
+    default OptTraceable<ImmutableMapTraceable<String, Boolean>> asMapOfBooleans() {
+      return asMapOf(DocNodeParser.BOOLEAN);
+    }
+
     Required required();
   }
 
@@ -247,5 +271,29 @@ public interface TraceableAttribute {
     <T> Traceable<ImmutableList<Traceable<T>>> asListOf(DocNodeParser<T> parser);
 
     <T> Traceable<ImmutableList<Traceable<T>>> asListOf(TraceableDocNodeParser<T> parser);
+
+    default Traceable<ImmutableMapTraceable<String, String>> asMapOfStrings() {
+      return asMapOf(DocNodeParser.STRING);
+    }
+
+    default Traceable<ImmutableMapTraceable<String, Integer>> asMapOfInts() {
+      return asMapOf(DocNodeParser.INT);
+    }
+
+    default Traceable<ImmutableMapTraceable<String, Double>> asMapOfDoubles() {
+      return asMapOf(DocNodeParser.DOUBLE);
+    }
+
+    default Traceable<ImmutableMapTraceable<String, Long>> asMapOfLongs() {
+      return asMapOf(DocNodeParser.LONG);
+    }
+
+    default Traceable<ImmutableMapTraceable<String, Boolean>> asMapOfBooleans() {
+      return asMapOf(DocNodeParser.BOOLEAN);
+    }
+
+    <T> Traceable<ImmutableMapTraceable<String, T>> asMapOf(DocNodeParser<T> parser);
+
+    <T> Traceable<ImmutableMapTraceable<String, T>> asMapOf(TraceableDocNodeParser<T> parser);
   }
 }
