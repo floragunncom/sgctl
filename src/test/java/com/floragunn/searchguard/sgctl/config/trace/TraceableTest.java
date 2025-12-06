@@ -1,7 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -215,6 +214,34 @@ public class TraceableTest {
     assertEquals("map_test.yml: root.stringMap", stringMap.getSource().fullPathString());
     assertEquals("map_test.yml: root.stringMap.a", a.getSource().fullPathString());
     assertEquals("map_test.yml: root.stringMap.b", b.getSource().fullPathString());
+  }
+
+  @Test
+  public void testTryAsAttributeFail() throws ConfigValidationException {
+    var yaml =
+        """
+        root: "test"
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    // vDoc is not an attribute of anything, it's the root
+    assertFalse(vDoc.tryAsAttribute().isPresent());
+  }
+
+  @Test
+  public void testTryAsAttribute() throws ConfigValidationException {
+    var yaml =
+        """
+        root: "test"
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var root = vDoc.get("root").required().asTraceableDocNode();
+    var rootAttr = root.tryAsAttribute().orElseThrow();
+    var test = rootAttr.asString();
+    assertEquals("test", test.get());
+    assertEquals("test.yml: root", rootAttr.getSource().fullPathString());
+    assertEquals("test.yml: root", test.getSource().fullPathString());
   }
 
   @Test
