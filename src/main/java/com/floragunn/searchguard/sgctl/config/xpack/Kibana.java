@@ -3,11 +3,14 @@ package com.floragunn.searchguard.sgctl.config.xpack;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
-import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
+import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
+import com.floragunn.searchguard.sgctl.config.trace.*;
 import java.util.*;
+import org.jspecify.annotations.NullMarked;
 
+@NullMarked
 public record Kibana(SecurityConfig security) {
 
   public Kibana {
@@ -15,16 +18,16 @@ public record Kibana(SecurityConfig security) {
   }
 
   public record SecurityConfig(
-      boolean enabled,
-      Optional<AuthCConfig> authC,
-      Optional<String> loginAssistanceMessage,
-      Optional<String> loginHelp,
-      Optional<String> cookieName,
-      Optional<String> encryptionKey,
-      boolean secureCookies,
-      Optional<SameSiteCookies> sameSiteCookies,
-      CommonProviderData.Session session,
-      Optional<DocNode> audit) {
+      Traceable<Boolean> enabled,
+      OptTraceable<AuthCConfig> authC,
+      OptTraceable<String> loginAssistanceMessage,
+      OptTraceable<String> loginHelp,
+      OptTraceable<String> cookieName,
+      OptTraceable<String> encryptionKey,
+      Traceable<Boolean> secureCookies,
+      OptTraceable<SameSiteCookies> sameSiteCookies,
+      Session session,
+      OptTraceable<DocNode> audit) {
     public SecurityConfig {
       Objects.requireNonNull(authC, "authC cannot be null");
       Objects.requireNonNull(loginAssistanceMessage, "loginAssistanceMessage cannot be null");
@@ -41,26 +44,17 @@ public record Kibana(SecurityConfig security) {
       None
     }
 
-    private static SecurityConfig parse(DocNode doc, Parser.Context context)
-        throws ConfigValidationException {
-      var vDoc = new ValidatingDocNode(doc, new ValidationErrors(), context);
-      var enabled = vDoc.get("enabled").withDefault(true).asBoolean();
-      var authc = Optional.ofNullable(vDoc.get("authc").by(AuthCConfig::parse));
-      var loginAssistanceMessage =
-          Optional.ofNullable(vDoc.get("loginAssistanceMessage").asString());
-      var loginHelp = Optional.ofNullable(vDoc.get("loginHelp").asString());
-      var cookieName = Optional.ofNullable(vDoc.get("cookieName").asString());
-      var encryptionKey = Optional.ofNullable(vDoc.get("encryptionKey").asString());
-      var secureCookies = vDoc.get("secureCookies").withDefault(false).asBoolean();
-      var sameSiteCookies =
-          Optional.ofNullable(vDoc.get("sameSiteCookies").asEnum(SameSiteCookies.class));
-      var session =
-          vDoc.get("session")
-              .withDefault(CommonProviderData.Session.EMPTY)
-              .by(CommonProviderData.Session::parse);
-      var audit = Optional.ofNullable(vDoc.get("audit").asDocNode());
-
-      vDoc.throwExceptionForPresentErrors();
+    private static SecurityConfig parse(TraceableDocNode tDoc) {
+      var enabled = tDoc.get("enabled").asBoolean(true);
+      var authc = tDoc.get("authc").as(AuthCConfig::parse);
+      var loginAssistanceMessage = tDoc.get("loginAssistanceMessage").asString();
+      var loginHelp = tDoc.get("loginHelp").asString();
+      var cookieName = tDoc.get("cookieName").asString();
+      var encryptionKey = tDoc.get("encryptionKey").asString();
+      var secureCookies = tDoc.get("secureCookies").asBoolean(false);
+      var sameSiteCookies = tDoc.get("sameSiteCookies").asEnum(SameSiteCookies.class);
+      var session = tDoc.get("session").as(Session::parse).get().orElse(Session.EMPTY);
+      var audit = tDoc.get("audit").asDocNode();
 
       return new SecurityConfig(
           enabled,
@@ -76,260 +70,256 @@ public record Kibana(SecurityConfig security) {
     }
   }
 
+  public record Session(
+      OptTraceable<String> idleTimeout,
+      OptTraceable<String> lifespan,
+      OptTraceable<String> cleanupInterval,
+      OptTraceable<Integer> maxConcurrentSessions) {
+
+    public static final Session EMPTY =
+        new Session(
+            OptTraceable.empty(Source.NONE),
+            OptTraceable.empty(Source.NONE),
+            OptTraceable.empty(Source.NONE),
+            OptTraceable.empty(Source.NONE));
+
+    public Session {
+      Objects.requireNonNull(idleTimeout, "idleTimeout cannot be null");
+      Objects.requireNonNull(lifespan, "lifespan cannot be null");
+    }
+
+    private static Session parse(TraceableDocNode tDoc) {
+      var idleTimeout = tDoc.get("idleTimeout").asString();
+      var lifespan = tDoc.get("lifespan").asString();
+      var cleanupInterval = tDoc.get("cleanupInterval").asString();
+      var maxConcurrentSessions = tDoc.get("concurrentSessions.maxSessions").asInt();
+      return new Session(idleTimeout, lifespan, cleanupInterval, maxConcurrentSessions);
+    }
+  }
+
   public record AuthCConfig(
-      Map<String, Provider> providers, boolean selectorEnabled, Optional<Http> http) {
+      Map<String, ImmutableMap<String, Provider>> providerTypes,
+      Traceable<Boolean> selectorEnabled,
+      OptTraceable<Http> http) {
 
     public AuthCConfig {
-      Objects.requireNonNull(providers, "providers cannot be null");
+      Objects.requireNonNull(providerTypes, "providerTypes cannot be null");
       Objects.requireNonNull(http, "http cannot be null");
     }
 
-    public record Http(boolean enabled, boolean autoSchemesEnabled, List<String> schemes) {
+    public record Http(
+        Traceable<Boolean> enabled,
+        Traceable<Boolean> autoSchemesEnabled,
+        ImmutableList<Traceable<String>> schemes) {
 
       public Http {
         Objects.requireNonNull(schemes, "schemes cannot be null");
       }
 
-      private static Http parse(DocNode doc, Parser.Context context)
-          throws ConfigValidationException {
-        var vDoc = new ValidatingDocNode(doc, new ValidationErrors(), context);
-
-        var enabled = vDoc.get("enabled").withDefault(true).asBoolean();
-        var autoSchemesEnabled = vDoc.get("autoSchemesEnabled").withDefault(true).asBoolean();
-        var schemes = vDoc.get("schemes").withListDefault("apikey", "bearer").ofStrings();
-
-        vDoc.throwExceptionForPresentErrors();
+      private static Http parse(TraceableDocNode tDoc) {
+        var enabled = tDoc.get("enabled").asBoolean(true);
+        var autoSchemesEnabled = tDoc.get("autoSchemesEnabled").asBoolean(true);
+        var schemes = tDoc.get("schemes").asListOfStrings("apikey", "bearer").get();
 
         return new Http(enabled, autoSchemesEnabled, schemes);
       }
     }
 
-    private static AuthCConfig parse(DocNode doc, Parser.Context context)
-        throws ConfigValidationException {
-      var vDoc = new ValidatingDocNode(doc, new ValidationErrors(), context);
+    private static AuthCConfig parse(TraceableDocNode tDoc) {
+      var providerTypesOpt =
+          tDoc.get("providers")
+              .asMapOf(
+                  (TraceableDocNodeParser<ImmutableMap<String, Provider>>)
+                      (innerTDoc) -> {
+                        var type =
+                            Traceable.of(innerTDoc.getSource(), innerTDoc.getSource().pathPart());
+                        var tAttr =
+                            innerTDoc
+                                .tryAsAttribute()
+                                .orElseThrow(
+                                    () ->
+                                        new IllegalStateException(
+                                            "innerTDoc has to be an Attribute, because it's a value in a map"));
+                        return tAttr
+                            .asMapOf(
+                                (TraceableDocNodeParser<Provider>)
+                                    (providerTDoc) -> {
+                                      var name =
+                                          Traceable.of(
+                                              providerTDoc.getSource(),
+                                              providerTDoc.getSource().pathPart());
+                                      return Provider.parse(type, name, providerTDoc);
+                                    })
+                            .get()
+                            .mapValues(Traceable::get);
+                      });
+      var providerTypes =
+          providerTypesOpt.get().orElse(ImmutableMap.empty()).mapValues(Traceable::get);
+      var selectorEnabled = tDoc.get("selector.enabled").asBoolean(providerTypes.size() > 1);
+      var http = tDoc.get("http").as(Http::parse);
 
-      Map<String, Provider> providers =
-          vDoc.get("providers").by(ctx -> parseProviders(ctx, context));
-      if (providers == null) {
-        providers = Map.of();
-      }
-      var selectorEnabled =
-          vDoc.get("selector.enabled").withDefault(providers.size() > 1).asBoolean();
-      var http = Optional.ofNullable(vDoc.get("http").by(Http::parse));
-
-      vDoc.throwExceptionForPresentErrors();
-
-      return new AuthCConfig(providers, selectorEnabled, http);
+      return new AuthCConfig(providerTypes, selectorEnabled, http);
     }
 
-    private static ImmutableMap<String, Provider> parseProviders(
-        DocNode doc, Parser.Context context) throws ConfigValidationException {
-      var builder = new ImmutableMap.Builder<String, Provider>(doc.size());
-      var errors = new ValidationErrors();
+    public record CommonProviderData(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        OptTraceable<String> description,
+        OptTraceable<String> hint,
+        OptTraceable<String> icon,
+        ImmutableList<Traceable<String>> origin,
+        Traceable<Boolean> showInSelector,
+        Session session) {
 
-      // structured as: xpack.security.authc.providers.<type>.<name>
-      final var map = doc.toMapOfNodes();
-      for (var entry : map.entrySet()) {
-        var splitKey = entry.getKey().split("\\.", 2);
-        if (splitKey.length == 2) {
-          var providerType = splitKey[0];
-          var providerName = splitKey[1];
-          var providerConfig = entry.getValue();
-          var vDoc = new ValidatingDocNode(providerConfig, errors, context);
-          var provider = Provider.parse(providerType, providerName, vDoc);
-          builder.with(entry.getKey(), provider);
-        } else {
-          var providerType = entry.getKey();
-          var typeNode = entry.getValue();
-          for (var providerName : typeNode.keySet()) {
-            var providerConfig = typeNode.getAsNode(providerName);
-            var vDoc = new ValidatingDocNode(providerConfig, new ValidationErrors(), context);
-            var provider = Provider.parse(providerType, providerName, vDoc);
-            builder.with(providerType + "." + providerName, provider);
-          }
+      public CommonProviderData {
+        Objects.requireNonNull(type, "type cannot be null");
+        Objects.requireNonNull(name, "name cannot be null");
+        Objects.requireNonNull(description, "description cannot be null");
+        Objects.requireNonNull(hint, "hint cannot be null");
+        Objects.requireNonNull(icon, "icon cannot be null");
+        Objects.requireNonNull(origin, "origin cannot be null");
+        Objects.requireNonNull(session, "session cannot be null");
+      }
+    }
+
+    public sealed interface Provider {
+
+      default Traceable<String> type() {
+        return common().type;
+      }
+
+      CommonProviderData common();
+
+      record BasicProvider(CommonProviderData common) implements Provider {
+        public BasicProvider {
+          Objects.requireNonNull(common, "common provider data cannot be null");
         }
       }
 
-      errors.throwExceptionForPresentErrors();
+      record TokenProvider(CommonProviderData common) implements Provider {
+        public TokenProvider {
+          Objects.requireNonNull(common, "common provider data cannot be null");
+        }
+      }
 
-      return builder.build();
+      record SamlProvider(
+          CommonProviderData common,
+          Traceable<String> realm,
+          OptTraceable<Integer> maxRedirectURLSize,
+          Traceable<Boolean> useRelayStateDeepLink)
+          implements Provider {
+        public SamlProvider {
+          Objects.requireNonNull(common, "common provider data cannot be null");
+          Objects.requireNonNull(realm, "realm cannot be null");
+        }
+
+        private static SamlProvider parse(CommonProviderData common, TraceableDocNode tDoc) {
+          var realm = tDoc.get("realm").required().asString();
+          var maxRedirectURLSize = tDoc.get("maxRedirectURLSize").asInt();
+          var useRelayStateDeepLink = tDoc.get("useRelayStateDeepLink").asBoolean(false);
+          return new SamlProvider(common, realm, maxRedirectURLSize, useRelayStateDeepLink);
+        }
+      }
+
+      record OidcProvider(CommonProviderData common, Traceable<String> realm) implements Provider {
+        public OidcProvider {
+          Objects.requireNonNull(common, "common provider data cannot be null");
+          Objects.requireNonNull(realm, "realm cannot be null");
+        }
+
+        private static OidcProvider parse(CommonProviderData common, TraceableDocNode tDoc) {
+          var realm = tDoc.get("realm").required().asString();
+          return new OidcProvider(common, realm);
+        }
+      }
+
+      record AnonymousProvider(
+          CommonProviderData common, Traceable<String> username, Traceable<String> password)
+          implements Provider {
+        public AnonymousProvider {
+          Objects.requireNonNull(common, "common provider data cannot be null");
+          Objects.requireNonNull(username, "username cannot be null");
+          Objects.requireNonNull(password, "password cannot be null");
+        }
+
+        private static AnonymousProvider parse(CommonProviderData common, TraceableDocNode tDoc) {
+          var username = tDoc.get("credentials.username").required().asString();
+          var password = tDoc.get("credentials.password").required().asString();
+          return new AnonymousProvider(common, username, password);
+        }
+
+        @Override
+        public Traceable<String> type() {
+          return common.name;
+        }
+      }
+
+      // For stretch goals: kerberos, pki
+      record OtherProvider(CommonProviderData common, Traceable<DocNode> content)
+          implements Provider {
+        public OtherProvider {
+          Objects.requireNonNull(common, "common provider data cannot be null");
+          Objects.requireNonNull(content, "content provider data cannot be null");
+        }
+      }
+
+      private static Provider parse(
+          Traceable<String> type, Traceable<String> name, TraceableDocNode tDoc) {
+        var order = tDoc.get("order").required().asInt();
+        var enabled = tDoc.get("enabled").asBoolean(true);
+        var description = tDoc.get("description").asString();
+        var hint = tDoc.get("hint").asString();
+        var icon = tDoc.get("icon").asString();
+        var origin = tDoc.get("origin").asListOfStrings().get().orElse(ImmutableList.empty());
+        Traceable<Boolean> showInSelector;
+        if (type.equals("basic") || type.equals("token")) {
+          // Force true for basic and token provider
+          showInSelector =
+              Traceable.of(new Source.Attribute(tDoc.getSource(), "showInSelector"), true);
+        } else {
+          showInSelector = tDoc.get("showInSelector").asBoolean(true);
+        }
+        var session = tDoc.get("session").as(Session::parse).get().orElse(Session.EMPTY);
+        var common =
+            new CommonProviderData(
+                type,
+                name,
+                order,
+                enabled,
+                description,
+                hint,
+                icon,
+                origin,
+                showInSelector,
+                session);
+
+        return switch (type.get()) {
+          case "basic" -> new BasicProvider(common);
+          case "token" -> new TokenProvider(common);
+          case "saml" -> SamlProvider.parse(common, tDoc);
+          case "oidc" -> OidcProvider.parse(common, tDoc);
+          case "anonymous" -> AnonymousProvider.parse(common, tDoc);
+          default ->
+              new OtherProvider(
+                  common,
+                  tDoc.tryAsAttribute()
+                      .orElseThrow(
+                          () ->
+                              new IllegalStateException(
+                                  "tDoc has to be an Attribute, because it's a value in a map"))
+                      .asDocNode());
+        };
+      }
     }
   }
 
-  public record CommonProviderData(
-      String name,
-      int order,
-      boolean enabled,
-      Optional<String> description,
-      Optional<String> hint,
-      Optional<String> icon,
-      List<String> origin,
-      boolean showInSelector,
-      Session session) {
-
-    public CommonProviderData {
-      Objects.requireNonNull(name, "name cannot be null");
-      Objects.requireNonNull(description, "description cannot be null");
-      Objects.requireNonNull(hint, "hint cannot be null");
-      Objects.requireNonNull(icon, "icon cannot be null");
-      Objects.requireNonNull(origin, "origin cannot be null");
-      Objects.requireNonNull(session, "session cannot be null");
-    }
-
-    public record Session(
-        Optional<String> idleTimeout,
-        Optional<String> lifespan,
-        Optional<String> cleanupInterval,
-        Optional<Integer> maxConcurrentSessions) {
-
-      public static final Session EMPTY =
-          new Session(Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
-
-      public Session {
-        Objects.requireNonNull(idleTimeout, "idleTimeout cannot be null");
-        Objects.requireNonNull(lifespan, "lifespan cannot be null");
-      }
-
-      private static Session parse(DocNode doc, Parser.Context context)
-          throws ConfigValidationException {
-        var vDoc = new ValidatingDocNode(doc, new ValidationErrors(), context);
-
-        var idleTimeout = Optional.ofNullable(vDoc.get("idleTimeout").asString());
-        var lifespan = Optional.ofNullable(vDoc.get("lifespan").asString());
-        var cleanupInterval = Optional.ofNullable(vDoc.get("cleanupInterval").asString());
-        var maxConcurrentSessions =
-            Optional.ofNullable(vDoc.get("concurrentSessions.maxSessions").asInteger());
-
-        vDoc.throwExceptionForPresentErrors();
-
-        return new Session(idleTimeout, lifespan, cleanupInterval, maxConcurrentSessions);
-      }
-    }
-  }
-
-  public sealed interface Provider {
-
-    String type();
-
-    CommonProviderData common();
-
-    record BasicProvider(String type, CommonProviderData common) implements Provider {
-      public BasicProvider {
-        Objects.requireNonNull(type, "type cannot be null");
-        Objects.requireNonNull(common, "common provider data cannot be null");
-      }
-    }
-
-    record TokenProvider(String type, CommonProviderData common) implements Provider {
-      public TokenProvider {
-        Objects.requireNonNull(type, "type cannot be null");
-        Objects.requireNonNull(common, "common provider data cannot be null");
-      }
-    }
-
-    record SamlProvider(
-        String type,
-        CommonProviderData common,
-        String realm,
-        Optional<Integer> maxRedirectURLSize,
-        boolean useRelayStateDeepLink)
-        implements Provider {
-      public SamlProvider {
-        Objects.requireNonNull(type, "type cannot be null");
-        Objects.requireNonNull(common, "common provider data cannot be null");
-        Objects.requireNonNull(realm, "realm cannot be null");
-      }
-
-      private static SamlProvider parse(CommonProviderData common, ValidatingDocNode vDoc) {
-        var realm = vDoc.get("realm").required().asString();
-        var maxRedirectURLSize = Optional.ofNullable(vDoc.get("maxRedirectURLSize").asInteger());
-        var useRelayStateDeepLink =
-            vDoc.get("useRelayStateDeepLink").withDefault(false).asBoolean();
-        return new SamlProvider("saml", common, realm, maxRedirectURLSize, useRelayStateDeepLink);
-      }
-    }
-
-    record OidcProvider(String type, CommonProviderData common, String realm) implements Provider {
-      public OidcProvider {
-        Objects.requireNonNull(type, "type cannot be null");
-        Objects.requireNonNull(common, "common provider data cannot be null");
-        Objects.requireNonNull(realm, "realm cannot be null");
-      }
-
-      private static OidcProvider parse(CommonProviderData common, ValidatingDocNode vDoc) {
-        var realm = vDoc.get("realm").required().asString();
-        return new OidcProvider("oidc", common, realm);
-      }
-    }
-
-    record AnonymousProvider(
-        String type, CommonProviderData common, String username, String password)
-        implements Provider {
-      public AnonymousProvider {
-        Objects.requireNonNull(type, "type cannot be null");
-        Objects.requireNonNull(common, "common provider data cannot be null");
-        Objects.requireNonNull(username, "username cannot be null");
-        Objects.requireNonNull(password, "password cannot be null");
-      }
-
-      private static AnonymousProvider parse(CommonProviderData common, ValidatingDocNode vDoc) {
-        var username = vDoc.get("credentials.username").required().asString();
-        var password = vDoc.get("credentials.password").required().asString();
-        return new AnonymousProvider("anonymous", common, username, password);
-      }
-    }
-
-    // For stretch goals: kerberos, pki
-    record OtherProvider(String type, CommonProviderData common, DocNode content)
-        implements Provider {
-      public OtherProvider {
-        Objects.requireNonNull(type, "type cannot be null");
-        Objects.requireNonNull(common, "common provider data cannot be null");
-        Objects.requireNonNull(content, "content provider data cannot be null");
-      }
-    }
-
-    private static Provider parse(String type, String name, ValidatingDocNode vDoc)
-        throws ConfigValidationException {
-      var order = vDoc.get("order").required().asInt();
-      var enabled = vDoc.get("enabled").withDefault(true).asBoolean();
-      var description = Optional.ofNullable(vDoc.get("description").asString());
-      var hint = Optional.ofNullable(vDoc.get("hint").asString());
-      var icon = Optional.ofNullable(vDoc.get("icon").asString());
-      List<String> origin = vDoc.get("origin").withListDefault().ofStrings();
-      var showInSelector =
-          type.equals("basic")
-              || type.equals("token")
-              || vDoc.get("showInSelector").withDefault(true).asBoolean();
-      var session =
-          vDoc.get("session")
-              .withDefault(CommonProviderData.Session.EMPTY)
-              .by(CommonProviderData.Session::parse);
-
-      var common =
-          new CommonProviderData(
-              name, order, enabled, description, hint, icon, origin, showInSelector, session);
-
-      return switch (type) {
-        case "basic" -> new BasicProvider(type, common);
-        case "token" -> new TokenProvider(type, common);
-        case "saml" -> SamlProvider.parse(common, vDoc);
-        case "oidc" -> OidcProvider.parse(common, vDoc);
-        case "anonymous" -> AnonymousProvider.parse(common, vDoc);
-        default -> new OtherProvider(type, common, vDoc.getDocumentNode());
-      };
-    }
-  }
-
-  public static Kibana parse(DocNode doc, Parser.Context context) throws ConfigValidationException {
+  public static Kibana parse(DocNode doc, Parser.Context _context)
+      throws ConfigValidationException {
     var errors = new ValidationErrors();
-    var vDoc = new ValidatingDocNode(doc, errors, context);
-    var xpackNode = vDoc.get("xpack").required().asDocNode();
-    var security =
-        new ValidatingDocNode(xpackNode, errors, context)
-            .get("security")
-            .by(Kibana.SecurityConfig::parse);
-
+    var tDoc = TraceableDocNode.of(doc, new Source.Config("kibana.yml"), errors);
+    var security = tDoc.get("xpack.security").required().as(Kibana.SecurityConfig::parse).get();
     errors.throwExceptionForPresentErrors();
 
     return new Kibana(security);

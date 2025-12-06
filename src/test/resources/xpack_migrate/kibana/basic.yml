@@ -35,3 +35,5 @@ xpack:
         token:
           token1:
             order: 4
+        token.token2:
+          order: 5
