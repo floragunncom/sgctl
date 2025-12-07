@@ -1,7 +1,8 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
-import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.*;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
@@ -9,6 +10,7 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
+import com.floragunn.fluent.collections.ImmutableMap;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 
@@ -167,6 +169,110 @@ public class TraceableTest {
     var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
     vDoc.get("root").required().asTraceableDocNode();
     assertThrows(ConfigValidationException.class, vDoc::throwExceptionForPresentErrors);
+  }
+
+  @Test
+  public void testTraceableMap() throws ConfigValidationException {
+    var yaml =
+        """
+        root:
+          inners:
+            foo.enabled: true
+            foo:
+              value: 3
+            bar:
+              enabled: false
+            bar.value: 7
+          stringMap:
+            a: "lol"
+            b: "zzz"
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("map_test.yml"));
+
+    var innersOpt = vDoc.get("root.inners").asMapOf(Inner::parse);
+    var stringMap = vDoc.get("root.stringMap").required().asMapOfStrings();
+    var defaultMap = vDoc.get("root.defaultMap").asMapOfInts(ImmutableMap.of("first", 1));
+    vDoc.throwExceptionForPresentErrors();
+
+    var inners = innersOpt.get().orElseThrow();
+    assertTrue(inners.containsKey("foo"));
+    assertTrue(inners.containsKey("bar"));
+    var foo = inners.get("foo");
+    var bar = inners.get("bar");
+    assertNotNull(foo);
+    assertNotNull(bar);
+    var enabled = bar.get().value;
+
+    var a = stringMap.get().get("a");
+    var b = stringMap.get().get("b");
+    assertNotNull(a);
+    assertNotNull(b);
+
+    var first = defaultMap.get().get("first");
+    assertNotNull(first);
+    assertEquals(1, first.get());
+
+    assertEquals("map_test.yml: root.inners", innersOpt.getSource().fullPathString());
+    assertEquals("map_test.yml: root.inners.foo", foo.getSource().fullPathString());
+    assertEquals("map_test.yml: root.inners.bar", bar.getSource().fullPathString());
+    assertEquals("map_test.yml: root.inners.bar.value", enabled.getSource().fullPathString());
+    assertEquals("map_test.yml: root.stringMap", stringMap.getSource().fullPathString());
+    assertEquals("map_test.yml: root.stringMap.a", a.getSource().fullPathString());
+    assertEquals("map_test.yml: root.stringMap.b", b.getSource().fullPathString());
+    assertEquals("map_test.yml: root.defaultMap", defaultMap.getSource().fullPathString());
+    assertEquals("map_test.yml: root.defaultMap.first", first.getSource().fullPathString());
+  }
+
+  @Test
+  public void testAsNestedMap() throws ConfigValidationException {
+    var yaml =
+        """
+        root:
+          foo:
+            one: 1
+            two: 2
+          bar:
+            three: 3
+            four: 4
+    """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("nested_test.yml"));
+    var nestedMap =
+        vDoc.get("root").required().asMapOf(TraceableAttribute.Required::asMapOfStrings);
+    vDoc.throwExceptionForPresentErrors();
+
+    var foo = nestedMap.get().get("foo");
+    var bar = nestedMap.get().get("bar");
+    var one = foo.get().get("one");
+    var two = foo.get().get("two");
+    var three = bar.get().get("three");
+    var four = bar.get().get("four");
+
+    assertEquals("nested_test.yml: root.foo", foo.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.foo.one", one.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.foo.two", two.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.bar", bar.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.bar.three", three.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.bar.four", four.getSource().fullPathString());
+  }
+
+  @Test
+  public void testAsAttribute() throws ConfigValidationException {
+    var yaml =
+        """
+        root: "test"
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var fileAsAttr = vDoc.asAttribute();
+    var root = vDoc.get("root").required().asTraceableDocNode();
+    var rootAttr = root.asAttribute();
+    var test = rootAttr.asString();
+    assertEquals("test", test.get());
+    assertEquals("test.yml: ", fileAsAttr.getSource().fullPathString());
+    assertEquals("test.yml: root", rootAttr.getSource().fullPathString());
+    assertEquals("test.yml: root", test.getSource().fullPathString());
   }
 
   @Test

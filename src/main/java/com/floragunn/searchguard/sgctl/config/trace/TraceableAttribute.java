@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.config.trace;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.fluent.collections.ImmutableList;
+import com.floragunn.fluent.collections.ImmutableMap;
 
 public interface TraceableAttribute {
 
@@ -49,6 +50,8 @@ public interface TraceableAttribute {
 
     <T> OptTraceable<T> as(TraceableDocNodeParser<T> parser);
 
+    <T> OptTraceable<T> as(TraceableAttributeParser<T> parser);
+
     default Traceable<String> asString(String defaultValue) {
       return as(DocNodeParser.STRING, defaultValue);
     }
@@ -74,6 +77,14 @@ public interface TraceableAttribute {
     }
 
     default <T> Traceable<T> as(DocNodeParser<T> parser, T defaultValue) {
+      return as(parser).orElse(defaultValue);
+    }
+
+    default <T> Traceable<T> as(TraceableDocNodeParser<T> parser, T defaultValue) {
+      return as(parser).orElse(defaultValue);
+    }
+
+    default <T> Traceable<T> as(TraceableAttributeParser<T> parser, T defaultValue) {
       return as(parser).orElse(defaultValue);
     }
 
@@ -104,6 +115,8 @@ public interface TraceableAttribute {
     <T> OptTraceable<ImmutableList<Traceable<T>>> asListOf(DocNodeParser<T> parser);
 
     <T> OptTraceable<ImmutableList<Traceable<T>>> asListOf(TraceableDocNodeParser<T> parser);
+
+    <T> OptTraceable<ImmutableList<Traceable<T>>> asListOf(TraceableAttributeParser<T> parser);
 
     default Traceable<ImmutableList<Traceable<String>>> asListOfStrings(
         ImmutableList<String> defaultValue) {
@@ -145,6 +158,11 @@ public interface TraceableAttribute {
       return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
     }
 
+    default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
+        TraceableAttributeParser<T> parser, ImmutableList<T> defaultValue) {
+      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+    }
+
     default Traceable<ImmutableList<Traceable<String>>> asListOfStrings(String... defaultValue) {
       return asListOf(DocNodeParser.STRING, defaultValue);
     }
@@ -177,6 +195,78 @@ public interface TraceableAttribute {
     default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
         TraceableDocNodeParser<T> parser, T... defaultValue) {
       return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+    }
+
+    default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
+        TraceableAttributeParser<T> parser, T... defaultValue) {
+      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+    }
+
+    <T> OptTraceable<ImmutableMap<String, Traceable<T>>> asMapOf(DocNodeParser<T> parser);
+
+    <T> OptTraceable<ImmutableMap<String, Traceable<T>>> asMapOf(TraceableDocNodeParser<T> parser);
+
+    <T> OptTraceable<ImmutableMap<String, Traceable<T>>> asMapOf(
+        TraceableAttributeParser<T> parser);
+
+    default OptTraceable<ImmutableMap<String, Traceable<String>>> asMapOfStrings() {
+      return asMapOf(DocNodeParser.STRING);
+    }
+
+    default OptTraceable<ImmutableMap<String, Traceable<Integer>>> asMapOfInts() {
+      return asMapOf(DocNodeParser.INT);
+    }
+
+    default OptTraceable<ImmutableMap<String, Traceable<Double>>> asMapOfDoubles() {
+      return asMapOf(DocNodeParser.DOUBLE);
+    }
+
+    default OptTraceable<ImmutableMap<String, Traceable<Long>>> asMapOfLongs() {
+      return asMapOf(DocNodeParser.LONG);
+    }
+
+    default OptTraceable<ImmutableMap<String, Traceable<Boolean>>> asMapOfBooleans() {
+      return asMapOf(DocNodeParser.BOOLEAN);
+    }
+
+    default <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(
+        DocNodeParser<T> parser, ImmutableMap<String, T> defaultValue) {
+      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue));
+    }
+
+    default <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(
+        TraceableDocNodeParser<T> parser, ImmutableMap<String, T> defaultValue) {
+      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue));
+    }
+
+    default <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(
+        TraceableAttributeParser<T> parser, ImmutableMap<String, T> defaultValue) {
+      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue));
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<String>>> asMapOfStrings(
+        ImmutableMap<String, String> defaultValue) {
+      return asMapOf(DocNodeParser.STRING, defaultValue);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Integer>>> asMapOfInts(
+        ImmutableMap<String, Integer> defaultValue) {
+      return asMapOf(DocNodeParser.INT, defaultValue);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Double>>> asMapOfDoubles(
+        ImmutableMap<String, Double> defaultValue) {
+      return asMapOf(DocNodeParser.DOUBLE, defaultValue);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Long>>> asMapOfLongs(
+        ImmutableMap<String, Long> defaultValue) {
+      return asMapOf(DocNodeParser.LONG, defaultValue);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Boolean>>> asMapOfBooleans(
+        ImmutableMap<String, Boolean> defaultValue) {
+      return asMapOf(DocNodeParser.BOOLEAN, defaultValue);
     }
 
     Required required();
@@ -220,6 +310,8 @@ public interface TraceableAttribute {
 
     <T> Traceable<T> as(TraceableDocNodeParser<T> parser);
 
+    <T> Traceable<T> as(TraceableAttributeParser<T> parser);
+
     default Traceable<ImmutableList<Traceable<String>>> asListOfStrings() {
       return asListOf(DocNodeParser.STRING);
     }
@@ -247,5 +339,33 @@ public interface TraceableAttribute {
     <T> Traceable<ImmutableList<Traceable<T>>> asListOf(DocNodeParser<T> parser);
 
     <T> Traceable<ImmutableList<Traceable<T>>> asListOf(TraceableDocNodeParser<T> parser);
+
+    <T> Traceable<ImmutableList<Traceable<T>>> asListOf(TraceableAttributeParser<T> parser);
+
+    default Traceable<ImmutableMap<String, Traceable<String>>> asMapOfStrings() {
+      return asMapOf(DocNodeParser.STRING);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Integer>>> asMapOfInts() {
+      return asMapOf(DocNodeParser.INT);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Double>>> asMapOfDoubles() {
+      return asMapOf(DocNodeParser.DOUBLE);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Long>>> asMapOfLongs() {
+      return asMapOf(DocNodeParser.LONG);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Boolean>>> asMapOfBooleans() {
+      return asMapOf(DocNodeParser.BOOLEAN);
+    }
+
+    <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(DocNodeParser<T> parser);
+
+    <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(TraceableDocNodeParser<T> parser);
+
+    <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(TraceableAttributeParser<T> parser);
   }
 }

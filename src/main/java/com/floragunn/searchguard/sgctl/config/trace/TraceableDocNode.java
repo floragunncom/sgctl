@@ -18,5 +18,9 @@ public interface TraceableDocNode {
 
   boolean hasNonNull(String attribute);
 
+  TraceableAttribute.Required asAttribute();
+
+  Source getSource();
+
   void throwExceptionForPresentErrors() throws ConfigValidationException;
 }

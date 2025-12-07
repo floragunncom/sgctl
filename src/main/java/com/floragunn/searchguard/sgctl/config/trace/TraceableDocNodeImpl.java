@@ -34,6 +34,16 @@ class TraceableDocNodeImpl implements TraceableDocNode {
   }
 
   @Override
+  public TraceableAttribute.Required asAttribute() {
+    return new TraceableAttributeImpl.RequiredImpl(source, docNode, errors);
+  }
+
+  @Override
+  public Source getSource() {
+    return source;
+  }
+
+  @Override
   public boolean hasNonNull(String attribute) {
     return docNode.hasNonNull(attribute);
   }
