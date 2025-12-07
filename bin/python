@@ -1,8 +1,0 @@
-#!/usr/bin/env python3
-import os, sys
-# Simple shim to forward `python` calls to `python3` for environments
-# where `python` is missing or points to Python2. This file is intended
-# to live in the repo-local `bin/` directory and be placed first on PATH
-# during commands like `PATH="$PWD/bin:$PATH" pre-commit run --all-files`.
-
-os.execvp('python3', ['python3'] + sys.argv[1:])
