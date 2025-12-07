@@ -3,7 +3,6 @@ package com.floragunn.searchguard.sgctl.config.trace;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
-import java.util.Optional;
 
 class TraceableDocNodeImpl implements TraceableDocNode {
 
@@ -35,12 +34,8 @@ class TraceableDocNodeImpl implements TraceableDocNode {
   }
 
   @Override
-  public Optional<TraceableAttribute.Required> tryAsAttribute() {
-    if (source instanceof Source.Attribute) {
-      return Optional.of(
-          new TraceableAttributeImpl.RequiredImpl((Source.Attribute) source, docNode, errors));
-    }
-    return Optional.empty();
+  public TraceableAttribute.Required asAttribute() {
+    return new TraceableAttributeImpl.RequiredImpl(source, docNode, errors);
   }
 
   @Override
