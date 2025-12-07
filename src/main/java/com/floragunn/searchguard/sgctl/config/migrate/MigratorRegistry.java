@@ -38,27 +38,6 @@ public class MigratorRegistry {
   }
 
   /**
-   * Gets the list of sub-migrators statically. Throws an exception if the registry has not been
-   * finalized.
-   *
-   * @return The list of sub-migrators.
-   */
-  public static List<SubMigrator> getSubMigratorsStatic() {
-    instance = MigratorRegistry.getInstance();
-    return instance.getSubMigrators();
-  }
-
-  /**
-   * Registers a sub-migrator statically.
-   *
-   * @param subMigrator The sub-migrator to register.
-   */
-  public static void registerSubMigratorStatic(SubMigrator subMigrator) {
-    instance = MigratorRegistry.getInstance();
-    instance.registerSubMigrator(subMigrator);
-  }
-
-  /**
    * Registers a sub-migrator.
    *
    * @param subMigrator The sub-migrator to register.
@@ -68,16 +47,6 @@ public class MigratorRegistry {
       throw new IllegalStateException("Migrator registry has already been finalized!");
     }
     subMigrators.add(subMigrator);
-  }
-
-  /**
-   * Unregisters a sub-migrator statically.
-   *
-   * @param subMigrator The sub-migrator to unregister.
-   */
-  public static void unregisterSubMigratorStatic(SubMigrator subMigrator) {
-    instance = MigratorRegistry.getInstance();
-    instance.unregisterSubMigrator(subMigrator);
   }
 
   /**
@@ -92,22 +61,10 @@ public class MigratorRegistry {
     subMigrators.remove(subMigrator);
   }
 
-  /** Finalizes the sub-migrator registry statically. */
-  public static void finalizeMigratorsStatic() {
-    instance = MigratorRegistry.getInstance();
-    instance.finalizeSubMigrators();
-  }
-
   /** Finalizes the sub-migrators. */
   public void finalizeSubMigrators() {
     isFinalized = true;
     // TODO: Finalize
-  }
-
-  /** Attempts to un-finalize sub-migrator registry statically. */
-  public static void unfinalizeMigratorsStatic() {
-    instance = MigratorRegistry.getInstance();
-    instance.unfinalizeMigrators();
   }
 
   /** Attempts to un-finalize sub-migrator registry. */
@@ -127,17 +84,7 @@ public class MigratorRegistry {
               + "Did you forget to finalize?");
     }
     subMigrators.clear();
-    unfinalizeMigratorsStatic();
-  }
-
-  /**
-   * Checks if the migrators are finalized statically.
-   *
-   * @return True if the migrators are finalized, false otherwise.
-   */
-  public static boolean isFinalizedStatic() {
-    instance = MigratorRegistry.getInstance();
-    return instance.isFinalized();
+    unfinalizeMigrators();
   }
 
   /**

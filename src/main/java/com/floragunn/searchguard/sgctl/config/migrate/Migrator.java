@@ -7,7 +7,10 @@ import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import com.google.common.collect.ImmutableList;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,7 +22,7 @@ public class Migrator {
 
   /**
    * Executes all {@link SubMigrator}s added to the {@link MigratorRegistry} using
-   * registerSubMigratorStatic()
+   * registerSubMigrator()
    *
    * @param context All parsed XPackConfigs. Gets passed to the subMigrators
    * @return A List of SearchGuard Configs
@@ -30,7 +33,7 @@ public class Migrator {
     final Map<String, NamedConfig<?>> migratedConfigs = new HashMap<>();
     final List<SubMigrator> subMigrators;
     try {
-      subMigrators = MigratorRegistry.getSubMigratorsStatic();
+      subMigrators = MigratorRegistry.getInstance().getSubMigrators();
     } catch (IllegalStateException e) {
       // TODO: maybe better handling?
       logger.warn("Migrator registry has not been finalized!");

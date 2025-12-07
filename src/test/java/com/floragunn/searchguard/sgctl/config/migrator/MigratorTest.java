@@ -9,12 +9,11 @@ import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
+import com.floragunn.searchguard.sgctl.config.xpack.Users;
+import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.floragunn.searchguard.sgctl.config.xpack.Users;
-import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -120,10 +119,11 @@ class MigratorTest {
 
   @Test
   public void testMigrationSimple() throws SgctlException {
+    var registry = MigratorRegistry.getInstance();
     // Register all sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
+    registry.registerSubMigrator(new TestMigratorUsers());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
@@ -188,11 +188,12 @@ class MigratorTest {
 
   @Test
   public void testMigrationFailureSameFileTwiceAndSameSubMigratorTwice() throws SgctlException {
+    var registry = MigratorRegistry.getInstance();
     // Register sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
+    registry.registerSubMigrator(new TestMigratorUsers());
+    registry.registerSubMigrator(new TestMigratorUsers());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
@@ -204,11 +205,12 @@ class MigratorTest {
   @Test
   public void testMigrationFailureSameFileTwiceMultipleDifferentSubMigrators()
       throws SgctlException {
+    var registry = MigratorRegistry.getInstance();
     // Register sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorCombined());
+    registry.registerSubMigrator(new TestMigratorUsers());
+    registry.registerSubMigrator(new TestMigratorCombined());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
@@ -219,10 +221,11 @@ class MigratorTest {
 
   @Test
   public void testMigrationComplex() throws SgctlException {
+    var registry = MigratorRegistry.getInstance();
     // Register sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorCombined());
+    registry.registerSubMigrator(new TestMigratorCombined());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
@@ -276,10 +279,11 @@ class MigratorTest {
 
   @Test
   public void testFailingMigration() {
+    var registry = MigratorRegistry.getInstance();
     // Register sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new FailingTestMigrator());
+    registry.registerSubMigrator(new FailingTestMigrator());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
