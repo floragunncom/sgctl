@@ -61,10 +61,36 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
         return sgMapping;
     }
 
-    private List<String> collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName, String originPath, List<String> usernames) {
-        // TODO: implement
+    private List<String> extractStringValues(Object raw, String path) {
         var result = new ArrayList<String>();
+        // TODO: implement
         return result;
+    }
+
+    private void collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName, String originPath, List<String> usernames) {
+        var field = rules.getField();
+        if (field != null && field.containsKey("username")) {
+            var path = mappingName + "->" + originPath + ".field.username";
+            usernames.addAll(extractStringValues(field.get("username"), path));
+        }
+
+        var anyRules = rules.getAny();
+        if (anyRules != null) {
+            for (int i = 0; i < anyRules.size(); i++) {
+                var child = anyRules.get(i);
+                var childPath = originPath + "->any[" + i + "]";
+                collectUsernames(child, mappingName, roleName, childPath, usernames);
+            }
+        }
+
+        var allRules = rules.getAll();
+        if (allRules != null) {
+            report.addManualAction(FILE_NAME, roleName + "->" + originPath + ".all", "XPack rule uses all which cannot be migrated automatically.");
+        }
+
+        if (rules.getExcept() != null) {
+            report.addManualAction(FILE_NAME, roleName + "->" + originPath + ".except", "XPack rule uses except which cannot be migrated automatically.");
+        }
     }
 
     public List<String> getSGUsers(RoleMapping rm, String roleName) {
