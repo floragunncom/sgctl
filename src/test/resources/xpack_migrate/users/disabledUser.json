@@ -1,81 +1,35 @@
 {
-  "took": 14,
-  "timed_out": false,
-  "_shards": {
-    "total": 1,
-    "successful": 1,
-    "skipped": 0,
-    "failed": 0
+  "john_doe": {
+    "username": "john_doe",
+    "roles": ["admin", "monitoring"],
+    "full_name": "John Doe",
+    "email": "john.doe@example.com",
+    "metadata": {
+      "department": "IT",
+      "employee_id": "A1234"
+    },
+    "enabled": true
   },
-  "hits": {
-    "total": { "value": 3, "relation": "eq" },
-    "max_score": 1.0,
-    "hits": [
-      {
-        "_index": ".security",
-        "_type": "_doc",
-        "_id": "user-john_doe",
-        "_score": 1.0,
-        "_source": {
-          "username": "john_doe",
-          "password": "$2a$12$QzOf63.lc/QaesXkvmk6DOrmmaL001QqMJ403CoDZPgPjLnag/PQC",
-          "roles": [
-            "admin",
-            "monitoring"
-          ],
-          "full_name": "John Doe",
-          "email": "john.doe@example.com",
-          "metadata": {
-            "department": "IT",
-            "employee_id": "A1234"
-          },
-          "enabled": true,
-          "type": "user"
-        }
-      },
-      {
-        "_index": ".security",
-        "_type": "_doc",
-        "_id": "user-jane_smith",
-        "_score": 1.0,
-        "_source": {
-          "username": "jane_smith",
-          "password": "$2a$12$oej89fF9fXQleZtlmZklrOk39uOcPu3dfsh9FJLpuaYDoG0k6npqG",
-          "roles": [
-            "kibana_admin",
-            "other_role2"
-          ],
-          "full_name": "Jane Smith",
-          "email": "jane.smith@example.com",
-          "metadata": {
-            "department": "Marketing",
-            "employee_id": "B8891"
-          },
-          "enabled": true,
-          "type": "user"
-        }
-      },
-      {
-        "_index": ".security",
-        "_type": "_doc",
-        "_id": "user-paused_user",
-        "_score": 1.0,
-        "_source": {
-          "username": "paused_user",
-          "password": "$2a$12$sl8auFfGJ2N83dpfHcM0xuA6lJsYudkJr2PaX6fwm7iRGUbI2x5Ay",
-          "roles": [
-            "viewer"
-          ],
-          "full_name": "Paul Inactive",
-          "email": "paul.inactive@example.com",
-          "metadata": {
-            "department": "Support",
-            "note": "Account disabled due to inactivity"
-          },
-          "enabled": false,
-          "type": "user"
-        }
-      }
-    ]
+  "jane_smith": {
+    "username": "jane_smith",
+    "roles": ["kibana_admin", "other_role2"],
+    "full_name": "Jane Smith",
+    "email": "jane.smith@example.com",
+    "metadata": {
+      "department": "Marketing",
+      "employee_id": "B8891"
+    },
+    "enabled": true
+  },
+  "paused_user": {
+    "username": "paused_user",
+    "roles": ["viewer"],
+    "full_name": "Paul Inactive",
+    "email": "paul.inactive@example.com",
+    "metadata": {
+      "department": "Support",
+      "note": "Account disabled due to inactivity"
+    },
+    "enabled": false
   }
 }

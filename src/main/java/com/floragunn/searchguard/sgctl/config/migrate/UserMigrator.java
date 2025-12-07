@@ -36,12 +36,11 @@ public class UserMigrator implements SubMigrator {
 
       builder.add(
           new SgInternalUsers.User(
-              entry.getValue().username(),
-              entry.getValue().password(),
-              entry.getValue().roles(),
-              sgMetaData));
+              entry.getValue().username(), "", entry.getValue().roles(), sgMetaData));
     }
 
+    logger.warn(
+        "Passwords are empty for all migrated users. Each user must reset their password or a admin nmust set them manually.");
     return List.of(new SgInternalUsers(builder.build()));
   }
 }

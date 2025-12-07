@@ -4,10 +4,6 @@
     "roles": ["admin", "monitoring"],
     "full_name": "John Doe",
     "email": "john.doe@example.com",
-    "metadata": {
-      "department": "IT",
-      "employee_id": "A1234"
-    },
     "enabled": true
   }
 }
