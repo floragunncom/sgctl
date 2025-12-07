@@ -24,6 +24,6 @@ class ErroneousOptTraceable<T> implements OptTraceable<T> {
 
   @Override
   public Traceable<T> orElse(T other) {
-    throw new UnhandledConfigValidationException(new ConfigValidationException(errors));
+    return new ErroneousTraceable<>(errors);
   }
 }
