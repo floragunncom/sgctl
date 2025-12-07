@@ -4,18 +4,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
-import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.codova.documents.Parser;
-import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
-import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.migrate.Migrator.MigrationContext;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain;
-import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
-import com.floragunn.searchguard.sgctl.config.xpack.Roles;
-import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import java.io.IOException;
-import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -47,7 +40,7 @@ class AuthMigratorTest {
     var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/ldap_basic.yml");
 
     assertEquals(1, sgAuthC.authDomains().size());
-    var ldap = assertLdapDomain(sgAuthC.authDomains().get(0));
+    var ldap = assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(0));
 
     assertFalse(ldap.identityProvider().hosts().isEmpty());
     assertTrue(ldap.userSearch().isPresent());
@@ -61,7 +54,7 @@ class AuthMigratorTest {
     var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/ldap_with_scopes.yml");
 
     assertEquals(1, sgAuthC.authDomains().size());
-    var ldap = assertLdapDomain(sgAuthC.authDomains().get(0));
+    var ldap = assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(0));
 
     // SUB_TREE -> SUB
     assertEquals(AuthDomain.Ldap.SearchScope.SUB, ldap.userSearch().get().scope().orElse(null));
@@ -74,7 +67,7 @@ class AuthMigratorTest {
     var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/ldap_without_group_search.yml");
 
     assertEquals(1, sgAuthC.authDomains().size());
-    var ldap = assertLdapDomain(sgAuthC.authDomains().get(0));
+    var ldap = assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(0));
 
     assertTrue(ldap.userSearch().isPresent());
     assertFalse(ldap.groupSearch().isPresent());
@@ -85,7 +78,7 @@ class AuthMigratorTest {
     var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/active_directory_only.yml");
 
     assertEquals(1, sgAuthC.authDomains().size());
-    var ldap = assertLdapDomain(sgAuthC.authDomains().get(0));
+    var ldap = assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(0));
 
     assertTrue(ldap.userSearch().isPresent());
     assertEquals("dc=example,dc=com", ldap.userSearch().get().baseDn().orElse(null));
@@ -95,18 +88,17 @@ class AuthMigratorTest {
   @Test
   void testMigrateUnsupportedRealm() throws Exception {
     var config = loadConfig("/xpack_migrate/elasticsearch/auth/unsupported_realm.yml");
-    var context = new TestMigrationContext(Optional.of(config));
-    var migrator = new AuthMigrator();
+    var context = createContext(Optional.of(config));
 
-    assertThrows(UnsupportedOperationException.class, () -> migrator.migrate(context, logger));
+    assertThrows(
+        UnsupportedOperationException.class, () -> new AuthMigrator().migrate(context, logger));
   }
 
   @Test
   void testMigrateEmptyElasticsearchConfig() throws Exception {
-    var context = new TestMigrationContext(Optional.empty());
-    var migrator = new AuthMigrator();
+    var context = createContext(Optional.empty());
 
-    List<NamedConfig<?>> result = migrator.migrate(context, logger);
+    var result = new AuthMigrator().migrate(context, logger);
 
     assertTrue(result.isEmpty());
   }
@@ -122,10 +114,9 @@ class AuthMigratorTest {
 
   private SgAuthC migrate(String path) throws Exception {
     var config = loadConfig(path);
-    var context = new TestMigrationContext(Optional.of(config));
-    var migrator = new AuthMigrator();
+    var context = createContext(Optional.of(config));
 
-    List<NamedConfig<?>> result = migrator.migrate(context, logger);
+    var result = new AuthMigrator().migrate(context, logger);
 
     assertEquals(1, result.size());
     var sgAuthC = assertInstanceOf(SgAuthC.class, result.get(0));
@@ -133,47 +124,16 @@ class AuthMigratorTest {
     return sgAuthC;
   }
 
-  private AuthDomain.Ldap assertLdapDomain(AuthDomain<?> domain) {
-    return assertInstanceOf(AuthDomain.Ldap.class, domain);
+  private MigrationContext createContext(Optional<XPackElasticsearchConfig> config) {
+    return new MigrationContext(
+        Optional.empty(), Optional.empty(), Optional.empty(), config, Optional.empty());
   }
 
   private XPackElasticsearchConfig loadConfig(String path) throws Exception {
-    var node = readYaml(path);
-    return XPackElasticsearchConfig.parse(node, Parser.Context.get());
-  }
-
-  private DocNode readYaml(String path) throws IOException, DocumentParseException {
     try (var in = getClass().getResourceAsStream(path)) {
       assertNotNull(in, "Resource not found: " + path);
-      return DocNode.wrap(DocReader.yaml().read(in));
-    }
-  }
-
-  record TestMigrationContext(Optional<XPackElasticsearchConfig> config)
-      implements Migrator.IMigrationContext {
-    @Override
-    public Optional<RoleMappings> getRoleMappings() {
-      return Optional.empty();
-    }
-
-    @Override
-    public Optional<Roles> getRoles() {
-      return Optional.empty();
-    }
-
-    @Override
-    public Optional<Users> getUsers() {
-      return Optional.empty();
-    }
-
-    @Override
-    public Optional<XPackElasticsearchConfig> getElasticsearch() {
-      return config;
-    }
-
-    @Override
-    public Optional<?> getKibana() {
-      return Optional.empty();
+      var node = DocNode.wrap(DocReader.yaml().read(in));
+      return XPackElasticsearchConfig.parse(node, Parser.Context.get());
     }
   }
 }
