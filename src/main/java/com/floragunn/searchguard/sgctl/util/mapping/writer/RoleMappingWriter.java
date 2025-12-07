@@ -63,7 +63,28 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     private List<String> extractStringValues(Object raw, String path) {
         var result = new ArrayList<String>();
-        // TODO: implement
+
+        if (raw == null) {
+            return result;
+        }
+
+        if (raw instanceof String s) {
+            result.add(s);
+            return result;
+        }
+
+        if (raw instanceof List<?> list) {
+            for (Object o : list) {
+                if (o instanceof String s) {
+                    result.add(s);
+                } else {
+                    report.addInvalidType(FILE_NAME, path, String.class, o);
+                }
+            }
+            return result;
+        }
+
+        report.addInvalidType(FILE_NAME, path, String.class, raw);
         return result;
     }
 
