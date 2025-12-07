@@ -1,0 +1,20 @@
+cluster.name: role_user_cluster
+http.host: 0.0.0.0
+
+xpack.security.enabled: false
+
+
+searchguard.ssl.transport.enabled: true
+searchguard.ssl.transport.keystore_filepath: certs/transport.p12
+searchguard.ssl.transport.keystore_type: PKCS12
+searchguard.ssl.transport.truststore_filepath: certs/transport.p12
+searchguard.ssl.transport.truststore_type: PKCS12
+
+
+searchguard.ssl.http.enabled: true
+searchguard.ssl.http.keystore_filepath: certs/http.p12
+searchguard.ssl.http.keystore_type: PKCS12
+searchguard.ssl.http.truststore_filepath: certs/http.p12
+searchguard.ssl.http.truststore_type: PKCS12
+
+cluster.initial_master_nodes: ["DESKTOP-TL4S4Q5"]
