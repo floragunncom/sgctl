@@ -11,13 +11,13 @@ import org.jspecify.annotations.Nullable;
 
 abstract class TraceableAttributeImpl implements TraceableAttribute {
 
-  protected final Source.Attribute source;
+  protected final Source source;
   protected final DocNode node;
   protected final ValidationErrors errors;
 
   protected @Nullable String expected;
 
-  public TraceableAttributeImpl(Source.Attribute source, DocNode node, ValidationErrors errors) {
+  public TraceableAttributeImpl(Source source, DocNode node, ValidationErrors errors) {
     this.source = source;
     this.node = node;
     this.errors = errors;
@@ -181,7 +181,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
   static final class OptionalImpl extends TraceableAttributeImpl
       implements TraceableAttribute.Optional {
 
-    public OptionalImpl(Source.Attribute source, DocNode node, ValidationErrors errors) {
+    public OptionalImpl(Source source, DocNode node, ValidationErrors errors) {
       super(source, node, errors);
     }
 
@@ -203,13 +203,13 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
 
       var subErrors = new ValidationErrors();
       var result = parser.parse(TraceableDocNode.of(node, source, subErrors));
-      errors.add(source.name(), subErrors);
+      errors.add(source.pathPart(), subErrors);
       return OptTraceable.of(source, result);
     }
 
     @Override
     public TraceableDocNode asTraceableDocNode() {
-      return TraceableDocNode.of(node, source, new ValidationErrors(errors, source.name()));
+      return TraceableDocNode.of(node, source, new ValidationErrors(errors, source.pathPart()));
     }
 
     @Override
@@ -247,7 +247,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
   static final class RequiredImpl extends TraceableAttributeImpl
       implements TraceableAttribute.Required {
 
-    public RequiredImpl(Source.Attribute source, DocNode node, ValidationErrors errors) {
+    public RequiredImpl(Source source, DocNode node, ValidationErrors errors) {
       super(source, node, errors);
     }
 
@@ -277,7 +277,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
 
       var subErrors = new ValidationErrors();
       var result = parser.parse(TraceableDocNode.of(node, source, subErrors));
-      errors.add(source.name(), subErrors);
+      errors.add(source.pathPart(), subErrors);
       return Traceable.of(source, result);
     }
 
@@ -287,7 +287,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         var error = new MissingAttribute(source.pathPart(), node);
         errors.add(error);
       }
-      return TraceableDocNode.of(node, source, new ValidationErrors(errors, source.name()));
+      return TraceableDocNode.of(node, source, new ValidationErrors(errors, source.pathPart()));
     }
 
     @Override

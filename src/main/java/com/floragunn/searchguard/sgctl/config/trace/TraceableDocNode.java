@@ -3,7 +3,6 @@ package com.floragunn.searchguard.sgctl.config.trace;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
-import java.util.Optional;
 
 public interface TraceableDocNode {
 
@@ -19,7 +18,7 @@ public interface TraceableDocNode {
 
   boolean hasNonNull(String attribute);
 
-  Optional<TraceableAttribute.Required> tryAsAttribute();
+  TraceableAttribute.Required asAttribute();
 
   Source getSource();
 

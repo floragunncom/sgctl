@@ -217,18 +217,6 @@ public class TraceableTest {
   }
 
   @Test
-  public void testTryAsAttributeFail() throws ConfigValidationException {
-    var yaml =
-        """
-        root: "test"
-        """;
-    var node = DocNode.wrap(DocReader.yaml().read(yaml));
-    var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
-    // vDoc is not an attribute of anything, it's the root
-    assertFalse(vDoc.tryAsAttribute().isPresent());
-  }
-
-  @Test
   public void testTryAsAttribute() throws ConfigValidationException {
     var yaml =
         """
@@ -236,10 +224,12 @@ public class TraceableTest {
         """;
     var node = DocNode.wrap(DocReader.yaml().read(yaml));
     var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var fileAsAttr = vDoc.asAttribute();
     var root = vDoc.get("root").required().asTraceableDocNode();
-    var rootAttr = root.tryAsAttribute().orElseThrow();
+    var rootAttr = root.asAttribute();
     var test = rootAttr.asString();
     assertEquals("test", test.get());
+    assertEquals("test.yml: ", fileAsAttr.getSource().fullPathString());
     assertEquals("test.yml: root", rootAttr.getSource().fullPathString());
     assertEquals("test.yml: root", test.getSource().fullPathString());
   }
