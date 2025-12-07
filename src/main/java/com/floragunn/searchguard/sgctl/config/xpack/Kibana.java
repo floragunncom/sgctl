@@ -11,7 +11,7 @@ import java.util.*;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
-public record Kibana(SecurityConfig security) {
+public record Kibana(OptTraceable<SecurityConfig> security) {
 
   public Kibana {
     Objects.requireNonNull(security, "security cannot be null");
@@ -26,7 +26,7 @@ public record Kibana(SecurityConfig security) {
       OptTraceable<String> encryptionKey,
       Traceable<Boolean> secureCookies,
       OptTraceable<SameSiteCookies> sameSiteCookies,
-      Session session,
+      Traceable<Session> session,
       OptTraceable<DocNode> audit) {
     public SecurityConfig {
       Objects.requireNonNull(authC, "authC cannot be null");
@@ -53,7 +53,7 @@ public record Kibana(SecurityConfig security) {
       var encryptionKey = tDoc.get("encryptionKey").asString();
       var secureCookies = tDoc.get("secureCookies").asBoolean(false);
       var sameSiteCookies = tDoc.get("sameSiteCookies").asEnum(SameSiteCookies.class);
-      var session = tDoc.get("session").as(Session::parse).get().orElse(Session.EMPTY);
+      var session = tDoc.get("session").as(Session::parse, Session.EMPTY);
       var audit = tDoc.get("audit").asDocNode();
 
       return new SecurityConfig(
@@ -98,7 +98,8 @@ public record Kibana(SecurityConfig security) {
   }
 
   public record AuthCConfig(
-      Map<String, ImmutableMap<String, Provider>> providerTypes,
+      Traceable<ImmutableMap<String, Traceable<ImmutableMap<String, Traceable<Provider>>>>>
+          providerTypes,
       Traceable<Boolean> selectorEnabled,
       OptTraceable<Http> http) {
 
@@ -110,7 +111,7 @@ public record Kibana(SecurityConfig security) {
     public record Http(
         Traceable<Boolean> enabled,
         Traceable<Boolean> autoSchemesEnabled,
-        ImmutableList<Traceable<String>> schemes) {
+        Traceable<ImmutableList<Traceable<String>>> schemes) {
 
       public Http {
         Objects.requireNonNull(schemes, "schemes cannot be null");
@@ -119,43 +120,28 @@ public record Kibana(SecurityConfig security) {
       private static Http parse(TraceableDocNode tDoc) {
         var enabled = tDoc.get("enabled").asBoolean(true);
         var autoSchemesEnabled = tDoc.get("autoSchemesEnabled").asBoolean(true);
-        var schemes = tDoc.get("schemes").asListOfStrings("apikey", "bearer").get();
+        var schemes = tDoc.get("schemes").asListOfStrings("apikey", "bearer");
 
         return new Http(enabled, autoSchemesEnabled, schemes);
       }
     }
 
+    private static Traceable<ImmutableMap<String, Traceable<Provider>>> parseProviderType(
+        TraceableAttribute.Required tAttr) {
+      var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart());
+      return tAttr.asMapOf(
+          (TraceableDocNodeParser<Provider>)
+              (providerTDoc) -> {
+                var name =
+                    Traceable.of(providerTDoc.getSource(), providerTDoc.getSource().pathPart());
+                return Provider.parse(type, name, providerTDoc);
+              });
+    }
+
     private static AuthCConfig parse(TraceableDocNode tDoc) {
-      var providerTypesOpt =
-          tDoc.get("providers")
-              .asMapOf(
-                  (TraceableDocNodeParser<ImmutableMap<String, Provider>>)
-                      (innerTDoc) -> {
-                        var type =
-                            Traceable.of(innerTDoc.getSource(), innerTDoc.getSource().pathPart());
-                        var tAttr =
-                            innerTDoc
-                                .tryAsAttribute()
-                                .orElseThrow(
-                                    () ->
-                                        new IllegalStateException(
-                                            "innerTDoc has to be an Attribute, because it's a value in a map"));
-                        return tAttr
-                            .asMapOf(
-                                (TraceableDocNodeParser<Provider>)
-                                    (providerTDoc) -> {
-                                      var name =
-                                          Traceable.of(
-                                              providerTDoc.getSource(),
-                                              providerTDoc.getSource().pathPart());
-                                      return Provider.parse(type, name, providerTDoc);
-                                    })
-                            .get()
-                            .mapValues(Traceable::get);
-                      });
       var providerTypes =
-          providerTypesOpt.get().orElse(ImmutableMap.empty()).mapValues(Traceable::get);
-      var selectorEnabled = tDoc.get("selector.enabled").asBoolean(providerTypes.size() > 1);
+          tDoc.get("providers").asMapOf(AuthCConfig::parseProviderType, ImmutableMap.empty());
+      var selectorEnabled = tDoc.get("selector.enabled").asBoolean(true);
       var http = tDoc.get("http").as(Http::parse);
 
       return new AuthCConfig(providerTypes, selectorEnabled, http);
@@ -169,9 +155,9 @@ public record Kibana(SecurityConfig security) {
         OptTraceable<String> description,
         OptTraceable<String> hint,
         OptTraceable<String> icon,
-        ImmutableList<Traceable<String>> origin,
+        Traceable<ImmutableList<Traceable<String>>> origin,
         Traceable<Boolean> showInSelector,
-        Session session) {
+        Traceable<Session> session) {
 
       public CommonProviderData {
         Objects.requireNonNull(type, "type cannot be null");
@@ -266,25 +252,26 @@ public record Kibana(SecurityConfig security) {
       }
 
       private static Provider parse(
-          Traceable<String> type, Traceable<String> name, TraceableDocNode tDoc) {
+          Traceable<String> tType, Traceable<String> name, TraceableDocNode tDoc) {
         var order = tDoc.get("order").required().asInt();
         var enabled = tDoc.get("enabled").asBoolean(true);
         var description = tDoc.get("description").asString();
         var hint = tDoc.get("hint").asString();
         var icon = tDoc.get("icon").asString();
-        var origin = tDoc.get("origin").asListOfStrings().get().orElse(ImmutableList.empty());
+        var origin = tDoc.get("origin").asListOfStrings(ImmutableList.empty());
         Traceable<Boolean> showInSelector;
+        var type = tType.get(); // Is ok, because created
         if (type.equals("basic") || type.equals("token")) {
-          // Force true for basic and token provider
+          // Force true for basic and token provider, according to xpac docs
           showInSelector =
               Traceable.of(new Source.Attribute(tDoc.getSource(), "showInSelector"), true);
         } else {
           showInSelector = tDoc.get("showInSelector").asBoolean(true);
         }
-        var session = tDoc.get("session").as(Session::parse).get().orElse(Session.EMPTY);
+        var session = tDoc.get("session").as(Session::parse, Session.EMPTY);
         var common =
             new CommonProviderData(
-                type,
+                tType,
                 name,
                 order,
                 enabled,
@@ -295,21 +282,13 @@ public record Kibana(SecurityConfig security) {
                 showInSelector,
                 session);
 
-        return switch (type.get()) {
+        return switch (type) {
           case "basic" -> new BasicProvider(common);
           case "token" -> new TokenProvider(common);
           case "saml" -> SamlProvider.parse(common, tDoc);
           case "oidc" -> OidcProvider.parse(common, tDoc);
           case "anonymous" -> AnonymousProvider.parse(common, tDoc);
-          default ->
-              new OtherProvider(
-                  common,
-                  tDoc.tryAsAttribute()
-                      .orElseThrow(
-                          () ->
-                              new IllegalStateException(
-                                  "tDoc has to be an Attribute, because it's a value in a map"))
-                      .asDocNode());
+          default -> new OtherProvider(common, tDoc.asAttribute().asDocNode());
         };
       }
     }
@@ -319,7 +298,7 @@ public record Kibana(SecurityConfig security) {
       throws ConfigValidationException {
     var errors = new ValidationErrors();
     var tDoc = TraceableDocNode.of(doc, new Source.Config("kibana.yml"), errors);
-    var security = tDoc.get("xpack.security").required().as(Kibana.SecurityConfig::parse).get();
+    var security = tDoc.get("xpack.security").as(Kibana.SecurityConfig::parse);
     errors.throwExceptionForPresentErrors();
 
     return new Kibana(security);

@@ -34,9 +34,9 @@ public class KibanaTest {
     assertNotNull(config);
 
     // Verify security
-    var security = config.security();
+    var security = config.security().get().orElseThrow();
     assertTrue(security.enabled().get());
-    var session = security.session();
+    var session = security.session().get();
     assertEquals("30m", session.idleTimeout().orElse(null).get());
     assertEquals("8h", session.lifespan().orElse(null).get());
     assertTrue(security.sameSiteCookies().get().isPresent());
@@ -51,7 +51,7 @@ public class KibanaTest {
     assertTrue(authc.selectorEnabled().get());
 
     // Verify providerTypes
-    var providerTypes = authc.providerTypes();
+    var providerTypes = authc.providerTypes().get();
     assertNotNull(providerTypes);
     assertEquals(5, providerTypes.size());
     assertTrue(providerTypes.containsKey("anonymous"));
@@ -61,7 +61,7 @@ public class KibanaTest {
     assertTrue(providerTypes.containsKey("token"));
 
     // Verify anonymous provider
-    var anonProv = providerTypes.get("anonymous").get("anonymous1");
+    var anonProv = providerTypes.get("anonymous").get().get("anonymous1").get();
     assertNotNull(anonProv);
     assertInstanceOf(Kibana.AuthCConfig.Provider.AnonymousProvider.class, anonProv);
     var anon = (Kibana.AuthCConfig.Provider.AnonymousProvider) anonProv;
@@ -72,19 +72,19 @@ public class KibanaTest {
     assertEquals("anonymous_service_account_password", anon.password().get());
 
     // Verify basic provider
-    var basicProv = providerTypes.get("basic").get("basic1");
+    var basicProv = providerTypes.get("basic").get().get("basic1").get();
     assertNotNull(basicProv);
     assertInstanceOf(Kibana.AuthCConfig.Provider.BasicProvider.class, basicProv);
     var basic = (Kibana.AuthCConfig.Provider.BasicProvider) basicProv;
     assertEquals("basic1", basic.common().name().get());
-    List<Traceable<String>> basicOrigins = basic.common().origin();
+    List<Traceable<String>> basicOrigins = basic.common().origin().get();
     assertNotNull(basicOrigins);
     assertEquals(2, basicOrigins.size());
     assertEquals("http://localhost:5601", basicOrigins.get(0).get());
     assertEquals("http://127.0.0.1:5601", basicOrigins.get(1).get());
 
     // Verify saml provider
-    var samlProv = providerTypes.get("saml").get("saml1");
+    var samlProv = providerTypes.get("saml").get().get("saml1").get();
     assertNotNull(samlProv);
     assertInstanceOf(Kibana.AuthCConfig.Provider.SamlProvider.class, samlProv);
     var saml = (Kibana.AuthCConfig.Provider.SamlProvider) samlProv;
@@ -92,12 +92,12 @@ public class KibanaTest {
     assertEquals(2, saml.common().order().get());
     assertEquals("saml1", saml.realm().get());
     // origin can be a single string turned into list
-    ImmutableList<Traceable<String>> samlOrigins = saml.common().origin();
+    ImmutableList<Traceable<String>> samlOrigins = saml.common().origin().get();
     assertEquals(1, samlOrigins.size());
     assertEquals("https://elastic.co", samlOrigins.get(0).get());
 
     // Verify oidc provider
-    var oidcProv = providerTypes.get("oidc").get("oidc1");
+    var oidcProv = providerTypes.get("oidc").get().get("oidc1").get();
     assertNotNull(oidcProv);
     assertInstanceOf(Kibana.AuthCConfig.Provider.OidcProvider.class, oidcProv);
     var oidc = (Kibana.AuthCConfig.Provider.OidcProvider) oidcProv;
@@ -107,14 +107,14 @@ public class KibanaTest {
     assertEquals("OIDC Login", oidc.common().description().orElse(null).get());
 
     // Verify token providers
-    var tokenProviders = providerTypes.get("token");
-    var tokenProv = tokenProviders.get("token1");
+    var tokenProviders = providerTypes.get("token").get();
+    var tokenProv = tokenProviders.get("token1").get();
     assertNotNull(tokenProv);
     assertInstanceOf(Kibana.AuthCConfig.Provider.TokenProvider.class, tokenProv);
     assertEquals("token1", tokenProv.common().name().get());
     assertEquals(4, tokenProv.common().order().get());
 
-    var tokenProv2 = tokenProviders.get("token2");
+    var tokenProv2 = tokenProviders.get("token2").get();
     assertNotNull(tokenProv2);
     assertInstanceOf(Kibana.AuthCConfig.Provider.TokenProvider.class, tokenProv2);
     var token2 = (Kibana.AuthCConfig.Provider.TokenProvider) tokenProv2;
