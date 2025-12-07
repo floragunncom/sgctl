@@ -61,17 +61,26 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
         return sgMapping;
     }
 
-    private List<String> collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName, String originPath) {
+    private List<String> collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName, String originPath, List<String> usernames) {
+        // TODO: implement
         var result = new ArrayList<String>();
         return result;
     }
 
     public List<String> getSGUsers(RoleMapping rm, String roleName) {
-        List<String> users = new ArrayList<>();
-        return users;
+        var result = new ArrayList<String>();
+        var rules = rm.getRules();
+
+        if (rules == null) {
+            report.addManualAction(FILE_NAME, roleName + "->rules", "Search Guard users for role '" + roleName + "' must be configured manually.");
+            return result;
+        }
+        collectUsernames(rules, rm.getMappingName(), roleName, "rules", result);
+        return result;
     }
 
     public List<String> getSGBackendRoles(RoleMapping rm, String roleName) {
+        // TODO: backendRoles migrieren?
         List<String> backendRoles = new ArrayList<>();
         return backendRoles;
     }
