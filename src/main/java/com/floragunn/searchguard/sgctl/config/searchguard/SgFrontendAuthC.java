@@ -69,8 +69,8 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         builder.put("saml.idp.metadata_url", metadataURL);
         builder.put("saml.idp.entity_id", IDPEntityId);
         builder.put("saml.sp.entity_id", SPEntityId);
+        builder.put("label", label.orElse("SAML Login"));
         id.ifPresent(id -> builder.put("id", id));
-        label.ifPresent(gs -> builder.put("label", label));
         if (isDefault) builder.put("auto_select", true);
         return builder.build();
       }
@@ -109,8 +109,8 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         builder.put("oidc.client_id", clientId);
         builder.put("oidc.client_secret", clientSecret);
         builder.put("oidc.idp.openid_configuration_url", openidConfigurationUrl);
+        builder.put("label", label.orElse("OIDC Login"));
         id.ifPresent(id -> builder.put("id", id));
-        label.ifPresent(gs -> builder.put("label", label));
         if (isDefault) builder.put("auto_select", true);
         return builder.build();
       }
