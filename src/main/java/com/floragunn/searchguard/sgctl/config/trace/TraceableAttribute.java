@@ -50,6 +50,10 @@ public interface TraceableAttribute {
 
     <T> OptTraceable<T> as(TraceableDocNodeParser<T> parser);
 
+    default <T> Traceable<T> as(TraceableDocNodeParser<T> parser, T defaultValue) {
+      return as(parser).orElse(defaultValue);
+    }
+
     default Traceable<String> asString(String defaultValue) {
       return as(DocNodeParser.STRING, defaultValue);
     }
@@ -202,6 +206,41 @@ public interface TraceableAttribute {
 
     default OptTraceable<ImmutableMap<String, Traceable<Boolean>>> asMapOfBooleans() {
       return asMapOf(DocNodeParser.BOOLEAN);
+    }
+
+    default <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(
+        DocNodeParser<T> parser, ImmutableMap<String, T> defaultValue) {
+      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue));
+    }
+
+    default <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(
+        TraceableDocNodeParser<T> parser, ImmutableMap<String, T> defaultValue) {
+      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue));
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<String>>> asMapOfStrings(
+        ImmutableMap<String, String> defaultValue) {
+      return asMapOf(DocNodeParser.STRING, defaultValue);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Integer>>> asMapOfInts(
+        ImmutableMap<String, Integer> defaultValue) {
+      return asMapOf(DocNodeParser.INT, defaultValue);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Double>>> asMapOfDoubles(
+        ImmutableMap<String, Double> defaultValue) {
+      return asMapOf(DocNodeParser.DOUBLE, defaultValue);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Long>>> asMapOfLongs(
+        ImmutableMap<String, Long> defaultValue) {
+      return asMapOf(DocNodeParser.LONG, defaultValue);
+    }
+
+    default Traceable<ImmutableMap<String, Traceable<Boolean>>> asMapOfBooleans(
+        ImmutableMap<String, Boolean> defaultValue) {
+      return asMapOf(DocNodeParser.BOOLEAN, defaultValue);
     }
 
     Required required();
