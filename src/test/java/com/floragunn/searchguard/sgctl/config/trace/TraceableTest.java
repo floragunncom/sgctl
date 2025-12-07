@@ -225,6 +225,39 @@ public class TraceableTest {
   }
 
   @Test
+  public void testAsNestedMap() throws ConfigValidationException {
+    var yaml =
+        """
+        root:
+          foo:
+            one: 1
+            two: 2
+          bar:
+            three: 3
+            four: 4
+    """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("nested_test.yml"));
+    var nestedMap =
+        vDoc.get("root").required().asMapOf(TraceableAttribute.Required::asMapOfStrings);
+    vDoc.throwExceptionForPresentErrors();
+
+    var foo = nestedMap.get().get("foo");
+    var bar = nestedMap.get().get("bar");
+    var one = foo.get().get("one");
+    var two = foo.get().get("two");
+    var three = bar.get().get("three");
+    var four = bar.get().get("four");
+
+    assertEquals("nested_test.yml: root.foo", foo.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.foo.one", one.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.foo.two", two.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.bar", bar.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.bar.three", three.getSource().fullPathString());
+    assertEquals("nested_test.yml: root.bar.four", four.getSource().fullPathString());
+  }
+
+  @Test
   public void testAsAttribute() throws ConfigValidationException {
     var yaml =
         """

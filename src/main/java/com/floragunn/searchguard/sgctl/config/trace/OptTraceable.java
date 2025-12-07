@@ -21,6 +21,10 @@ public interface OptTraceable<T> extends Traceable<Optional<T>> {
     return of(source, Optional.of(value));
   }
 
+  static <T> OptTraceable<T> of(Traceable<T> traceable) {
+    return of(traceable.getSource(), traceable.get());
+  }
+
   static <T> OptTraceable<T> ofNullable(Source source, @Nullable T value) {
     return of(source, Optional.ofNullable(value));
   }
