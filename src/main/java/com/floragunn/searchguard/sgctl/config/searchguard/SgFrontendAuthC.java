@@ -75,5 +75,45 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         return builder.build();
       }
     }
+
+    /**
+     * OIDC authentication for Kibana
+     *
+     * @param label A label for the authentication method. Defaults to "OIDC Login".
+     * @param id An optional id. Only needed when multiple OIDC configs are used.
+     * @param isDefault Is this the default authentication method for Kibana?
+     * @param clientId The identity providers client id.
+     * @param clientSecret The identity providers client secret.
+     * @param openidConfigurationUrl The url pointing to the OpenID Connect configuration.
+     */
+    public record OIDC(
+        Optional<String> label,
+        Optional<String> id,
+        Boolean isDefault,
+        String clientId,
+        String clientSecret,
+        String openidConfigurationUrl)
+        implements AuthDomain<SAML> {
+
+      public OIDC {
+        Objects.requireNonNull(isDefault, "isDefault must not be null");
+        Objects.requireNonNull(clientId, "clientId must not be null");
+        Objects.requireNonNull(clientSecret, "clientSecret must not be null");
+        Objects.requireNonNull(openidConfigurationUrl, "openidConfigurationUrl must not be null");
+      }
+
+      @Override
+      public Object toBasicObject() {
+        var builder = new OrderedImmutableMap.Builder<String, Object>();
+        builder.put("type", "oidc");
+        builder.put("oidc.client_id", clientId);
+        builder.put("oidc.client_secret", clientSecret);
+        builder.put("oidc.idp.openid_configuration_url", openidConfigurationUrl);
+        id.ifPresent(id -> builder.put("id", id));
+        label.ifPresent(gs -> builder.put("label", label));
+        if (isDefault) builder.put("auto_select", true);
+        return builder.build();
+      }
+    }
   }
 }
