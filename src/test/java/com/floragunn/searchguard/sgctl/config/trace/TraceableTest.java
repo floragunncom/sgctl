@@ -10,6 +10,7 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
+import com.floragunn.fluent.collections.ImmutableMap;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
 
@@ -191,6 +192,7 @@ public class TraceableTest {
 
     var innersOpt = vDoc.get("root.inners").asMapOf(Inner::parse);
     var stringMap = vDoc.get("root.stringMap").required().asMapOfStrings();
+    var defaultMap = vDoc.get("root.defaultMap").asMapOfInts(ImmutableMap.of("first", 1));
     vDoc.throwExceptionForPresentErrors();
 
     var inners = innersOpt.get().orElseThrow();
@@ -207,6 +209,10 @@ public class TraceableTest {
     assertNotNull(a);
     assertNotNull(b);
 
+    var first = defaultMap.get().get("first");
+    assertNotNull(first);
+    assertEquals(1, first.get());
+
     assertEquals("map_test.yml: root.inners", innersOpt.getSource().fullPathString());
     assertEquals("map_test.yml: root.inners.foo", foo.getSource().fullPathString());
     assertEquals("map_test.yml: root.inners.bar", bar.getSource().fullPathString());
@@ -214,10 +220,12 @@ public class TraceableTest {
     assertEquals("map_test.yml: root.stringMap", stringMap.getSource().fullPathString());
     assertEquals("map_test.yml: root.stringMap.a", a.getSource().fullPathString());
     assertEquals("map_test.yml: root.stringMap.b", b.getSource().fullPathString());
+    assertEquals("map_test.yml: root.defaultMap", defaultMap.getSource().fullPathString());
+    assertEquals("map_test.yml: root.defaultMap.first", first.getSource().fullPathString());
   }
 
   @Test
-  public void testTryAsAttribute() throws ConfigValidationException {
+  public void testAsAttribute() throws ConfigValidationException {
     var yaml =
         """
         root: "test"

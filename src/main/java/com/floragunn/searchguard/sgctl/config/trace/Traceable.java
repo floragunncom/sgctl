@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.config.trace;
 
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
+import com.floragunn.fluent.collections.ImmutableMap;
 import java.util.List;
 
 public interface Traceable<T> {
@@ -23,6 +24,16 @@ public interface Traceable<T> {
     int i = 0;
     for (var value : values) {
       builder.add(Traceable.of(new Source.ListEntry(parent, i++), value));
+    }
+    return builder.build();
+  }
+
+  static <T> ImmutableMap<String, Traceable<T>> ofMap(Source parent, ImmutableMap<String, T> map) {
+    var builder = new ImmutableMap.Builder<String, Traceable<T>>();
+    for (var entry : map.entrySet()) {
+      var key = entry.getKey();
+      var value = entry.getValue();
+      builder.put(key, Traceable.of(new Source.Attribute(parent, key), value));
     }
     return builder.build();
   }
