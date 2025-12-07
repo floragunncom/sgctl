@@ -16,63 +16,63 @@ import java.util.List;
 public class Tls {
 
     /** Activation flag for TLS. */
-    boolean enabled;
+    private boolean enabled;
 
     // Keystore
     /** Path to the keystore containing certificate and private key. */
-    String keystorePath;
+    private String keystorePath;
     /** Type/format of the keystore (e.g. jks, PKCS12). */
-    String keystoreType;
+    private String keystoreType;
     /** Password of the keystore (plain value – secure_* variants are ignored). */
-    String keystorePassword;
+    private String keystorePassword;
     /** Password of the key inside the keystore. */
-    String keystoreKeyPassword;
+    private String keystoreKeyPassword;
 
     // Truststore
     /** Path to the truststore containing trusted CAs. */
-    String truststorePath;
+    private String truststorePath;
     /** Type/format of the truststore (e.g. PKCS12). */
-    String truststoreType;
+    private String truststoreType;
     /** Password of the truststore. */
-    String truststorePassword;
+    private String truststorePassword;
 
     // PEM -> can be used instead of keystores
     /** Path to the certificate in PEM format. */
-    String certificatePath;
+    private String certificatePath;
     /** Path to the private key in PEM format. */
-    String privateKeyPath;
+    private String privateKeyPath;
     /** Optional password for the private key. */
-    String privateKeyPassword;
+    private String privateKeyPassword;
     /** List of certificate authority file paths. */
-    List<String> certificateAuthorities = new ArrayList<>();
+    private List<String> certificateAuthorities = new ArrayList<>();
 
     // TLS modes
     /**
      * Verification mode defining how hostnames are validated in certificates.
      * Valid values: {@code full}, {@code certificate}, {@code none}.
      */
-    String verificationMode;
+    private String verificationMode;
     /**
      * Client authentication mode defining if client certificates are required.
      * Valid values: {@code required}, {@code optional}, {@code none}.
      */
-    String clientAuthMode;
+    private String clientAuthMode;
 
     // Constraints
     /** Supported protocol versions (e.g. TLSv1.2, TLSv1.3). */
-    List<String> supportedProtocols = new ArrayList<>();
+    private List<String> supportedProtocols = new ArrayList<>();
     /** List of cipher suites. */
-    List<String> ciphers = new ArrayList<>();
+    private List<String> ciphers = new ArrayList<>();
 
     // IP filtering (https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/security-settings#ip-filtering-settings)
     /** List of allowed IP addresses for this TLS context. */
-    List<String> allowedIPs;
+    private List<String> allowedIPs;
     /** List of denied IP addresses for this TLS context. */
-    List<String> deniedIPs;
+    private List<String> deniedIPs;
     /** List of allowed IP addresses for remote clusters. */
-    List<String> remoteClusterAllowedIPs;
+    private List<String> remoteClusterAllowedIPs;
     /** List of denied IP addresses for remote clusters. */
-    List<String> remoteClusterDeniedIPs;
+    private List<String> remoteClusterDeniedIPs;
 
     private final String THIS_FILE = "elasticsearch.yml";
 
@@ -251,7 +251,7 @@ public class Tls {
         boolean keyIgnore = false; // ignore all secure_* keys since they are not even visible
 
         // Booleans
-        if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
+        if (IntermediateRepresentationElasticSearchYml.isType(optionValue, Boolean.class)) {
             boolean value = (Boolean) optionValue;
             switch (optionName) {
                 case "enabled":
@@ -263,7 +263,7 @@ public class Tls {
         }
 
         // Strings
-        else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
+        else if (IntermediateRepresentationElasticSearchYml.isType(optionValue, String.class)) {
             String value = (String) optionValue;
             switch (optionName) {
                 case "keystore.path":
@@ -376,7 +376,7 @@ public class Tls {
         }
 
         // Lists
-        else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, List.class)) {
+        else if (IntermediateRepresentationElasticSearchYml.isType(optionValue, List.class)) {
             List<?> value = (List<?>) optionValue;
 
             if (value.isEmpty()) {

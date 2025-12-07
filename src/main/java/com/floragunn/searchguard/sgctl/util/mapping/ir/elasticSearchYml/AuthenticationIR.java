@@ -11,29 +11,29 @@ public class AuthenticationIR {
     private static final String THIS_FILE = "elasticsearch.yml";
 
     // Password hashing
-    String passwordHashingAlgorithm;
+    private String passwordHashingAlgorithm;
 
     // Anonymous access
-    String anonymousUserName;
-    String anonymousRoles;
-    boolean anonymousAuthzException;
+    private String anonymousUserName;
+    private String anonymousRoles;
+    private boolean anonymousAuthzException;
 
     // Token service
-    boolean tokenEnabled;
-    String tokenTimeout;
+    private boolean tokenEnabled;
+    private String tokenTimeout;
 
     // API Key
-    boolean apiKeyEnabled; 
-    String apiKeyCacheTtl; // Time-to-live for API Keys
-    String maxKeys; // Maximum number of API keys
-    String apiKeyInMemoryHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.cache.hash_algo"
-    String apiKeyRetentionPeriod; // Time after which a expired key can be deleted
-    String apiKeyDeleteInterval; // Schedule for automatic deletion of expired keys
-    String apiKeyDeleteTimeout;
-    String apiKeyHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.hashing.algorithm" (x-pack makes a distinction between in memory)
+    private boolean apiKeyEnabled;
+    private String apiKeyCacheTtl; // Time-to-live for API Keys
+    private String maxKeys; // Maximum number of API keys
+    private String apiKeyInMemoryHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.cache.hash_algo"
+    private String apiKeyRetentionPeriod; // Time after which a expired key can be deleted
+    private String apiKeyDeleteInterval; // Schedule for automatic deletion of expired keys
+    private String apiKeyDeleteTimeout;
+    private String apiKeyHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.hashing.algorithm" (x-pack makes a distinction between in memory)
 
     // realms collection
-    Map<String, RealmIR> realms = new HashMap<>();
+    private final Map<String, RealmIR> realms = new HashMap<>();
 
     // Getter
     public String getPasswordHashingAlgoritm() { return passwordHashingAlgorithm; }
@@ -75,7 +75,7 @@ public class AuthenticationIR {
             return;
         }
         // Booleans
-        else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
+        else if (IntermediateRepresentationElasticSearchYml.isType(optionValue, Boolean.class)) {
             boolean value = (Boolean) optionValue;
             switch (optionName) {
                 case "token.enabled":
@@ -94,7 +94,7 @@ public class AuthenticationIR {
                     keyKnown = false;
             }
         // Strings
-        } else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
+        } else if (IntermediateRepresentationElasticSearchYml.isType(optionValue, String.class)) {
             String value = (String) optionValue;
             switch (optionName) {
                 case "password_hashing.algorithm":

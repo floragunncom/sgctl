@@ -3,9 +3,9 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
 public class IntermediateRepresentationElasticSearchYml {
 
-    GlobalIR global;
-    SslTlsIR sslTls;
-    AuthenticationIR authent;
+    private final GlobalIR global;
+    private final SslTlsIR sslTls;
+    private final AuthenticationIR authent;
 
     public GlobalIR getGlobal() { return global; }
     public SslTlsIR getSslTls() { return sslTls; }
@@ -17,24 +17,36 @@ public class IntermediateRepresentationElasticSearchYml {
         authent = new AuthenticationIR();
     }
 
-    // before setting an option, check that its type matches
-    public static boolean assertType(Object object, Class<?> type) {
+    /**
+     * Helper to express intent when validating parsed config types.
+     */
+    public static boolean isType(Object object, Class<?> type) {
         return type.isInstance(object);
     }
 
-    // classify into severity: 0 -> info, 1 -> needs manual rework, 2 -> critical
+    /**
+     * Backwards-compatible alias for older code/tests.
+     *
+     * @deprecated use {@link #isType(Object, Class)} instead.
+     */
+    @Deprecated
+    public static boolean assertType(Object object, Class<?> type) {
+        return isType(object, type);
+    }
+
+    /**
+     * Legacy logger kept for compatibility with existing tests.
+     *
+     * @deprecated prefer structured reporting via {@link com.floragunn.searchguard.sgctl.util.mapping.MigrationReport}.
+     */
+    @Deprecated
     public static void errorLog(String message, int severity) {
-        switch (severity) {
-            case 0:
-                System.out.println(message);
-                break;
-            case 1:
-                System.out.println("Needs Manual rework: " + message);
-                break;
-            case 2:
-                System.out.println("Critical issue!: " + message);
-                break;
-        }
+        String prefix = switch (severity) {
+            case 1 -> "Needs Manual rework: ";
+            case 2 -> "Critical issue!: ";
+            default -> "";
+        };
+        System.out.println(prefix + message);
     }
 
 }

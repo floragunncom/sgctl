@@ -16,9 +16,9 @@ import java.util.Map;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
 public class RoleMappingConfigReader {
-    File roleMappingFile;
-    IntermediateRepresentation ir;
-    MigrationReport report;
+    private final File roleMappingFile;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
 
     static final String FILE_NAME = "role_mapping.json";
 
@@ -87,6 +87,13 @@ public class RoleMappingConfigReader {
                     var roles = toStringList(value, FILE_NAME, mappingName, key);
                     if (roles != null) {
                         roleMapping.setRoles(roles);
+                    }
+                    break;
+
+                case "users":
+                    var users = toStringList(value, FILE_NAME, mappingName, key);
+                    if (users != null) {
+                        roleMapping.setUsers(users);
                     }
                     break;
 

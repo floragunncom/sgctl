@@ -16,9 +16,9 @@ import java.util.List;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
 public class UserConfigReader {
-    File userFile;
-    IntermediateRepresentation ir;
-    MigrationReport report;
+    private final File userFile;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
 
     static final String FILE_NAME = "user.json";
 
@@ -146,15 +146,13 @@ public class UserConfigReader {
 
         if (enabled == null) {
             report.addMissingParameter(FILE_NAME, "enabled", name);
-            return;
         }
         if (roles == null) {
             report.addMissingParameter(FILE_NAME, "roles", name);
-            return;
         }
         if (attributes == null) {
             report.addMissingParameter(FILE_NAME, "attributes", name);
-            return;
+            attributes = new LinkedHashMap<>();
         }
 
         var user = new User(name, roles, fullName, email, enabled, profileUID, attributes);

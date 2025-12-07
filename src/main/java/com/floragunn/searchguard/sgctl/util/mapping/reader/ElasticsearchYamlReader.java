@@ -11,19 +11,21 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.Intermed
 public class ElasticsearchYamlReader {
 
     private final File configFile;
-    protected IntermediateRepresentationElasticSearchYml ir;
-    Map<String, Object> flattenedMap;
+    protected final IntermediateRepresentationElasticSearchYml ir;
+    private Map<String, Object> flattenedMap;
 
     public ElasticsearchYamlReader(File configFile, IntermediateRepresentationElasticSearchYml ir) {
         this.configFile = configFile;
         this.ir = ir;
+        if (configFile == null) {
+            return;
+        }
         try {
             Map<String, Object> map = read();
             flattenedMap = flattenMap(map);
             toIR(flattenedMap);
         } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
+            MigrationReport.shared.addWarning("elasticsearch.yml", "origin", e.getMessage());
         }
     }
 

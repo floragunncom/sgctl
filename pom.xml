@@ -158,6 +158,12 @@
 		</dependency>
 
 		<dependency>
+			<groupId>org.jspecify</groupId>
+			<artifactId>jspecify</artifactId>
+			<version>1.0.0</version>
+		</dependency>
+
+		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>fluent-collections</artifactId>
 			<version>[1.0.0,)</version>

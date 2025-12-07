@@ -6,14 +6,14 @@ import java.util.List;
 import java.util.Objects;
 
 public class Role {
-    @NonNull String name;
-    List<Application>  applications;
-    List<String> cluster;
-    List<RemoteCluster> remoteClusters;
-    List<Index> indices;
-    List<RemoteIndex> remoteIndices;
-    List<String> runAs;
-    String description;
+    @NonNull private String name;
+    private List<Application>  applications;
+    private List<String> cluster;
+    private List<RemoteCluster> remoteClusters;
+    private List<Index> indices;
+    private List<RemoteIndex> remoteIndices;
+    private List<String> runAs;
+    private String description;
 
     public Role(@NonNull String name) {
         this.name = name;
@@ -40,9 +40,9 @@ public class Role {
     public void setRemoteClusters(List<RemoteCluster> remoteClusters) { this.remoteClusters = remoteClusters; }
 
     public static class Application {
-        @NonNull String name;
-        @NonNull List<String> privileges;
-        @NonNull List<String> resources;
+        @NonNull private String name;
+        @NonNull private List<String> privileges;
+        @NonNull private List<String> resources;
 
         public Application(@NonNull String name, @NonNull List<String> privileges, @NonNull List<String> resources) {
             this.name = name;
@@ -79,8 +79,8 @@ public class Role {
     }
 
     public static class RemoteCluster {
-        List<String> clusters;
-        List<String> privileges;
+        private List<String> clusters;
+        private List<String> privileges;
 
         // Getter-Methods
         public List<String> getClusters() { return clusters; }
@@ -98,12 +98,12 @@ public class Role {
 
     public static class Index {
         /// Only set when this index is a remote index
-        @NonNull List<String> names;
-        @NonNull List<String> privileges;
-        FieldSecurity fieldSecurity;
-        String query;
+        @NonNull private List<String> names;
+        @NonNull private List<String> privileges;
+        private FieldSecurity fieldSecurity;
+        private String query;
         // TODO: Add query property
-        Boolean allowRestrictedIndices;
+        private Boolean allowRestrictedIndices;
 
         public Index(@NonNull List<String> names, @NonNull List<String> privileges, FieldSecurity fieldSecurity, String query, Boolean allowRestrictedIndices) {
             this.names = names;
@@ -134,7 +134,7 @@ public class Role {
     }
 
     public static class RemoteIndex extends Index {
-        @NonNull List<String> cluster;
+        @NonNull private List<String> cluster;
 
         public RemoteIndex(@NonNull List<String> cluster, @NonNull List<String> names, @NonNull List<String> privileges, FieldSecurity fieldSecurity, String query, Boolean allowRestrictedIndices) {
             super(names, privileges, fieldSecurity, query, allowRestrictedIndices);
@@ -147,13 +147,18 @@ public class Role {
 
         @Override
         public String toString() {
-            return "Remote Index [cluster=" + cluster + ", fieldSecurity=" + fieldSecurity + ", names=" + names + ", privileges=" + privileges + ", allowRestrictedIndices=" + allowRestrictedIndices + "]";
+            return "Remote Index [cluster=" + cluster
+                    + ", fieldSecurity=" + getFieldSecurity()
+                    + ", names=" + getNames()
+                    + ", privileges=" + getPrivileges()
+                    + ", allowRestrictedIndices=" + isAllowRestrictedIndices()
+                    + "]";
         }
     }
 
     public static class FieldSecurity {
-        List<String> except;
-        List<String> grant;
+        private List<String> except;
+        private List<String> grant;
 
         // Getter-Methods
         public List<String> getExcept() { return except; }

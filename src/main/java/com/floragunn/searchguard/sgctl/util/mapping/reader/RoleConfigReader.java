@@ -17,9 +17,9 @@ import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigRea
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
 public class RoleConfigReader {
-    File roleFile;
-    IntermediateRepresentation ir;
-    MigrationReport report;
+    private final File roleFile;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
 
     static final String FILE_NAME = "role.json";
 
