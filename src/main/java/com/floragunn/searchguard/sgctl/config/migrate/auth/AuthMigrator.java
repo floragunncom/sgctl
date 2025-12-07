@@ -9,10 +9,9 @@ import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap.*;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig.Realm;
-import org.slf4j.Logger;
-
 import java.util.List;
 import java.util.Optional;
+import org.slf4j.Logger;
 
 public class AuthMigrator implements SubMigrator {
 
@@ -27,8 +26,11 @@ public class AuthMigrator implements SubMigrator {
 
     var realms = elasticsearchCfg.get().security().authc().realms();
 
-    var authcDomains = new ImmutableList.Builder<SgAuthC.AuthDomain<?>>(realms.size());
-    for (var realm : realms.values()) {
+    var sortedRealms =
+        realms.values().stream().sorted((a, b) -> Integer.compare(a.order(), b.order())).toList();
+
+    var authcDomains = new ImmutableList.Builder<SgAuthC.AuthDomain<?>>(sortedRealms.size());
+    for (var realm : sortedRealms) {
       SgAuthC.AuthDomain<?> domain;
       if (realm instanceof Realm.NativeRealm || realm instanceof Realm.FileRealm) {
         domain = new SgAuthC.AuthDomain.Internal();

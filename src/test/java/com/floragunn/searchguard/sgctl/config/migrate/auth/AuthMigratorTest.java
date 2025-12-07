@@ -110,6 +110,18 @@ class AuthMigratorTest {
     assertEquals(3, sgAuthC.authDomains().size());
   }
 
+  @Test
+  void testMigrateRealmOrder() throws Exception {
+    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/order_test.yml");
+
+    // Realms defined as: ldap(order=2), native(order=0), file(order=1)
+    // Should be sorted to: native(0), file(1), ldap(2)
+    assertEquals(3, sgAuthC.authDomains().size());
+    assertInstanceOf(AuthDomain.Internal.class, sgAuthC.authDomains().get(0)); // native (order 0)
+    assertInstanceOf(AuthDomain.Internal.class, sgAuthC.authDomains().get(1)); // file (order 1)
+    assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(2)); // ldap (order 2)
+  }
+
   // Helper methods
 
   private SgAuthC migrate(String path) throws Exception {
