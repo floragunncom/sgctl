@@ -93,7 +93,7 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         String clientId,
         String clientSecret,
         String openidConfigurationUrl)
-        implements AuthDomain<SAML> {
+        implements AuthDomain<OIDC> {
 
       public OIDC {
         Objects.requireNonNull(isDefault, "isDefault must not be null");
