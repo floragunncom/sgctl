@@ -26,5 +26,13 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
     return builder.build();
   }
 
-  public interface AuthDomain<T> extends Document<T> {}
+  public interface AuthDomain<T> extends Document<T> {
+    /** The default authentication method for a Kibana Instance */
+    public record Basic() implements AuthDomain<Basic> {
+      @Override
+      public Object toBasicObject() {
+        return OrderedImmutableMap.of("type", "basic");
+      }
+    }
+  }
 }
