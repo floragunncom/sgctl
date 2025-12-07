@@ -4,7 +4,6 @@ import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
 
 import java.util.LinkedHashMap;
@@ -135,7 +134,9 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
     @Override
     public Object toBasicObject() {
         Map<String, SGRoleMapping> contents = new LinkedHashMap<>();
-        //TODO: implement
+        for (var mapping : rolesMappings) {
+            contents.put(mapping.roleName, mapping);
+        }
         return contents;
     }
 
