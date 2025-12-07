@@ -4,6 +4,8 @@ import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -27,27 +29,49 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     public void createSGRoleMappings() {
         for (var rm : ir.getRoleMappings()) {
-            var roleName = getSGRole();
-            var users = createSGUsers();
-            var backendRoles = createSGBackendRoles();
-            // TODO: hosts und ips nicht in XPack vorhanden
-            var sgMapping = new SGRoleMapping(roleName, users, backendRoles, null, null);
-            rolesMappings.add(sgMapping);
+            var mappingName = rm.getMappingName();
+            var roles = rm.getRoles();
+            var templates = rm.getRoleTemplates();
+
+            if (templates != null) {
+                report.addManualAction(FILE_NAME, mappingName + "role_templates", "X-Pack role_templates are not automatically migrated.");
+                continue;
+            }
+
+            for (String roleName : roles) {
+                var users = getSGUsers(rm, roleName);
+                var backendeRoles = getSGBackendRoles(rm, roleName);
+                var hosts = new ArrayList<String>();
+                var ips = new ArrayList<String>();
+
+                var sgMapping = new SGRoleMapping(roleName, users, backendeRoles, hosts, ips);
+                rolesMappings.add(sgMapping);
+            }
         }
-
     }
 
-    public String getSGRole() {
-        String roleName = null;
-        return roleName;
+    private SGRoleMapping findOrCreateSGRoleMapping(String roleName) {
+        for (var mapping : rolesMappings) {
+            if (mapping.roleName.equals(roleName)) {
+                return mapping;
+            }
+        }
+        var sgMapping = new SGRoleMapping(roleName, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        rolesMappings.add(sgMapping);
+        return sgMapping;
     }
 
-    public List<String> createSGUsers() {
+    private List<String> collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName, String originPath) {
+        var result = new ArrayList<String>();
+        return result;
+    }
+
+    public List<String> getSGUsers(RoleMapping rm, String roleName) {
         List<String> users = new ArrayList<>();
         return users;
     }
 
-    public List<String> createSGBackendRoles() {
+    public List<String> getSGBackendRoles(RoleMapping rm, String roleName) {
         List<String> backendRoles = new ArrayList<>();
         return backendRoles;
     }
@@ -60,14 +84,14 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
     }
 
     static class SGRoleMapping implements Document<SGRoleMapping> {
-        String mappingName;
+        String roleName;
         List<String> users = new ArrayList<>();
         List<String> backendRoles = new ArrayList<>();
         List<String> hosts = new ArrayList<>();
         List<String> ips = new ArrayList<>();
 
-        SGRoleMapping(String mappingName, List<String> users, List<String> backendRoles, List<String> hosts, List<String> ips) {
-            this.mappingName = mappingName;
+        SGRoleMapping(String roleName, List<String> users, List<String> backendRoles, List<String> hosts, List<String> ips) {
+            this.roleName = roleName;
             this.users = users;
             this.backendRoles = backendRoles;
             this.hosts = hosts;
