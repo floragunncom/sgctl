@@ -8,17 +8,12 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
-import com.floragunn.searchguard.sgctl.config.migrate.RolesMigrator;
 import com.floragunn.searchguard.sgctl.config.migrate.RoleMappingsMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.RolesMigrator;
 import com.floragunn.searchguard.sgctl.config.migrate.UserMigrator;
 import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
-import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
-import com.floragunn.searchguard.sgctl.config.xpack.Roles;
-import com.floragunn.searchguard.sgctl.config.xpack.Users;
-import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import picocli.CommandLine;
-
+import com.floragunn.searchguard.sgctl.config.xpack.*;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import picocli.CommandLine;
 
 @CommandLine.Command(
     name = "migrate-security",
@@ -57,7 +53,8 @@ public class XPackMigrate implements Callable<Integer> {
           "role_mapping.json", RoleMappings::parse,
           "roles.json", Roles::parse,
           "users.json", Users::parse,
-          "elasticsearch.yml", XPackElasticsearchConfig::parse);
+          "elasticsearch.yml", XPackElasticsearchConfig::parse,
+          "kibana.yml", Kibana::parse);
 
   public Integer call() throws Exception {
     registerSubMigrators();
