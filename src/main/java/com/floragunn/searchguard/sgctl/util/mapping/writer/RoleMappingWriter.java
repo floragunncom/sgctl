@@ -39,11 +39,11 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
             for (String roleName : roles) {
                 var users = getSGUsers(rm, roleName);
-                var backendeRoles = getSGBackendRoles(rm, roleName);
+                var backendRoles = getSGBackendRoles(rm, roleName);
                 var hosts = new ArrayList<String>();
                 var ips = new ArrayList<String>();
 
-                var sgMapping = new SGRoleMapping(roleName, users, backendeRoles, hosts, ips);
+                var sgMapping = new SGRoleMapping(roleName, users, backendRoles, hosts, ips);
                 rolesMappings.add(sgMapping);
             }
         }
