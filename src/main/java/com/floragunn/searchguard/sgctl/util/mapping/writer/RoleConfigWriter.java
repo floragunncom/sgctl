@@ -60,7 +60,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     }
 
     private String toSGDLS(Role.Index index, Role role) {
-        return index.getQuery();
+        var query = index.getQuery();
+        if (query == null) {
+            return null;
+        }
+
+        return query;
     }
 
     private List<String> toSGClusterPrivileges(Role role) {
@@ -176,7 +181,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 case "transport_client":
                     break;
                 default:
-                    report.addManualAction(FILE_NAME, role.getName() + "->cluster_permissions", "The privilege: " + privilege + " is unknown and can not be automatically mapped");
+                    report.addManualAction(FILE_NAME, role.getName() + "->cluster_permissions", "The privilege: " + privilege + " is unknown and can not be automatically mapped.");
                     break;
             }
         }
@@ -292,9 +297,15 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
 
             @Override
             public Object toBasicObject() {
-                var contents = new LinkedHashMap<String, List<String>>();
+                var contents = new LinkedHashMap<String, Object>();
                 contents.put("index_patterns", indexPatterns);
                 contents.put("allowed_actions", allowedActions);
+                if (dls != null) {
+                    contents.put("_dls_", dls);
+                }
+                if (fls != null && !fls.isEmpty()) {
+                    contents.put("_fls_", fls);
+                }
                 return contents;
             }
         }
