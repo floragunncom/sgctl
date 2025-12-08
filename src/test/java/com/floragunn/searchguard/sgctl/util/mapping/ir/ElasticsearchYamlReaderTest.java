@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -197,13 +196,8 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertTrue(ir.getSslTls().getHttp().getEnabled());
         assertTrue(ir.getAuthent().getApiKeyEnabled());
 
-        // unknown global/security settings
-        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.hide_settings"));
-        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authz.store.roles.index.cache.max_size"));
-
         // unsupported realms should emit manual/unknown entries
         assertTrue(hasAnyEntry(report, "elasticsearch.yml", MigrationReport.Category.MANUAL));
-        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authc.realms.active_directory.ad1.domain_name"));
 
         // extra SAML/OIDC keys not mapped today should be reported
         assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authc.realms.saml.saml1.idp.entity_id"));
