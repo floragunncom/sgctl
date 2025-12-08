@@ -148,3 +148,60 @@ transform_user:
         - ".transform-notifications-read"
       allowed_actions:
         - "READ_INDEX_GROUP"
+
+remote_monitoring_agent:
+  cluster_permissions:
+    - CLUSTER_MANAGE_TEMPLATES_PIPELINES
+    - CLUSTER_MANAGE_ILM
+    - CLUSTER_MANAGE_WATCHER
+    - CLUSTER_MONITOR_BASIC
+
+  index_permissions:
+    - index_patterns:
+        - ".monitoring-*"
+      allowed_actions:
+        - SGS_INDICES_ALL
+
+    - index_patterns:
+        - "metricbeat-*"
+      allowed_actions:
+        - INDEX_WRITE_AND_MANAGE
+
+beats_admin:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - ".management-beats"
+      allowed_actions:
+        - SGS_INDICES_ALL
+
+apm_system:
+  cluster_permissions:
+    - CLUSTER_MONITOR_BASIC
+
+  index_permissions:
+    - index_patterns:
+        - ".monitoring-beats-*"
+      allowed_actions:
+        - INDEX_CREATE_ONLY
+
+watcher_admin:
+  cluster_permissions:
+    - CLUSTER_MANAGE_WATCHER
+
+index_permissions:
+    - index_patterns:
+        - ".watches"
+        - ".triggered_watches"
+        - ".watcher-history-*"
+      allowed_actions:
+        - SGS_READ
+
+superuser:
+  cluster_permissions:
+    - "SGS_UNLIMITED"
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - "SGS_UNLIMITED"

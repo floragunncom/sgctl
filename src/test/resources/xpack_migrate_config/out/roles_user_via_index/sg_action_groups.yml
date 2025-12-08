@@ -73,3 +73,31 @@ INDEX_VIEW_METADATA:
 CLUSTER_MONITOR_TRANSFORM:
   allowed_actions:
     - "cluster:monitor/transform/*"
+
+CLUSTER_MONITOR_BASIC:
+  allowed_actions:
+    - "cluster:monitor/*"
+
+CLUSTER_MANAGE_TEMPLATES_PIPELINES:
+  allowed_actions:
+    - "cluster:admin/index_template/*"
+    - "cluster:admin/ingest/pipeline/*"
+
+CLUSTER_MANAGE_ILM:
+  allowed_actions:
+    - "cluster:admin/ilm/*"
+
+CLUSTER_MANAGE_WATCHER:
+  allowed_actions:
+    - "cluster:admin/xpack/watcher/*"
+
+INDEX_WRITE_AND_MANAGE:
+  allowed_actions:
+    - "indices:data/write/*"
+    - "indices:admin/*"
+
+INDEX_CREATE_ONLY:
+  allowed_actions:
+    - "indices:data/write/index"
+    - "indices:data/write/create"
+    - "indices:admin/create"
