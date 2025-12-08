@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.ArrayList;
 
 public class RoleMappingWriter implements Document<RoleMappingWriter>{
-    private IntermediateRepresentation ir;
-    private MigrationReport report;
-    private List<SGRoleMapping> rolesMappings;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
+    private final List<SGRoleMapping> rolesMappings;
 
     private static final String FILE_NAME = "sg_roles_mapping.yml";
 
@@ -32,7 +32,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             var roles = rm.getRoles();
             var templates = rm.getRoleTemplates();
 
-            if (templates != null) {
+            if (templates != null && !templates.isEmpty()) {
                 report.addManualAction(FILE_NAME, mappingName + "role_templates", "X-Pack role_templates are not automatically migrated.");
                 continue;
             }
@@ -123,6 +123,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
     public Object toBasicObject() {
         Map<String, SGRoleMapping> contents = new LinkedHashMap<>();
         for (var mapping : rolesMappings) {
+            // TODO: Key = SG-Rollenname → überschreiben bei gleicher Rolle? Oder merge?
             contents.put(mapping.roleName, mapping);
         }
         return contents;
