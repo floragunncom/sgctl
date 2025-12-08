@@ -49,17 +49,6 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
         }
     }
 
-    private SGRoleMapping findOrCreateSGRoleMapping(String roleName) {
-        for (var mapping : rolesMappings) {
-            if (mapping.roleName.equals(roleName)) {
-                return mapping;
-            }
-        }
-        var sgMapping = new SGRoleMapping(roleName, new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
-        rolesMappings.add(sgMapping);
-        return sgMapping;
-    }
-
     private List<String> extractStringValues(Object raw, String path) {
         var result = new ArrayList<String>();
 
@@ -127,8 +116,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     public List<String> getSGBackendRoles(RoleMapping rm, String roleName) {
         // TODO: backendRoles migrieren?
-        List<String> backendRoles = new ArrayList<>();
-        return backendRoles;
+        return new ArrayList<>();
     }
 
     @Override
@@ -142,10 +130,10 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     static class SGRoleMapping implements Document<SGRoleMapping> {
         String roleName;
-        List<String> users = new ArrayList<>();
-        List<String> backendRoles = new ArrayList<>();
-        List<String> hosts = new ArrayList<>();
-        List<String> ips = new ArrayList<>();
+        List<String> users;
+        List<String> backendRoles;
+        List<String> hosts;
+        List<String> ips;
 
         SGRoleMapping(String roleName, List<String> users, List<String> backendRoles, List<String> hosts, List<String> ips) {
             this.roleName = roleName;
