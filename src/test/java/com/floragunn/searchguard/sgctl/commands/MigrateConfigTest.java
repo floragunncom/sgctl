@@ -46,7 +46,13 @@ public class MigrateConfigTest {
 
     @BeforeAll
     public static void connect() throws Exception {
-        cluster = new LocalCluster.Builder().singleNode().sslEnabled().enterpriseModulesEnabled().start();
+        cluster = new LocalCluster.Builder()
+                .singleNode()
+                .sslEnabled()
+                .enterpriseModulesEnabled()
+                .nodeSettings("entitlements.enabled", "false")
+                .useExternalProcessCluster()
+                .start();
     }
 
     @AfterAll

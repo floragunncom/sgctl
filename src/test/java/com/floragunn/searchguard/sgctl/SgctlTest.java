@@ -83,7 +83,12 @@ public class SgctlTest {
 
     @BeforeAll
     public static void connect() throws Exception {
-        cluster = new LocalCluster.Builder().singleNode().sslEnabled(TEST_CERTIFICATES).start();
+        cluster = new LocalCluster.Builder()
+                .singleNode()
+                .sslEnabled(TEST_CERTIFICATES)
+                .nodeSettings("entitlements.enabled", "false")
+                .useExternalProcessCluster()
+                .start();
 
         InetSocketAddress httpAddress = cluster.getHttpAddress();
         TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
