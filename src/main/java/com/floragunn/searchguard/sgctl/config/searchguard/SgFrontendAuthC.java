@@ -43,22 +43,22 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
      * @param id An optional id. Only needed when multiple SAML configs are used.
      * @param isDefault Is this the default authentication method for Kibana?
      * @param metadataURL Metadata URL for the identity provider.
-     * @param IDPEntityId Entity id for the identity provider.
+     * @param idpEntityId Entity id for the identity provider.
      * @param SPEntityId Entity id for the service provider.
      */
-    public record SAML(
+    public record Saml(
         Optional<String> label,
         Optional<String> id,
         Boolean isDefault,
         String metadataURL,
-        String IDPEntityId,
+        String idpEntityId,
         String SPEntityId)
-        implements AuthDomain<SAML> {
+        implements AuthDomain<Saml> {
 
-      public SAML {
+      public Saml {
         Objects.requireNonNull(isDefault, "isDefault must not be null");
         Objects.requireNonNull(metadataURL, "metadataURL must not be null");
-        Objects.requireNonNull(IDPEntityId, "IDPEntityId must not be null");
+        Objects.requireNonNull(idpEntityId, "idpEntityId must not be null");
         Objects.requireNonNull(SPEntityId, "SPEntityId must not be null");
       }
 
@@ -67,7 +67,7 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         var builder = new OrderedImmutableMap.Builder<String, Object>();
         builder.put("type", "saml");
         builder.put("saml.idp.metadata_url", metadataURL);
-        builder.put("saml.idp.entity_id", IDPEntityId);
+        builder.put("saml.idp.entity_id", idpEntityId);
         builder.put("saml.sp.entity_id", SPEntityId);
         builder.put("label", label.orElse("SAML Login"));
         id.ifPresent(id -> builder.put("id", id));
@@ -86,16 +86,16 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
      * @param clientSecret The identity providers client secret.
      * @param openidConfigurationUrl The url pointing to the OpenID Connect configuration.
      */
-    public record OIDC(
+    public record Oidc(
         Optional<String> label,
         Optional<String> id,
         Boolean isDefault,
         String clientId,
         String clientSecret,
         String openidConfigurationUrl)
-        implements AuthDomain<OIDC> {
+        implements AuthDomain<Oidc> {
 
-      public OIDC {
+      public Oidc {
         Objects.requireNonNull(isDefault, "isDefault must not be null");
         Objects.requireNonNull(clientId, "clientId must not be null");
         Objects.requireNonNull(clientSecret, "clientSecret must not be null");
