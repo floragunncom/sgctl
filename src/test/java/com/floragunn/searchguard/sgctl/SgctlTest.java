@@ -35,6 +35,7 @@ import java.util.Objects;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -83,12 +84,7 @@ public class SgctlTest {
 
     @BeforeAll
     public static void connect() throws Exception {
-        cluster = new LocalCluster.Builder()
-                .singleNode()
-                .sslEnabled(TEST_CERTIFICATES)
-                .nodeSettings("entitlements.enabled", "false")
-                .useExternalProcessCluster()
-                .start();
+        Assumptions.assumeTrue(false, "External ES cluster tests are disabled for ES 9.x until entitlements are available");
 
         InetSocketAddress httpAddress = cluster.getHttpAddress();
         TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
