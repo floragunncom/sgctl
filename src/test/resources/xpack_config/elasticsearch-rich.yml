@@ -1,0 +1,102 @@
+xpack.security.enabled: true
+
+xpack.security.authc:
+  anonymous:
+    username: anon_user
+    roles: sg_anonymous
+    authz_exception: true
+  token:
+    enabled: true
+    timeout: 20m
+  api_key:
+    enabled: true
+    cache:
+      ttl: 30m
+      max_keys: "5000"
+      hash_algo: pbkdf2
+    delete:
+      retention_period: 7d
+      interval: 1h
+      timeout: 30s
+    hashing:
+      algorithm: pbkdf2_1000
+  realms:
+    ldap:
+      corp:
+        enabled: true
+        order: 0
+        url: ldaps://ldap.example.com
+        bindDn: cn=admin,dc=example,dc=com
+        user_search.base_dn: ou=users,dc=example,dc=com
+        user_search.filter: "(uid={0})"
+        group_search.base_dn: ou=groups,dc=example,dc=com
+    file:
+      file1:
+        enabled: true
+        order: 1
+        files.users: users
+        files.users_roles: users_roles
+    pki:
+      pki1:
+        enabled: true
+        order: 2
+        certificate_authorities: ["pki-ca.pem"]
+        username_pattern: "EMAILADDRESS=(.*)"
+        username_attribute: mail
+        truststore.path: certs/pki-trust.p12
+        truststore.type: PKCS12
+        truststore.password: changeit
+    oidc:
+      oidc1:
+        enabled: true
+        order: 3
+        rp.client_id: sg-client
+        rp.response_type: code
+        rp.post_logout_redirect_uri: https://example.com/logout
+        op.issuer: https://issuer.example.com
+        op.authorization_endpoint: https://issuer.example.com/auth
+        op.token_endpoint: https://issuer.example.com/token
+        op.jwkset_path: https://issuer.example.com/keys.jwks
+        claims.principal: sub
+        claims.name: name
+        claims.mail: email
+        claims.groups: groups
+
+xpack.security.http.ssl:
+  enabled: true
+  keystore.path: certs/http.p12
+  keystore.type: jks
+  certificate: http.crt
+  key: http.key
+  key_passphrase: httpSecret
+  certificate_authorities: ["http-ca.pem"]
+  supported_protocols: ["TLSv1.2"]
+  cipher_suites: ["TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"]
+  filter:
+    allow: ["127.0.0.1"]
+
+xpack.security.transport.ssl:
+  enabled: true
+  verification_mode: certificate
+  client_authentication: optional
+  keystore.path: certs/transport.p12
+  keystore.password: changeit
+  keystore.type: PKCS12
+  truststore.path: certs/transport-trust.p12
+  truststore.type: PKCS12
+  certificate_authorities: ["ca1.pem", "ca2.pem"]
+  supported_protocols: ["TLSv1.3", "TLSv1.2"]
+  cipher_suites: ["TLS_AES_128_GCM_SHA256"]
+  filter:
+    allow: ["10.0.0.1", "10.0.0.2"]
+    deny: ["0.0.0.0/0"]
+  remote_cluster:
+    filter:
+      allow: ["172.20.0.0/16"]
+      deny: ["172.21.0.0/16"]
+
+transport:
+  profiles:
+    edge:
+      xpack.security.filter.allow: ["192.168.1.10"]
+      xpack.security.filter.deny: ["192.168.1.0/24"]
