@@ -131,7 +131,7 @@ class MigratorTest {
     NullMigrationContext context = new NullMigrationContext();
     final List<NamedConfig<?>> migrationResult;
     try {
-      migrationResult = migrator.migrate(context);
+      migrationResult = migrator.migrate(context).configs();
     } catch (IllegalStateException e) {
       System.err.println("MigratorA migrate failed. Did you forget to finalize?");
       throw e;
@@ -233,7 +233,7 @@ class MigratorTest {
     NullMigrationContext context = new NullMigrationContext();
     final List<NamedConfig<?>> migrationResult;
     try {
-      migrationResult = migrator.migrate(context);
+      migrationResult = migrator.migrate(context).configs();
     } catch (IllegalStateException e) {
       System.err.println("TestMigratorCombined migrate failed. Did you forget to finalize?");
       throw e;
