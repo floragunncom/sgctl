@@ -1,0 +1,18 @@
+# X-Pack elasticsearch.yml with unsupported realm type (saml)
+# Expected behavior: UnsupportedOperationException during migration
+
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        saml:
+          saml1:
+            order: 0
+            enabled: true
+            idp:
+              metadata:
+                path: "/path/to/idp-metadata.xml"
+            sp:
+              entity_id: "https://sp.example.com"
+              acs: "https://sp.example.com/api/security/saml/callback"
