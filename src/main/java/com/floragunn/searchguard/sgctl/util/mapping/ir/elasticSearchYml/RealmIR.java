@@ -39,7 +39,6 @@ public class RealmIR {
             case "oidc": return new OidcRealmIR(name);
             case "kerberos": return new KerberosRealmIR(name);
             default:
-                //System.out.println("Unknown realm type: " + type);
                 return new UnknownRealmIR(type, name);
         }
     }
@@ -90,9 +89,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
 
@@ -139,9 +138,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -184,9 +183,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -235,9 +234,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -313,9 +312,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -390,9 +389,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -441,9 +440,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }

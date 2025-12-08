@@ -428,14 +428,14 @@ public class Tls {
         }
 
         if (keyIgnore) {
-            MigrationReport.shared.addIgnoredKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
+            MigrationReport.shared.addIgnoredKey(THIS_FILE, keyPrefix + optionName, keyPrefix + optionName);
             return;
         }
 
         if (keyKnown) {
             MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
         } else {
-            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
+            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, keyPrefix + optionName);
         }
     }
 }
