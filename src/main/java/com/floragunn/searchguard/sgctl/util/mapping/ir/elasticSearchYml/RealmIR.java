@@ -5,6 +5,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RealmIR {
@@ -43,18 +44,80 @@ public class RealmIR {
         }
     }
 
+    // have the complete ldap config as this is the most used realm
     public static class LdapRealmIR extends RealmIR {
+        // connection
         String url;
         String bindDn;
+        String bindPassword;
+        Boolean followReferrals;
+
+        // user search
         String userSearchBaseDn;
         String userSearchFilter;
-        String groupSearchBaseDn;
+        String userSearchScope;
+        String userSearchAttribute;
+        String userSearchUsernameAttribute;
 
-        public String getUrl() { return url; }
-        public String getBindDn() { return bindDn; }
-        public String getUserSearchBaseDn() { return userSearchBaseDn; }
-        public String getUserSearchFilter() { return userSearchFilter; }
-        public String getGroupSearchBaseDn() { return groupSearchBaseDn; }
+        // group search
+        String groupSearchBaseDn;
+        String groupSearchScope;
+        String groupSearchFilter;
+        String groupSearchAttribute;
+
+        // Authorization
+        String filesRolesMapping;
+        Boolean unmappedGroupsAsRoles;
+
+        // SSL
+        List<String> certificateAuthorities = new ArrayList<>();
+        String sslVerificationMode;
+        String sslTruststorePath;
+        String sslTruststorePassword;
+        String sslTruststoreType;
+        String sslKeystorePath;
+        String sslKeystorePassword;
+        String sslKeystoreType;
+
+        // Load balancing
+        String loadBalanceType;
+        String loadBalanceCacheTtl;
+
+        // Timeouts
+        String timeoutTcpConnect;
+        String timeoutLdapRead;
+        String timeoutLdapSearch;
+
+        public String getUrl(){return url;}
+        public String getBindDn(){return bindDn;}
+        public String getBindPassword(){return bindPassword;}
+        public Boolean getFollowReferrals(){return followReferrals;}
+        public String getUserSearchBaseDn(){return userSearchBaseDn;}
+        public String getUserSearchFilter(){return userSearchFilter;}
+        public String getUserSearchScope(){return userSearchScope;}
+        public String getUserSearchAttribute(){return userSearchAttribute;}
+        public String getUserSearchUsernameAttribute(){return userSearchUsernameAttribute;}
+        public String getGroupSearchBaseDn(){return groupSearchBaseDn;}
+        public String getGroupSearchScope(){return groupSearchScope;}
+        public String getGroupSearchFilter(){return groupSearchFilter;}
+        public String getGroupSearchAttribute(){return groupSearchAttribute;}
+        public String getFilesRolesMapping(){return filesRolesMapping;}
+        public Boolean getUnmappedGroupsAsRoles(){return unmappedGroupsAsRoles;}
+        public List<String> getCertificateAuthorities(){return certificateAuthorities;}
+        public String getSslVerificationMode(){return sslVerificationMode;}
+        public String getSslTruststorePath(){return sslTruststorePath;}
+        public String getSslTruststorePassword(){return sslTruststorePassword;}
+        public String getSslTruststoreType(){return sslTruststoreType;}
+        public String getSslKeystorePath(){return sslKeystorePath;}
+        public String getSslKeystorePassword(){return sslKeystorePassword;}
+        public String getSslKeystoreType(){return sslKeystoreType;}
+        public String getLoadBalanceType(){return loadBalanceType;}
+        public String getLoadBalanceCacheTtl(){return loadBalanceCacheTtl;}
+        public String getTimeoutTcpConnect(){return timeoutTcpConnect;}
+        public String getTimeoutLdapRead(){return timeoutLdapRead;}
+        public String getTimeoutLdapSearch(){return timeoutLdapSearch;}
+
+
 
         LdapRealmIR(String name) {
             super("ldap", name);
@@ -67,6 +130,8 @@ public class RealmIR {
             if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
+                    case "follow_referrals": this.followReferrals = (Boolean) value; break;
+                    case "unmapped_groups_as_roles": this.unmappedGroupsAsRoles = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
@@ -74,15 +139,62 @@ public class RealmIR {
                     case "type": this.type = (String) value; break;
                     case "url": this.url = (String) value; break;
                     case "bindDn": this.bindDn = (String) value; break;
+                    case "bind_password": this.bindPassword = (String) value; break;
+
                     case "user_search.base_dn": this.userSearchBaseDn = (String) value; break;
                     case "user_search.filter": this.userSearchFilter = (String) value; break;
+                    case "user_search.scope": this.userSearchScope = (String) value; break;
+                    case "user_search.attribute": this.userSearchAttribute = (String) value; break;
+                    case "user_search.username_attribute": this.userSearchUsernameAttribute = (String) value; break;
+
                     case "group_search.base_dn": this.groupSearchBaseDn = (String) value; break;
+                    case "group_search.filter": this.groupSearchFilter = (String) value; break;
+                    case "group_search.scope": this.groupSearchScope = (String) value; break;
+                    case "group_search.attribute": this.groupSearchAttribute = (String) value; break;
+
+                    case "files.role_mapping": this.filesRolesMapping = (String) value; break;
+
+                    case "ssl.verification_mode": this.sslVerificationMode = (String) value; break;
+                    case "ssl.truststore.path": this.sslTruststorePath = (String) value; break;
+                    case "ssl.truststore.password": this.sslTruststorePassword = (String) value; break;
+                    case "ssl.truststore.type": this.sslTruststoreType = (String) value; break;
+                    case "ssl.keystore.path": this.sslKeystorePath = (String) value; break;
+                    case "ssl.keystore.password": this.sslKeystorePassword = (String) value; break;
+                    case "ssl.keystore.type": this.sslKeystoreType = (String) value; break;
+
+                    case "load_balance.type": this.loadBalanceType = (String) value; break;
+                    case "load_balance.cache.ttl": this.loadBalanceCacheTtl = (String) value; break;
+
+                    case "timeout.tcp_connect": this.timeoutTcpConnect = (String) value; break;
+                    case "timeout.ldap_read": this.timeoutLdapRead = (String) value; break;
+                    case "timeout.ldap_search": this.timeoutLdapSearch = (String) value; break;
+
+                    case "metadata":
+                        MigrationReport.shared.addIgnoredKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
+                        break;
+
                     default: keyKnown = false; break;
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
                 switch (attribute) {
                     case "order": this.order = (Integer) value; break;
                     default: keyKnown = false; break;
+                }
+            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, List.class)) {
+                List<?> v = (List<?>) value;
+                if (v.isEmpty())
+                    return;
+                if (v.get(0) instanceof String) {
+                    switch (attribute) {
+                        case "ssl.certificate_authorities": this.certificateAuthorities = (List<String>) value; break;
+                        default: keyKnown = false; break;
+                    }
+                } else {
+                    MigrationReport.shared.addManualAction(
+                        THIS_FILE,
+                        keyPrefix + attribute,
+                        value + " is not a string but it should be"
+                    );
                 }
             } else {
                 MigrationReport.shared.addManualAction(THIS_FILE, keyPrefix + attribute, "Unexpected type " + value.getClass().getSimpleName());
