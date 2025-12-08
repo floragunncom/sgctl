@@ -1,0 +1,39 @@
+xpack:
+  security:
+    enabled: true
+    session:
+      idleTimeout: "30m"
+      lifespan: "8h"
+    sameSiteCookies: "Strict"
+    loginAssistanceMessage: "Testing!"
+    authc:
+      selector.enabled: true
+
+      providers:
+        anonymous.anonymous1:
+          order: 0
+          description: "Anonymous access"
+          credentials:
+            username: "anonymous_service_account"
+            password: "anonymous_service_account_password"
+
+        basic.basic1:
+          order: 1
+          origin: [http://localhost:5601, http://127.0.0.1:5601]
+
+        saml.saml1:
+            order: 2
+            origin: https://elastic.co
+            realm: "saml1"
+
+        oidc:
+          oidc1:
+            order: 3
+            realm: "oidc1"
+            description: "OIDC Login"
+
+        token:
+          token1:
+            order: 4
+        token.token2:
+          order: 5

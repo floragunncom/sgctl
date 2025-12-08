@@ -1,0 +1,12 @@
+# X-Pack elasticsearch.yml with file realm only
+# Expected conversion: basic/internal_users_db
+
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        file:
+          file1:
+            order: 0
+            enabled: true

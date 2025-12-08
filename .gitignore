@@ -1,5 +1,7 @@
 /target/
 /.m2/
+/bin/
+.factorypath
 ### Intellij ###
 .idea/
 *.iml

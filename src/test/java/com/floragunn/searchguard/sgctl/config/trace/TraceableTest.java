@@ -1,8 +1,8 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
-import static org.junit.Assert.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
@@ -273,6 +273,16 @@ public class TraceableTest {
     assertEquals("test.yml: ", fileAsAttr.getSource().fullPathString());
     assertEquals("test.yml: root", rootAttr.getSource().fullPathString());
     assertEquals("test.yml: root", test.getSource().fullPathString());
+  }
+
+  @Test
+  public void testErroneousWithDefault() throws ConfigValidationException {
+    var yaml = "value: 'five'";
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var tDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+
+    assertDoesNotThrow(() -> tDoc.get("value").asInt(1337));
+    assertThrows(ConfigValidationException.class, tDoc::throwExceptionForPresentErrors);
   }
 
   @Test
