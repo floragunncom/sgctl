@@ -51,6 +51,7 @@ public class MigrateConfigTest {
                 .sslEnabled()
                 .enterpriseModulesEnabled()
                 .nodeSettings("entitlements.enabled", "false")
+                .jvmArgs("-Djava.security.manager=")
                 .useExternalProcessCluster()
                 .start();
     }

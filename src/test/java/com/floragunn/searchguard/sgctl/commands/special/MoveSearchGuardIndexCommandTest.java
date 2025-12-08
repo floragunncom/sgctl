@@ -44,6 +44,7 @@ public class MoveSearchGuardIndexCommandTest {
         try (LocalCluster cluster = new LocalCluster.Builder()
                 .singleNode()
                 .sslEnabled(TEST_CERTIFICATES)//
+                .jvmArgs("-Djava.security.manager=")//
                 .useExternalProcessCluster()//
                 .nodeSettings("entitlements.enabled", "false")//
                 .start()) {
