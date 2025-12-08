@@ -1,23 +1,25 @@
 xpack.security.enabled: true
 
 xpack.security.authc:
+  password_hashing:
+    algorithm: pbkdf2_1000
   anonymous:
     username: anon_user
     roles: sg_anonymous
     authz_exception: true
   token:
     enabled: true
-    timeout: 20m
+    timeout: 30m
   api_key:
     enabled: true
     cache:
-      ttl: 30m
-      max_keys: "5000"
+      ttl: 45m
+      max_keys: "8000"
       hash_algo: pbkdf2
     delete:
-      retention_period: 7d
-      interval: 1h
-      timeout: 30s
+      retention_period: 14d
+      interval: 2h
+      timeout: 1m
     hashing:
       algorithm: pbkdf2_1000
   realms:
@@ -36,20 +38,35 @@ xpack.security.authc:
         order: 1
         files.users: users
         files.users_roles: users_roles
+    native:
+      native1:
+        enabled: true
+        order: 2
+        cache.ttl: 5m
+        cache.max_users: 500
+    saml:
+      saml1:
+        enabled: true
+        order: 3
+        idp.metadata.path: /etc/idp.xml
+        sp.entity_id: sg-sp
+        sp.acs: https://sg.example.com/acs
+        attributes.principal: username
     pki:
       pki1:
         enabled: true
-        order: 2
+        order: 4
         certificate_authorities: ["pki-ca.pem"]
         username_pattern: "EMAILADDRESS=(.*)"
         username_attribute: mail
         truststore.path: certs/pki-trust.p12
         truststore.type: PKCS12
         truststore.password: changeit
+        delegation.enabled: true
     oidc:
       oidc1:
         enabled: true
-        order: 3
+        order: 5
         rp.client_id: sg-client
         rp.response_type: code
         rp.post_logout_redirect_uri: https://example.com/logout
@@ -61,19 +78,35 @@ xpack.security.authc:
         claims.name: name
         claims.mail: email
         claims.groups: groups
+    kerberos:
+      krb1:
+        enabled: true
+        order: 6
+        keytab.path: /etc/keytab
+        principal: "HTTP/host@REALM"
+        krb.debug: true
+        remove_realm_name: false
 
 xpack.security.http.ssl:
   enabled: true
   keystore.path: certs/http.p12
+  keystore.password: httpStorePass
+  keystore.key_password: httpKeyPass
   keystore.type: jks
+  truststore.path: certs/http-trust.p12
+  truststore.password: httpTrustPass
+  truststore.type: PKCS12
   certificate: http.crt
   key: http.key
   key_passphrase: httpSecret
-  certificate_authorities: ["http-ca.pem"]
-  supported_protocols: ["TLSv1.2"]
-  cipher_suites: ["TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"]
+  verification_mode: full
+  client_authentication: none
+  certificate_authorities: ["http-ca.pem", "http-ca2.pem"]
+  supported_protocols: ["TLSv1.3", "TLSv1.2"]
+  cipher_suites: ["TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"]
   filter:
     allow: ["127.0.0.1"]
+    deny: ["10.10.0.0/16"]
 
 xpack.security.transport.ssl:
   enabled: true
@@ -81,8 +114,10 @@ xpack.security.transport.ssl:
   client_authentication: optional
   keystore.path: certs/transport.p12
   keystore.password: changeit
+  keystore.key_password: transKeyPass
   keystore.type: PKCS12
   truststore.path: certs/transport-trust.p12
+  truststore.password: transTrustPass
   truststore.type: PKCS12
   certificate_authorities: ["ca1.pem", "ca2.pem"]
   supported_protocols: ["TLSv1.3", "TLSv1.2"]
@@ -100,3 +135,6 @@ transport:
     edge:
       xpack.security.filter.allow: ["192.168.1.10"]
       xpack.security.filter.deny: ["192.168.1.0/24"]
+    backend:
+      xpack.security.filter.allow: ["10.0.0.0/8"]
+      xpack.security.filter.deny: ["172.16.0.0/12"]
