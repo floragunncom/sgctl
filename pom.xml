@@ -20,7 +20,7 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>9.1.0</elasticsearch.version>
+		<elasticsearch.version>8.17.5</elasticsearch.version>
 		<sg.test-version>main-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
@@ -29,7 +29,7 @@
 		<license.excludedScopes>test,provided</license.excludedScopes>
         <log4j2.version>2.25.2</log4j2.version>
 		<sg.plugin.skip>false</sg.plugin.skip>
-		<sg.plugin.version>4.0.1-es-9.1.0</sg.plugin.version>
+		<sg.plugin.version>4.0.1-es-8.17.5</sg.plugin.version>
 		<sg.plugin.file>${project.build.directory}/sg-plugin.zip</sg.plugin.file>
 		<sg.plugin.file.basename>sg-plugin.zip</sg.plugin.file.basename>
 		<sg.plugin.url>https://maven.search-guard.com/search-guard-flx-release/com/floragunn/search-guard-flx-elasticsearch-plugin/${sg.plugin.version}/search-guard-flx-elasticsearch-plugin-${sg.plugin.version}.zip</sg.plugin.url>
@@ -514,29 +514,6 @@
 									<destFileName>${sg.plugin.file.basename}</destFileName>
 								</artifactItem>
 							</artifactItems>
-						</configuration>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-antrun-plugin</artifactId>
-				<executions>
-					<execution>
-						<id>patch-sg-plugin-entitlements</id>
-						<phase>process-test-resources</phase>
-						<goals>
-							<goal>run</goal>
-						</goals>
-						<configuration>
-							<target>
-								<mkdir dir="${project.build.directory}/sg-plugin-unpacked" />
-								<unzip src="${sg.plugin.file}" dest="${project.build.directory}/sg-plugin-unpacked" />
-								<copy file="${project.basedir}/src/test/resources/entitlements/entitlement-policy.yaml"
-								      tofile="${project.build.directory}/sg-plugin-unpacked/entitlement-policy.yaml"
-								      overwrite="true" />
-								<zip destfile="${sg.plugin.file}" basedir="${project.build.directory}/sg-plugin-unpacked" />
-							</target>
 						</configuration>
 					</execution>
 				</executions>
