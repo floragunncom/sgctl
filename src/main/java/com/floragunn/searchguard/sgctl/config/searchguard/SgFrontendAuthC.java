@@ -44,7 +44,7 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
      * @param isDefault Is this the default authentication method for Kibana?
      * @param metadataURL Metadata URL for the identity provider.
      * @param idpEntityId Entity id for the identity provider.
-     * @param SPEntityId Entity id for the service provider.
+     * @param spEntityId Entity id for the service provider.
      */
     public record Saml(
         Optional<String> label,
@@ -52,14 +52,14 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         Boolean isDefault,
         String metadataURL,
         String idpEntityId,
-        String SPEntityId)
+        String spEntityId)
         implements AuthDomain<Saml> {
 
       public Saml {
         Objects.requireNonNull(isDefault, "isDefault must not be null");
         Objects.requireNonNull(metadataURL, "metadataURL must not be null");
         Objects.requireNonNull(idpEntityId, "idpEntityId must not be null");
-        Objects.requireNonNull(SPEntityId, "SPEntityId must not be null");
+        Objects.requireNonNull(spEntityId, "spEntityId must not be null");
       }
 
       @Override
@@ -68,7 +68,7 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         builder.put("type", "saml");
         builder.put("saml.idp.metadata_url", metadataURL);
         builder.put("saml.idp.entity_id", idpEntityId);
-        builder.put("saml.sp.entity_id", SPEntityId);
+        builder.put("saml.sp.entity_id", spEntityId);
         builder.put("label", label.orElse("SAML Login"));
         id.ifPresent(id -> builder.put("id", id));
         if (isDefault) builder.put("auto_select", true);
