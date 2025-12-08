@@ -16,6 +16,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Verifies that {@link ElasticsearchYamlReader} populates the intermediate representation from an elasticsearch.yml.
@@ -183,11 +184,54 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(6, kerberosRealm.getOrder());
     }
 
+    /**
+     * Verifies that unsupported or unknown settings are surfaced as migration report entries rather than silently ignored.
+     */
+    @Test
+    void shouldReportUnsupportedSettings() {
+        MigrationReport report = newEmptyReport();
+        IntermediateRepresentationElasticSearchYml ir = readIrWithReport("xpack_config/elasticsearch-unsupported.yml", report);
+
+        // known fields are still parsed
+        assertTrue(ir.getGlobal().getXpackSecEnabled());
+        assertTrue(ir.getSslTls().getHttp().getEnabled());
+        assertTrue(ir.getAuthent().getApiKeyEnabled());
+
+        // unknown global/security settings
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.hide_settings"));
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authz.store.roles.index.cache.max_size"));
+
+        // unsupported realms should emit manual/unknown entries
+        assertTrue(hasAnyEntry(report, "elasticsearch.yml", MigrationReport.Category.MANUAL));
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authc.realms.active_directory.ad1.domain_name"));
+
+        // extra SAML/OIDC keys not mapped today should be reported
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authc.realms.saml.saml1.idp.entity_id"));
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authc.realms.oidc.oidc1.op.userinfo_endpoint"));
+
+        // transport/http filter flags outside our TLS handlers should be reported
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.transport.filter.enabled"));
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.http.filter.enabled"));
+    }
+
     private IntermediateRepresentationElasticSearchYml readIr(String resourceName) {
         Path configPath = resolveResourcePath(resourceName);
         MigrationReport previousReport = MigrationReport.shared;
         try {
             MigrationReport.shared = newEmptyReport();
+            IntermediateRepresentationElasticSearchYml ir = new IntermediateRepresentationElasticSearchYml();
+            new ElasticsearchYamlReader(new File(configPath.toString()), ir);
+            return ir;
+        } finally {
+            MigrationReport.shared = previousReport;
+        }
+    }
+
+    private IntermediateRepresentationElasticSearchYml readIrWithReport(String resourceName, MigrationReport report) {
+        Path configPath = resolveResourcePath(resourceName);
+        MigrationReport previousReport = MigrationReport.shared;
+        try {
+            MigrationReport.shared = report;
             IntermediateRepresentationElasticSearchYml ir = new IntermediateRepresentationElasticSearchYml();
             new ElasticsearchYamlReader(new File(configPath.toString()), ir);
             return ir;
@@ -204,5 +248,13 @@ class ElasticsearchYamlReaderTest extends TestBase {
         } catch (Exception e) {
             throw new IllegalStateException("Failed to create isolated MigrationReport", e);
         }
+    }
+
+    private boolean hasReportEntry(MigrationReport report, String file, MigrationReport.Category category, String parameter) {
+        return report.getEntries(file, category).stream().anyMatch(e -> parameter.equals(e.getParameter()));
+    }
+
+    private boolean hasAnyEntry(MigrationReport report, String file, MigrationReport.Category category) {
+        return !report.getEntries(file, category).isEmpty();
     }
 }
