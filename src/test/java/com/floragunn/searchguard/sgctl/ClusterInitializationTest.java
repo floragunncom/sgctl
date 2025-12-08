@@ -70,7 +70,6 @@ public class ClusterInitializationTest {
                 .singleNode()
                 .sslEnabled(TEST_CERTIFICATES)
                 .nodeSettings("entitlements.enabled", "false")
-                .jvmArgs("-Djava.security.manager=")
                 .useExternalProcessCluster()
                 .start();
 

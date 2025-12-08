@@ -471,8 +471,8 @@
 				<configuration>
 					<argLine>-Xmx3072m ${surefireArgLine} ${sg.plugin.argline}</argLine>
 					<environmentVariables>
-						<SG_TESTS_JAVA_OPTS>-Des.entitlements.enabled=false</SG_TESTS_JAVA_OPTS>
-						<ES_JAVA_OPTS>-Des.entitlements.enabled=false</ES_JAVA_OPTS>
+						<SG_TESTS_JAVA_OPTS>-Des.entitlements.enabled=false -Djava.security.manager=</SG_TESTS_JAVA_OPTS>
+						<ES_JAVA_OPTS>-Des.entitlements.enabled=false -Djava.security.manager=</ES_JAVA_OPTS>
 					</environmentVariables>
 					<includes>
 						<include>**/*.java</include>
