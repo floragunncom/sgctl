@@ -148,19 +148,19 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
         public Object toBasicObject() {
             var contents = new LinkedHashMap<String, Object>();
 
-            if (users.isEmpty()) {
+            if (!users.isEmpty()) {
                 contents.put("users", users);
             }
 
-            if (backendRoles.isEmpty()) {
+            if (!backendRoles.isEmpty()) {
                 contents.put("backend_roles", backendRoles);
             }
 
-            if (hosts.isEmpty()) {
+            if (!hosts.isEmpty()) {
                 contents.put("hosts", hosts);
             }
 
-            if (ips.isEmpty()) {
+            if (!ips.isEmpty()) {
                 contents.put("ips", ips);
             }
 
