@@ -4,11 +4,13 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
+import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Parser;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator.MigrationContext;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -21,68 +23,32 @@ class AuthMigratorTest {
 
   @Test
   void testMigrateNativeOnly() throws Exception {
-    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/native_only.yml");
-
-    assertEquals(1, sgAuthC.authDomains().size());
-    assertInstanceOf(AuthDomain.Internal.class, sgAuthC.authDomains().get(0));
+    assertMigrationOutput("native_only");
   }
 
   @Test
   void testMigrateFileOnly() throws Exception {
-    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/file_only.yml");
-
-    assertEquals(1, sgAuthC.authDomains().size());
-    assertInstanceOf(AuthDomain.Internal.class, sgAuthC.authDomains().get(0));
+    assertMigrationOutput("file_only");
   }
 
   @Test
   void testMigrateLdapBasic() throws Exception {
-    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/ldap_basic.yml");
-
-    assertEquals(1, sgAuthC.authDomains().size());
-    var ldap = assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(0));
-
-    assertFalse(ldap.identityProvider().hosts().isEmpty());
-    assertTrue(ldap.userSearch().isPresent());
-    assertEquals("ou=users,dc=example,dc=com", ldap.userSearch().get().baseDn().orElse(null));
-    assertTrue(ldap.groupSearch().isPresent());
-    assertEquals("ou=groups,dc=example,dc=com", ldap.groupSearch().get().baseDn());
+    assertMigrationOutput("ldap_basic");
   }
 
   @Test
   void testMigrateLdapWithScopes() throws Exception {
-    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/ldap_with_scopes.yml");
-
-    assertEquals(1, sgAuthC.authDomains().size());
-    var ldap = assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(0));
-
-    // SUB_TREE -> SUB
-    assertEquals(AuthDomain.Ldap.SearchScope.SUB, ldap.userSearch().get().scope().orElse(null));
-    // ONE_LEVEL -> ONE
-    assertEquals(AuthDomain.Ldap.SearchScope.ONE, ldap.groupSearch().get().scope().orElse(null));
+    assertMigrationOutput("ldap_with_scopes");
   }
 
   @Test
   void testMigrateLdapWithoutGroupSearch() throws Exception {
-    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/ldap_without_group_search.yml");
-
-    assertEquals(1, sgAuthC.authDomains().size());
-    var ldap = assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(0));
-
-    assertTrue(ldap.userSearch().isPresent());
-    assertFalse(ldap.groupSearch().isPresent());
+    assertMigrationOutput("ldap_without_group_search");
   }
 
   @Test
   void testMigrateActiveDirectoryOnly() throws Exception {
-    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/active_directory_only.yml");
-
-    assertEquals(1, sgAuthC.authDomains().size());
-    var ldap = assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(0));
-
-    assertTrue(ldap.userSearch().isPresent());
-    assertEquals("dc=example,dc=com", ldap.userSearch().get().baseDn().orElse(null));
-    assertFalse(ldap.groupSearch().isPresent());
+    assertMigrationOutput("active_directory_only");
   }
 
   @Test
@@ -105,24 +71,26 @@ class AuthMigratorTest {
 
   @Test
   void testMigrateMultipleRealms() throws Exception {
-    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/multiple_realms.yml");
-
-    assertEquals(3, sgAuthC.authDomains().size());
+    assertMigrationOutput("multiple_realms");
   }
 
   @Test
   void testMigrateRealmOrder() throws Exception {
-    var sgAuthC = migrate("/xpack_migrate/elasticsearch/auth/order_test.yml");
-
-    // Realms defined as: ldap(order=2), native(order=0), file(order=1)
-    // Should be sorted to: native(0), file(1), ldap(2)
-    assertEquals(3, sgAuthC.authDomains().size());
-    assertInstanceOf(AuthDomain.Internal.class, sgAuthC.authDomains().get(0)); // native (order 0)
-    assertInstanceOf(AuthDomain.Internal.class, sgAuthC.authDomains().get(1)); // file (order 1)
-    assertInstanceOf(AuthDomain.Ldap.class, sgAuthC.authDomains().get(2)); // ldap (order 2)
+    assertMigrationOutput("order_test");
   }
 
   // Helper methods
+
+  private void assertMigrationOutput(String testCaseName) throws Exception {
+    var inputPath = "/xpack_migrate/elasticsearch/auth/" + testCaseName + ".yml";
+    var expectedPath = "/xpack_migrate/expected/auth/" + testCaseName + ".yml";
+
+    var sgAuthC = migrate(inputPath);
+    var actualYaml = DocWriter.yaml().writeAsString(sgAuthC.toBasicObject());
+    var expectedYaml = loadResourceAsString(expectedPath);
+
+    assertEquals(expectedYaml, actualYaml, "Migration output for " + testCaseName);
+  }
 
   private SgAuthC migrate(String path) throws Exception {
     var config = loadConfig(path);
@@ -146,6 +114,13 @@ class AuthMigratorTest {
       assertNotNull(in, "Resource not found: " + path);
       var node = DocNode.wrap(DocReader.yaml().read(in));
       return XPackElasticsearchConfig.parse(node, Parser.Context.get());
+    }
+  }
+
+  private String loadResourceAsString(String path) throws IOException {
+    try (var in = getClass().getResourceAsStream(path)) {
+      assertNotNull(in, "Resource not found: " + path);
+      return new String(in.readAllBytes(), StandardCharsets.UTF_8);
     }
   }
 }

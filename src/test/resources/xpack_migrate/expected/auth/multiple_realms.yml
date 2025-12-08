@@ -1,0 +1,14 @@
+---
+auth_domains:
+- type: "basic/internal_users_db"
+- type: "basic/internal_users_db"
+- type: "basic/ldap"
+  idp:
+    hosts:
+    - "ldaps://ldap.example.com:636"
+  user_search:
+    base_dn: "ou=users,dc=example,dc=com"
+    scope: "sub"
+    filter.raw: "(uid={0})"
+  group_search:
+    base_dn: "ou=groups,dc=example,dc=com"
