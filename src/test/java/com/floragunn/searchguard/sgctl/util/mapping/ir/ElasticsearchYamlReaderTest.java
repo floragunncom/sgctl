@@ -8,6 +8,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.reader.ElasticsearchYamlRead
 import org.junit.jupiter.api.Test;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.nio.file.Path;
 import java.util.List;
 
@@ -143,12 +144,22 @@ class ElasticsearchYamlReaderTest extends TestBase {
         Path configPath = resolveResourcePath(resourceName);
         MigrationReport previousReport = MigrationReport.shared;
         try {
-            MigrationReport.shared = new MigrationReport();
+            MigrationReport.shared = newEmptyReport();
             IntermediateRepresentationElasticSearchYml ir = new IntermediateRepresentationElasticSearchYml();
             new ElasticsearchYamlReader(new File(configPath.toString()), ir);
             return ir;
         } finally {
             MigrationReport.shared = previousReport;
+        }
+    }
+
+    private MigrationReport newEmptyReport() {
+        try {
+            Constructor<MigrationReport> ctor = MigrationReport.class.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            return ctor.newInstance();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create isolated MigrationReport", e);
         }
     }
 }
