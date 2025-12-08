@@ -1,15 +1,48 @@
+###############################################
+# Baseline cluster settings (not parsed into IR but kept for realism)
+###############################################
+
+cluster.name: ir-coverage-cluster
+node.name: ir-node-1
+node.roles: ["master", "data_hot", "ingest", "ml", "transform"]
+path.data: /var/lib/elasticsearch/data
+path.logs: /var/log/elasticsearch
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+discovery.seed_hosts: ["es-node-1", "es-node-2"]
+cluster.initial_master_nodes: ["es-node-1", "es-node-2"]
+
+action.auto_create_index: "+.security,-*"
+indices.recovery.max_bytes_per_sec: 50mb
+
+
+###############################################
+# X-Pack Security – global
+###############################################
+
 xpack.security.enabled: true
+xpack.security.enrollment.enabled: false
+
+
+###############################################
+# xpack.security.authc – Authentication
+###############################################
 
 xpack.security.authc:
   password_hashing:
     algorithm: pbkdf2_1000
+
   anonymous:
     username: anon_user
     roles: sg_anonymous
     authz_exception: true
+
   token:
     enabled: true
     timeout: 30m
+
   api_key:
     enabled: true
     cache:
@@ -22,119 +55,152 @@ xpack.security.authc:
       timeout: 1m
     hashing:
       algorithm: pbkdf2_1000
+
   realms:
-    ldap:
-      corp:
+    native:
+      native1:
         enabled: true
         order: 0
-        url: ldaps://ldap.example.com
-        bindDn: cn=admin,dc=example,dc=com
-        user_search.base_dn: ou=users,dc=example,dc=com
-        user_search.filter: "(uid={0})"
-        group_search.base_dn: ou=groups,dc=example,dc=com
+        cache.ttl: 10m
+        cache.max_users: 10000
+
     file:
       file1:
         enabled: true
         order: 1
         files.users: users
         files.users_roles: users_roles
-    native:
-      native1:
+
+    ldap:
+      corp:
         enabled: true
         order: 2
-        cache.ttl: 5m
-        cache.max_users: 500
-    saml:
-      saml1:
-        enabled: true
-        order: 3
-        idp.metadata.path: /etc/idp.xml
-        sp.entity_id: sg-sp
-        sp.acs: https://sg.example.com/acs
-        attributes.principal: username
+        url: "ldaps://ldap.example.com:636"
+        bindDn: "cn=ldap-bind,ou=service,dc=example,dc=com"
+        user_search.base_dn: "ou=users,dc=example,dc=com"
+        user_search.filter: "(uid={0})"
+        group_search.base_dn: "ou=groups,dc=example,dc=com"
+
     pki:
       pki1:
         enabled: true
-        order: 4
-        certificate_authorities: ["pki-ca.pem"]
+        order: 3
+        certificate_authorities: ["config/ldap-ca.pem"]
         username_pattern: "EMAILADDRESS=(.*)"
         username_attribute: mail
         truststore.path: certs/pki-trust.p12
         truststore.type: PKCS12
         truststore.password: changeit
         delegation.enabled: true
+
+    saml:
+      saml1:
+        enabled: true
+        order: 4
+        idp.metadata.path: "config/idp.xml"
+        sp.entity_id: "https://es.example.com/"
+        sp.acs: "https://es.example.com/api/security/saml/callback"
+        attributes.principal: "nameid"
+
     oidc:
       oidc1:
         enabled: true
         order: 5
-        rp.client_id: sg-client
-        rp.response_type: code
-        rp.post_logout_redirect_uri: https://example.com/logout
-        op.issuer: https://issuer.example.com
-        op.authorization_endpoint: https://issuer.example.com/auth
-        op.token_endpoint: https://issuer.example.com/token
-        op.jwkset_path: https://issuer.example.com/keys.jwks
-        claims.principal: sub
-        claims.name: name
-        claims.mail: email
-        claims.groups: groups
+        rp.client_id: "sg-client"
+        rp.response_type: "code"
+        rp.post_logout_redirect_uri: "https://example.com/logout"
+        op.issuer: "https://issuer.example.com"
+        op.authorization_endpoint: "https://issuer.example.com/auth"
+        op.token_endpoint: "https://issuer.example.com/token"
+        op.jwkset_path: "https://issuer.example.com/keys.jwks"
+        claims.principal: "sub"
+        claims.name: "name"
+        claims.mail: "email"
+        claims.groups: "groups"
+
     kerberos:
       krb1:
         enabled: true
         order: 6
-        keytab.path: /etc/keytab
-        principal: "HTTP/host@REALM"
+        keytab.path: "/etc/krb5.keytab"
+        principal: "HTTP/es.example.com@EXAMPLE.COM"
         krb.debug: true
         remove_realm_name: false
 
+
+###############################################
+# TLS / SSL – HTTP
+###############################################
+
 xpack.security.http.ssl:
   enabled: true
-  keystore.path: certs/http.p12
-  keystore.password: httpStorePass
-  keystore.key_password: httpKeyPass
-  keystore.type: jks
-  truststore.path: certs/http-trust.p12
-  truststore.password: httpTrustPass
-  truststore.type: PKCS12
-  certificate: http.crt
-  key: http.key
-  key_passphrase: httpSecret
+  client_authentication: optional
   verification_mode: full
-  client_authentication: none
-  certificate_authorities: ["http-ca.pem", "http-ca2.pem"]
-  supported_protocols: ["TLSv1.3", "TLSv1.2"]
-  cipher_suites: ["TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"]
+  keystore.path: "certs/http-keystore.p12"
+  keystore.type: PKCS12
+  keystore.password: "httpStorePass"
+  keystore.key_password: "httpKeyPass"
+  truststore.path: "certs/http-truststore.p12"
+  truststore.type: PKCS12
+  truststore.password: "httpTrustPass"
+
+  certificate: "certs/http.pem"
+  key: "certs/http.key"
+  key_passphrase: "httpSecret"
+  certificate_authorities: ["certs/http-ca.pem", "certs/http-ca2.pem"]
+
+  supported_protocols: ["TLSv1.2", "TLSv1.3"]
+  cipher_suites:
+    - "TLS_AES_256_GCM_SHA384"
+    - "TLS_AES_128_GCM_SHA256"
+
   filter:
-    allow: ["127.0.0.1"]
-    deny: ["10.10.0.0/16"]
+    allow: ["127.0.0.1", "10.0.0.0/8", "localhost"]
+    deny: ["0.0.0.0/0"]
+
+
+###############################################
+# TLS / SSL – Transport
+###############################################
 
 xpack.security.transport.ssl:
   enabled: true
   verification_mode: certificate
-  client_authentication: optional
-  keystore.path: certs/transport.p12
-  keystore.password: changeit
-  keystore.key_password: transKeyPass
+  client_authentication: required
+  keystore.path: "certs/transport-keystore.p12"
   keystore.type: PKCS12
-  truststore.path: certs/transport-trust.p12
-  truststore.password: transTrustPass
+  keystore.password: "changeit"
+  keystore.key_password: "transKeyPass"
+  truststore.path: "certs/transport-truststore.p12"
   truststore.type: PKCS12
-  certificate_authorities: ["ca1.pem", "ca2.pem"]
-  supported_protocols: ["TLSv1.3", "TLSv1.2"]
+  truststore.password: "transTrustPass"
+  certificate_authorities: ["certs/ca1.pem", "certs/ca2.pem"]
+
+  supported_protocols: ["TLSv1.2", "TLSv1.3"]
   cipher_suites: ["TLS_AES_128_GCM_SHA256"]
+
   filter:
     allow: ["10.0.0.1", "10.0.0.2"]
-    deny: ["0.0.0.0/0"]
+    deny: ["_all"]
+
   remote_cluster:
     filter:
       allow: ["172.20.0.0/16"]
       deny: ["172.21.0.0/16"]
 
+
+###############################################
+# Transport profiles with dedicated filters
+###############################################
+
 transport:
   profiles:
     edge:
+      port: 9400
       xpack.security.filter.allow: ["192.168.1.10"]
       xpack.security.filter.deny: ["192.168.1.0/24"]
+
     backend:
+      port: 9500
       xpack.security.filter.allow: ["10.0.0.0/8"]
       xpack.security.filter.deny: ["172.16.0.0/12"]
