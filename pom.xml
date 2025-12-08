@@ -28,6 +28,12 @@
 		<license.excludedGroups>.*floragunn.*</license.excludedGroups>
 		<license.excludedScopes>test,provided</license.excludedScopes>
         <log4j2.version>2.25.2</log4j2.version>
+		<sg.plugin.skip>true</sg.plugin.skip>
+		<sg.plugin.version>4.0</sg.plugin.version>
+		<sg.plugin.file>${project.build.directory}/sg-plugin.zip</sg.plugin.file>
+		<sg.plugin.file.basename>sg-plugin.zip</sg.plugin.file.basename>
+		<sg.plugin.url>https://maven.search-guard.com/search-guard-flx-release/com/floragunn/search-guard-flx-elasticsearch-plugin/${sg.plugin.version}/search-guard-flx-elasticsearch-plugin-${sg.plugin.version}.zip</sg.plugin.url>
+		<sg.plugin.argline></sg.plugin.argline>
 	</properties>
 
 	<repositories>
@@ -470,7 +476,7 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.5.4</version>
 				<configuration>
-					<argLine>-Xmx3072m ${surefireArgLine}</argLine>
+					<argLine>-Xmx3072m ${surefireArgLine} ${sg.plugin.argline}</argLine>
 					<includes>
 						<include>**/*.java</include>
 					</includes>
@@ -481,6 +487,27 @@
 					<forkCount>1</forkCount>
 					<reuseForks>false</reuseForks>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>com.googlecode.maven-download-plugin</groupId>
+				<artifactId>download-maven-plugin</artifactId>
+				<version>1.9.2</version>
+				<executions>
+					<execution>
+						<id>download-search-guard-plugin</id>
+						<phase>process-test-resources</phase>
+						<goals>
+							<goal>wget</goal>
+						</goals>
+						<configuration>
+							<skip>${sg.plugin.skip}</skip>
+							<url>${sg.plugin.url}</url>
+							<outputDirectory>${project.build.directory}</outputDirectory>
+							<outputFileName>${sg.plugin.file.basename}</outputFileName>
+							<unpack>false</unpack>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -616,4 +643,14 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>with-sg-plugin</id>
+			<properties>
+				<sg.plugin.skip>false</sg.plugin.skip>
+				<sg.plugin.argline>-Dsg.tests.sg_plugin.file=${sg.plugin.file}</sg.plugin.argline>
+			</properties>
+		</profile>
+	</profiles>
 </project>
