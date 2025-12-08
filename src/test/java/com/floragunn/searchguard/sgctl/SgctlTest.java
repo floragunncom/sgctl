@@ -39,6 +39,7 @@ import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.floragunn.codova.documents.DocNode;
@@ -55,6 +56,7 @@ import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 
+@Disabled("External ES cluster tests are disabled for ES 9.x until entitlements are available")
 public class SgctlTest {
 
     private final PrintStream standardOut = System.out;
