@@ -1,7 +1,11 @@
 package com.floragunn.searchguard.sgctl.commands;
 
+import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
-import com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
+import com.floragunn.searchguard.sgctl.util.mapping.reader.ElasticsearchYamlReader;
+import com.floragunn.searchguard.sgctl.util.mapping.writer.SearchGuardConfigWriter;
 import picocli.CommandLine.Parameters;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Command;
@@ -9,6 +13,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.concurrent.Callable;
 //names of files: user.json, role.json, role_mapping.json
 @Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
@@ -31,14 +37,22 @@ public class MigrateSecurity implements Callable<Integer> {
         if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
             return 1;
         }
-        var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
-        reader.generateIR();
+
+
+
+        IntermediateRepresentationElasticSearchYml irElasticSearchYml = new IntermediateRepresentationElasticSearchYml();
+        new ElasticsearchYamlReader(elasticsearch, irElasticSearchYml);
+        IntermediateRepresentation ir = new IntermediateRepresentation();
+        SearchGuardConfigWriter sgcw = new SearchGuardConfigWriter(irElasticSearchYml, ir);
+
+        writeYamlConfig(sgcw.getSg_frontend_authc(), outputDir, "sg_frontend_authc.yml");
         MigrationReport.shared.printReport();
         return 0;
     }
 
     public boolean checkOutputDir() {
         if(outputDir == null) {
+            log.error("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> -o <Output Directory>");
             return true;
         }
         if(!outputDir.exists()) {
@@ -60,29 +74,29 @@ public class MigrateSecurity implements Callable<Integer> {
     public boolean checkInputDirAndLoadConfig() {
 
         if (inputDir == null) {
-            System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
+            log.error("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
             return false;
         }
 
         if (!inputDir.exists()) {
-            System.err.println("Input path does not exist: " + inputDir.getAbsolutePath());
+            log.error("Input path does not exist: {}", inputDir.getAbsolutePath());
             return false;
         }
 
         if (!inputDir.isDirectory()) {
-            System.err.println("Input path is not a directory: " + inputDir.getAbsolutePath());
+            log.error("Input path is not a directory: {}", inputDir.getAbsolutePath());
             return false;
         }
 
         if (!inputDir.canRead()) {
-            System.err.println("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
+            log.error("Input directory is not readable. Check permissions: {}", inputDir.getAbsolutePath());
             return false;
         }
 
         var files = inputDir.listFiles();
 
         if (files == null) {
-            System.err.println("Found unexpected null-value while listing files in input directory (I/O error).");
+            log.error("Found unexpected null-value while listing files in input directory (I/O error).");
             return false;
         }else{
             for (File file : files) {
@@ -100,9 +114,22 @@ public class MigrateSecurity implements Callable<Integer> {
             }
         }
         if (elasticsearch == null) {
-            System.err.println("Required file elasticsearch.yml not found.");
+            log.error("Required file elasticsearch.yml not found.");
             return false;
         }
         return true;
+    }
+
+    /**
+     * Serializes a Java object into a YAML file.
+     *
+     * @param configObject The object to serialize.
+     * @param outputDir    Target directory.
+     * @param filename     Name of the output YAML file.
+     * @throws IOException If writing fails.
+     */
+    private void writeYamlConfig(Object configObject, File outputDir, String filename) throws IOException {
+        File outputFile = new File(outputDir, filename);
+        Files.writeString(outputFile.toPath(), DocWriter.yaml().writeAsString(configObject));
     }
 }

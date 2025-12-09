@@ -13,10 +13,10 @@ public class SearchGuardConfigWriter {
     MigrateConfig.SgAuthc sg_frontend_authc;
 
     public SearchGuardConfigWriter(IntermediateRepresentationElasticSearchYml irElasticSearchYml, IntermediateRepresentation ir) {
-        var configs = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml);
+        //If there is a specific reason why we can't just make one initial call please tell me.
+        SGAuthcTranslator.Configs configs = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml);
         sg_authc = configs.config;
         sg_frontend_authc = configs.fconfig;
-
     }
 
     public MigrateConfig.SgAuthc getSg_frontend_authc() {
