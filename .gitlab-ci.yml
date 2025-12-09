@@ -242,6 +242,77 @@ sonar_scan:
     paths:
       - .m2/repository
 
+quality_summary:
+  stage: quality
+  needs:
+    - job: sonarish_gate
+      artifacts: true
+  rules:
+    - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
+      when: never
+    - when: always
+  script:
+    - |
+      set -euo pipefail
+      if ! command -v python3 >/dev/null 2>&1; then
+        apt-get update && apt-get install -y python3
+      fi
+      SUMMARY=quality-summary.md
+      printf "## Quality Summary\n\n" > "$SUMMARY"
+
+      if [ -f target/checkstyle-result.xml ]; then
+        python3 - target/checkstyle-result.xml "$SUMMARY" <<'PY'
+import sys, xml.etree.ElementTree as ET, pathlib
+xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
+tree = ET.parse(xml); root = tree.getroot()
+errs = sum(1 for _ in root.iter('error'))
+out.write_text(out.read_text() + f"- Checkstyle: {errs} issue(s)\n")
+PY
+      else
+        printf "- Checkstyle: report missing\n" >> "$SUMMARY"
+      fi
+
+      if [ -f target/spotbugsXml.xml ]; then
+        python3 - target/spotbugsXml.xml "$SUMMARY" <<'PY'
+import sys, xml.etree.ElementTree as ET, pathlib
+xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
+tree = ET.parse(xml); root = tree.getroot()
+bugs = len(root.findall(".//BugInstance"))
+high = len(root.findall(".//BugInstance[@priority='1']"))
+out.write_text(out.read_text() + f"- SpotBugs: {bugs} bug(s), high-priority: {high}\n")
+PY
+      else
+        printf "- SpotBugs: report missing\n" >> "$SUMMARY"
+      fi
+
+      if [ -f target/site/jacoco/jacoco.xml ]; then
+        python3 - target/site/jacoco/jacoco.xml "$SUMMARY" <<'PY'
+import sys, xml.etree.ElementTree as ET, pathlib
+xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
+root = ET.parse(xml).getroot()
+line_cov = None
+for c in root.iter('counter'):
+    if c.get('type') == 'LINE':
+        missed, covered = int(c.get('missed')), int(c.get('covered'))
+        total = missed + covered
+        line_cov = 0.0 if total == 0 else (covered/total)*100.0
+        break
+if line_cov is None:
+    out.write_text(out.read_text() + "- Coverage: report unreadable\n")
+else:
+    out.write_text(out.read_text() + f"- Coverage (line): {line_cov:.2f}%\n")
+PY
+      else
+        printf "- Coverage: report missing\n" >> "$SUMMARY"
+      fi
+
+      cat "$SUMMARY"
+  artifacts:
+    when: always
+    paths:
+      - quality-summary.md
+    expire_in: 7 days
+
 format_check:
   stage: quality
   rules:
