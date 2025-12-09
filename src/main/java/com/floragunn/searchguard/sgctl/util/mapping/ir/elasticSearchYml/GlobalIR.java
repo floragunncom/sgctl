@@ -12,7 +12,6 @@ public class GlobalIR {
 
     String THIS_FILE = "elasticsearch.yml";
     public void handleGlobalOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
-        //boolean error = false;
         boolean keyKnown = true;
 
         // Booleans
@@ -30,7 +29,7 @@ public class GlobalIR {
         if (keyKnown) {
             MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
         } else {
-            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
+            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, keyPrefix + optionName);
         }
     }
 }

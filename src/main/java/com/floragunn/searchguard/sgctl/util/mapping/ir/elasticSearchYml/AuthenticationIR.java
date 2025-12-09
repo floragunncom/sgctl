@@ -149,7 +149,7 @@ public class AuthenticationIR {
         if (keyKnown) {
             MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
         } else {
-            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
+            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, keyPrefix + optionName);
         }
     }
 }
