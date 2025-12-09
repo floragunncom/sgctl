@@ -1,19 +1,17 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
-import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
-import com.google.common.collect.ImmutableMap;
 
 import java.util.*;
 
 public class SGAuthcTranslator {
     private static final String SG_AUTHC_FILE_NAME = "sg_authc.yml";
     public static class Configs{
-        public MigrateConfig.SgAuthc config;
-        public MigrateConfig.SgAuthc fconfig;
+        public final MigrateConfig.SgAuthc config;
+        public final MigrateConfig.SgAuthc fconfig;
 
         public Configs(MigrateConfig.SgAuthc config, MigrateConfig.SgAuthc fconfig){
             this.config = config;
@@ -21,6 +19,9 @@ public class SGAuthcTranslator {
         }
 
     }
+
+    private SGAuthcTranslator() {}
+
     /**
      * Creates Authc Config
      *
@@ -44,55 +45,61 @@ public class SGAuthcTranslator {
                 return;
             }
             String type = realm.getType();
-            String keyPrefix = "xpack.security.authc.realms." + type + "." + realmName;
             MigrateConfig.NewAuthDomain newDomain = null;
             boolean isFrontendRealm = false;
 
             switch (type) {
                 case "ldap":
-                    newDomain = createLdapDomain(realmName, (RealmIR.LdapRealmIR) realm);
+                    newDomain = createLdapDomain((RealmIR.LdapRealmIR) realm);
                     break;
                 case "file":
-                    newDomain = createFileDomain(realmName, (RealmIR.FileRealmIR) realm);
-                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "File realm migration not yet implemented.");
+                    newDomain = createFileDomain((RealmIR.FileRealmIR) realm);
+                    realmNotImplementedReport(realmName, realm);
                     break;
                 case "native":
-                    newDomain = createNativeDomain(realmName, (RealmIR.NativeRealmIR) realm);
-                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "Native realm migration not yet implemented.");
+                    newDomain = createNativeDomain((RealmIR.NativeRealmIR) realm);
+                    realmNotImplementedReport(realmName, realm);
                     break;
                 case "saml":
-                    newDomain = createSAMLDomain(realmName, (RealmIR.SamlRealmIR) realm);
+                    newDomain = createSAMLDomain((RealmIR.SamlRealmIR) realm);
+                    isFrontendRealm = true;
                     break;
                 case "pki":
-                    newDomain = createPkiDomain(realmName, (RealmIR.PkiRealmIR) realm);
-                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "PKI realm migration not yet implemented.");
+                    newDomain = createPkiDomain((RealmIR.PkiRealmIR) realm);
+                    realmNotImplementedReport(realmName, realm);
+
                     break;
                 case "oidc":
-                    newDomain = createOidcDomain(realmName, (RealmIR.OidcRealmIR) realm);
+                    newDomain = createOidcDomain((RealmIR.OidcRealmIR) realm);
                     isFrontendRealm = true;
                     break;
                 case "kerberos":
-                    newDomain = createkerebosDomain(realmName, (RealmIR.KerberosRealmIR) realm);
-                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "Kereberos realm migration not yet implemented.");
+                    newDomain = createKerberosDomain((RealmIR.KerberosRealmIR) realm);
+                    isFrontendRealm = true;
                     break;
                 default:
-                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, String.format("Encountered Unknown Realm (Name: %s, Type: %s)", realmName, type));
+                    realmNotImplementedReport(realmName, realm);
                     break;
             }
 
             if (newDomain != null) {
                 if (isFrontendRealm) {
                     fconfig.authDomains.add(newDomain);
-                    MigrationReport.shared.addMigrated("elasticsearch.yml", keyPrefix, "Realm migrated to sg_frontend_authc.yml");
+                    MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_frontend_authc.yml");
                 } else {
                     config.authDomains.add(newDomain);
-                    MigrationReport.shared.addMigrated("elasticsearch.yml", keyPrefix, "Realm migrated to sg_authc.yml");
+                    MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_authc.yml");
                 }
             }
 
         });
 
         return new Configs(config, fconfig);
+    }
+
+    private static void realmNotImplementedReport(String realmName, RealmIR realm) {
+        MigrationReport.shared.addManualAction(SG_AUTHC_FILE_NAME, realmName, String.format("Realm migration for type %s not yet implemented.", realm.getType()));
+
     }
 
     /**
@@ -105,16 +112,15 @@ public class SGAuthcTranslator {
         if (value == null)
             return;
         config.put(key, value);
-        MigrationReport.shared.addMigrated("sg_authc.yml", key);
+        MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, key);
     }
 
     /**
      * Creates the LDAP-Auth-Domain for sg_authc.yml
-     * @param realmName Name of the current Realm
      * @param ir The IR that holds the config info
      * @return NewAuthDomain
      */
-    private static MigrateConfig.NewAuthDomain createLdapDomain(String realmName, RealmIR.LdapRealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createLdapDomain(RealmIR.LdapRealmIR ir) {
         Map<String, Object> ldapConfig = new HashMap<>();
         String url = ir.getUrl();
         if (url != null) {
@@ -138,11 +144,10 @@ public class SGAuthcTranslator {
 
     /**
      * Creates the SAML-Auth-Domain for sg_authc.yml
-     * @param realmName Name of the current Realm
      * @param ir The IR that holds the config info
      * @return NewAuthDomain
      */
-    private static MigrateConfig.NewAuthDomain createSAMLDomain(String realmName, RealmIR.SamlRealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createSAMLDomain(RealmIR.SamlRealmIR ir) {
         Map<String, Object> samlConfig = new HashMap<>();
         addOptionalConfigProperty(samlConfig, "user_mapping.roles.from", "change me");
         addOptionalConfigProperty(samlConfig, "saml.idp.metadata_file", ir.getIdpMetadataPath());
@@ -167,29 +172,48 @@ public class SGAuthcTranslator {
         );
     }
 
-    //TODO Implement these functions. They are just place holders for now
-    private static MigrateConfig.NewAuthDomain createFileDomain(String realmName, RealmIR.FileRealmIR ir) {
-        return null;
-    }
-    private static MigrateConfig.NewAuthDomain createNativeDomain(String realmName, RealmIR.NativeRealmIR ir) {
-        return null;
-    }
-
-    private static MigrateConfig.NewAuthDomain createPkiDomain(String realmName, RealmIR.PkiRealmIR ir) {
-
-        return null;
-    }
-    private static MigrateConfig.NewAuthDomain createkerebosDomain(String realmName, RealmIR.KerberosRealmIR ir) {
-        return null;
-    }
-
     /**
-     * Creates the OIDC-Auth-Domain for sg_authc.yml
-     * @param realmName Name of the current Realm
+     * Creates the KEREBEROS-Auth-Domain for sg_authc.yml
      * @param ir The IR that holds the config info
      * @return NewAuthDomain
      */
-    private static MigrateConfig.NewAuthDomain createOidcDomain(String realmName, RealmIR.OidcRealmIR ir) {
+    private static MigrateConfig.NewAuthDomain createKerberosDomain(RealmIR.KerberosRealmIR ir) {
+        Map<String, Object> kerberosConfig = new HashMap<>();
+        addOptionalConfigProperty(kerberosConfig, "kerberos.krb_debug", ir.getKrbDebug());
+        addOptionalConfigProperty(kerberosConfig, "kerberos.acceptor_keytab", ir.getPrincipal());
+        addOptionalConfigProperty(kerberosConfig, "kerberos.acceptor_principal", ir.getKeytabPath());
+        addOptionalConfigProperty(kerberosConfig, "kerberos.strip_realm_from_principal", ir.getRemoveRealmName());
+
+        return new MigrateConfig.NewAuthDomain(
+                ir.getType(),
+                null,
+                null,
+                null,
+                kerberosConfig,
+                null
+        );
+    }
+
+    //TODO Implement these functions. They are just place holders for now
+    private static MigrateConfig.NewAuthDomain createFileDomain(RealmIR.FileRealmIR ir) {
+        return null;
+    }
+    private static MigrateConfig.NewAuthDomain createNativeDomain(RealmIR.NativeRealmIR ir) {
+        return null;
+    }
+
+    private static MigrateConfig.NewAuthDomain createPkiDomain(RealmIR.PkiRealmIR ir) {
+
+        return null;
+    }
+
+
+    /**
+     * Creates the OIDC-Auth-Domain for sg_authc.yml
+     * @param ir The IR that holds the config info
+     * @return NewAuthDomain
+     */
+    private static MigrateConfig.NewAuthDomain createOidcDomain(RealmIR.OidcRealmIR ir) {
         Map<String, Object> oidcConfig = new HashMap<>();
 
         // 1. RP settings
