@@ -9,14 +9,9 @@ import java.util.*;
 
 public class SGAuthcTranslator {
     private static final String SG_AUTHC_FILE_NAME = "sg_authc.yml";
-    public static class Configs{
-        public final MigrateConfig.SgAuthc config;
-        public final MigrateConfig.SgAuthc fconfig;
+    private static final String SG_FRONTEND_AUTHC_FILE_NAME = "sg_frontend_authc.yml";
 
-        public Configs(MigrateConfig.SgAuthc config, MigrateConfig.SgAuthc fconfig){
-            this.config = config;
-            this.fconfig = fconfig;
-        }
+    public record Configs(MigrateConfig.SgAuthc config, MigrateConfig.SgAuthc fconfig) {
 
     }
 
@@ -107,12 +102,19 @@ public class SGAuthcTranslator {
      * @param config The config that the value gets added to
      * @param key The Key which needs to be added
      * @param value Optional value that gets added if present
+     * @param sg_frontend_authc true if in sg_frontend_authc section
      */
-    private static void addOptionalConfigProperty(Map<String, Object> config, String key, Object value) {
+    private static void addOptionalConfigProperty(Map<String, Object> config, String key, Object value, Boolean sg_frontend_authc) {
         if (value == null)
             return;
-        config.put(key, value);
-        MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, key);
+        if(sg_frontend_authc){
+            config.put(key, value);
+            MigrationReport.shared.addMigrated(SG_FRONTEND_AUTHC_FILE_NAME, key);
+        }else{
+            config.put(key, value);
+            MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, key);
+        }
+
     }
 
     /**
@@ -127,10 +129,10 @@ public class SGAuthcTranslator {
             List<String> ldapHosts = Arrays.asList(url);
             ldapConfig.put("ldap.idp.hosts", ldapHosts);
         }
-        addOptionalConfigProperty(ldapConfig, "ldap.idp.bind_dn", ir.getBindDn());
-        addOptionalConfigProperty(ldapConfig, "ldap.user_search.base_dn", ir.getUserSearchBaseDn());
-        addOptionalConfigProperty(ldapConfig, "ldap.user_search.filter.raw", ir.getUserSearchFilter());
-        addOptionalConfigProperty(ldapConfig, "ldap.group_search.base_dn", ir.getGroupSearchBaseDn());
+        addOptionalConfigProperty(ldapConfig, "ldap.idp.bind_dn", ir.getBindDn(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.user_search.base_dn", ir.getUserSearchBaseDn(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.user_search.filter.raw", ir.getUserSearchFilter(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.group_search.base_dn", ir.getGroupSearchBaseDn(), false);
 
         return new MigrateConfig.NewAuthDomain(
                 ir.getType(),
@@ -149,9 +151,9 @@ public class SGAuthcTranslator {
      */
     private static MigrateConfig.NewAuthDomain createSAMLDomain(RealmIR.SamlRealmIR ir) {
         Map<String, Object> samlConfig = new HashMap<>();
-        addOptionalConfigProperty(samlConfig, "user_mapping.roles.from", "change me");
-        addOptionalConfigProperty(samlConfig, "saml.idp.metadata_file", ir.getIdpMetadataPath());
-        addOptionalConfigProperty(samlConfig, "saml.sp.entity_id", ir.getSpEntityID());
+        addOptionalConfigProperty(samlConfig, "user_mapping.roles.from", "change me", true);
+        addOptionalConfigProperty(samlConfig, "saml.idp.metadata_file", ir.getIdpMetadataPath(),true);
+        addOptionalConfigProperty(samlConfig, "saml.sp.entity_id", ir.getSpEntityID(),true);
         String spAcs = ir.getSpAcs();
         if (spAcs != null) {
             MigrationReport.shared.addManualAction(SG_AUTHC_FILE_NAME, "saml.sp.acs",
@@ -179,10 +181,10 @@ public class SGAuthcTranslator {
      */
     private static MigrateConfig.NewAuthDomain createKerberosDomain(RealmIR.KerberosRealmIR ir) {
         Map<String, Object> kerberosConfig = new HashMap<>();
-        addOptionalConfigProperty(kerberosConfig, "kerberos.krb_debug", ir.getKrbDebug());
-        addOptionalConfigProperty(kerberosConfig, "kerberos.acceptor_keytab", ir.getPrincipal());
-        addOptionalConfigProperty(kerberosConfig, "kerberos.acceptor_principal", ir.getKeytabPath());
-        addOptionalConfigProperty(kerberosConfig, "kerberos.strip_realm_from_principal", ir.getRemoveRealmName());
+        addOptionalConfigProperty(kerberosConfig, "kerberos.krb_debug", ir.getKrbDebug(), true);
+        addOptionalConfigProperty(kerberosConfig, "kerberos.acceptor_keytab", ir.getPrincipal(), true);
+        addOptionalConfigProperty(kerberosConfig, "kerberos.acceptor_principal", ir.getKeytabPath(), true);
+        addOptionalConfigProperty(kerberosConfig, "kerberos.strip_realm_from_principal", ir.getRemoveRealmName(), true);
 
         return new MigrateConfig.NewAuthDomain(
                 ir.getType(),
@@ -215,19 +217,23 @@ public class SGAuthcTranslator {
      */
     private static MigrateConfig.NewAuthDomain createOidcDomain(RealmIR.OidcRealmIR ir) {
         Map<String, Object> oidcConfig = new HashMap<>();
+        //TODO review mapping: oidc.idp.openid_configuration_url, oidc.idp.tls.trusted_cas
 
         // 1. RP settings
-        addOptionalConfigProperty(oidcConfig, "rp.client_id", ir.getRpClientId());
-        addOptionalConfigProperty(oidcConfig, "rp.response_type", ir.getRpResponseType());
-        // 2. OP settings
-        addOptionalConfigProperty(oidcConfig, "op.issuer", ir.getOpIssuer());
-        addOptionalConfigProperty(oidcConfig, "op.authorization_endpoint", ir.getOpAuthEndpoint());
-        addOptionalConfigProperty(oidcConfig, "op.token_endpoint", ir.getOpTokenEndpoint());
-        addOptionalConfigProperty(oidcConfig, "op.jwkset_path", ir.getOpJwkSetPath());
-        addOptionalConfigProperty(oidcConfig, "claims.principal", ir.getClaimPrincipal());
+        addOptionalConfigProperty(oidcConfig, "oidc.client_id", ir.getRpClientId(), true);
+        addOptionalConfigProperty(oidcConfig, "oidc.logout_url", ir.getRpPostLogoutRedirectUri(), true);
+        addOptionalConfigProperty(oidcConfig, "user_mapping.user_name.from.json_path", "oidc_id_token."+ ir.getClaimName(), true);
+        addOptionalConfigProperty(oidcConfig, "user_mapping.user_name.from.pattern", "oidc_id_token."+ ir.getClaimMail(), true);
+        addOptionalConfigProperty(oidcConfig, "oidc.idp.openid_configuration_url", ir.getOpIssuer()+ ".well-known/openid-configuration", true);
+
+        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.idp.tls.trusted_cas", "needs to be added manualy");
+        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "user_mapping.roles.from_comma_separated_string", "needs to be added manualy");
+        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.idp.proxy", "needs to be added manualy");
+        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.client_secret", "needs to be added manualy");
+
 
         return new MigrateConfig.NewAuthDomain(
-                "oidc",
+                ir.getType(),
                 null,
                 null,
                 null,
