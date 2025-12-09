@@ -448,7 +448,7 @@ public class RealmIR {
         }
     }
 
-    static class UnknownRealmIR extends RealmIR {
+    public static class UnknownRealmIR extends RealmIR {
         UnknownRealmIR(String type, String name) {
             super(type, name);
         }
