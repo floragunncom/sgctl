@@ -125,8 +125,6 @@ class MigratorTest {
 
     Traceable<?> dummyTraceable1 = OptTraceable.empty(Source.NONE);
     Traceable<?> dummyTraceable2 = OptTraceable.empty(Source.NONE);
-    Traceable<?> dummyTraceable3 = OptTraceable.empty(Source.NONE);
-    Traceable<?> dummyTraceable4 = OptTraceable.empty(Source.NONE);
 
     @Override
     public List<NamedConfig<?>> migrate(
