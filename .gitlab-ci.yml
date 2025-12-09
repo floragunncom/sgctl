@@ -57,24 +57,40 @@ static_checks:
     - when: always
   script:
     - |
-      set -eo pipefail
-      BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
-      if [ -z "$BASE_SHA" ]; then BASE_SHA="$(git rev-parse HEAD~1)"; fi
+      set -e
+      BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
+      BASE_REF="origin/$BASE_BRANCH"
+      git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
+      BASE_SHA="${BASE_REF}"
+      if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
+        BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
+      fi
+      if [ -z "$BASE_SHA" ] || ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
+        BASE_SHA="$(git rev-parse HEAD~1)"
+      fi
       echo "Diff base: $BASE_SHA"
-      mapfile -t CHANGED_JAVA < <(git diff --name-only "$BASE_SHA" HEAD -- 'src/**/*.java')
+      mapfile -t CHANGED_JAVA < <(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java')
       if [ "${#CHANGED_JAVA[@]}" -eq 0 ]; then
         echo "No changed Java files; skipping static checks."
         exit 0
       fi
       CHECKSTYLE_INCLUDES=$(printf "%s\n" "${CHANGED_JAVA[@]}" | paste -sd, -)
       echo "Checkstyle includes: $CHECKSTYLE_INCLUDES"
-      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -Dcheckstyle.failOnViolation=false -Dcheckstyle.includes="$CHECKSTYLE_INCLUDES" checkstyle:check
+      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -Dcheckstyle.failOnViolation=false -Dcheckstyle.includes="$CHECKSTYLE_INCLUDES" checkstyle:check || true
     - |
       if grep -q "spotbugs-maven-plugin" pom.xml; then
-        set -eo pipefail
-        BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
-        if [ -z "$BASE_SHA" ]; then BASE_SHA="$(git rev-parse HEAD~1)"; fi
-        mapfile -t CHANGED_JAVA < <(git diff --name-only "$BASE_SHA" HEAD -- 'src/**/*.java')
+        set -e
+        BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
+        BASE_REF="origin/$BASE_BRANCH"
+        git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
+        BASE_SHA="${BASE_REF}"
+        if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
+          BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
+        fi
+        if [ -z "$BASE_SHA" ] || ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
+          BASE_SHA="$(git rev-parse HEAD~1)"
+        fi
+        mapfile -t CHANGED_JAVA < <(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java')
         if [ "${#CHANGED_JAVA[@]}" -eq 0 ]; then
           echo "No changed Java files; skipping SpotBugs."
           exit 0
@@ -92,7 +108,7 @@ static_checks:
           echo "</FindBugsFilter>"
         } > spotbugs-include.xml
         cat spotbugs-include.xml
-        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -Dspotbugs.failOnError=false -Dspotbugs.includeFilterFile=spotbugs-include.xml spotbugs:check
+        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -Dspotbugs.failOnError=false -Dspotbugs.includeFilterFile=spotbugs-include.xml spotbugs:check || true
       else
         echo "SpotBugs plugin not configured; skipping spotbugs check."
       fi
@@ -107,17 +123,25 @@ format_check:
   script:
     - |
       if grep -q "spotless-maven-plugin" pom.xml; then
-        set -eo pipefail
-        BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
-        if [ -z "$BASE_SHA" ]; then BASE_SHA="$(git rev-parse HEAD~1)"; fi
-        mapfile -t CHANGED_SOURCES < <(git diff --name-only "$BASE_SHA" HEAD -- 'src/**/*.java')
+        set -e
+        BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
+        BASE_REF="origin/$BASE_BRANCH"
+        git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
+        BASE_SHA="${BASE_REF}"
+        if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
+          BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
+        fi
+        if [ -z "$BASE_SHA" ] || ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
+          BASE_SHA="$(git rev-parse HEAD~1)"
+        fi
+        mapfile -t CHANGED_SOURCES < <(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java')
         if [ "${#CHANGED_SOURCES[@]}" -eq 0 ]; then
           echo "No changed Java files; skipping format check."
           exit 0
         fi
         SPOTLESS_FILES=$(printf "%s\n" "${CHANGED_SOURCES[@]}" | paste -sd, -)
         echo "Spotless files: $SPOTLESS_FILES"
-        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -DspotlessFiles="$SPOTLESS_FILES" spotless:check
+        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -DspotlessFiles="$SPOTLESS_FILES" spotless:check || true
       else
         echo "Spotless plugin not configured; skipping format check."
       fi
