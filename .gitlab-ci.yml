@@ -177,26 +177,7 @@ sonarish_gate:
         exit 1
       fi
       echo "Enforcing coverage >= ${COVERAGE_MINIMUM}% from Jacoco XML"
-      python3 - "$COVERAGE_MINIMUM" target/site/jacoco/jacoco.xml <<'PY'
-        import sys, xml.etree.ElementTree as ET
-        min_cov = float(sys.argv[1])
-        xml_path = sys.argv[2]
-        root = ET.parse(xml_path).getroot()
-        line_cov = None
-        for c in root.iter('counter'):
-            if c.get('type') == 'LINE':
-                missed = int(c.get('missed'))
-                covered = int(c.get('covered'))
-                total = missed + covered
-                line_cov = 0.0 if total == 0 else (covered / total) * 100.0
-                break
-        if line_cov is None:
-            print("No LINE counter in Jacoco report")
-            sys.exit(1)
-        print(f"Line coverage: {line_cov:.2f}% (minimum {min_cov:.2f}%)")
-        if line_cov + 1e-9 < min_cov:
-            sys.exit(1)
-      PY
+      python3 -c "import sys, xml.etree.ElementTree as ET; min_cov=float(sys.argv[1]); root=ET.parse(sys.argv[2]).getroot(); counter=next((c for c in root.iter('counter') if c.get('type')=='LINE'), None); line=None if counter is None else (lambda m,c: 0.0 if m+c==0 else (c/(m+c))*100.0)(int(counter.get('missed')), int(counter.get('covered'))); print(f'Line coverage: {line:.2f}% (minimum {min_cov:.2f}%)') if line is not None else print('No LINE counter in Jacoco report'); sys.exit(1) if (line is None or line + 1e-9 < min_cov) else None" "$COVERAGE_MINIMUM" target/site/jacoco/jacoco.xml
   artifacts:
     when: always
     paths:
@@ -369,18 +350,7 @@ quality_summary:
         json.dump(issues, sys.stdout, indent=2)
         PY
 
-      ISSUE_COUNT=$(python3 - <<'PY'
-import json
-import sys
-try:
-    with open("codequality.json") as f:
-        data = json.load(f)
-    print(len(data))
-except FileNotFoundError:
-    print(0)
-    sys.exit(0)
-PY
-)
+      ISSUE_COUNT=$(python3 -c "import json, pathlib; p=pathlib.Path('codequality.json'); print(len(json.load(p.open()))) if p.exists() else print(0)")
       echo "Code Quality issues found: ${ISSUE_COUNT}"
       if [ "${ISSUE_COUNT}" -gt 0 ]; then
         echo "Failing job because code quality issues were detected in changed files."
