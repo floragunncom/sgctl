@@ -107,7 +107,17 @@ format_check:
   script:
     - |
       if grep -q "spotless-maven-plugin" pom.xml; then
-        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests spotless:check
+        set -eo pipefail
+        BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
+        if [ -z "$BASE_SHA" ]; then BASE_SHA="$(git rev-parse HEAD~1)"; fi
+        mapfile -t CHANGED_SOURCES < <(git diff --name-only "$BASE_SHA" HEAD -- 'src/**/*.java')
+        if [ "${#CHANGED_SOURCES[@]}" -eq 0 ]; then
+          echo "No changed Java files; skipping format check."
+          exit 0
+        fi
+        SPOTLESS_FILES=$(printf "%s\n" "${CHANGED_SOURCES[@]}" | paste -sd, -)
+        echo "Spotless files: $SPOTLESS_FILES"
+        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -DspotlessFiles="$SPOTLESS_FILES" spotless:check
       else
         echo "Spotless plugin not configured; skipping format check."
       fi
