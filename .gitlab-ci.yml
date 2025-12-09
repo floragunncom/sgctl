@@ -56,7 +56,13 @@ static_checks:
       when: never
     - when: always
   script:
-    - mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests checkstyle:check spotbugs:check
+    - mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests checkstyle:check
+    - |
+      if grep -q "spotbugs-maven-plugin" pom.xml; then
+        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests spotbugs:check
+      else
+        echo "SpotBugs plugin not configured; skipping spotbugs check."
+      fi
   allow_failure: true
 
 format_check:
