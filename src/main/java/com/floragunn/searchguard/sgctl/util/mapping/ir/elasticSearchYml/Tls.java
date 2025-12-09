@@ -96,28 +96,28 @@ public class Tls {
      * @return list of allowed IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getAllowedIPs() {
-        return allowedIPs;
+        return allowedIPs != null ? allowedIPs : List.of();
     }
 
     /**
      * @return list of denied IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getDeniedIPs() {
-        return deniedIPs;
+        return deniedIPs != null ? deniedIPs : List.of();
     }
 
     /**
      * @return list of allowed IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterAllowedIPs() {
-        return remoteClusterAllowedIPs;
+        return remoteClusterAllowedIPs != null ? remoteClusterAllowedIPs : List.of();
     }
 
     /**
      * @return list of denied IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterDeniedIPs() {
-        return remoteClusterDeniedIPs;
+        return remoteClusterDeniedIPs != null ? remoteClusterDeniedIPs : List.of();
     }
 
     /**

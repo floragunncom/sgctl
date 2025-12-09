@@ -42,10 +42,12 @@ class ElasticsearchYamlReaderTest extends TestBase {
     @Test
     void shouldParseExtendedElasticsearchConfiguration() {
         IntermediateRepresentationElasticSearchYml ir = readIr("xpack_config/elasticsearch-rich.yml");
-
         assertTrue(ir.getGlobal().getXpackSecEnabled(), "xpack.security.enabled should be true");
+    }
 
-        var http = ir.getSslTls().getHttp();
+    @Test
+    void shouldParseRichHttpTls() {
+        var http = readIr("xpack_config/elasticsearch-rich.yml").getSslTls().getHttp();
         assertTrue(http.getEnabled());
         assertEquals("PKCS12", http.getKeystoreType());
         assertEquals("certs/http-keystore.p12", http.getKeystorePath());
@@ -64,8 +66,11 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(List.of("TLS_AES_256_GCM_SHA384", "TLS_AES_128_GCM_SHA256"), http.getCiphers());
         assertEquals(List.of("127.0.0.1", "10.0.0.0/8", "localhost"), http.getAllowedIPs());
         assertEquals(List.of("0.0.0.0/0"), http.getDeniedIPs());
+    }
 
-        var transport = ir.getSslTls().getTransport();
+    @Test
+    void shouldParseRichTransportTls() {
+        var transport = readIr("xpack_config/elasticsearch-rich.yml").getSslTls().getTransport();
         assertTrue(transport.getEnabled());
         assertEquals("certificate", transport.getVerificationMode());
         assertEquals("required", transport.getClientAuthMode());
@@ -83,13 +88,20 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(List.of("_all"), transport.getDeniedIPs());
         assertEquals(List.of("172.20.0.0/16"), transport.getRemoteClusterAllowedIPs());
         assertEquals(List.of("172.21.0.0/16"), transport.getRemoteClusterDeniedIPs());
+    }
 
-        assertEquals(List.of("192.168.1.10"), ir.getSslTls().getProfileAllowedIPs().get("edge"));
-        assertEquals(List.of("192.168.1.0/24"), ir.getSslTls().getProfileDeniedIPs().get("edge"));
-        assertEquals(List.of("10.0.0.0/8"), ir.getSslTls().getProfileAllowedIPs().get("backend"));
-        assertEquals(List.of("172.16.0.0/12"), ir.getSslTls().getProfileDeniedIPs().get("backend"));
+    @Test
+    void shouldParseTransportProfiles() {
+        var sslTls = readIr("xpack_config/elasticsearch-rich.yml").getSslTls();
+        assertEquals(List.of("192.168.1.10"), sslTls.getProfileAllowedIPs().get("edge"));
+        assertEquals(List.of("192.168.1.0/24"), sslTls.getProfileDeniedIPs().get("edge"));
+        assertEquals(List.of("10.0.0.0/8"), sslTls.getProfileAllowedIPs().get("backend"));
+        assertEquals(List.of("172.16.0.0/12"), sslTls.getProfileDeniedIPs().get("backend"));
+    }
 
-        var auth = ir.getAuthent();
+    @Test
+    void shouldParseAuthSettings() {
+        var auth = readIr("xpack_config/elasticsearch-rich.yml").getAuthent();
         assertTrue(auth.getTokenEnabled());
         assertEquals("30m", auth.getTokenTimeout());
         assertEquals("anon_user", auth.getAnonymousUserName());
@@ -104,8 +116,11 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals("1m", auth.getApiKeyDeleteTimeout());
         assertEquals("pbkdf2_1000", auth.getApiKeyHashingAlgorithm());
         assertEquals("pbkdf2_1000", auth.getPasswordHashingAlgoritm());
+    }
 
-        var realms = auth.getRealms();
+    @Test
+    void shouldParseFileAndNativeRealms() {
+        var realms = readIr("xpack_config/elasticsearch-rich.yml").getAuthent().getRealms();
         assertEquals(7, realms.size());
 
         var nativeRealm = (RealmIR.NativeRealmIR) realms.get("native1");
@@ -115,6 +130,18 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(10000, nativeRealm.getCacheMaxUsers());
         assertTrue(nativeRealm.isEnabled());
         assertEquals(0, nativeRealm.getOrder());
+
+        var fileRealm = (RealmIR.FileRealmIR) realms.get("file1");
+        assertNotNull(fileRealm);
+        assertEquals("users", fileRealm.getFilesUsers());
+        assertEquals("users_roles", fileRealm.getFilesUsersRoles());
+        assertTrue(fileRealm.isEnabled());
+        assertEquals(1, fileRealm.getOrder());
+    }
+
+    @Test
+    void shouldParseLdapAndPkiRealms() {
+        var realms = readIr("xpack_config/elasticsearch-rich.yml").getAuthent().getRealms();
 
         var ldap = (RealmIR.LdapRealmIR) realms.get("corp");
         assertNotNull(ldap);
@@ -127,13 +154,6 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(2, ldap.getOrder());
         assertTrue(ldap.isEnabled());
 
-        var fileRealm = (RealmIR.FileRealmIR) realms.get("file1");
-        assertNotNull(fileRealm);
-        assertEquals("users", fileRealm.getFilesUsers());
-        assertEquals("users_roles", fileRealm.getFilesUsersRoles());
-        assertTrue(fileRealm.isEnabled());
-        assertEquals(1, fileRealm.getOrder());
-
         var pkiRealm = (RealmIR.PkiRealmIR) realms.get("pki1");
         assertNotNull(pkiRealm);
         assertEquals(List.of("config/ldap-ca.pem"), pkiRealm.getCertificateAuthorities());
@@ -145,6 +165,11 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(Boolean.TRUE, pkiRealm.getDelegationEnabled());
         assertTrue(pkiRealm.isEnabled());
         assertEquals(3, pkiRealm.getOrder());
+    }
+
+    @Test
+    void shouldParseOidcSamlAndKerberosRealms() {
+        var realms = readIr("xpack_config/elasticsearch-rich.yml").getAuthent().getRealms();
 
         var oidcRealm = (RealmIR.OidcRealmIR) realms.get("oidc1");
         assertNotNull(oidcRealm);

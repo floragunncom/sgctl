@@ -4,11 +4,14 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 public class AuthenticationIR {
     private static final String THIS_FILE = "elasticsearch.yml";
+    private static final String REALMS_PREFIX = "realms.";
+    private static final Logger LOG = Logger.getLogger(AuthenticationIR.class.getName());
 
     // Password hashing
     private String passwordHashingAlgorithm;
@@ -56,12 +59,12 @@ public class AuthenticationIR {
         boolean keyKnown = true;
 
         // realms, they have this pattern: xpack.security.authc.realms.<type>.<name>.<setting>
-        if (optionName.startsWith("realms.")) {
-            String substring = optionName.substring("realms.".length());
+        if (optionName.startsWith(REALMS_PREFIX)) {
+            String substring = optionName.substring(REALMS_PREFIX.length());
             String[] parts = substring.split("\\.");
 
             if (parts.length < 3) {
-                System.out.println("Invalid option: %s" + substring);
+                LOG.warning(() -> "Invalid option: " + substring);
                 return;
             }
 
@@ -71,7 +74,7 @@ public class AuthenticationIR {
 
             RealmIR realm = realms.computeIfAbsent(name, n -> RealmIR.create(type, n));
 
-            realm.handleAttribute(attr, optionValue, keyPrefix + "realms." + type + "." + name + ".", configFile);
+            realm.handleAttribute(attr, optionValue, keyPrefix + REALMS_PREFIX + type + "." + name + ".", configFile);
             return;
         }
         // Booleans

@@ -1,7 +1,10 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
+import java.util.logging.Logger;
 
 public class IntermediateRepresentationElasticSearchYml {
+
+    private static final Logger LOG = Logger.getLogger(IntermediateRepresentationElasticSearchYml.class.getName());
 
     private final GlobalIR global;
     private final SslTlsIR sslTls;
@@ -29,7 +32,7 @@ public class IntermediateRepresentationElasticSearchYml {
      *
      * @deprecated use {@link #isType(Object, Class)} instead.
      */
-    @Deprecated
+    @Deprecated(since = "1.0", forRemoval = false)
     public static boolean assertType(Object object, Class<?> type) {
         return isType(object, type);
     }
@@ -39,14 +42,14 @@ public class IntermediateRepresentationElasticSearchYml {
      *
      * @deprecated prefer structured reporting via {@link com.floragunn.searchguard.sgctl.util.mapping.MigrationReport}.
      */
-    @Deprecated
+    @Deprecated(since = "1.0", forRemoval = false)
     public static void errorLog(String message, int severity) {
         String prefix = switch (severity) {
             case 1 -> "Needs Manual rework: ";
             case 2 -> "Critical issue!: ";
             default -> "";
         };
-        System.out.println(prefix + message);
+        LOG.info(prefix + message);
     }
 
 }

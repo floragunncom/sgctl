@@ -99,19 +99,19 @@ public class ElasticsearchYamlReader {
     }
 
     public static String getFieldsAsString(Object o) {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         try {
             Class<?> c = o.getClass();
             for (var field : c.getDeclaredFields()) {
                 field.setAccessible(true);
                 Object val = field.get(o);
-                result += field.getName() + ": " + val + '\n';
+                result.append(field.getName()).append(": ").append(val).append('\n');
             }
-            return result;
+            return result.toString();
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return result;
+        return result.toString();
     }
 
 
