@@ -4,13 +4,7 @@ import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.google.common.collect.ImmutableMap;
-import com.google.errorprone.annotations.Immutable;
-import org.jspecify.annotations.NonNull;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -33,7 +27,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
 //        } catch (IOException e) {
 //            printErr(e);
 //        }
-//        print(DocWriter.yaml().writeAsString(this));
+        print(DocWriter.yaml().writeAsString(this));
     }
 
     private void createSGInternalUser() {

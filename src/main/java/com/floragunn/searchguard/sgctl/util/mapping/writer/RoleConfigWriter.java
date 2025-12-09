@@ -53,6 +53,16 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             return Collections.emptyList();
         }
         var fls = index.getFieldSecurity().getGrant();
+        for (var field : fls) {
+            if (field.isEmpty()) continue;
+            if (field.charAt(0) == '~') {
+                report.addManualAction(FILE_NAME,
+                        role.getName() + "->index->field_security->" + field,
+                        "There is a '~' at the start of a field security key. In SG this is used to mark an exclusion.");
+                fls.remove(field);
+            }
+        }
+        if (index.getFieldSecurity().getExcept() == null) return fls;
         for (var except : index.getFieldSecurity().getExcept()) {
             fls.add("~" + except);
         }
