@@ -3,10 +3,14 @@ package com.floragunn.searchguard.sgctl.config.migrator;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.floragunn.searchguard.sgctl.SgctlException;
+import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
 import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
@@ -115,6 +119,55 @@ class MigratorTest {
       logger.debug("FailingTestMigrator migrate start");
       throw new SgctlException("Failed to migrate because of ...");
     }
+  }
+
+  static class ReportingTestMigrator implements SubMigrator {
+
+    Traceable<?> dummyTraceable1 = OptTraceable.empty(Source.NONE);
+    Traceable<?> dummyTraceable2 = OptTraceable.empty(Source.NONE);
+    Traceable<?> dummyTraceable3 = OptTraceable.empty(Source.NONE);
+    Traceable<?> dummyTraceable4 = OptTraceable.empty(Source.NONE);
+
+    @Override
+    public List<NamedConfig<?>> migrate(
+        Migrator.IMigrationContext context, MigrationReporter reporter) {
+      reporter.problem(dummyTraceable1, "1");
+      reporter.problem(dummyTraceable2, "2");
+      reporter.inconvertible(dummyTraceable1, "1.1");
+      reporter.inconvertible(dummyTraceable1, "1.2");
+      reporter.generic("generic 1");
+      reporter.generic("generic 2");
+      return List.of();
+    }
+  }
+
+  @Test
+  public void testMigrationReporting() throws SgctlException {
+    var test = new ReportingTestMigrator();
+    var registry = MigratorRegistry.getInstance();
+    registry.registerSubMigrator(test);
+    registry.finalizeSubMigrators();
+
+    var reporter = new AssertableMigrationReporter();
+    new Migrator(reporter).migrate(new NullMigrationContext());
+
+    reporter.assertProblem(test.dummyTraceable1);
+    reporter.assertProblem(test.dummyTraceable2, "2");
+    assertThrows(AssertionError.class, () -> reporter.assertProblem(test.dummyTraceable1));
+    assertThrows(AssertionError.class, () -> reporter.assertProblem(test.dummyTraceable2));
+    reporter.assertNoProblem(test.dummyTraceable1);
+    reporter.assertNoProblem(test.dummyTraceable2);
+
+    reporter.assertInconvertible(test.dummyTraceable1, "1.1");
+    assertThrows(AssertionError.class, () -> reporter.assertNoInconvertible(test.dummyTraceable1));
+    reporter.assertInconvertible(test.dummyTraceable1, "1.2");
+    assertThrows(AssertionError.class, () -> reporter.assertInconvertible(test.dummyTraceable1));
+    reporter.assertNoInconvertible(test.dummyTraceable1);
+
+    reporter.assertGeneric("generic 1");
+    reporter.assertGeneric("generic 2");
+
+    reporter.assertNoMoreProblems();
   }
 
   @Test

@@ -1,17 +1,17 @@
 package com.floragunn.searchguard.sgctl.config.migrator;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import org.junit.jupiter.api.Test;
 
-public class MigrationReporterTest {
+import static org.junit.jupiter.api.Assertions.assertEquals;
+
+public class MigrationReporterImplTest {
 
   @Test
   public void testGenerateFullReport() {
-    var reporter = new MigrationReporter();
+    var reporter = MigrationReporter.searchGuard();
     var cfgSrc = new Source.Config("test.yml");
     var value1 = Traceable.of(new Source.Attribute(cfgSrc, "a.b.c"), "value1");
     reporter.inconvertible(value1, "First message for value 1");
@@ -47,7 +47,7 @@ public class MigrationReporterTest {
 
   @Test
   public void testInconvertibleOmittedIfEmpty() {
-    var reporter = new MigrationReporter();
+    var reporter = MigrationReporter.searchGuard();
     var cfgSrc = new Source.Config("test.yml");
     reporter.problem(
         Traceable.of(new Source.Attribute(cfgSrc, "a.b.c"), "value1"), "Your message here");
@@ -70,7 +70,7 @@ public class MigrationReporterTest {
 
   @Test
   public void testProblemOmittedIfEmpty() {
-    var reporter = new MigrationReporter();
+    var reporter = MigrationReporter.searchGuard();
     var cfgSrc = new Source.Config("test.yml");
     reporter.inconvertible(
         Traceable.of(new Source.Attribute(cfgSrc, "a.b.d"), 42), "Other config option");
@@ -93,7 +93,7 @@ public class MigrationReporterTest {
 
   @Test
   public void testGenericOmittedIfEmpty() {
-    var reporter = new MigrationReporter();
+    var reporter = MigrationReporter.searchGuard();
     var cfgSrc = new Source.Config("test.yml");
     var value1 = Traceable.of(new Source.Attribute(cfgSrc, "a.b.c"), "value1");
     reporter.inconvertible(value1, "First message for value 1");

@@ -19,7 +19,15 @@ import org.slf4j.LoggerFactory;
 public class Migrator {
 
   private final Logger logger = LoggerFactory.getLogger(Migrator.class);
-  private final MigrationReporter reporter = new MigrationReporter();
+  private final MigrationReporter reporter;
+
+  public Migrator(MigrationReporter reporter) {
+    this.reporter = reporter;
+  }
+
+  public Migrator() {
+    this(MigrationReporter.searchGuard());
+  }
 
   /**
    * Executes all {@link SubMigrator}s added to the {@link MigratorRegistry} using
