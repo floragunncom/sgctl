@@ -89,11 +89,15 @@ public class ElasticsearchYamlReader {
             Object value = entry.getValue();
 
             // check if metadata
+            boolean wasMetaData = false;
             for (String meta : metadata) {
                 if (key.startsWith(meta)) {
                     MigrationReport.shared.addIgnoredKey("elasticsearch.yml", key, key);
+                    wasMetaData = true;
                 }
             }
+            if (wasMetaData)
+                continue;
 
             // for each option name, propagate to responsible ir class method, added prefixes and file because they are required by the report api
             // Order matters
