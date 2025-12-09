@@ -205,3 +205,21 @@ superuser:
         - "*"
       allowed_actions:
         - "SGS_UNLIMITED"
+
+read_only_role_test:
+  cluster_permissions:
+    - SGS_CLUSTER_MONITOR
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - READ
+
+admin_role_test:
+  cluster_permissions:
+    - SGS_UNLIMITED
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - SGS_UNLIMITED

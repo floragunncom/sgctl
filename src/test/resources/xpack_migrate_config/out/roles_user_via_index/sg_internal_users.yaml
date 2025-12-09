@@ -1,0 +1,30 @@
+elastic:
+  hash: changeit
+  backend_roles:
+    - superuser
+  
+apm_system:
+  hash: changeit
+  backend_roles:
+    - apm_system
+  description: "APM system user"
+
+remote_monitoring_user:
+  hash: changeit
+  backend_roles:
+    - remote_monitoring_agent
+  
+alice:
+  hash: changeit
+  backend_roles:
+    - read_only_role_test
+  attributes:
+    full_name: "Alice Example"
+    email: "alice@example.com"
+  
+bob:
+  hash: changeit
+  backend_roles:
+    - admin_role_test
+  attributes:
+    full_name: "Bob Admin"
