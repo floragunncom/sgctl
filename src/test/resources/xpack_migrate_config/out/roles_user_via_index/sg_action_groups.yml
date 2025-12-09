@@ -1,14 +1,16 @@
 #NOT FINAL
 
 READ_INDEX_GROUP:
-    allowed_actions:
-      - "READ"
-      - "SEARCH"
-      - "GET"
-      - "SCROLL"
-      - "METADATA_READ"
+  type: "index"
+  allowed_actions:
+    - "READ"
+    - "SEARCH"
+    - "GET"
+    - "SCROLL"
+    - "METADATA_READ"
 
 ML_READ_GROUP:
+  type: "index"
   allowed_actions:
     - "READ"
     - "GET"
@@ -16,32 +18,38 @@ ML_READ_GROUP:
     - "METADATA_READ"
 
 ML_WRITE_GROUP:
+  type: "index"
   allowed_actions:
     - "WRITE"
     - "INDEX"
     - "CREATE"
 
 CLUSTER_MONITOR:
+  type: "cluster"
   allowed_actions:
     - "cluster:monitor/main"
     - "cluster:monitor/xpack/info"
     - "cluster:monitor/remote/info"
 
 CLUSTER_MANAGE_INFERENCE:
+  type: "cluster"
   allowed_actions:
     - "cluster:admin/inference/*"
 
 CLUSTER_MANAGE_ROLLUP:
+  type: "cluster"
   allowed_actions:
     - "cluster:admin/xpack/rollup/*"
 
 CLUSTER_TRANSPORT_CLIENT:
+  type: "cluster"
   allowed_actions:
     - "cluster:monitor/state"
     - "cluster:monitor/nodes/info"
     - "cluster:monitor/nodes/stats"
 
 INDEX_READ_WITH_CROSS_CLUSTER:
+  type: "index"
   allowed_actions:
     - "indices:data/read/*"
     - "indices:monitor/*"
@@ -49,54 +57,66 @@ INDEX_READ_WITH_CROSS_CLUSTER:
     - "read_cross_cluster"
 
 CLUSTER_MONITOR_WATCHER:
+  type: "cluster"
   allowed_actions:
     - "cluster:monitor/xpack/watcher/*"
 
 INDEX_READ_WATCHER:
+  type: "index"
   allowed_actions:
     -"READ"
 
 KIBANA_REPORTING_USER:
+  type: "tenant"
   allowed_actions:
     - "kibana_read"
     - "kibana_report_download"
 
 CLUSTER_CREATE_SNAPSHOT:
+  type: "cluster"
   allowed_actions:
     - "cluster:admin/snapshot/create"
     - "cluster:admin/repository/get"
 
 INDEX_VIEW_METADATA:
+  type: "index"
   allowed_actions:
     - "METADATA_READ"
   
 CLUSTER_MONITOR_TRANSFORM:
+  type: "cluster"
   allowed_actions:
     - "cluster:monitor/transform/*"
 
 CLUSTER_MONITOR_BASIC:
+  type: "cluster"
   allowed_actions:
     - "cluster:monitor/*"
 
 CLUSTER_MANAGE_TEMPLATES_PIPELINES:
+  type: "cluster"
   allowed_actions:
     - "cluster:admin/index_template/*"
     - "cluster:admin/ingest/pipeline/*"
 
 CLUSTER_MANAGE_ILM:
+  type: "cluster"
   allowed_actions:
     - "cluster:admin/ilm/*"
 
 CLUSTER_MANAGE_WATCHER:
+  type: "cluster"
   allowed_actions:
     - "cluster:admin/xpack/watcher/*"
 
 INDEX_WRITE_AND_MANAGE:
+  type: "index"
   allowed_actions:
     - "indices:data/write/*"
     - "indices:admin/*"
 
 INDEX_CREATE_ONLY:
+  type: "index"
   allowed_actions:
     - "indices:data/write/index"
     - "indices:data/write/create"
