@@ -59,7 +59,12 @@ deploy_snapshot:
       when: never
     - if: '$DOCKER_ONLY'
       when: never      
-    - when: on_success
+    # Run snapshot deploys only for protected branches or when explicitly requested to avoid missing credentials.
+    - if: '$CI_COMMIT_REF_PROTECTED == "true"'
+      when: on_success
+    - if: '$DEPLOY_SNAPSHOT == "true"'
+      when: on_success
+    - when: never
   script:
     - |
       set -x
