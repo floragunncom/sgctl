@@ -62,7 +62,6 @@ public class SGAuthcTranslator {
                     break;
                 case "saml":
                     newDomain = createSAMLDomain(realmName, (RealmIR.SamlRealmIR) realm);
-                    MigrationReport.shared.addManualAction("elasticsearch.yml", keyPrefix, "SAML realm migration not yet implemented.");
                     break;
                 case "pki":
                     newDomain = createPkiDomain(realmName, (RealmIR.PkiRealmIR) realm);
@@ -111,6 +110,7 @@ public class SGAuthcTranslator {
 
     /**
      * Creates the LDAP-Auth-Domain for sg_authc.yml
+     * @param realmName Name of the current Realm
      * @param ir The IR that holds the config info
      * @return NewAuthDomain
      */
@@ -135,15 +135,27 @@ public class SGAuthcTranslator {
                 null
         );
     }
-    //TODO Implement these functions. They are just place holders for now
-    private static MigrateConfig.NewAuthDomain createFileDomain(String realmName, RealmIR.FileRealmIR ir) {
-        return null;
-    }
-    private static MigrateConfig.NewAuthDomain createNativeDomain(String realmName, RealmIR.NativeRealmIR ir) {
-        return null;
-    }
+
+    /**
+     * Creates the SAML-Auth-Domain for sg_authc.yml
+     * @param realmName Name of the current Realm
+     * @param ir The IR that holds the config info
+     * @return NewAuthDomain
+     */
     private static MigrateConfig.NewAuthDomain createSAMLDomain(String realmName, RealmIR.SamlRealmIR ir) {
         Map<String, Object> samlConfig = new HashMap<>();
+        addOptionalConfigProperty(samlConfig, "user_mapping.roles.from", "change me");
+        addOptionalConfigProperty(samlConfig, "saml.idp.metadata_file", ir.getIdpMetadataPath());
+        addOptionalConfigProperty(samlConfig, "saml.sp.entity_id", ir.getSpEntityID());
+        String spAcs = ir.getSpAcs();
+        if (spAcs != null) {
+            MigrationReport.shared.addManualAction(SG_AUTHC_FILE_NAME, "saml.sp.acs",
+                    String.format(
+                            "%s cannot be converted, domain is fixed to: https://<kibana-host>:<port>/searchguard/saml/acs",
+                            spAcs
+                    )
+            );
+        }
 
         return new MigrateConfig.NewAuthDomain(
                 ir.getType(),
@@ -154,6 +166,15 @@ public class SGAuthcTranslator {
                 null
         );
     }
+
+    //TODO Implement these functions. They are just place holders for now
+    private static MigrateConfig.NewAuthDomain createFileDomain(String realmName, RealmIR.FileRealmIR ir) {
+        return null;
+    }
+    private static MigrateConfig.NewAuthDomain createNativeDomain(String realmName, RealmIR.NativeRealmIR ir) {
+        return null;
+    }
+
     private static MigrateConfig.NewAuthDomain createPkiDomain(String realmName, RealmIR.PkiRealmIR ir) {
 
         return null;
@@ -164,6 +185,7 @@ public class SGAuthcTranslator {
 
     /**
      * Creates the OIDC-Auth-Domain for sg_authc.yml
+     * @param realmName Name of the current Realm
      * @param ir The IR that holds the config info
      * @return NewAuthDomain
      */
