@@ -142,6 +142,12 @@ coverage:
   dependencies:
     - build
   script:
+    - mkdir -p target/site/jacoco
+    - |
+      if [ ! -f target/site/jacoco/jacoco.xml ]; then
+        echo "Jacoco report not found at target/site/jacoco/jacoco.xml (was the build job skipped or tests not run?)"
+        exit 1
+      fi
     - python /opt/cover2cover.py target/site/jacoco/jacoco.xml src/main/java/ > target/site/cobertura.xml
     - cat target/site/jacoco/index.html | grep -o '<tfoot>.*</tfoot>'
   coverage: '/Total.*?([0-9]{1,3})%/'
