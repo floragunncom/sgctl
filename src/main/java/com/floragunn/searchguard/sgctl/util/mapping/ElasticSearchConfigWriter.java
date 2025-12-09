@@ -41,28 +41,10 @@ public class ElasticSearchConfigWriter {
     public static void generateESConfigFromIR(IntermediateRepresentationElasticSearchYml ir, File outputDir) {
         System.out.println("--- DEBUG: START generateConfigsFromIR (Outputting defaults in elasticsearch.yml style) ---");
 
-        MigrationReport report = new MigrationReport();
-
-        try {
-            // Pass the report object to the config creation method
-            String configContent = createConfigStringFromIR(ir, report);
-
-            writeStringConfig(configContent, outputDir, "elasticsearch.yml");
-
-            System.out.println("--- DEBUG: SUCCESS! Default configuration written to: " + outputDir.getAbsolutePath() + File.separator + "elasticsearch.yml ---");
-
-        } catch (IOException e) {
-            System.err.println("--- DEBUG: ERROR! Configuration could not be written (IOException). ---");
-            e.printStackTrace();
-
-        } catch (Exception e) {
-            System.err.println("--- DEBUG: CRITICAL ERROR! Unexpected error during configuration generation. ---");
-            e.printStackTrace();
-        }
+        System.out.println("--- DEBUG: SUCCESS! Default configuration written to: " + outputDir.getAbsolutePath() + File.separator + "elasticsearch.yml ---");
 
         System.out.println("--- DEBUG: END generateConfigsFromIR ---");
         //TODO: remove debug output
-        report.printReport();
     }
 
     /**
@@ -82,8 +64,8 @@ public class ElasticSearchConfigWriter {
         final String FILE_NAME = "elasticsearch.yml";
 
         // Access the nested TLS configuration objects (assuming public fields/accessors)
-        Tls transportTls = ir.sslTls.transport;
-        Tls httpTls = ir.sslTls.http;
+        Tls transportTls = ir.getSslTls().getTransport();
+        Tls httpTls = ir.getSslTls().getHttp();
 
         if (transportTls == null || httpTls == null) {
             throw new IllegalStateException("Transport or HTTP Tls configuration is missing in the Intermediate Representation.");
@@ -92,26 +74,26 @@ public class ElasticSearchConfigWriter {
         // --- TRANSPORT TLS ---
 
         // Apply defaults or use IR values for non-password fields
-        String transportKeystoreType = Objects.toString(transportTls.keystoreType, DEFAULT_KEYSTORE_TYPE);
-        String transportKeystoreFilepath = Objects.toString(transportTls.keystorePath, null);
-        String transportTruststoreType = Objects.toString(transportTls.truststoreType, DEFAULT_TRUSTSTORE_TYPE);
-        String transportTruststoreFilepath = Objects.toString(transportTls.truststorePath, null);
+        String transportKeystoreType = Objects.toString(transportTls.getKeystoreType(), DEFAULT_KEYSTORE_TYPE);
+        String transportKeystoreFilepath = Objects.toString(transportTls.getKeystorePath(), null);
+        String transportTruststoreType = Objects.toString(transportTls.getTruststoreType(), DEFAULT_TRUSTSTORE_TYPE);
+        String transportTruststoreFilepath = Objects.toString(transportTls.getTruststorePath(), null);
 
         // Apply defaults or use IR values for password fields and log if default is used
-        String transportKeystorePassword = Objects.toString(transportTls.keystorePassword, DEFAULT_KEYSTORE_PASSWORD);
-        String transportKeystoreKeyPassword = Objects.toString(transportTls.keystoreKeyPassword, DEFAULT_KEYSTORE_KEYPASSWORD);
-        String transportTruststorePassword = Objects.toString(transportTls.truststorePassword, DEFAULT_TRUSTSTORE_PASSWORD);
+        String transportKeystorePassword = Objects.toString(transportTls.getKeystorePassword(), DEFAULT_KEYSTORE_PASSWORD);
+        String transportKeystoreKeyPassword = Objects.toString(transportTls.getKeystoreKeyPassword(), DEFAULT_KEYSTORE_KEYPASSWORD);
+        String transportTruststorePassword = Objects.toString(transportTls.getTruststorePassword(), DEFAULT_TRUSTSTORE_PASSWORD);
 
         // Check and report on 'changeit' defaults for passwords
-        if (transportTls.keystorePassword == null) {
+        if (transportTls.getKeystorePassword() == null) {
             report.addManualAction(FILE_NAME, "searchguard.ssl.transport.keystore_password",
                     "Keystore password defaulted to 'changeit'. **MUST be updated** to actual password or secured via Elasticsearch Keystore.");
         }
-        if (transportTls.keystoreKeyPassword == null) {
+        if (transportTls.getKeystoreKeyPassword() == null) {
             report.addManualAction(FILE_NAME, "searchguard.ssl.transport.keystore_keypassword",
                     "Keystore key password defaulted to 'changeit'. **MUST be updated** to actual password or secured via Elasticsearch Keystore.");
         }
-        if (transportTls.truststorePassword == null) {
+        if (transportTls.getTruststorePassword() == null) {
             report.addManualAction(FILE_NAME, "searchguard.ssl.transport.truststore_password",
                     "Truststore password defaulted to 'changeit'. **MUST be updated** to actual password or secured via Elasticsearch Keystore.");
         }
@@ -126,29 +108,29 @@ public class ElasticSearchConfigWriter {
 
         // 'enabled' output logic: use IR value, or fall back to DEFAULT_ENABLED (true).
         // WARNING: This logic overrides explicit 'false' if Tls.enabled is primitive 'boolean'.
-        String httpEnabledOutput = String.valueOf(httpTls.enabled || DEFAULT_ENABLED);
+        String httpEnabledOutput = String.valueOf(httpTls.getEnabled() || DEFAULT_ENABLED);
 
         // Apply defaults or use IR values for non-password fields
-        String httpKeystoreType = Objects.toString(httpTls.keystoreType, DEFAULT_KEYSTORE_TYPE);
-        String httpKeystoreFilepath = Objects.toString(httpTls.keystorePath, null);
-        String httpTruststoreType = Objects.toString(httpTls.truststoreType, DEFAULT_TRUSTSTORE_TYPE);
-        String httpTruststoreFilepath = Objects.toString(httpTls.truststorePath, null);
+        String httpKeystoreType = Objects.toString(httpTls.getKeystoreType(), DEFAULT_KEYSTORE_TYPE);
+        String httpKeystoreFilepath = Objects.toString(httpTls.getKeystorePath(), null);
+        String httpTruststoreType = Objects.toString(httpTls.getTruststoreType(), DEFAULT_TRUSTSTORE_TYPE);
+        String httpTruststoreFilepath = Objects.toString(httpTls.getTruststorePath(), null);
 
         // Apply defaults or use IR values for password fields and log if default is used
-        String httpKeystorePassword = Objects.toString(httpTls.keystorePassword, DEFAULT_KEYSTORE_PASSWORD);
-        String httpKeystoreKeyPassword = Objects.toString(httpTls.keystoreKeyPassword, DEFAULT_KEYSTORE_KEYPASSWORD);
-        String httpTruststorePassword = Objects.toString(httpTls.truststorePassword, DEFAULT_TRUSTSTORE_PASSWORD);
+        String httpKeystorePassword = Objects.toString(httpTls.getKeystorePassword(), DEFAULT_KEYSTORE_PASSWORD);
+        String httpKeystoreKeyPassword = Objects.toString(httpTls.getKeystoreKeyPassword(), DEFAULT_KEYSTORE_KEYPASSWORD);
+        String httpTruststorePassword = Objects.toString(httpTls.getTruststorePassword(), DEFAULT_TRUSTSTORE_PASSWORD);
 
         // Check and report on 'changeit' defaults for passwords
-        if (httpTls.keystorePassword == null) {
+        if (httpTls.getKeystorePassword() == null) {
             report.addManualAction(FILE_NAME, "searchguard.ssl.http.keystore_password",
                     "Keystore password defaulted to 'changeit'. **MUST be updated** to actual password or secured via Elasticsearch Keystore.");
         }
-        if (httpTls.keystoreKeyPassword == null) {
+        if (httpTls.getKeystoreKeyPassword() == null) {
             report.addManualAction(FILE_NAME, "searchguard.ssl.http.keystore_keypassword",
                     "Keystore key password defaulted to 'changeit'. **MUST be updated** to actual password or secured via Elasticsearch Keystore.");
         }
-        if (httpTls.truststorePassword == null) {
+        if (httpTls.getTruststorePassword() == null) {
             report.addManualAction(FILE_NAME, "searchguard.ssl.http.truststore_password",
                     "Truststore password defaulted to 'changeit'. **MUST be updated** to actual password or secured via Elasticsearch Keystore.");
         }
