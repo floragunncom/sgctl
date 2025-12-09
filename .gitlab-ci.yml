@@ -368,6 +368,24 @@ def load_checkstyle():
 issues = load_spotbugs() + load_checkstyle()
 json.dump(issues, sys.stdout, indent=2)
 PY
+
+      ISSUE_COUNT=$(python3 - <<'PY'
+import json
+import sys
+try:
+    with open("codequality.json") as f:
+        data = json.load(f)
+    print(len(data))
+except FileNotFoundError:
+    print(0)
+    sys.exit(0)
+PY
+)
+      echo "Code Quality issues found: ${ISSUE_COUNT}"
+      if [ "${ISSUE_COUNT}" -gt 0 ]; then
+        echo "Failing job because code quality issues were detected in changed files."
+        exit 1
+      fi
   artifacts:
     when: always
     paths:
