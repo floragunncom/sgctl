@@ -64,7 +64,7 @@ static_checks:
       set -e
       BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
       BASE_REF="origin/$BASE_BRANCH"
-      git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
+      git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
       BASE_SHA="${BASE_REF}"
       if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
         BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
@@ -135,7 +135,7 @@ format_check:
         set -e
         BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
         BASE_REF="origin/$BASE_BRANCH"
-        git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
+        git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
         BASE_SHA="${BASE_REF}"
         if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
           BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
