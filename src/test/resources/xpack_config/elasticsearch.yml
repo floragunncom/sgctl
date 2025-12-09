@@ -14,33 +14,33 @@
 #
 # Use a descriptive name for your cluster:
 #
-#cluster.name: my-application
+cluster.name: my-application
 #
 # ------------------------------------ Node ------------------------------------
 #
 # Use a descriptive name for the node:
 #
-#node.name: node-1
+node.name: node-1
 #
 # Add custom attributes to the node:
 #
-#node.attr.rack: r1
+node.attr.rack: r1
 #
 # ----------------------------------- Paths ------------------------------------
 #
 # Path to directory where to store the data (separate multiple locations by comma):
 #
-#path.data: /path/to/data
+path.data: /path/to/data
 #
 # Path to log files:
 #
-#path.logs: /path/to/logs
+path.logs: /path/to/logs
 #
 # ----------------------------------- Memory -----------------------------------
 #
 # Lock the memory on startup:
 #
-#bootstrap.memory_lock: true
+bootstrap.memory_lock: true
 #
 # Make sure that the heap size is set to about half the memory available
 # on the system and that the owner of the process is allowed to use this
@@ -53,12 +53,12 @@
 # By default Elasticsearch is only accessible on localhost. Set a different
 # address here to expose this node on the network:
 #
-#network.host: 192.168.0.1
+network.host: 192.168.0.1
 #
 # By default Elasticsearch listens for HTTP traffic on the first free port it
 # finds starting at 9200. Set a specific HTTP port here:
 #
-#http.port: 9200
+http.port: 9200
 #
 # For more information, consult the network module documentation.
 #
@@ -67,11 +67,11 @@
 # Pass an initial list of hosts to perform discovery when this node is started:
 # The default list of hosts is ["127.0.0.1", "[::1]"]
 #
-#discovery.seed_hosts: ["host1", "host2"]
+discovery.seed_hosts: ["host1", "host2"]
 #
 # Bootstrap the cluster using an initial set of master-eligible nodes:
 #
-#cluster.initial_master_nodes: ["node-1", "node-2"]
+cluster.initial_master_nodes: ["node-1", "node-2"]
 #
 # For more information, consult the discovery and cluster formation module documentation.
 #
@@ -79,7 +79,7 @@
 #
 # Allow wildcard deletion of indices:
 #
-#action.destructive_requires_name: false
+action.destructive_requires_name: false
 
 #----------------------- BEGIN SECURITY AUTO CONFIGURATION -----------------------
 #
@@ -88,12 +88,12 @@
 #
 # --------------------------------------------------------------------------------
 
-# # Enable security features
-# xpack.security.enabled: false #true
+# # # Enable security features
+# xpack.security.enabled: true
 
 # xpack.security.enrollment.enabled: true
 
-# # Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
+# # # Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
 # xpack.security.http.ssl:
 #   enabled: true
 #   keystore.path: certs/http.p12
@@ -134,14 +134,14 @@
 #     user_search.base_dn: "ou=users,dc=example,dc=com"
 #     group_search.base_dn: "ou=groups,dc=example,dc=com"
 
-  # saml.saml1:
-  #   order: 3
-  #   idp.entity_id: "https://idp.example.com/metadata"
-  #   idp.metadata_path: "/etc/elasticsearch/saml/idp.xml"
-  #   sp.entity_id: "https://es.example.com/"
-  #   sp.acs: "https://es.example.com/_security/saml/acs"
-  #   sp.logout: "https://es.example.com/logout"
-  #   attributes.principal: "nameid"
+#   saml.saml1:
+#     order: 3
+#     idp.entity_id: "https://idp.example.com/metadata"
+#     idp.metadata_path: "/etc/elasticsearch/saml/idp.xml"
+#     sp.entity_id: "https://es.example.com/"
+#     sp.acs: "https://es.example.com/_security/saml/acs"
+#     sp.logout: "https://es.example.com/logout"
+#     attributes.principal: "nameid"
 
 
 # ================= TLS / SSL Settings =================

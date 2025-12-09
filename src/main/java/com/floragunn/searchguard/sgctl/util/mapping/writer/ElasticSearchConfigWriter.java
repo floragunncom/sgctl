@@ -7,6 +7,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.Tls;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.Objects;
 
 /**
@@ -87,6 +88,9 @@ public class ElasticSearchConfigWriter {
         String httpKeystoreKeyPassword = Objects.toString(httpTls.getKeystoreKeyPassword(), DEFAULT_KEYSTORE_KEYPASSWORD);
         String httpTruststorePassword = Objects.toString(httpTls.getTruststorePassword(), DEFAULT_TRUSTSTORE_PASSWORD);
 
+        MigrationReport.shared.addManualAction("elasticsearch.yml", "searchguard.ssl.client.external_context_id", "If you set wrong values here this this could be a security risk");
+        MigrationReport.shared.addManualAction("elasticsearch.yml", "searchguard.ssl.transport.principal_extractor_class", "If you set wrong values here this this could be a security risk");
+
         // Assemble the final configuration string
         return "" +
                 // Transport TLS Configuration
@@ -98,6 +102,9 @@ public class ElasticSearchConfigWriter {
                 "searchguard.ssl.transport.truststore_filepath: " + transportTruststoreFilepath + "\n" +
                 "searchguard.ssl.transport.truststore_password: " + transportTruststorePassword + "\n" +
 
+                toYamlList("searchguard.ssl.transport.enabled_ciphers", transportTls.getCiphers()) +
+                toYamlList("searchguard.ssl.transport.enabled_protocols", transportTls.getSupportedProtocols()) +
+
                 // HTTP TLS Configuration
                 "searchguard.ssl.http.enabled: " + httpEnabledOutput + "\n" +
                 "searchguard.ssl.http.keystore_type: " + httpKeystoreType + "\n" +
@@ -106,9 +113,20 @@ public class ElasticSearchConfigWriter {
                 "searchguard.ssl.http.keystore_keypassword: " + httpKeystoreKeyPassword + "\n" +
                 "searchguard.ssl.http.truststore_type: " + httpTruststoreType + "\n" +
                 "searchguard.ssl.http.truststore_filepath: " + httpTruststoreFilepath + "\n" +
-                "searchguard.ssl.http.truststore_password: " + httpTruststorePassword + "\n";
-    }
+                "searchguard.ssl.http.truststore_password: " + httpTruststorePassword + "\n" +
 
+                toYamlList("searchguard.ssl.http.enabled_ciphers", transportTls.getCiphers()) +
+                toYamlList("searchguard.ssl.http.enabled_protocols", transportTls.getSupportedProtocols());
+
+    }
+    public static String toYamlList(String key, List<String> values) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(key).append(":\n");
+        for (String v : values) {
+            sb.append("  - \"").append(v).append("\"\n");
+        }
+        return sb.toString();
+    }
     /**
      * Writes the generated configuration content string to a file within the specified output directory.
      * It ensures the output directory exists before attempting to write the file.
