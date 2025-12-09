@@ -307,10 +307,74 @@ PY
       fi
 
       cat "$SUMMARY"
+
+      echo "Generating Code Quality report (codequality.json) from SpotBugs and Checkstyle..."
+      python3 - "$SUMMARY" > codequality.json <<'PY'
+import json, pathlib, xml.etree.ElementTree as ET, sys
+
+def load_spotbugs():
+    path = pathlib.Path("target/spotbugsXml.xml")
+    if not path.exists():
+        return []
+    root = ET.parse(path).getroot()
+    out = []
+    for bug in root.findall(".//BugInstance"):
+        cls = bug.findtext("Class/SourceLine/@classname", default=None)
+        sl = bug.find("SourceLine")
+        if sl is None:
+            continue
+        path_attr = sl.get("sourcepath") or sl.get("sourcefile") or ""
+        line = sl.get("start")
+        message = bug.findtext("LongMessage") or bug.findtext("ShortMessage") or bug.get("type") or "SpotBugs issue"
+        severity = bug.get("priority")
+        level = {"1": "major", "2": "minor"}.get(severity, "minor")
+        out.append({
+            "description": f"SpotBugs: {message}",
+            "check_name": f"SpotBugs:{bug.get('type')}",
+            "fingerprint": f"spotbugs-{bug.get('type')}-{path_attr}-{line}",
+            "severity": level,
+            "location": {
+                "path": path_attr,
+                "lines": {"begin": int(line)} if line else {"begin": 1}
+            }
+        })
+    return out
+
+def load_checkstyle():
+    path = pathlib.Path("target/checkstyle-result.xml")
+    if not path.exists():
+        return []
+    root = ET.parse(path).getroot()
+    out = []
+    for file_el in root.findall(".//file"):
+        fname = file_el.get("name")
+        for err in file_el.findall("error"):
+            line = err.get("line") or "1"
+            msg = err.get("message") or "Checkstyle issue"
+            severity = err.get("severity") or "warning"
+            level = {"error": "major", "warning": "minor", "info": "minor"}.get(severity, "minor")
+            out.append({
+                "description": f"Checkstyle: {msg}",
+                "check_name": f"Checkstyle:{err.get('source','rule')}",
+                "fingerprint": f"checkstyle-{fname}-{line}-{msg}",
+                "severity": level,
+                "location": {
+                    "path": fname,
+                    "lines": {"begin": int(line)}
+                }
+            })
+    return out
+
+issues = load_spotbugs() + load_checkstyle()
+json.dump(issues, sys.stdout, indent=2)
+PY
   artifacts:
     when: always
     paths:
       - quality-summary.md
+      - codequality.json
+    reports:
+      codequality: codequality.json
     expire_in: 7 days
 
 format_check:
