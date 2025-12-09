@@ -16,7 +16,6 @@ public class SGAuthcTranslator {
     }
 
     private SGAuthcTranslator() {}
-
     /**
      * Creates Authc Config
      *
@@ -27,7 +26,6 @@ public class SGAuthcTranslator {
         MigrateConfig.SgAuthc config = new MigrateConfig.SgAuthc();
         MigrateConfig.SgAuthc fconfig = new MigrateConfig.SgAuthc();
         config.authDomains = new ArrayList<>();
-
 
         fconfig.authDomains = new ArrayList<>();
         fconfig.internalProxies = "";
@@ -62,7 +60,6 @@ public class SGAuthcTranslator {
                 case "pki":
                     newDomain = createPkiDomain((RealmIR.PkiRealmIR) realm);
                     realmNotImplementedReport(realmName, realm);
-
                     break;
                 case "oidc":
                     newDomain = createOidcDomain((RealmIR.OidcRealmIR) realm);
@@ -76,7 +73,6 @@ public class SGAuthcTranslator {
                     realmNotImplementedReport(realmName, realm);
                     break;
             }
-
             if (newDomain != null) {
                 if (isFrontendRealm) {
                     fconfig.authDomains.add(newDomain);
@@ -88,7 +84,6 @@ public class SGAuthcTranslator {
             }
 
         });
-
         return new Configs(config, fconfig);
     }
 
@@ -114,7 +109,6 @@ public class SGAuthcTranslator {
             config.put(key, value);
             MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, key);
         }
-
     }
 
     /**
@@ -205,10 +199,8 @@ public class SGAuthcTranslator {
     }
 
     private static MigrateConfig.NewAuthDomain createPkiDomain(RealmIR.PkiRealmIR ir) {
-
         return null;
     }
-
 
     /**
      * Creates the OIDC-Auth-Domain for sg_authc.yml
@@ -226,11 +218,10 @@ public class SGAuthcTranslator {
         addOptionalConfigProperty(oidcConfig, "user_mapping.user_name.from.pattern", "oidc_id_token."+ ir.getClaimMail(), true);
         addOptionalConfigProperty(oidcConfig, "oidc.idp.openid_configuration_url", ir.getOpIssuer()+ ".well-known/openid-configuration", true);
 
-        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.idp.tls.trusted_cas", "needs to be added manualy");
-        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "user_mapping.roles.from_comma_separated_string", "needs to be added manualy");
-        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.idp.proxy", "needs to be added manualy");
-        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.client_secret", "needs to be added manualy");
-
+        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.idp.tls.trusted_cas", "needs to be added manually");
+        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "user_mapping.roles.from_comma_separated_string", "needs to be added manually");
+        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.idp.proxy", "needs to be added manually");
+        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.client_secret", "needs to be added manually");
 
         return new MigrateConfig.NewAuthDomain(
                 ir.getType(),

@@ -1,6 +1,7 @@
 package com.floragunn.searchguard.sgctl.commands;
 
 import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.searchguard.sgctl.util.mapping.writer.ElasticSearchConfigWriter;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
@@ -16,7 +17,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.concurrent.Callable;
-//names of files: user.json, role.json, role_mapping.json
+
 @Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
 public class MigrateSecurity implements Callable<Integer> {
 
@@ -38,39 +39,37 @@ public class MigrateSecurity implements Callable<Integer> {
             return 1;
         }
 
-
-
         IntermediateRepresentationElasticSearchYml irElasticSearchYml = new IntermediateRepresentationElasticSearchYml();
         new ElasticsearchYamlReader(elasticsearch, irElasticSearchYml);
+
         IntermediateRepresentation ir = new IntermediateRepresentation();
         SearchGuardConfigWriter sgcw = new SearchGuardConfigWriter(irElasticSearchYml, ir);
 
+        ElasticSearchConfigWriter.writeElasticSearchYml(irElasticSearchYml, outputDir);
         writeYamlConfig(sgcw.getSg_frontend_authc(), outputDir, "sg_frontend_authc.yml");
         MigrationReport.shared.printReport();
         return 0;
     }
 
     public boolean checkOutputDir() {
-        if(outputDir == null) {
+        if (outputDir == null) {
             log.error("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> -o <Output Directory>");
             return true;
         }
-        if(!outputDir.exists()) {
+        if (!outputDir.exists()) {
             log.error("Output path does not exist: {}", outputDir.getAbsolutePath());
             return false;
         }
-        if(!outputDir.isDirectory()) {
+        if (!outputDir.isDirectory()) {
             log.error("Output path is not a directory: {}", outputDir.getAbsolutePath());
             return false;
         }
-        if(!outputDir.canWrite()) {
+        if (!outputDir.canWrite()) {
             log.error("Output directory is not writeable. Check permissions: {}", outputDir.getAbsolutePath());
             return false;
         }
         return true;
     }
-
-
     public boolean checkInputDirAndLoadConfig() {
 
         if (inputDir == null) {
