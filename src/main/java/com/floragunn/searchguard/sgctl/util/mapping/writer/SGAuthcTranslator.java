@@ -38,6 +38,11 @@ public class SGAuthcTranslator {
         fconfig.remoteIpHeader = "";
 
         ir.getAuthent().getRealms().forEach((String realmName, RealmIR realm) -> {
+            //Handle disabled realms, like discussed
+            if (!realm.isEnabled()) {
+                MigrationReport.shared.addIgnoredKey(SG_AUTHC_FILE_NAME, realmName, realm.getType());
+                return;
+            }
             String type = realm.getType();
             String keyPrefix = "xpack.security.authc.realms." + type + "." + realmName;
             MigrateConfig.NewAuthDomain newDomain = null;
