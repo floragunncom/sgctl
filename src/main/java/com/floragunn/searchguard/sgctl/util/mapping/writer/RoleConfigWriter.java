@@ -112,6 +112,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 case "manage_enrich":
                     break;
                 case "manage_ilm":
+                    sgPrivileges.add("SGS_CLUSTER_MANAGE_ILM");
                     break;
                 case "manage_index_templates":
                     sgPrivileges.add("SGS_CLUSTER_MANAGE_INDEX_TEMPLATES");
@@ -130,6 +131,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 case "manage_own_api_key":
                     break;
                 case "manage_pipeline":
+                    sgPrivileges.add("SGS_CLUSTER_MANAGE_PIPELINES");
                     break;
                 case "manage_rollup":
                     break;
