@@ -281,7 +281,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         var sgPrivileges = new ArrayList<String>() ;
         var agWriter = new ActionGroupConfigWriter(ir); // should probably be a private param of the class
         var type = "cluster";
-
+        // TODO: fill allowedActions with proper action strings
         for (var privilege : privileges) {
             switch (privilege) {
                 case "all" ->{
@@ -289,15 +289,19 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 }
                 case "cancel_task"-> {
                     var customName = "SGS_CANCEL_TASK_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "create_snapshot"-> {
                     var customName = "SGS_CREATE_SNAPSHOT_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "cross_cluster_replication"->{ // Note: This privilege must not be directly granted. It is used internally by Create Cross-Cluster API key and Update Cross-Cluster API key to manage cross-cluster API keys.
                 }
@@ -305,33 +309,43 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 }
                 case "grant_api_key"->{
                     var customName = "SGS_GRANT_API_KEY_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage"->{
                     var customName = "SGS_MANAGE_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_api_key"->{
                     var customName = "SGS_MANAGE_API_KEY_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_autoscaling"->{
                     var customName = "SGS_MANAGE_AUTOSCALING_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_ccr"->{
                     var customName = "SGS_MANAGE_CCR_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_data_frame_transforms"->{ // Deprecated 7.5.0
                 }
@@ -339,9 +353,11 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 }
                 case "manage_enrich"->{
                     var customName = "SGS_MANAGE_ENRICH_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_ilm"->{
                     sgPrivileges.add("SGS_CLUSTER_MANAGE_ILM");
@@ -351,69 +367,89 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 }
                 case "manage_inference"->{
                     var customName = "SGS_MANAGE_INFERENCE_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_ingest_pipelines"->{
                     sgPrivileges.add("SGS_CLUSTER_MANAGE_PIPELINES");
                 }
                 case "manage_logstash_pipelines"->{
                     var customName = "SGS_MANAGE_LOGSTASH_PIPELINES_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_ml"->{
                     var customName = "SGS_MANAGE_ML_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_oidc"->{
                     var customName = "SGS_MANAGE_OIDC_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_own_api_key"->{
                     var customName = "SGS_MANAGE_OWN_API_KEY_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_pipeline"->{
                     sgPrivileges.add("SGS_CLUSTER_MANAGE_PIPELINES");
                 }
                 case "manage_rollup"->{
                     var customName = "SGS_MANAGE_ROLLUP_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_saml"->{
                     var customName = "SGS_MANAGE_SAML_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_search_application"->{
                     var customName = "SGS_MANAGE_SEARCH_APPLICATION_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_search_query_rules"->{
                     var customName = "SGS_MANAGE_SEARCH_QUERY_RULES_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
                 case "manage_search_synonyms"->{
                     var customName = "SGS_MANAGE_SEARCH_SYNONYMS_CUSTOM";
+                    if (!agWriter.contains(customName)){
+                        agWriter.addCustomActionGroup(customName, type,
+                                customActionGroupDescription(privilege), new String[] {});
+                    }
                     sgPrivileges.add(customName);
-                    agWriter.addCustomActionGroup(customName, type,
-                            customActionGroupDescription(privilege), new String[] {});
                 }
             }
         }
