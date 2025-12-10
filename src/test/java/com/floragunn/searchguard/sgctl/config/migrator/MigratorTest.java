@@ -3,10 +3,7 @@ package com.floragunn.searchguard.sgctl.config.migrator;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.floragunn.searchguard.sgctl.SgctlException;
-import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
-import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
-import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
-import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.*;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
@@ -129,12 +126,14 @@ class MigratorTest {
     @Override
     public List<NamedConfig<?>> migrate(
         Migrator.IMigrationContext context, MigrationReporter reporter) {
+      reporter.critical(dummyTraceable1, "critical 1");
       reporter.problem(dummyTraceable1, "1");
       reporter.problem(dummyTraceable2, "2");
       reporter.inconvertible(dummyTraceable1, "1.1");
       reporter.inconvertible(dummyTraceable1, "1.2");
-      reporter.generic("generic 1");
-      reporter.generic("generic 2");
+      reporter.problem("generic 1");
+      reporter.problem("generic 2");
+      reporter.critical("critical generic");
       return List.of();
     }
   }
@@ -149,6 +148,10 @@ class MigratorTest {
     var reporter = new AssertableMigrationReporter();
     new Migrator(reporter).migrate(new NullMigrationContext());
 
+    reporter.assertCritical(test.dummyTraceable1, "critical 1");
+    assertThrows(AssertionError.class, () -> reporter.assertCritical(test.dummyTraceable1));
+    reporter.assertNoCritical(test.dummyTraceable1);
+
     reporter.assertProblem(test.dummyTraceable1);
     reporter.assertProblem(test.dummyTraceable2, "2");
     assertThrows(AssertionError.class, () -> reporter.assertProblem(test.dummyTraceable1));
@@ -162,8 +165,10 @@ class MigratorTest {
     assertThrows(AssertionError.class, () -> reporter.assertInconvertible(test.dummyTraceable1));
     reporter.assertNoInconvertible(test.dummyTraceable1);
 
-    reporter.assertGeneric("generic 1");
-    reporter.assertGeneric("generic 2");
+    reporter.assertCritical("critical generic");
+
+    reporter.assertProblem("generic 1");
+    reporter.assertProblem("generic 2");
 
     reporter.assertNoMoreProblems();
   }
@@ -182,7 +187,7 @@ class MigratorTest {
     NullMigrationContext context = new NullMigrationContext();
     final List<NamedConfig<?>> migrationResult;
     try {
-      migrationResult = migrator.migrate(context).configs();
+      migrationResult = ((MigrationResult.Success) migrator.migrate(context)).configs();
     } catch (IllegalStateException e) {
       System.err.println("MigratorA migrate failed. Did you forget to finalize?");
       throw e;
@@ -284,7 +289,7 @@ class MigratorTest {
     NullMigrationContext context = new NullMigrationContext();
     final List<NamedConfig<?>> migrationResult;
     try {
-      migrationResult = migrator.migrate(context).configs();
+      migrationResult = ((MigrationResult.Success) migrator.migrate(context)).configs();
     } catch (IllegalStateException e) {
       System.err.println("TestMigratorCombined migrate failed. Did you forget to finalize?");
       throw e;

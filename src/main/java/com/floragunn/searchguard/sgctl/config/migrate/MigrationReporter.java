@@ -6,6 +6,15 @@ import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 public interface MigrationReporter {
 
   /**
+   * Reports a critical problem with a {@link Traceable}. Critical problems will cause migration to
+   * fail, and no config files will be written.
+   *
+   * @param subject The {@link Traceable} that is the subject of this problem.
+   * @param message An explanation of the problem.
+   */
+  void critical(Traceable<?> subject, String message);
+
+  /**
    * Reports a genic problem with a {@link Traceable}.
    *
    * @param subject The {@link Traceable} that is the subject of this problem.
@@ -23,11 +32,19 @@ public interface MigrationReporter {
   void inconvertible(Traceable<?> subject, String message);
 
   /**
+   * Adds a critical message to the report. The migration cannot complete successfully if any
+   * critical messages are present.
+   *
+   * @param message The message.
+   */
+  void critical(String message);
+
+  /**
    * Adds an uncategorized message to the report.
    *
    * @param message The message.
    */
-  void generic(String message);
+  void problem(String message);
 
   /**
    * Generates the migration report from all logged problems.
@@ -35,6 +52,14 @@ public interface MigrationReporter {
    * @return The report
    */
   String generateReport();
+
+  /**
+   * Returns whether any critical problems were reported. Critical problems will cause migration to
+   * fail and no config files will be written.
+   *
+   * @return True if any critical problems were reported, false otherwise.
+   */
+  boolean hasCriticalProblems();
 
   /**
    * Creates a new migration reporter.

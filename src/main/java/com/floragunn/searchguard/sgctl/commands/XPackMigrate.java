@@ -69,7 +69,7 @@ public class XPackMigrate implements Callable<Integer> {
       final Migrator.MigrationContext context = getMigrationContext(xPackConfigs);
       final MigrationResult result = migrator.migrate(context);
       // serialize
-      writeConfigs(result.configs());
+      if (result instanceof MigrationResult.Success suc) writeConfigs(suc.configs());
       writeReport(result.report());
     } catch (SgctlException e) {
       System.err.println("Error: " + e.getMessage());

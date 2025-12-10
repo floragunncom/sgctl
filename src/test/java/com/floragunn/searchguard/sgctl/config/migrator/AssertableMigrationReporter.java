@@ -12,9 +12,17 @@ public class AssertableMigrationReporter implements MigrationReporter {
   private final MigrationReporter delegate =
       MigrationReporter.of("sgctl migrate-security report", "Search Guard");
 
+  private final Map<Traceable<?>, List<String>> critical = new LinkedHashMap<>();
   private final Map<Traceable<?>, List<String>> problem = new LinkedHashMap<>();
   private final Map<Traceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
-  private final List<String> generic = new ArrayList<>();
+  private final List<String> problemMessages = new ArrayList<>();
+  private final List<String> criticalMessages = new ArrayList<>();
+
+  @Override
+  public void critical(Traceable<?> subject, String message) {
+    delegate.critical(subject, message);
+    add(critical, subject, message);
+  }
 
   @Override
   public void problem(Traceable<?> subject, String message) {
@@ -29,9 +37,15 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   @Override
-  public void generic(String message) {
-    delegate.generic(message);
-    generic.add(message);
+  public void problem(String message) {
+    delegate.problem(message);
+    problemMessages.add(message);
+  }
+
+  @Override
+  public void critical(String message) {
+    delegate.critical(message);
+    criticalMessages.add(message);
   }
 
   @Override
@@ -39,9 +53,52 @@ public class AssertableMigrationReporter implements MigrationReporter {
     return delegate.generateReport();
   }
 
+  @Override
+  public boolean hasCriticalProblems() {
+    return delegate.hasCriticalProblems();
+  }
+
   private void add(
       Map<? super Traceable<?>, List<String>> map, Traceable<?> subject, String message) {
     map.computeIfAbsent(subject, v -> new ArrayList<>()).add(message);
+  }
+
+  /**
+   * Asserts that a critical problem was reported for the given traceable. Then removes it from the
+   * list of tracked critical problems.
+   *
+   * @param subject The traceable to check.
+   */
+  public void assertCritical(Traceable<?> subject) {
+    if (critical.remove(subject) == null)
+      throw new AssertionError("Expected critical problem for traceable: " + subject);
+  }
+
+  /**
+   * Asserts that there is no critical problem reported for the given traceable.
+   *
+   * @param subject The traceable to check.
+   */
+  public void assertNoCritical(Traceable<?> subject) {
+    if (critical.containsKey(subject))
+      throw new AssertionError("Did not expect critical problem for traceable: " + subject);
+  }
+
+  /**
+   * Asserts that a critical problem with the given message was reported for the given traceable.
+   * Then removes the subject message combination from the list of tracked critical problems.
+   *
+   * @param subject The traceable to check.
+   * @param message The message to check.
+   */
+  public void assertCritical(Traceable<?> subject, String message) {
+    List<String> messages = critical.get(subject);
+    if (messages == null || !messages.remove(message))
+      throw new AssertionError(
+          "Expected critical message '" + message + "' for traceable: " + subject);
+    if (messages.isEmpty()) {
+      critical.remove(subject);
+    }
   }
 
   /**
@@ -121,12 +178,25 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   /**
-   * Asserts that a generic message was reported. Then removes it from the list of tracked generic
+   * Asserts that a critical message was reported. Then removes it from the list of tracked critical
+   * problems.
    *
    * @param message The message to check.
    */
-  public void assertGeneric(String message) {
-    if (!generic.remove(message)) throw new AssertionError("Expected generic message: " + message);
+  public void assertCritical(String message) {
+    if (!criticalMessages.remove(message))
+      throw new AssertionError("Expected critical message: " + message);
+  }
+
+  /**
+   * Asserts that a generic message was reported. Then removes it from the list of tracked generic
+   * problems.
+   *
+   * @param message The message to check.
+   */
+  public void assertProblem(String message) {
+    if (!problemMessages.remove(message))
+      throw new AssertionError("Expected generic message: " + message);
   }
 
   /** Asserts that no more problems that weren't already checked via asserts were reported. */
@@ -134,6 +204,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
     if (!problem.isEmpty()) throw new AssertionError("Unexpected problems: " + problem);
     if (!inconvertible.isEmpty())
       throw new AssertionError("Unexpected inconvertibles: " + inconvertible);
-    if (!generic.isEmpty()) throw new AssertionError("Unexpected generic messages: " + generic);
+    if (!problemMessages.isEmpty())
+      throw new AssertionError("Unexpected generic messages: " + problemMessages);
   }
 }

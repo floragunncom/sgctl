@@ -9,4 +9,25 @@ import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
  * @param configs The migrated configurations.
  * @param report The migration report.
  */
-public record MigrationResult(ImmutableList<NamedConfig<?>> configs, String report) {}
+public sealed interface MigrationResult {
+
+  /**
+   * @return The migration report
+   */
+  String report();
+
+  /**
+   * A successful migration result.
+   *
+   * @param configs The migrated configurations.
+   * @param report The migration report.
+   */
+  record Success(ImmutableList<NamedConfig<?>> configs, String report) implements MigrationResult {}
+
+  /**
+   * A failed migration result.
+   *
+   * @param report The migration report.
+   */
+  record Failure(String report) implements MigrationResult {}
+}

@@ -1,11 +1,11 @@
 package com.floragunn.searchguard.sgctl.config.migrator;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class MigrationReporterImplTest {
 
@@ -14,17 +14,26 @@ public class MigrationReporterImplTest {
     var reporter = MigrationReporter.searchGuard();
     var cfgSrc = new Source.Config("test.yml");
     var value1 = Traceable.of(new Source.Attribute(cfgSrc, "a.b.c"), "value1");
+    reporter.critical(value1, "Critical setting");
+    reporter.critical("Critical generic");
     reporter.inconvertible(value1, "First message for value 1");
     reporter.inconvertible(value1, "Second message for value 1");
     reporter.inconvertible(
         Traceable.of(new Source.Attribute(cfgSrc, "a.b.d"), 42), "Other config option");
     reporter.problem(value1, "Your message here");
-    reporter.generic("Generic message 1");
-    reporter.generic("Generic message 2");
+    reporter.problem("Generic message 1");
+    reporter.problem("Generic message 2");
 
     var expected =
         """
         # sgctl migrate-security report
+
+        1 setting(s) caused critical problem(s):
+        * test.yml: a.b.c: value1
+          * Critical setting
+
+        1 other critical problem(s):
+        * Critical generic
 
         2 setting(s) cannot be converted because no equivalent concept exists in Search Guard:
         * test.yml: a.b.c: value1
@@ -43,6 +52,7 @@ public class MigrationReporterImplTest {
         """;
 
     assertEquals(expected, reporter.generateReport());
+    assertTrue(reporter.hasCriticalProblems());
   }
 
   @Test
@@ -51,7 +61,7 @@ public class MigrationReporterImplTest {
     var cfgSrc = new Source.Config("test.yml");
     reporter.problem(
         Traceable.of(new Source.Attribute(cfgSrc, "a.b.c"), "value1"), "Your message here");
-    reporter.generic("Generic message");
+    reporter.problem("Generic message");
 
     var expected =
         """
@@ -66,6 +76,7 @@ public class MigrationReporterImplTest {
             """;
 
     assertEquals(expected, reporter.generateReport());
+    assertFalse(reporter.hasCriticalProblems());
   }
 
   @Test
@@ -74,7 +85,7 @@ public class MigrationReporterImplTest {
     var cfgSrc = new Source.Config("test.yml");
     reporter.inconvertible(
         Traceable.of(new Source.Attribute(cfgSrc, "a.b.d"), 42), "Other config option");
-    reporter.generic("Generic message");
+    reporter.problem("Generic message");
 
     var expected =
         """
@@ -89,10 +100,11 @@ public class MigrationReporterImplTest {
             """;
 
     assertEquals(expected, reporter.generateReport());
+    assertFalse(reporter.hasCriticalProblems());
   }
 
   @Test
-  public void testGenericOmittedIfEmpty() {
+  public void testProblemMessageOmittedIfEmpty() {
     var reporter = MigrationReporter.searchGuard();
     var cfgSrc = new Source.Config("test.yml");
     var value1 = Traceable.of(new Source.Attribute(cfgSrc, "a.b.c"), "value1");
@@ -113,5 +125,17 @@ public class MigrationReporterImplTest {
             """;
 
     assertEquals(expected, reporter.generateReport());
+    assertFalse(reporter.hasCriticalProblems());
+  }
+
+  @Test
+  public void testCriticalRemembered() {
+    var reporter = MigrationReporter.searchGuard();
+    reporter.problem("Non-critical problem");
+    assertFalse(reporter.hasCriticalProblems());
+
+    var reporter1 = MigrationReporter.searchGuard();
+    reporter1.critical("There was a critical problem");
+    assertTrue(reporter1.hasCriticalProblems());
   }
 }

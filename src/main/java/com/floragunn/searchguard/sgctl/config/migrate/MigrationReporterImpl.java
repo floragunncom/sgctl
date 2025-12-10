@@ -14,11 +14,18 @@ class MigrationReporterImpl implements MigrationReporter {
 
   private final Map<Traceable<?>, List<String>> problem = new LinkedHashMap<>();
   private final Map<Traceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
-  private final List<String> generic = new ArrayList<>();
+  private final Map<Traceable<?>, List<String>> critical = new LinkedHashMap<>();
+  private final List<String> problemMessages = new ArrayList<>();
+  private final List<String> criticalMessages = new ArrayList<>();
 
   public MigrationReporterImpl(String migrationTitle, String targetDomainName) {
     this.migrationTitle = migrationTitle;
     this.targetDomainName = targetDomainName;
+  }
+
+  @Override
+  public void critical(Traceable<?> subject, String message) {
+    add(critical, subject, message);
   }
 
   @Override
@@ -32,8 +39,18 @@ class MigrationReporterImpl implements MigrationReporter {
   }
 
   @Override
-  public void generic(String message) {
-    generic.add(message);
+  public void problem(String message) {
+    problemMessages.add(message);
+  }
+
+  @Override
+  public void critical(String message) {
+    criticalMessages.add(message);
+  }
+
+  @Override
+  public boolean hasCriticalProblems() {
+    return !criticalMessages.isEmpty() || !critical.isEmpty();
   }
 
   private void add(
@@ -48,13 +65,16 @@ class MigrationReporterImpl implements MigrationReporter {
     sb.append(migrationTitle);
     sb.append("\n");
 
+    reportTraceables(sb, critical, "setting(s) caused critical problem(s)");
+    reportList(sb, criticalMessages, "other critical problem(s)");
+
     reportTraceables(
         sb,
         inconvertible,
         "setting(s) cannot be converted because no equivalent concept exists in "
             + targetDomainName);
     reportTraceables(sb, problem, "setting(s) caused a generic problem");
-    reportList(sb, generic, "other problem(s)");
+    reportList(sb, problemMessages, "other problem(s)");
 
     return sb.toString();
   }

@@ -73,7 +73,12 @@ public class Migrator {
       outputMigratedConfigsBuilder.add(migratedConfig);
     }
 
-    return new MigrationResult(outputMigratedConfigsBuilder.build(), reporter.generateReport());
+    if (reporter.hasCriticalProblems()) {
+      return new MigrationResult.Failure(reporter.generateReport());
+    } else {
+      return new MigrationResult.Success(
+          outputMigratedConfigsBuilder.build(), reporter.generateReport());
+    }
   }
 
   private List<NamedConfig<?>> legacySubMigrate(
