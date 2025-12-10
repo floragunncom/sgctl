@@ -35,7 +35,7 @@ public class MigrateSecurity implements Callable<Integer> {
         var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
         var ir = reader.generateIR();
         var writer = new SearchGuardConfigWriter(ir);
-        MigrationReport.shared.printReport();
+//        MigrationReport.shared.printReport();
         return 0;
     }
 

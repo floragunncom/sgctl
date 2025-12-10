@@ -1,26 +1,53 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
-import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.codova.documents.Document;
+import com.fasterxml.jackson.core.JsonParser;
+import com.floragunn.codova.documents.*;
+import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.sun.jdi.InvalidTypeException;
 
 import java.util.*;
+
+import static com.floragunn.codova.documents.Format.JSON;
 
 public class RoleConfigWriter implements Document<RoleConfigWriter> {
     private IntermediateRepresentation ir;
     private MigrationReport report;
     private List<SGRole> roles;
+    private MigrateConfig.SgAuthc sgAuthc;
 
     private static final String FILE_NAME = "sg_roles.yml";
+    private static final Set<String> validQueryKeys = Set.of(
+            // Full-text queries https://www.elastic.co/docs/reference/query-languages/query-dsl/full-text-queries
+            "match", "match_phrase", "match_phrase_prefix", "match_bool_prefix", "multi_match", "intervals", "query_string", "simple_query_string",
+            // Term-level queries https://www.elastic.co/docs/reference/query-languages/query-dsl/term-level-queries
+            "term", "terms", "terms_set", "range", "exists", "prefix", "wildcard", "regexp", "fuzzy", "ids",
+            // Compound queries https://www.elastic.co/docs/reference/query-languages/query-dsl/compound-queries
+            "bool", "boosting", "constant_score", "dis_max", "function_score",
+            // Joining queries https://www.elastic.co/docs/reference/query-languages/query-dsl/joining-queries
+            "nested", "has_child", "has_parent", "parent_id",
+            // Geo queries https://www.elastic.co/docs/reference/query-languages/query-dsl/geo-queries
+            "geo_bounding_box", "geo_distance", "geo_grid", "geo_polygon", "geo_shape",
+            // Vector queries https://www.elastic.co/docs/reference/query-languages/query-dsl/vector-queries
+            "knn", "sparse_vector", "semantic",
+            // Specialized https://www.elastic.co/docs/reference/query-languages/query-dsl/specialized-queries
+            "distance_feature", "more_like_this", "percolate", "rank_feature", "script", "script_score", "wrapper", "pinned", "rule",
+            // Span queries https://www.elastic.co/docs/reference/query-languages/query-dsl/span-queries
+            "span_containing", "span_field_masking", "span_first", "span_multi", "span_near", "span_not", "span_or", "span_term", "span_within",
+            // Other queries https://www.elastic.co/docs/reference/query-languages/query-dsl/
+            "match_all", "shape"
+    );
 
-    public RoleConfigWriter(IntermediateRepresentation ir) {
+
+    public RoleConfigWriter(IntermediateRepresentation ir, MigrateConfig.SgAuthc sgAuthc) {
         this.ir = ir;
         this.report = MigrationReport.shared;
         this.roles = new ArrayList<>();
+        this.sgAuthc = sgAuthc;
         createSGRoles();
-        print(DocWriter.yaml().writeAsString(this));
+//        print(DocWriter.yaml().writeAsString(this));
     }
 
     private void createSGRoles() {
@@ -48,10 +75,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     }
 
     private List<String> toSGFLS(Role.Index index, Role role) {
-        // TODO: Check whether there is a restriction on the ~
-        if (index.getFieldSecurity() == null) {
-            return Collections.emptyList();
-        }
+        if (index.getFieldSecurity() == null) return Collections.emptyList();
         var fls = index.getFieldSecurity().getGrant();
         for (var field : fls) {
             if (field.isEmpty()) continue;
@@ -69,12 +93,60 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return fls;
     }
 
+    private MigrateConfig.NewAuthDomain createAuthc(List<String> attributes) {
+        for (var attribute : attributes) {
+
+        }
+        return new MigrateConfig.NewAuthDomain("basic/internal_user_db",
+                null,
+                null,
+                null,
+                null,
+                null);
+    }
+
+    private String parseQuery(LinkedHashMap<?, ?> queryMap) throws InvalidTypeException {
+        for (var entry : queryMap.entrySet()) {
+            if (!(entry.getKey() instanceof String key)) throw new InvalidTypeException();
+            if (entry.getValue() instanceof LinkedHashMap<?, ?> valueMap) {
+                try {
+//                    print(valueMap);
+                    print("H");
+                    return "{\""+ key + "\":" + parseQuery(valueMap) + "}";
+                } catch (InvalidTypeException e) {
+                    printErr(e.getMessage()); // TODO: Add Migration Rrport Entry
+                    throw e;
+                }
+            } else if (entry.getValue() instanceof String value) {
+                if (value.matches("^\\{\\{\\w+}}")) {
+//                    print("Need for transform");
+                }
+                print(value);
+                return "{\""+ key + "\":\"" + value + "\"";
+            }
+        }
+        return "";
+    }
+
     private String toSGDLS(Role.Index index, Role role) {
         var query = index.getQuery();
-        if (query == null) {
-            return null;
+        if (query == null) return null;
+        print(query);
+        try {
+            var queryJSON = DocReader.json().read(query);
+            if (queryJSON instanceof LinkedHashMap<?,?> queryMap) {
+//                var parsedQuery = parseQuery(queryMap);
+//                print(queryMap.entrySet().size());
+                return "parsedQuery";
+            }
+        } catch (DocumentParseException e) {
+            report.addManualAction(FILE_NAME,
+                    role.getName() + "->indices->query",
+                    "The error '" + e.getMessage() + "' occurred while trying to parse the string: '" + query + "' to a JSON object");
         }
-
+//        } catch (InvalidTypeException e) {
+//            printErr("Invalid Type");
+//        }
         return query;
     }
 
