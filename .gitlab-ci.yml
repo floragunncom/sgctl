@@ -246,7 +246,7 @@ quality_summary:
       printf "## Quality Summary\n\n" > "$SUMMARY"
 
       if [ -f target/checkstyle-result.xml ]; then
-python3 - target/checkstyle-result.xml "$SUMMARY" <<'PY'
+        python3 - target/checkstyle-result.xml "$SUMMARY" <<'PY'
 import sys, xml.etree.ElementTree as ET, pathlib
 xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
 tree = ET.parse(xml); root = tree.getroot()
@@ -258,7 +258,7 @@ PY
       fi
 
       if [ -f target/spotbugsXml.xml ]; then
-python3 - target/spotbugsXml.xml "$SUMMARY" <<'PY'
+        python3 - target/spotbugsXml.xml "$SUMMARY" <<'PY'
 import sys, xml.etree.ElementTree as ET, pathlib
 xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
 tree = ET.parse(xml); root = tree.getroot()
@@ -271,7 +271,7 @@ PY
       fi
 
       if [ -f target/site/jacoco/jacoco.xml ]; then
-python3 - target/site/jacoco/jacoco.xml "$SUMMARY" <<'PY'
+        python3 - target/site/jacoco/jacoco.xml "$SUMMARY" <<'PY'
 import sys, xml.etree.ElementTree as ET, pathlib
 xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
 root = ET.parse(xml).getroot()
@@ -294,7 +294,7 @@ PY
       cat "$SUMMARY"
 
       echo "Generating Code Quality report (codequality.json) from SpotBugs and Checkstyle..."
-python3 - "$SUMMARY" > codequality.json <<'PY'
+        python3 - "$SUMMARY" > codequality.json <<'PY'
 import json, pathlib, xml.etree.ElementTree as ET, sys
 
 def load_spotbugs():
