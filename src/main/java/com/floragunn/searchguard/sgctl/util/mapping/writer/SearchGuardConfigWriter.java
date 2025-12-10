@@ -6,6 +6,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentatio
 public class SearchGuardConfigWriter {
     MigrateConfig.SgAuthc sg_authc;
     UserConfigWriter userConfig;
+    ActionGroupConfigWriter actionGroupConfig;
     RoleConfigWriter roleConfig;
     RoleMappingWriter mappingWriter;
 
@@ -13,6 +14,7 @@ public class SearchGuardConfigWriter {
     public SearchGuardConfigWriter(IntermediateRepresentation ir) {
         sg_authc = new MigrateConfig.SgAuthc();
         userConfig = new UserConfigWriter(ir);
+        actionGroupConfig = new ActionGroupConfigWriter(ir);
         roleConfig = new RoleConfigWriter(ir, sg_authc);
         mappingWriter = new RoleMappingWriter(ir);
     }

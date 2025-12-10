@@ -112,43 +112,63 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             if (!(entry.getKey() instanceof String key)) throw new InvalidTypeException();
             if (entry.getValue() instanceof LinkedHashMap<?, ?> valueMap) {
                 try {
+//                    print("Map");
 //                    print(valueMap);
-                    print("H");
                     return "{\""+ key + "\":" + parseQuery(valueMap) + "}";
                 } catch (InvalidTypeException e) {
-                    printErr(e.getMessage()); // TODO: Add Migration Rrport Entry
+                    printErr(e.getMessage()); // TODO: Add Migration Report Entry
                     throw e;
                 }
             } else if (entry.getValue() instanceof String value) {
-                if (value.matches("^\\{\\{\\w+}}")) {
-//                    print("Need for transform");
+                if (value.matches("^\\{\\{.+}}")) {
+                    value = parseTemplate(value);
                 }
-                print(value);
-                return "{\""+ key + "\":\"" + value + "\"";
+//                print("String");
+//                print(value);
+                return "{\""+ key + "\":\"" + value + "\"}";
+            } else {
+                return "{\""+ key + "\":" + entry.getValue().toString() + "}";
             }
         }
         return "";
     }
 
+    private String parseTemplate(String template) {
+        var sgTemplate = "${";
+        template = template.substring(2, template.length()-2);
+        if (template.matches("^_user\\..*")) {
+            sgTemplate += "user.";
+            template = template.substring(6);
+            if (template.equals("username")) {
+                sgTemplate += "name";
+            } else if (template.equals("roles")) {
+                sgTemplate += "roles";
+            } else if (template.matches("^metadata\\..*")) {
+                sgTemplate += "attrs." + template.substring(9);
+            }
+        }
+        return sgTemplate + "}}";
+    }
+
     private String toSGDLS(Role.Index index, Role role) {
         var query = index.getQuery();
         if (query == null) return null;
-        print(query);
+//        print(query);
         try {
             var queryJSON = DocReader.json().read(query);
             if (queryJSON instanceof LinkedHashMap<?,?> queryMap) {
-//                var parsedQuery = parseQuery(queryMap);
-//                print(queryMap.entrySet().size());
-                return "parsedQuery";
+                var parsedQuery = parseQuery(queryMap);
+                print(query);
+                print(parsedQuery);
+                return parsedQuery;
             }
         } catch (DocumentParseException e) {
             report.addManualAction(FILE_NAME,
                     role.getName() + "->indices->query",
                     "The error '" + e.getMessage() + "' occurred while trying to parse the string: '" + query + "' to a JSON object");
+        } catch (InvalidTypeException e) {
+            printErr("Invalid Type");
         }
-//        } catch (InvalidTypeException e) {
-//            printErr("Invalid Type");
-//        }
         return query;
     }
 
@@ -280,7 +300,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
 
     private List<String> toSGClusterPrivilegesFIRST_HALF(Role role) {
         var privileges = role.getCluster();
-        var sgPrivileges = new ArrayList<String>() ;
+        var sgPrivileges = new ArrayList<String>();
         var agWriter = new ActionGroupConfigWriter(ir); // should probably be a private param of the class
         var type = "cluster";
         // TODO: fill allowedActions with proper action strings
