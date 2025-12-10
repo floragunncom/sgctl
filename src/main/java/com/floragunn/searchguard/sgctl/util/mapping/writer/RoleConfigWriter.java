@@ -122,7 +122,10 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                     throw e;
                 }
             } else if (entry.getValue() instanceof String value) {
-                if (value.matches("^\\{\\{.+}}")) {
+                if (value.matches(".*\\{\\{([#^]).+?}}.+?\\{\\{/.+?}}.*")) {
+                    report.addWarning(FILE_NAME, origin,
+                            "Suspected incompatible Mustache template syntax. Check the part: '" + value + "'.");
+                } else if (value.matches("^\\{\\{.+}}")) {
                     value = parseTemplate(value);
                 }
 //                print("String");
@@ -145,6 +148,10 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 sgTemplate += "name";
             } else if (template.equals("roles")) {
                 sgTemplate += "roles";
+            } else if (template.equals("full_name")) {
+                sgTemplate += "attrs.full_name";
+            } else if (template.equals("email")) {
+                sgTemplate += "attrs.email";
             } else if (template.matches("^metadata\\..*")) {
                 sgTemplate += "attrs." + template.substring(9);
             }
@@ -480,7 +487,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return sgPrivileges;
     }
 
-      private List<String> toSGClusterPrivilegesSECOND_HALF(Role role) {
+    private List<String> toSGClusterPrivilegesSECOND_HALF(Role role) {
         var privileges = role.getCluster();
         var sgPrivileges = new ArrayList<String>() ;
         var type = "CLUSTER";
@@ -629,7 +636,6 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         }
         return sgPrivileges;
     }
-
 
     private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
         var sgPrivileges = new ArrayList<String>() ;
