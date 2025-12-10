@@ -15,7 +15,7 @@ public class SearchGuardConfigWriter {
         sg_authc = new MigrateConfig.SgAuthc();
         userConfig = new UserConfigWriter(ir);
         actionGroupConfig = new ActionGroupConfigWriter(ir);
-        roleConfig = new RoleConfigWriter(ir, sg_authc);
+        roleConfig = new RoleConfigWriter(ir, sg_authc, actionGroupConfig);
         mappingWriter = new RoleMappingWriter(ir);
     }
 }

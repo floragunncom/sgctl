@@ -8,16 +8,18 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentatio
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.sun.jdi.InvalidTypeException;
 
+import java.security.InvalidKeyException;
 import java.util.*;
 
 import static com.floragunn.codova.documents.Format.JSON;
 
 public class RoleConfigWriter implements Document<RoleConfigWriter> {
-    private IntermediateRepresentation ir;
+    final private IntermediateRepresentation ir;
     private MigrationReport report;
     private List<SGRole> roles;
     private MigrateConfig.SgAuthc sgAuthc;
     private ActionGroupConfigWriter agWriter;
+    private Set<String> userMappingAttributes = new HashSet<>();
 
     private static final String FILE_NAME = "sg_roles.yml";
     private static final Set<String> validQueryKeys = Set.of(
@@ -42,13 +44,14 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     );
 
 
-    public RoleConfigWriter(IntermediateRepresentation ir, MigrateConfig.SgAuthc sgAuthc) {
+    public RoleConfigWriter(IntermediateRepresentation ir, MigrateConfig.SgAuthc sgAuthc, ActionGroupConfigWriter agWriter) {
         this.ir = ir;
         this.report = MigrationReport.shared;
         this.roles = new ArrayList<>();
         this.sgAuthc = sgAuthc;
-        this.agWriter = new ActionGroupConfigWriter(ir); 
+        this.agWriter = agWriter;
         createSGRoles();
+        addToAuthc();
         print(DocWriter.yaml().writeAsString(this));
     }
 
@@ -95,50 +98,83 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return fls;
     }
 
-    private MigrateConfig.NewAuthDomain createAuthc(List<String> attributes) {
-        for (var attribute : attributes) {
-
+    private void addToAuthc() {
+        final var frontendType = "basic/internal_user_db";
+        var contents = new LinkedHashMap<String, String>();
+        for (var attribute : userMappingAttributes) {
+            contents.put(attribute, "user_entry.attributes." + attribute);
         }
-        return new MigrateConfig.NewAuthDomain("basic/internal_user_db",
-                null,
-                null,
-                null,
-                null,
-                null);
+        var map = new LinkedHashMap<String, Object>();
+        map.put("user_mapping.attributes.from", contents);
+        // TODO: Add to sgAuthc
+        new MigrateConfig.NewAuthDomain(frontendType, null, null, null, map, null);
     }
 
-    private String parseQuery(LinkedHashMap<?, ?> queryMap, String origin) throws InvalidTypeException {
+    private String parseQueryMap(LinkedHashMap<?, ?> queryMap, String origin) throws InvalidTypeException, InvalidKeyException {
         for (var entry : queryMap.entrySet()) {
-            if (!(entry.getKey() instanceof String key)) throw new InvalidTypeException();
+            if (!(entry.getKey() instanceof String key)) {
+                throw new InvalidTypeException("Encountered a key of type: '" + entry.getKey().getClass().getName() + "' for entry: '" + entry +"'.");
+            }
+            var removeKey = (key.equals("template") || key.equals("source"));
             if (entry.getValue() instanceof LinkedHashMap<?, ?> valueMap) {
-                if (!validQueryKeys.contains(key)) report.addWarning(FILE_NAME, origin,
-                        "Unknown key: '" + key + "' found while parsing DSL query. Review this value.");
-                try {
-//                    print("Map");
-//                    print(valueMap);
-                    return "{\""+ key + "\":" + parseQuery(valueMap, origin) + "}";
-                } catch (InvalidTypeException e) {
-                    printErr(e.getMessage()); // TODO: Add Migration Report Entry
-                    throw e;
-                }
-            } else if (entry.getValue() instanceof String value) {
-                if (value.matches(".*\\{\\{([#^]).+?}}.+?\\{\\{/.+?}}.*")) {
+                if (!validQueryKeys.contains(key)) {
                     report.addWarning(FILE_NAME, origin,
-                            "Suspected incompatible Mustache template syntax. Check the part: '" + value + "'.");
-                } else if (value.matches("^\\{\\{.+}}")) {
-                    value = parseTemplate(value);
+                            "Unknown key: '" + key + "' found while parsing DSL query. Review this value.");
                 }
-//                print("String");
-//                print(value);
-                return "{\""+ key + "\":\"" + value + "\"}";
+                if (removeKey) {
+                    return parseQueryMap(valueMap, origin);
+                }
+                return "{\""+ key + "\": " + parseQueryMap(valueMap, origin) + "}";
+            } else if (entry.getValue() instanceof String value) {
+                if (removeKey) {
+                    return parseQueryString(value, origin);
+                }
+                return "{\"" + key + "\": \"" + parseQueryString(value, origin) + "\"}";
+            } else if (entry.getValue() instanceof ArrayList<?> value) {
+                if (removeKey) {
+                    return parseQueryArray(value, origin);
+                }
+                return "{\"" + key + "\": " + parseQueryArray(value, origin) + "}";
             } else {
-                return "{\""+ key + "\":" + entry.getValue().toString() + "}";
+                print(entry.getValue().getClass());
+                return "{\""+ key + "\": " + entry.getValue().toString() + "}";
             }
         }
         return "";
     }
 
-    private String parseTemplate(String template) {
+    private String parseQueryArray(ArrayList<?> array, String origin) throws InvalidTypeException, InvalidKeyException {
+        var strRep = new StringBuilder("[");
+        for (var i = 0; i < array.size(); i++) {
+            var element = array.get(i);
+            if (element instanceof LinkedHashMap<?,?> map) {
+                strRep.append(parseQueryMap(map, origin));
+            } else if (element instanceof String elementStr) {
+                strRep.append(parseQueryString(elementStr, origin));
+            } else if (element instanceof ArrayList<?> elementArray) {
+                strRep.append(parseQueryArray(elementArray, origin));
+            } else {
+                strRep.append(element);
+            }
+            if (i < array.size()-1) strRep.append(", ");
+        }
+
+        return strRep + "]";
+    }
+
+    private String parseQueryString(String value, String origin) throws InvalidKeyException {
+        if (value.matches(".*\\{\\{([#^]).+?}}.+?\\{\\{/.+?}}.*")) {
+            report.addWarning(FILE_NAME, origin,
+                    "Suspected incompatible Mustache template syntax. The part: '" + value + "' probably needs to be adjusted or removed.");
+            throw new InvalidKeyException();
+        } else if (value.strip().matches("^\\{\\{.+}}")) {
+            return parseTemplate(value.strip(), origin);
+        }
+        return value;
+    }
+
+    private String parseTemplate(String template, String origin) throws InvalidKeyException {
+        final var fallback = template;
         var sgTemplate = "${";
         template = template.substring(2, template.length()-2);
         if (template.matches("^_user\\..*")) {
@@ -150,23 +186,34 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 sgTemplate += "roles";
             } else if (template.equals("full_name")) {
                 sgTemplate += "attrs.full_name";
+                userMappingAttributes.add("full_name");
             } else if (template.equals("email")) {
                 sgTemplate += "attrs.email";
+                userMappingAttributes.add("full_name");
             } else if (template.matches("^metadata\\..*")) {
-                sgTemplate += "attrs." + template.substring(9);
+                template = template.substring(9);
+                sgTemplate += "attrs." + template;
+                userMappingAttributes.add(template);
+            } else {
+                report.addWarning(FILE_NAME, origin,
+                        "Encountered an unsupported value for _user in the variable substitution. Review the part: '" + fallback + "'.");
+                throw new InvalidKeyException();
             }
+        } else {
+            report.addWarning(FILE_NAME, origin,
+                    "Encountered an unsupported value in a variable substitution field. Review the part: '" + fallback + "'.");
+            throw new InvalidKeyException();
         }
-        return sgTemplate + "}}";
+        return sgTemplate + "}";
     }
 
     private String toSGDLS(Role.Index index, Role role) {
         var query = index.getQuery();
         if (query == null) return null;
-//        print(query);
         try {
             var queryJSON = DocReader.json().read(query);
             if (queryJSON instanceof LinkedHashMap<?,?> queryMap) {
-                var parsedQuery = parseQuery(queryMap, role.getName() + "->indices->query");
+                var parsedQuery = parseQueryMap(queryMap, role.getName() + "->indices->query");
                 print(query);
                 print(parsedQuery);
                 return parsedQuery;
@@ -174,11 +221,15 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         } catch (DocumentParseException e) {
             report.addManualAction(FILE_NAME,
                     role.getName() + "->indices->query",
-                    "The error '" + e.getMessage() + "' occurred while trying to parse the string: '" + query + "' to a JSON object");
+                    "The error '" + e.getMessage() + "' occurred while trying to parse the string: '" + query + "' to a JSON object.");
         } catch (InvalidTypeException e) {
-            printErr("Invalid Type");
+            report.addWarning(FILE_NAME,
+                    role.getName() + "->indices->query",
+                    e.getMessage() + "Please review the query '" + query + "'.");
+        } catch (InvalidKeyException e) {
+            return null;
         }
-        return query;
+        return null;
     }
 
     private List<String> toSGClusterPrivileges(Role role) {
@@ -628,10 +679,10 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                             customActionGroupDescription(privilege), new String[] {});
                 }
 
-                default -> {    
+                default -> {
                     report.addManualAction(FILE_NAME, role.getName() + "->cluster_permissions", "The privilege: " + privilege + " is unknown and can not be automatically mapped.");
                 }
-                
+
             }
         }
         return sgPrivileges;
