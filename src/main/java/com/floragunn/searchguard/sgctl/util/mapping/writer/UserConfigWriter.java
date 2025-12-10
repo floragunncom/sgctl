@@ -33,6 +33,12 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
     private void createSGInternalUser() {
         for (var user : ir.getUsers()) {
             // TODO: Add handling for enabled
+            if (!user.getEnabled()) {
+                report.addWarning(FILE_NAME,
+                        user.getUsername() + "->enabled",
+                        "The user has set 'enabled' to false. This can not be done in Search Guard and the user is not translated");
+                continue;
+            }
             var attributes = user.getAttributes();
             if (user.getEmail() != null) {
                 attributes.put("email", user.getEmail());
