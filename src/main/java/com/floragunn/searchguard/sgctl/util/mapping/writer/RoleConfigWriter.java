@@ -38,7 +38,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             // Span queries https://www.elastic.co/docs/reference/query-languages/query-dsl/span-queries
             "span_containing", "span_field_masking", "span_first", "span_multi", "span_near", "span_not", "span_or", "span_term", "span_within",
             // Other queries https://www.elastic.co/docs/reference/query-languages/query-dsl/
-            "match_all", "shape"
+            "match_all", "shape", "template", "source"
     );
 
 
@@ -49,7 +49,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         this.sgAuthc = sgAuthc;
         this.agWriter = new ActionGroupConfigWriter(ir); 
         createSGRoles();
-//        print(DocWriter.yaml().writeAsString(this));
+        print(DocWriter.yaml().writeAsString(this));
     }
 
     private void createSGRoles() {
@@ -107,14 +107,16 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 null);
     }
 
-    private String parseQuery(LinkedHashMap<?, ?> queryMap) throws InvalidTypeException {
+    private String parseQuery(LinkedHashMap<?, ?> queryMap, String origin) throws InvalidTypeException {
         for (var entry : queryMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) throw new InvalidTypeException();
             if (entry.getValue() instanceof LinkedHashMap<?, ?> valueMap) {
+                if (!validQueryKeys.contains(key)) report.addWarning(FILE_NAME, origin,
+                        "Unknown key: '" + key + "' found while parsing DSL query. Review this value.");
                 try {
 //                    print("Map");
 //                    print(valueMap);
-                    return "{\""+ key + "\":" + parseQuery(valueMap) + "}";
+                    return "{\""+ key + "\":" + parseQuery(valueMap, origin) + "}";
                 } catch (InvalidTypeException e) {
                     printErr(e.getMessage()); // TODO: Add Migration Report Entry
                     throw e;
@@ -157,7 +159,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         try {
             var queryJSON = DocReader.json().read(query);
             if (queryJSON instanceof LinkedHashMap<?,?> queryMap) {
-                var parsedQuery = parseQuery(queryMap);
+                var parsedQuery = parseQuery(queryMap, role.getName() + "->indices->query");
                 print(query);
                 print(parsedQuery);
                 return parsedQuery;
