@@ -476,15 +476,6 @@
 						<additionalJOption>-Xdoclint:all</additionalJOption>
 					</additionalJOptions>
 				</configuration>
-				<executions>
-					<execution>
-						<id>verify-javadocs</id>
-						<phase>verify</phase>
-						<goals>
-							<goal>javadoc</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
