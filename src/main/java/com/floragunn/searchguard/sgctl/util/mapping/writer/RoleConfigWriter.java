@@ -200,6 +200,48 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return sgPrivileges;
     }
 
+      private List<String> toSGClusterPrivilegesSECOND_HALF(Role role) {
+        var privileges = role.getCluster();
+        var sgPrivileges = new ArrayList<String>() ;
+
+        for (var privilege : privileges) {
+            switch (privilege) {
+
+                case "manage_security" -> { sgPrivileges.add("SGS_MANAGE_SECURITY_CUSTOM"); }
+                case "manage_service_account" -> { sgPrivileges.add("SGS_MANAGE_SERVICE_ACCOUNT_CUSTOM"); }
+                case "manage_slm" -> { sgPrivileges.add("SGS_MANAGE_SLM_CUSTOM"); }
+                case "manage_token" -> { sgPrivileges.add("SGS_MANAGE_TOKEN_CUSTOM"); }
+                case "manage_transform" -> { sgPrivileges.add("SGS_MANAGE_TRANSFORM_CUSTOM"); }
+                case "manage_watcher" -> { sgPrivileges.add("SGS_MANAGE_WATCHER_CUSTOM"); }
+                case "monitor" -> { sgPrivileges.add("SGS_CLUSTER_MONITOR"); }
+                case "monitor_data_stream_global_retention" -> {}     // deprecated 8.16.0
+                case "monitor_enrich" -> { sgPrivileges.add("SGS_MONITOR_ENRICH_CUSTOM"); }
+                case "monitor_esql" -> { sgPrivileges.add("SGS_MONITOR_ESQL_CUSTOM"); }
+                case "monitor_inference" -> { sgPrivileges.add("SGS_MONITOR_INFERENCE_CUSTOM"); }
+                case "monitor_ml" -> { sgPrivileges.add("SGS_MONITOR_ML_CUSTOM"); }
+                case "monitor_rollup" -> { sgPrivileges.add("SGS_MONITOR_ROLLUP_CUSTOM"); }
+                case "monitor_snapshot" -> { sgPrivileges.add("SGS_MONITOR_SNAPSHOT_CUSTOM"); }
+                case "monitor_stats" -> { sgPrivileges.add("SGS_MONITOR_STATS_CUSTOM"); }
+                case "monitor_text_structure" -> { sgPrivileges.add("SGS_MONITOR_TEXT_STRUCTURE_CUSTOM"); }
+                case "monitor_transform" -> { sgPrivileges.add("SGS_MONITOR_TRANSFORM_CUSTOM"); }
+                case "monitor_watcher" -> { sgPrivileges.add("SGS_MONITOR_WATCHER_CUSTOM"); }
+                case "read_ccr" -> { sgPrivileges.add("SGS_READ_CCR_CUSTOM"); }
+                case "read_ilm" -> { sgPrivileges.add("SGS_READ_ILM_CUSTOM"); }
+                case "read_pipeline" -> { sgPrivileges.add("SGS_READ_PIPELINE_CUSTOM"); }
+                case "read_slm" -> { sgPrivileges.add("SGS_READ_SLM_CUSTOM"); }
+                case "read_security" -> { sgPrivileges.add("SGS_READ_SECURITY_CUSTOM"); }
+                case "transport_client" -> { sgPrivileges.add("SGS_TRANSPORT_CLIENT_CUSTOM"); }
+
+                default -> {    
+                    report.addManualAction(FILE_NAME, role.getName() + "->cluster_permissions", "The privilege: " + privilege + " is unknown and can not be automatically mapped.");
+                }
+                
+            }
+        }
+        return sgPrivileges;
+    }
+
+
     private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
         var sgPrivileges = new ArrayList<String>() ;
         for (var privilege : privileges) {
