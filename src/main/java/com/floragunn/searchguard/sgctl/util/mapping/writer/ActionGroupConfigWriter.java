@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 
 import com.floragunn.codova.documents.DocWriter;
@@ -32,6 +33,14 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
         ActionGroup ag = new ActionGroup(name, List.of(allowedActions), type, description);
         // possibly write to report here?
         actionGroups.add(ag);
+    }
+
+    public boolean contains(String name){
+        if (actionGroups == null) return false;
+        for (var ag : actionGroups){
+            if (Objects.equals(ag.name, name)) return true;
+        }
+        return false;
     }
 
     @Override
