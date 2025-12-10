@@ -17,6 +17,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     private MigrationReport report;
     private List<SGRole> roles;
     private MigrateConfig.SgAuthc sgAuthc;
+    private ActionGroupConfigWriter agWriter;
 
     private static final String FILE_NAME = "sg_roles.yml";
     private static final Set<String> validQueryKeys = Set.of(
@@ -46,6 +47,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         this.report = MigrationReport.shared;
         this.roles = new ArrayList<>();
         this.sgAuthc = sgAuthc;
+        this.agWriter = new ActionGroupConfigWriter(ir); 
         createSGRoles();
 //        print(DocWriter.yaml().writeAsString(this));
     }
@@ -279,7 +281,6 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
       private List<String> toSGClusterPrivilegesSECOND_HALF(Role role) {
         var privileges = role.getCluster();
         var sgPrivileges = new ArrayList<String>() ;
-        var agWriter = new ActionGroupConfigWriter(ir); // should probably be a private param of the class
         var type = "CLUSTER";
 
         for (var privilege : privileges) {
