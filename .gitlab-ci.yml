@@ -327,7 +327,7 @@ PY
       cat "$SUMMARY"
 
       echo "Generating Code Quality report (codequality.json) from SpotBugs and Checkstyle..."
-        python3 - "$SUMMARY" > codequality.json <<'PY'
+      python3 - "$SUMMARY" > codequality.json <<'PY'
 import json, pathlib, xml.etree.ElementTree as ET, sys
 
 def load_spotbugs():
