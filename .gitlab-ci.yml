@@ -299,7 +299,15 @@ javadoc_check:
         exit 0
       fi
 
-      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests javadoc:javadoc
+      # Fail the Javadoc build when warnings are encountered.  The maven-javadoc-plugin
+      # has a parameter failOnWarnings (since 3.0.1) which causes the build to
+      # return a non-zero status on any Javadoc warning.  We enable this via
+      # the corresponding user property so that missing comments or other
+      # warnings mark this job as failed.  See plugin docs: the default is
+      # false, so warnings are otherwise ignored.
+      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
+        -Dmaven.javadoc.failOnWarnings=true \
+        -DskipTests javadoc:javadoc
   # Do not block the pipeline if Javadoc generation fails.
   allow_failure: true
 
@@ -411,8 +419,17 @@ quality_summary:
       ISSUE_COUNT=$(python3 -c "import json, pathlib; p=pathlib.Path('codequality.json'); print(len(json.load(p.open())) if p.exists() else 0)")
       echo "Code Quality issues found: ${ISSUE_COUNT}"
 
-      if [ "${ISSUE_COUNT}" -gt 0 ]; then
-        echo "Failing job because code quality issues were detected in changed files."
+      # Treat any Checkstyle or SpotBugs finding as a failing condition. Even though the
+      # job is allowed to fail (allow_failure: true), returning a non-zero exit code
+      # will mark this job as "failed" in the GitLab UI, which surfaces it as a warning
+      # for the overall pipeline.  If ERRORS or BUGS variables are non-empty and
+      # greater than zero, exit with failure.
+      if [ -n "${ERRORS:-}" ] && [ "${ERRORS}" -gt 0 ]; then
+        echo "Quality Summary: Checkstyle found ${ERRORS} issue(s); marking job as failed."
+        exit 1
+      fi
+      if [ -n "${BUGS:-}" ] && [ "${BUGS}" -gt 0 ]; then
+        echo "Quality Summary: SpotBugs found ${BUGS} bug(s); marking job as failed."
         exit 1
       fi
   # This job runs automatically and is allowed to fail without affecting the overall pipeline.
