@@ -90,12 +90,14 @@ static_checks:
       CHECKSTYLE_INCLUDES=$(printf "%s\n" $CHANGED_JAVA | paste -sd, -)
       echo "Checkstyle includes: $CHECKSTYLE_INCLUDES"
 
+      # Fail the Checkstyle task when violations are found.  This allows the
+      # job to exit with a non‑zero status so the pipeline shows a warning.
       mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
         -DskipTests \
-        -Dcheckstyle.failOnViolation=false \
+        -Dcheckstyle.failOnViolation=true \
         -Dcheckstyle.includes="$CHECKSTYLE_INCLUDES" \
         -Dcheckstyle.config.location=sun_checks.xml \
-        checkstyle:check || true
+        checkstyle:check
     - |
       if grep -q "spotbugs-maven-plugin" pom.xml; then
         set -eu
@@ -137,16 +139,20 @@ static_checks:
 
         cat spotbugs-include.xml
 
+        # Fail the SpotBugs task when violations are found to ensure the
+        # pipeline records a warning.  The allow_failure setting on the job
+        # prevents the pipeline from going red.
         mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
           -Pspotbugs \
           -DskipTests \
-          -Dspotbugs.failOnError=false \
+          -Dspotbugs.failOnError=true \
           -Dspotbugs.includeFilterFile=spotbugs-include.xml \
-          spotbugs:check || true
+          spotbugs:check
       else
         echo "SpotBugs plugin not configured; skipping spotbugs check."
       fi
-    - exit 0
+    # Do not exit with a forced 0; allow the previous commands to set
+    # the proper exit status based on Checkstyle/SpotBugs results.
   # This job runs automatically and is allowed to fail without
   # affecting the overall pipeline status.
 
