@@ -3,11 +3,11 @@ variables:
   MAVEN_OPTS: "-Dmaven.repo.local=.m2/repository"
   MAVEN_CLI_OPTS: "--batch-mode -Pwith-sg-plugin"
   DOCKER_DRIVER: overlay2
+
 image: "maven:3.9.9-amazoncorretto-21-debian"
 
-
 include:
-- local: 'ci/aikido.yml'  
+  - local: "ci/aikido.yml"
 
 stages:
   - build
@@ -30,7 +30,7 @@ build:
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
     - if: '$DOCKER_ONLY'
-      when: never            
+      when: never
     - when: on_success
   script:
     - mvn -Dspotbugs.skip=true -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS clean install
@@ -61,59 +61,87 @@ static_checks:
         apt-get update && apt-get install -y git || { echo "git unavailable; skipping static checks."; exit 0; }
       fi
     - |
-      set -e
+      set -eu
+
       BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
       BASE_REF="origin/$BASE_BRANCH"
-      git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
-      BASE_SHA="${BASE_REF}"
+
+      git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 \
+        || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 \
+        || true
+
+      BASE_SHA="$BASE_REF"
       if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
         BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
       fi
       if [ -z "$BASE_SHA" ] || ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
         BASE_SHA="$(git rev-parse HEAD~1)"
       fi
+
       echo "Diff base: $BASE_SHA"
-      mapfile -t CHANGED_JAVA < <(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java')
-      if [ "${#CHANGED_JAVA[@]}" -eq 0 ]; then
+
+      CHANGED_JAVA="$(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java' || true)"
+      if [ -z "$CHANGED_JAVA" ]; then
         echo "No changed Java files; skipping static checks."
         exit 0
       fi
-      CHECKSTYLE_INCLUDES=$(printf "%s\n" "${CHANGED_JAVA[@]}" | paste -sd, -)
+
+      CHECKSTYLE_INCLUDES=$(printf "%s\n" $CHANGED_JAVA | paste -sd, -)
       echo "Checkstyle includes: $CHECKSTYLE_INCLUDES"
-      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -Dcheckstyle.failOnViolation=false -Dcheckstyle.includes="$CHECKSTYLE_INCLUDES" -Dcheckstyle.config.location=sun_checks.xml checkstyle:check || true
+
+      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
+        -DskipTests \
+        -Dcheckstyle.failOnViolation=false \
+        -Dcheckstyle.includes="$CHECKSTYLE_INCLUDES" \
+        -Dcheckstyle.config.location=sun_checks.xml \
+        checkstyle:check || true
     - |
       if grep -q "spotbugs-maven-plugin" pom.xml; then
-        set -e
+        set -eu
+
         BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
         BASE_REF="origin/$BASE_BRANCH"
-        git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
-        BASE_SHA="${BASE_REF}"
+
+        git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 \
+          || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 \
+          || true
+
+        BASE_SHA="$BASE_REF"
         if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
           BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
         fi
         if [ -z "$BASE_SHA" ] || ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
           BASE_SHA="$(git rev-parse HEAD~1)"
         fi
-        mapfile -t CHANGED_JAVA < <(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java')
-        if [ "${#CHANGED_JAVA[@]}" -eq 0 ]; then
+
+        CHANGED_JAVA="$(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java' || true)"
+        if [ -z "$CHANGED_JAVA" ]; then
           echo "No changed Java files; skipping SpotBugs."
           exit 0
         fi
+
         echo "Generating SpotBugs include filter for changed files..."
         {
           echo "<FindBugsFilter>"
-          for f in "${CHANGED_JAVA[@]}"; do
-            cls="${f#src/main/java/}"
-            cls="${cls#src/test/java/}"
-            cls="${cls%.java}"
-            cls="${cls//\//.}"
-            # SpotBugs expects the class name on an attribute, not as text content
-            [ -n "$cls" ] && echo "  <Match><Class name=\"$cls\"/></Match>"
+          for f in $CHANGED_JAVA; do
+            cls=$(printf '%s\n' "$f" | sed \
+              -e 's@^src/main/java/@@' \
+              -e 's@^src/test/java/@@' \
+              -e 's@\.java$@@' \
+              -e 's@/@.@g')
+            [ -n "$cls" ] && printf '  <Match><Class name="%s"/></Match>\n' "$cls"
           done
           echo "</FindBugsFilter>"
         } > spotbugs-include.xml
+
         cat spotbugs-include.xml
-        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -Pspotbugs -DskipTests -Dspotbugs.failOnError=false -Dspotbugs.includeFilterFile=spotbugs-include.xml spotbugs:check || true
+
+        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
+          -Pspotbugs \
+          -DskipTests \
+          -Dspotbugs.failOnError=false \
+          -Dspotbugs.includeFilterFile=spotbugs-include.xml \
+          spotbugs:check || true
       else
         echo "SpotBugs plugin not configured; skipping spotbugs check."
       fi
@@ -133,51 +161,75 @@ sonarish_gate:
     COVERAGE_MINIMUM: "70"
   script:
     - |
-      set -euo pipefail
+      set -eu
+
       if ! command -v python3 >/dev/null 2>&1 || ! command -v git >/dev/null 2>&1; then
         apt-get update && apt-get install -y python3 git
       fi
+
       BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
       BASE_REF="origin/$BASE_BRANCH"
-      git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
-      BASE_SHA="${BASE_REF}"
+
+      git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 \
+        || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 \
+        || true
+
+      BASE_SHA="$BASE_REF"
       if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
         BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
       fi
       if [ -z "$BASE_SHA" ] || ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
         BASE_SHA="$(git rev-parse HEAD~1)"
       fi
+
       echo "Diff base: $BASE_SHA"
-      mapfile -t CHANGED_JAVA < <(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java')
-      if [ "${#CHANGED_JAVA[@]}" -eq 0 ]; then
+
+      CHANGED_JAVA="$(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java' || true)"
+      if [ -z "$CHANGED_JAVA" ]; then
         echo "No changed Java files; skipping Sonar-ish gate."
         exit 0
       fi
 
-      CHECKSTYLE_INCLUDES=$(printf "%s\n" "${CHANGED_JAVA[@]}" | paste -sd, -)
+      CHECKSTYLE_INCLUDES=$(printf "%s\n" $CHANGED_JAVA | paste -sd, -)
       echo "Checkstyle includes: $CHECKSTYLE_INCLUDES"
-      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -Dcheckstyle.failOnViolation=true -Dcheckstyle.includes="$CHECKSTYLE_INCLUDES" -Dcheckstyle.config.location=sun_checks.xml checkstyle:check
+
+      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
+        -DskipTests \
+        -Dcheckstyle.failOnViolation=true \
+        -Dcheckstyle.includes="$CHECKSTYLE_INCLUDES" \
+        -Dcheckstyle.config.location=sun_checks.xml \
+        checkstyle:check
 
       echo "Generating SpotBugs include filter for changed files..."
       {
         echo "<FindBugsFilter>"
-        for f in "${CHANGED_JAVA[@]}"; do
-          cls="${f#src/main/java/}"
-          cls="${cls#src/test/java/}"
-          cls="${cls%.java}"
-          cls="${cls//\//.}"
-          # SpotBugs expects the class name on an attribute, not as text content
-          [ -n "$cls" ] && echo "  <Match><Class name=\"$cls\"/></Match>"
+        for f in $CHANGED_JAVA; do
+          cls=$(printf '%s\n' "$f" | sed \
+            -e 's@^src/main/java/@@' \
+            -e 's@^src/test/java/@@' \
+            -e 's@\.java$@@' \
+            -e 's@/@.@g')
+          [ -n "$cls" ] && printf '  <Match><Class name="%s"/></Match>\n' "$cls"
         done
         echo "</FindBugsFilter>"
       } > spotbugs-include.xml
+
       cat spotbugs-include.xml
-      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -Pspotbugs -Dspotbugs.includeFilterFile=spotbugs-include.xml -Dspotbugs.effort=Max -Dspotbugs.threshold=Medium -Dspotbugs.xmlOutput=true spotbugs:spotbugs spotbugs:check
+
+      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
+        -DskipTests \
+        -Pspotbugs \
+        -Dspotbugs.includeFilterFile=spotbugs-include.xml \
+        -Dspotbugs.effort=Max \
+        -Dspotbugs.threshold=Medium \
+        -Dspotbugs.xmlOutput=true \
+        spotbugs:spotbugs spotbugs:check
 
       if [ ! -f target/site/jacoco/jacoco.xml ]; then
         echo "Jacoco report not found at target/site/jacoco/jacoco.xml (was the build job skipped or tests not run?)"
         exit 1
       fi
+
       echo "Enforcing coverage >= ${COVERAGE_MINIMUM}% from Jacoco XML"
       python3 -c "import sys, xml.etree.ElementTree as ET; min_cov=float(sys.argv[1]); root=ET.parse(sys.argv[2]).getroot(); counter=next((c for c in root.iter('counter') if c.get('type')=='LINE'), None); line=None if counter is None else (lambda m,c: 0.0 if m+c==0 else (c/(m+c))*100.0)(int(counter.get('missed')), int(counter.get('covered'))); print(f'Line coverage: {line:.2f}% (minimum {min_cov:.2f}%)') if line is not None else print('No LINE counter in Jacoco report'); sys.exit(1) if (line is None or line + 1e-9 < min_cov) else None" "$COVERAGE_MINIMUM" target/site/jacoco/jacoco.xml
   allow_failure: true
@@ -201,25 +253,33 @@ javadoc_check:
     - when: always
   script:
     - |
-      set -e
+      set -eu
+
       if ! command -v git >/dev/null 2>&1; then
         apt-get update && apt-get install -y git || { echo "git unavailable; skipping javadoc check."; exit 0; }
       fi
+
       BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
       BASE_REF="origin/$BASE_BRANCH"
-      git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
-      BASE_SHA="${BASE_REF}"
+
+      git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 \
+        || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 \
+        || true
+
+      BASE_SHA="$BASE_REF"
       if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
         BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
       fi
       if [ -z "$BASE_SHA" ] || ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
         BASE_SHA="$(git rev-parse HEAD~1)"
       fi
-      mapfile -t CHANGED_JAVA < <(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java')
-      if [ "${#CHANGED_JAVA[@]}" -eq 0 ]; then
+
+      CHANGED_JAVA="$(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java' || true)"
+      if [ -z "$CHANGED_JAVA" ]; then
         echo "No changed Java files; skipping Javadoc check."
         exit 0
       fi
+
       mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests javadoc:javadoc
   allow_failure: true
 
@@ -271,137 +331,180 @@ quality_summary:
     - when: always
   script:
     - |
-      set -euo pipefail
+      set -eu
+
       if ! command -v python3 >/dev/null 2>&1; then
         apt-get update && apt-get install -y python3
       fi
+
       SUMMARY=quality-summary.md
       printf "## Quality Summary\n\n" > "$SUMMARY"
 
+      # Checkstyle summary
       if [ -f target/checkstyle-result.xml ]; then
-        python3 - target/checkstyle-result.xml "$SUMMARY" <<'PY'
-          import sys, xml.etree.ElementTree as ET, pathlib
-          xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
-          tree = ET.parse(xml); root = tree.getroot()
-          errs = sum(1 for _ in root.iter('error'))
-          out.write_text(out.read_text() + f"- Checkstyle: {errs} issue(s)\n")
-PY
-      else
-        printf "- Checkstyle: report missing\n" >> "$SUMMARY"
-      fi
+        python3 - target/checkstyle-result.xml "$SUMMARY" << 'PY'
+  import sys
+  import xml.etree.ElementTree as ET
+  import pathlib
+  
+  xml_path = sys.argv[1]
+  out_path = pathlib.Path(sys.argv[2])
+  
+  tree = ET.parse(xml_path)
+  root = tree.getroot()
+  errs = sum(1 for _ in root.iter('error'))
+  
+  text = out_path.read_text() if out_path.exists() else ""
+text += f"- Checkstyle: {errs} issue(s)\n"
+  out_path.write_text(text)
+  PY
+  else
+printf "- Checkstyle: report missing\n" >> "$SUMMARY"
+  fi
+  
+  # SpotBugs summary
+  if [ -f target/spotbugsXml.xml ]; then
+  python3 - target/spotbugsXml.xml "$SUMMARY" << 'PY'
+  import sys
+  import xml.etree.ElementTree as ET
+  import pathlib
+  
+  xml_path = sys.argv[1]
+  out_path = pathlib.Path(sys.argv[2])
+  
+  tree = ET.parse(xml_path)
+  root = tree.getroot()
+  
+  bugs = root.findall(".//BugInstance")
+  bugs_count = len(bugs)
+  high = len([b for b in bugs if b.get("priority") == "1"])
+  
+  text = out_path.read_text() if out_path.exists() else ""
+text += f"- SpotBugs: {bugs_count} bug(s), high-priority: {high}\n"
+  out_path.write_text(text)
+  PY
+  else
+printf "- SpotBugs: report missing\n" >> "$SUMMARY"
+  fi
+  
+  # Coverage summary
+  if [ -f target/site/jacoco/jacoco.xml ]; then
+  python3 - target/site/jacoco/jacoco.xml "$SUMMARY" << 'PY'
+  import sys
+  import xml.etree.ElementTree as ET
+  import pathlib
+  
+  xml_path = sys.argv[1]
+  out_path = pathlib.Path(sys.argv[2])
+  
+  root = ET.parse(xml_path).getroot()
+  
+  line_cov = None
+for counter in root.iter('counter'):
+  if counter.get('type') == 'LINE':
+    missed = int(counter.get('missed'))
+    covered = int(counter.get('covered'))
+    total = missed + covered
+    line_cov = 0.0 if total == 0 else (covered / total) * 100.0
+    break
 
-      if [ -f target/spotbugsXml.xml ]; then
-        python3 - target/spotbugsXml.xml "$SUMMARY" <<'PY'
-          import sys, xml.etree.ElementTree as ET, pathlib
-          xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
-          tree = ET.parse(xml); root = tree.getroot()
-          bugs = len(root.findall(".//BugInstance"))
-          high = len(root.findall(".//BugInstance[@priority='1']"))
-          out.write_text(out.read_text() + f"- SpotBugs: {bugs} bug(s), high-priority: {high}\n")
-PY
-      else
-        printf "- SpotBugs: report missing\n" >> "$SUMMARY"
-      fi
-
-      if [ -f target/site/jacoco/jacoco.xml ]; then
-        python3 - target/site/jacoco/jacoco.xml "$SUMMARY" <<'PY'
-          import sys, xml.etree.ElementTree as ET, pathlib
-          xml = sys.argv[1]; out = pathlib.Path(sys.argv[2])
-          root = ET.parse(xml).getroot()
-          line_cov = None
-          for c in root.iter('counter'):
-              if c.get('type') == 'LINE':
-                  missed, covered = int(c.get('missed')), int(c.get('covered'))
-                  total = missed + covered
-                  line_cov = 0.0 if total == 0 else (covered/total)*100.0
-                  break
-          if line_cov is None:
-              out.write_text(out.read_text() + "- Coverage: report unreadable\n")
-          else:
-              out.write_text(out.read_text() + f"- Coverage (line): {line_cov:.2f}%\n")
-PY
-      else
-        printf "- Coverage: report missing\n" >> "$SUMMARY"
-      fi
-
-      cat "$SUMMARY"
-
-      echo "Generating Code Quality report (codequality.json) from SpotBugs and Checkstyle..."
-      python3 - "$SUMMARY" > codequality.json <<'PY'
-import json, pathlib, xml.etree.ElementTree as ET, sys
+  text = out_path.read_text() if out_path.exists() else ""
+if line_cov is None:
+  text += "- Coverage: report unreadable\n"
+else:
+  text += f"- Coverage (line): {line_cov:.2f}%\n"
+  out_path.write_text(text)
+  PY
+  else
+printf "- Coverage: report missing\n" >> "$SUMMARY"
+  fi
+  
+  cat "$SUMMARY"
+  
+  echo "Generating Code Quality report (codequality.json) from SpotBugs and Checkstyle..."
+  python3 - << 'PY'
+  import json
+  import pathlib
+  import xml.etree.ElementTree as ET
 
 def load_spotbugs():
-    path = pathlib.Path("target/spotbugsXml.xml")
-    if not path.exists():
-        return []
-    root = ET.parse(path).getroot()
-    out = []
-    for bug in root.findall(".//BugInstance"):
-        cls = bug.findtext("Class/SourceLine/@classname", default=None)
-        sl = bug.find("SourceLine")
-        if sl is None:
-            continue
-        path_attr = sl.get("sourcepath") or sl.get("sourcefile") or ""
-        line = sl.get("start")
-        message = bug.findtext("LongMessage") or bug.findtext("ShortMessage") or bug.get("type") or "SpotBugs issue"
-        severity = bug.get("priority")
-        level = {"1": "major", "2": "minor"}.get(severity, "minor")
-        out.append({
-            "description": f"SpotBugs: {message}",
+  path = pathlib.Path("target/spotbugsXml.xml")
+  if not path.exists():
+    return []
+  root = ET.parse(path).getroot()
+  out = []
+  for bug in root.findall(".//BugInstance"):
+    sl = bug.find("SourceLine")
+    if sl is None:
+      continue
+    path_attr = sl.get("sourcepath") or sl.get("sourcefile") or ""
+    line = sl.get("start")
+    message = (
+    bug.findtext("LongMessage")
+    or bug.findtext("ShortMessage")
+    or bug.get("type")
+    or "SpotBugs issue"
+    )
+    severity = bug.get("priority")
+    level = {"1": "major", "2": "minor"}.get(severity, "minor")
+    out.append({
+    "description": f"SpotBugs: {message}",
             "check_name": f"SpotBugs:{bug.get('type')}",
-            "fingerprint": f"spotbugs-{bug.get('type')}-{path_attr}-{line}",
-            "severity": level,
-            "location": {
-                "path": path_attr,
-                "lines": {"begin": int(line)} if line else {"begin": 1}
-            }
-        })
-    return out
+    "fingerprint": f"spotbugs-{bug.get('type')}-{path_attr}-{line}",
+    "severity": level,
+    "location": {
+      "path": path_attr,
+      "lines": {"begin": int(line) if line else 1},
+    },
+  })
+  return out
 
 def load_checkstyle():
-    path = pathlib.Path("target/checkstyle-result.xml")
-    if not path.exists():
-        return []
-    root = ET.parse(path).getroot()
-    out = []
-    for file_el in root.findall(".//file"):
-        fname = file_el.get("name")
-        for err in file_el.findall("error"):
-            line = err.get("line") or "1"
-            msg = err.get("message") or "Checkstyle issue"
-            severity = err.get("severity") or "warning"
-            level = {"error": "major", "warning": "minor", "info": "minor"}.get(severity, "minor")
-            out.append({
-                "description": f"Checkstyle: {msg}",
+  path = pathlib.Path("target/checkstyle-result.xml")
+  if not path.exists():
+    return []
+  root = ET.parse(path).getroot()
+  out = []
+  for file_el in root.findall(".//file"):
+    fname = file_el.get("name") or ""
+    for err in file_el.findall("error"):
+      line = err.get("line") or "1"
+      msg = err.get("message") or "Checkstyle issue"
+      severity = err.get("severity") or "warning"
+      level = {"error": "major", "warning": "minor", "info": "minor"}.get(severity, "minor")
+      out.append({
+      "description": f"Checkstyle: {msg}",
                 "check_name": f"Checkstyle:{err.get('source','rule')}",
-                "fingerprint": f"checkstyle-{fname}-{line}-{msg}",
-                "severity": level,
-                "location": {
-                    "path": fname,
-                    "lines": {"begin": int(line)}
-                }
-            })
-    return out
-
-issues = load_spotbugs() + load_checkstyle()
-json.dump(issues, sys.stdout, indent=2)
-PY
-
-      ISSUE_COUNT=$(python3 -c "import json, pathlib; p=pathlib.Path('codequality.json'); print(len(json.load(p.open()))) if p.exists() else print(0)")
-      echo "Code Quality issues found: ${ISSUE_COUNT}"
-      if [ "${ISSUE_COUNT}" -gt 0 ]; then
-        echo "Failing job because code quality issues were detected in changed files."
-        exit 1
-      fi
-  allow_failure: true
-  artifacts:
-    when: always
-    paths:
-      - quality-summary.md
-      - codequality.json
-    reports:
-      codequality: codequality.json
-    expire_in: 7 days
+      "fingerprint": f"checkstyle-{fname}-{line}-{msg}",
+      "severity": level,
+      "location": {
+        "path": fname,
+        "lines": {"begin": int(line)},
+      },
+    })
+  return out
+  
+  issues = load_spotbugs() + load_checkstyle()
+with open("codequality.json", "w", encoding="utf-8") as f:
+  json.dump(issues, f, indent=2)
+  PY
+  
+  ISSUE_COUNT=$(python3 -c "import json, pathlib; p=pathlib.Path('codequality.json'); print(len(json.load(p.open()))) if p.exists() else print(0)")
+echo "Code Quality issues found: ${ISSUE_COUNT}"
+  
+  if [ "${ISSUE_COUNT}" -gt 0 ]; then
+  echo "Failing job because code quality issues were detected in changed files."
+  exit 1
+  fi
+allow_failure: true
+artifacts:
+  when: always
+  paths:
+    - quality-summary.md
+    - codequality.json
+  reports:
+    codequality: codequality.json
+  expire_in: 7 days
 
 format_check:
   stage: quality
@@ -416,25 +519,36 @@ format_check:
       fi
     - |
       if grep -q "spotless-maven-plugin" pom.xml; then
-        set -e
+        set -eu
+
         BASE_BRANCH="${CI_DEFAULT_BRANCH:-main}"
         BASE_REF="origin/$BASE_BRANCH"
-        git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 || true
-        BASE_SHA="${BASE_REF}"
+
+        git fetch --prune --unshallow origin "$BASE_BRANCH" >/dev/null 2>&1 \
+          || git fetch origin "$BASE_BRANCH" >/dev/null 2>&1 \
+          || true
+
+        BASE_SHA="$BASE_REF"
         if ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
           BASE_SHA="${CI_MERGE_REQUEST_DIFF_BASE_SHA:-$CI_COMMIT_BEFORE_SHA}"
         fi
         if [ -z "$BASE_SHA" ] || ! git rev-parse "$BASE_SHA" >/dev/null 2>&1; then
           BASE_SHA="$(git rev-parse HEAD~1)"
         fi
-        mapfile -t CHANGED_SOURCES < <(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java')
-        if [ "${#CHANGED_SOURCES[@]}" -eq 0 ]; then
+
+        CHANGED_SOURCES="$(git diff --name-only "$BASE_SHA"...HEAD -- 'src/**/*.java' || true)"
+        if [ -z "$CHANGED_SOURCES" ]; then
           echo "No changed Java files; skipping format check."
           exit 0
         fi
-        SPOTLESS_FILES=$(printf "%s\n" "${CHANGED_SOURCES[@]}" | paste -sd, -)
+
+        SPOTLESS_FILES=$(printf "%s\n" $CHANGED_SOURCES | paste -sd, -)
         echo "Spotless files: $SPOTLESS_FILES"
-        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests -DspotlessFiles="$SPOTLESS_FILES" spotless:check || true
+
+        mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
+          -DskipTests \
+          -DspotlessFiles="$SPOTLESS_FILES" \
+          spotless:check || true
       else
         echo "Spotless plugin not configured; skipping format check."
       fi
@@ -504,7 +618,11 @@ deploy_snapshot:
   script:
     - |
       set -x
-      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -Dsg.plugin.skip=true -DskipTests -s settings.xml deploy
+      mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS \
+        -Dsg.plugin.skip=true \
+        -DskipTests \
+        -s settings.xml \
+        deploy
   artifacts:
     when: on_success
     expire_in: 10d
@@ -520,13 +638,12 @@ build_release:
   interruptible: true
   rules:
     - if: '$DOCKER_ONLY'
-      when: never          
+      when: never
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: on_success
   script:
-    # $CI_COMMIT_TAG: sgctl-1.0.0-beta-1
-    - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
-    - mvn -Dspotbugs.skip=true -Drevision=$SGCTL_RELEASE_VERSION $MAVEN_CLI_OPTS clean install
+    - export SGCTL_RELEASE_VERSION=$(echo "$CI_COMMIT_TAG" | sed -n 's/^sgctl-\(.*\)/\1/p')
+    - mvn -Dspotbugs.skip=true -Drevision="$SGCTL_RELEASE_VERSION" $MAVEN_CLI_OPTS clean install
   artifacts:
     when: always
     paths:
@@ -547,13 +664,17 @@ deploy_release:
   interruptible: true
   rules:
     - if: '$DOCKER_ONLY'
-      when: never        
+      when: never
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: on_success
   script:
     - set -x
-    - export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
-    - mvn -Drevision=$SGCTL_RELEASE_VERSION $MAVEN_CLI_OPTS -Dsg.plugin.skip=true -DskipTests -s settings.xml deploy
+    - export SGCTL_RELEASE_VERSION=$(echo "$CI_COMMIT_TAG" | sed -n 's/^sgctl-\(.*\)/\1/p')
+    - mvn -Drevision="$SGCTL_RELEASE_VERSION" $MAVEN_CLI_OPTS \
+      -Dsg.plugin.skip=true \
+      -DskipTests \
+      -s settings.xml \
+      deploy
   artifacts:
     when: on_success
     expire_in: 10d
@@ -571,7 +692,8 @@ coverage:
       when: never
     - when: always
   image: registry.gitlab.com/haynes/jacoco2cobertura:latest
-  needs: ["build"]
+  needs:
+    - build
   dependencies:
     - build
   script:
@@ -582,16 +704,17 @@ coverage:
         exit 1
       fi
     - python /opt/cover2cover.py target/site/jacoco/jacoco.xml src/main/java/ > target/site/cobertura.xml
-    - cat target/site/jacoco/index.html | grep -o '<tfoot>.*</tfoot>'
+    - |
+      if [ -f target/site/jacoco/index.html ]; then
+        grep -o '<tfoot>.*</tfoot>' target/site/jacoco/index.html || true
+      fi
   coverage: '/Total.*?([0-9]{1,3})%/'
   artifacts:
     reports:
       coverage_report:
         coverage_format: cobertura
         path: target/site/cobertura.xml
-        
-        
-        
+
 deploy_docker_image:
   stage: "Deploy Docker Image"
   image: docker:20.10.17
@@ -603,26 +726,42 @@ deploy_docker_image:
     - if: '$DOCKER_ONLY'
       when: on_success
   timeout: 1h
+  variables:
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_DRIVER: overlay2
   script:
     - |
+      set -eu
       cd docker
-      apk update && apk add bash curl 
+      apk update && apk add --no-cache bash curl
 
-      export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
-      echo "SGCTL_RELEASE_VERSION=$SGCTL_RELEASE_VERSION"
-      if [[ -z "$SGCTL_RELEASE_VERSION" ]]; then
-        echo "SGCTL_RELEASE_VERSION is empty"
-        exit 1
+      # Determine version
+      if [ -n "${CI_COMMIT_TAG:-}" ]; then
+        SGCTL_RELEASE_VERSION="${CI_COMMIT_TAG#sgctl-}"
+      elif [ -n "${SGCTL_RELEASE_VERSION:-}" ]; then
+        echo "Using provided SGCTL_RELEASE_VERSION=${SGCTL_RELEASE_VERSION}"
+      else
+        SGCTL_RELEASE_VERSION="b-${CI_COMMIT_REF_SLUG}-${CI_COMMIT_SHORT_SHA}"
       fi
-      echo "Docker logout"
-      docker logout 
-      
-      echo "Login in into Docker Hub"      
-      echo "$DOCKER_PASSWORD" | docker login --username floragunncom --password-stdin docker.io > /dev/null
 
-      echo ""
+      echo "SGCTL_RELEASE_VERSION=$SGCTL_RELEASE_VERSION"
+
+      echo "Docker logout"
+      docker logout || true
+
+      echo "Login into Docker Hub"
+      echo "$DOCKER_PASSWORD" | docker login \
+        --username "${DOCKER_USERNAME:-floragunncom}" \
+        --password-stdin docker.io > /dev/null
+
       echo "Enable qemu-user-static to support docker multiarch builds with buildx"
       docker run --rm --privileged multiarch/qemu-user-static --reset -p yes > /dev/null
 
-      ./build_and_push.sh "floragunncom" "docker.io" "search-guard-flx-sgctl" "$SGCTL_RELEASE_VERSION" "--build-arg SGCTL_VERSION="$SGCTL_RELEASE_VERSION" --build-arg JAVA_VERSION=$SG_JAVA_BUILD_VERSION"
-  allow_failure: false        
+      ./build_and_push.sh \
+        "floragunncom" \
+        "docker.io" \
+        "search-guard-flx-sgctl" \
+        "$SGCTL_RELEASE_VERSION" \
+        --build-arg "SGCTL_VERSION=$SGCTL_RELEASE_VERSION" \
+        --build-arg "JAVA_VERSION=$SG_JAVA_BUILD_VERSION"
+  allow_failure: false
