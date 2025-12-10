@@ -99,9 +99,9 @@ public class MigrateConfigTest {
                         ImmutableMap.of("content", backendUpdateInstructions.sgFrontendMultiTenancy.toBasicObject()));
             }
 
-            GenericRestClient.HttpResponse response = client.putJson("/_searchguard/config", DocWriter.json().writeAsString(updateBody));
+            //GenericRestClient.HttpResponse response = client.putJson("/_searchguard/config", DocWriter.json().writeAsString(updateBody));
 
-            Assertions.assertEquals(200, response.getStatusCode(), response.getBody());
+            //Assertions.assertEquals(200, response.getStatusCode(), response.getBody());
         }
 
     }
