@@ -73,7 +73,7 @@ class MigrationReporterImpl implements MigrationReporter {
         inconvertible,
         "setting(s) cannot be converted because no equivalent concept exists in "
             + targetDomainName);
-    reportTraceables(sb, problem, "setting(s) caused a generic problem");
+    reportTraceables(sb, problem, "setting(s) caused other problem(s)");
     reportList(sb, problemMessages, "other problem(s)");
 
     return sb.toString();
