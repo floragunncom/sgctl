@@ -6,11 +6,7 @@ import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
-import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
-import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
-import com.floragunn.searchguard.sgctl.config.migrate.RoleMappingsMigrator;
-import com.floragunn.searchguard.sgctl.config.migrate.RolesMigrator;
-import com.floragunn.searchguard.sgctl.config.migrate.UserMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.*;
 import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.*;
@@ -71,9 +67,10 @@ public class XPackMigrate implements Callable<Integer> {
       // migrate
       final Migrator migrator = new Migrator();
       final Migrator.MigrationContext context = getMigrationContext(xPackConfigs);
-      final List<NamedConfig<?>> searchGuardConfigs = migrator.migrate(context);
+      final MigrationResult result = migrator.migrate(context);
       // serialize
-      writeConfigs(searchGuardConfigs);
+      if (result instanceof MigrationResult.Success suc) writeConfigs(suc.configs());
+      writeReport(result.report());
     } catch (SgctlException e) {
       System.err.println("Error: " + e.getMessage());
       return 1;
@@ -92,13 +89,12 @@ public class XPackMigrate implements Callable<Integer> {
   }
 
   private void registerSubMigrators() {
-    // TODO: Add sub migrators example:
-    // MigratorRegistry.registerSubMigratorStatic(...);
-    MigratorRegistry.registerSubMigratorStatic(new RolesMigrator());
-    MigratorRegistry.registerSubMigratorStatic(new AuthMigrator());
-    MigratorRegistry.registerSubMigratorStatic(new UserMigrator());
-    MigratorRegistry.registerSubMigratorStatic(new RoleMappingsMigrator());
-    MigratorRegistry.finalizeMigratorsStatic(); // Never forget
+    var registry = MigratorRegistry.getInstance();
+    registry.registerSubMigrator(new RolesMigrator());
+    registry.registerSubMigrator(new AuthMigrator());
+    registry.registerSubMigrator(new UserMigrator());
+    registry.registerSubMigrator(new RoleMappingsMigrator());
+    registry.finalizeSubMigrators(); // Never forget
   }
 
   private Map<String, Object> parseConfigs()
@@ -148,5 +144,19 @@ public class XPackMigrate implements Callable<Integer> {
 
       DocWriter.yaml().write(configPath.toFile(), configObj);
     }
+  }
+
+  private void writeReport(String report) throws IOException {
+    if (!Files.exists(outputDir)) {
+      Files.createDirectories(outputDir);
+    }
+
+    var reportFile = outputDir.resolve("report.md");
+    if (Files.exists(reportFile) && !overwrite) {
+      throw new IOException(
+          "Refusing to overwrite existing report file: " + reportFile.toAbsolutePath());
+    }
+
+    Files.writeString(reportFile, report);
   }
 }

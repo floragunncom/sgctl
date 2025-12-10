@@ -1,13 +1,16 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
+import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import com.google.common.collect.ImmutableList;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,21 +19,30 @@ import org.slf4j.LoggerFactory;
 public class Migrator {
 
   private final Logger logger = LoggerFactory.getLogger(Migrator.class);
+  private final MigrationReporter reporter;
+
+  public Migrator(MigrationReporter reporter) {
+    this.reporter = reporter;
+  }
+
+  public Migrator() {
+    this(MigrationReporter.searchGuard());
+  }
 
   /**
    * Executes all {@link SubMigrator}s added to the {@link MigratorRegistry} using
-   * registerSubMigratorStatic()
+   * registerSubMigrator()
    *
    * @param context All parsed XPackConfigs. Gets passed to the subMigrators
    * @return A List of SearchGuard Configs
    */
-  public List<NamedConfig<?>> migrate(IMigrationContext context) throws SgctlException {
+  public MigrationResult migrate(IMigrationContext context) throws SgctlException {
     logger.info("Starting migration");
 
     final Map<String, NamedConfig<?>> migratedConfigs = new HashMap<>();
     final List<SubMigrator> subMigrators;
     try {
-      subMigrators = MigratorRegistry.getSubMigratorsStatic();
+      subMigrators = MigratorRegistry.getInstance().getSubMigrators();
     } catch (IllegalStateException e) {
       // TODO: maybe better handling?
       logger.warn("Migrator registry has not been finalized!");
@@ -39,7 +51,8 @@ public class Migrator {
 
     for (final SubMigrator subMigrator : subMigrators) {
       logger.debug("Running migration with {}", subMigrator.getClass().getSimpleName());
-      final List<NamedConfig<?>> migratedSubConfigs = subMigrator.migrate(context, logger);
+      final List<NamedConfig<?>> migratedSubConfigs =
+          legacySubMigrate(subMigrator, context, logger, reporter);
       logger.debug("SubMigrator returned {} config files", migratedSubConfigs.size());
 
       for (NamedConfig<?> migratedSubConfig : migratedSubConfigs) {
@@ -54,13 +67,28 @@ public class Migrator {
     }
 
     logger.info("Finished migration with {} files", migratedConfigs.size());
-    var outputMigratedConfigsBuilder = ImmutableList.<NamedConfig<?>>builder();
+    var outputMigratedConfigsBuilder = new ImmutableList.Builder<NamedConfig<?>>();
 
     for (NamedConfig<?> migratedConfig : migratedConfigs.values()) {
       outputMigratedConfigsBuilder.add(migratedConfig);
     }
 
-    return outputMigratedConfigsBuilder.build();
+    if (reporter.hasCriticalProblems()) {
+      return new MigrationResult.Failure(reporter.generateReport());
+    } else {
+      return new MigrationResult.Success(
+          outputMigratedConfigsBuilder.build(), reporter.generateReport());
+    }
+  }
+
+  private List<NamedConfig<?>> legacySubMigrate(
+      SubMigrator sm, IMigrationContext ctx, Logger logger, MigrationReporter reporter)
+      throws SgctlException {
+    try {
+      return sm.migrate(ctx, logger);
+    } catch (MigrationNotImplementedException e) {
+      return sm.migrate(ctx, reporter);
+    }
   }
 
   /**
