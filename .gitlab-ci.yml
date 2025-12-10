@@ -51,11 +51,11 @@ build:
 
 static_checks:
   stage: quality
+  # Run static checks automatically on every push/merge request unless it's a tagged release.
   rules:
-    # Make static checks manual so they run only when explicitly triggered
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
-    - when: manual
+    - when: on_success
   script:
     - |
       if ! command -v git >/dev/null 2>&1; then
@@ -147,18 +147,25 @@ static_checks:
         echo "SpotBugs plugin not configured; skipping spotbugs check."
       fi
     - exit 0
-  # Manual job should fail on issues when run
+  # This job runs automatically and is allowed to fail without
+  # affecting the overall pipeline status.
+
+  # Do not block the pipeline if any static check finds issues.  This ensures
+  # that quality results are visible but do not turn the pipeline red.
+  allow_failure: true
 
 sonarish_gate:
   stage: quality
   needs:
     - job: build
       artifacts: true
+  # Run the Sonar-ish gate automatically on every push/merge request unless
+  # it's a tagged release.  The job will report issues but not block the
+  # pipeline.
   rules:
-    # Make sonarish gate manual so it runs only when explicitly triggered
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
-    - when: manual
+    - when: on_success
   variables:
     COVERAGE_MINIMUM: "70"
   script:
@@ -234,7 +241,7 @@ sonarish_gate:
 
       echo "Enforcing coverage >= ${COVERAGE_MINIMUM}% from Jacoco XML"
       python3 -c "import sys, xml.etree.ElementTree as ET; min_cov=float(sys.argv[1]); root=ET.parse(sys.argv[2]).getroot(); counter=next((c for c in root.iter('counter') if c.get('type')=='LINE'), None); line=None if counter is None else (lambda m,c: 0.0 if m+c==0 else (c/(m+c))*100.0)(int(counter.get('missed')), int(counter.get('covered'))); print(f'Line coverage: {line:.2f}% (minimum {min_cov:.2f}%)') if line is not None else print('No LINE counter in Jacoco report'); sys.exit(1) if (line is None or line + 1e-9 < min_cov) else None" "$COVERAGE_MINIMUM" target/site/jacoco/jacoco.xml
-  # Manual job should fail on issues when run
+  # This job runs automatically and is allowed to fail without affecting the overall pipeline.
   artifacts:
     when: always
     paths:
@@ -244,16 +251,19 @@ sonarish_gate:
       - spotbugs-include.xml
     expire_in: 3 days
 
+  # Allow this job to report issues without failing the entire pipeline.
+  allow_failure: true
+
 javadoc_check:
   stage: quality
   needs:
     - job: build
       artifacts: true
+  # Run Javadoc check automatically on every push/merge request unless it's a tagged release.
   rules:
-    # Make Javadoc check manual
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
-    - when: manual
+    - when: on_success
   script:
     - |
       set -eu
@@ -284,7 +294,8 @@ javadoc_check:
       fi
 
       mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests javadoc:javadoc
-  # Manual job should fail on issues when run
+  # Do not block the pipeline if Javadoc generation fails.
+  allow_failure: true
 
 sonar_scan:
   stage: quality
@@ -294,12 +305,12 @@ sonar_scan:
       artifacts: true
   dependencies:
     - build
+  # Run Sonar scan automatically when Sonar variables are defined.  Tagged releases skip this job.
   rules:
-    # Make Sonar scan manual; only run if Sonar variables are defined
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
     - if: '$SONAR_HOST_URL && $SONAR_TOKEN'
-      when: manual
+      when: on_success
     - when: never
   script:
     - |
@@ -318,22 +329,25 @@ sonar_scan:
         -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml \
         -Dsonar.junit.reportPaths=target/surefire-reports,target/failsafe-reports \
         sonar:sonar
-  # Manual job should fail on issues when run
+  # This job runs automatically and is allowed to fail without affecting the overall pipeline.
   cache:
     key: mavenrepo
     paths:
       - .m2/repository
+
+  # Allow Sonar scan to fail without breaking the pipeline.  Issues will still be visible in the job logs.
+  allow_failure: true
 
 quality_summary:
   stage: quality
   needs:
     - job: sonarish_gate
       artifacts: true
+  # Run quality summary automatically on every push/merge request unless it's a tagged release.
   rules:
-    # Make quality summary manual
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
-    - when: manual
+    - when: on_success
   script:
     - |
       set -eu
@@ -395,7 +409,7 @@ quality_summary:
         echo "Failing job because code quality issues were detected in changed files."
         exit 1
       fi
-  # Manual job should fail on issues when run
+  # This job runs automatically and is allowed to fail without affecting the overall pipeline.
   artifacts:
     when: always
     paths:
@@ -405,26 +419,31 @@ quality_summary:
       codequality: codequality.json
     expire_in: 7 days
 
+  # Allow the quality summary job to report issues without failing the pipeline.
+  allow_failure: true
+
 # The Spotless format check has been removed because the plugin configuration in pom.xml
 # currently causes Maven to fail (target configuration not found).  If code formatting
 # enforcement is desired in the future, ensure the spotless-maven-plugin is configured
 # correctly in the POM and re-enable this job.
 
+
 dependency_updates:
   stage: quality
+  # Run dependency updates automatically on every push/merge request.
   rules:
-    # Manual job should fail on issues when run
-    - when: manual
+    - when: on_success
   script:
     - mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS -DskipTests versions:display-dependency-updates
-  # Manual job should fail on issues when run
+  # Allow this job to fail without failing the pipeline.
+  allow_failure: true
 
 dependency_vuln_scan:
   stage: quality
   image: owasp/dependency-check:latest
+  # Run vulnerability scan automatically on every push/merge request.
   rules:
-    # Manual job should fail on issues when run
-    - when: manual
+    - when: on_success
   variables:
     DATA_DIR: "/tmp/dependency-check-data"
   script:
@@ -435,7 +454,8 @@ dependency_vuln_scan:
     paths:
       - dependency-check-report
     expire_in: 3 days
-  # Manual job should fail on issues when run
+  # Allow this job to fail without failing the pipeline.
+  allow_failure: true
 
   # license_check job removed.  The license-maven-plugin 'check' goal does not exist,
   # causing the job to fail immediately.  To reintroduce license checking, use a valid
@@ -527,11 +547,11 @@ deploy_release:
 
 coverage:
   stage: package
+  # Run coverage job automatically on every push/merge request unless it's a tagged release.
   rules:
-    # Make coverage job manual
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: never
-    - when: manual
+    - when: on_success
   image: registry.gitlab.com/haynes/jacoco2cobertura:latest
   needs:
     - build
@@ -555,7 +575,8 @@ coverage:
       coverage_report:
         coverage_format: cobertura
         path: target/site/cobertura.xml
-  # Manual job should fail on issues when run
+  # Allow the coverage job to fail without blocking the pipeline.
+  allow_failure: true
 
 deploy_docker_image:
   stage: "Deploy Docker Image"
