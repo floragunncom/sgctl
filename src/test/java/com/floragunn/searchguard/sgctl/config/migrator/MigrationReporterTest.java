@@ -1,13 +1,13 @@
 package com.floragunn.searchguard.sgctl.config.migrator;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import org.junit.jupiter.api.Test;
 
-public class MigrationReporterImplTest {
+import static org.junit.jupiter.api.Assertions.*;
+
+public class MigrationReporterTest {
 
   @Test
   public void testGenerateFullReport() {
@@ -42,7 +42,7 @@ public class MigrationReporterImplTest {
         * test.yml: a.b.d: 42
           * Other config option
 
-        1 setting(s) caused a generic problem:
+        1 setting(s) caused other problem(s):
         * test.yml: a.b.c: value1
           * Your message here
 
@@ -67,7 +67,7 @@ public class MigrationReporterImplTest {
         """
             # sgctl migrate-security report
 
-            1 setting(s) caused a generic problem:
+            1 setting(s) caused other problem(s):
             * test.yml: a.b.c: value1
               * Your message here
 
@@ -119,7 +119,7 @@ public class MigrationReporterImplTest {
             * test.yml: a.b.c: value1
               * First message for value 1
 
-            1 setting(s) caused a generic problem:
+            1 setting(s) caused other problem(s):
             * test.yml: a.b.c: value1
               * Your message here
             """;
