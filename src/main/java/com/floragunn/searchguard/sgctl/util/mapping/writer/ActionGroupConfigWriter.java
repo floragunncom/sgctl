@@ -78,7 +78,16 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
                 contents.put("description", description);
             }
             return contents;
+        }   
+    }
+    enum ClusterActionGroups {
+        T("G", List.of("b", "XC"));
+        public final String label;
+        public final List<String> pattern;
+
+        ClusterActionGroups(String label, List<String> pattern) {
+            this.label = label;
+            this.pattern = pattern;
         }
-        
     }
 }
