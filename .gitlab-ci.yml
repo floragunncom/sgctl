@@ -107,7 +107,8 @@ static_checks:
             cls="${cls#src/test/java/}"
             cls="${cls%.java}"
             cls="${cls//\//.}"
-            [ -n "$cls" ] && echo "  <Match><Class>$cls</Class></Match>"
+            # SpotBugs expects the class name on an attribute, not as text content
+            [ -n "$cls" ] && echo "  <Match><Class name=\"$cls\"/></Match>"
           done
           echo "</FindBugsFilter>"
         } > spotbugs-include.xml
@@ -165,7 +166,8 @@ sonarish_gate:
           cls="${cls#src/test/java/}"
           cls="${cls%.java}"
           cls="${cls//\//.}"
-          [ -n "$cls" ] && echo "  <Match><Class>$cls</Class></Match>"
+          # SpotBugs expects the class name on an attribute, not as text content
+          [ -n "$cls" ] && echo "  <Match><Class name=\"$cls\"/></Match>"
         done
         echo "</FindBugsFilter>"
       } > spotbugs-include.xml
