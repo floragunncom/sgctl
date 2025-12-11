@@ -1,13 +1,15 @@
 #NOT FINAL
 
-READ_INDEX_GROUP:
+METADATA_READ_GROUP:
   type: "index"
   allowed_actions:
-    - "READ"
-    - "SEARCH"
-    - "GET"
-    - "SCROLL"
-    - "METADATA_READ"
+    - "indices:admin/mappings/get"
+    - "indices:admin/settings/get"
+
+ML_CLUSTER:
+  - "cluster:admin/xpack/ml/*"
+  - "cluster:monitor/state"
+  - "cluster:monitor/health"
 
 ML_READ_GROUP:
   type: "index"

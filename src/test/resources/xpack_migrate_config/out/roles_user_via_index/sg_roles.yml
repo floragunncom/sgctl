@@ -6,12 +6,14 @@ viewer:
     - index_patterns:
         - "~(([.]|ilm-history-).*)"
       allowed_actions:
-        - "READ_INDEX_GROUP"
+        - "METADATA_READ_GROUP"
+        - SGS_READ
 
     - index_patterns:
         - ".slo-observability.*"
       allowed_actions:
-        - "READ_INDEX_GROUP"
+        - "METADATA_READ_GROUP"
+        - SGS_READ
 
     - index_patterns:
         - ".siem-signals*"
@@ -24,23 +26,27 @@ viewer:
         - ".entities.*.history.*"
         - ".asset-criticality.asset-criticality-*"
       allowed_actions:
-        - "READ_INDEX_GROUP"
+        - "METADATA_READ_GROUP"
+        - SGS_READ
 
     - index_patterns:
         - ".alerts*"
         - ".preview.alerts*"
         - ".adhoc.alerts*"
       allowed_actions:
-        - "READ_INDEX_GROUP"
+        - "METADATA_READ_GROUP"
+        - SGS_READ
 
     - index_patterns:
         - "profiling-*"
         - ".profiling-*"
       allowed_actions:
-        - "READ_INDEX_GROUP"
+        - "METADATA_READ_GROUP"
+        - SGS_READ
 
 machine_learning_admin:
-  cluster_permissions: []
+  cluster_permissions: 
+    - "ML_CLUSTER"
   index_permissions:
     - index_patterns:
         - ".ml-anomalies*"
@@ -49,7 +55,8 @@ machine_learning_admin:
         - ".ml-meta*"
         - ".ml-stats-*"
       allowed_actions:
-        - "ML_READ_GROUP"
+        - "METADATA_READ_GROUP"
+        - SGS_READ
 
     - index_patterns:
         - ".ml-annotations*"
@@ -59,7 +66,9 @@ machine_learning_admin:
 
 monitoring_user:
   cluster_permissions:
-    - "CLUSTER_MONITOR"
+    - "METADATA_READ_GROUP"
+    - SGS_READ
+    - SGS_WRITE
 
   index_permissions:
     - index_patterns:
