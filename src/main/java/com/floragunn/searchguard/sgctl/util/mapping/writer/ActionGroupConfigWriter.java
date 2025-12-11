@@ -29,10 +29,12 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
 
     }
 
-    public void addCustomActionGroup(String name, String type, String description, String[] allowedActions){
-        ActionGroup ag = new ActionGroup(name, List.of(allowedActions), type, description);
-        // possibly write to report here?
-        actionGroups.add(ag);
+    public void addCustomActionGroups(Set<CustomClusterActionGroup> agSet ) {
+
+        for (var ag : agSet) {
+            this.actionGroups.add(ActionGroup.fromCustomClusterActionGroup(ag));
+        }
+
     }
 
     public boolean contains(String name){
@@ -79,15 +81,109 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             }
             return contents;
         }   
-    }
-    enum ClusterActionGroups {
-        T("G", List.of("b", "XC"));
-        public final String label;
-        public final List<String> pattern;
 
-        ClusterActionGroups(String label, List<String> pattern) {
-            this.label = label;
+        static ActionGroup fromCustomClusterActionGroup(CustomClusterActionGroup cag) {
+            var desc = "todo";
+            return new ActionGroup(cag.getName(), cag.getPattern(), "cluster", desc);
+        }
+
+    }
+
+    // TODO: better integration with above ActionGroup class, current implementation seems redundant
+    enum CustomClusterActionGroup {
+
+        // Might be cleaner to use static final patterns like in the elasticsearch repo
+        SGS_MANAGE_SECURITY_CUSTOM("SGS_MANAGE_SECURITY_CUSTOM", List.of(
+            "cluster:admin/xpack/security/*"    
+        )),
+        SGS_MANAGE_SERVICE_ACCOUNT_CUSTOM("SGS_MANAGE_SERVICE_ACCOUNT_CUSTOM", List.of(
+            "cluster:admin/xpack/security/service_account/*"
+        )),
+        SGS_MANAGE_TOKEN_CUSTOM("SGS_MANAGE_TOKEN_CUSTOM", List.of(
+            "cluster:admin/xpack/security/token/*"
+        )),
+        SGS_MANAGE_TRANSFORM_CUSTOM("SGS_MANAGE_TRANSFORM_CUSTOM", List.of(
+            "cluster:admin/data_frame/*",
+            "cluster:monitor/data_frame/*",
+            "cluster:monitor/transform/*",
+            "cluster:admin/transform/*"
+        )),
+        SGS_MANAGE_WATCHER_CUSTOM("SGS_MANAGE_WATCHER_CUSTOM", List.of(
+            "cluster:admin/xpack/watcher/*", 
+            "cluster:monitor/xpack/watcher/*"
+        )),
+        SGS_MONITOR_ENRICH_CUSTOM("SGS_MONITOR_ENRICH_CUSTOM", List.of(
+            "cluster:monitor/xpack/enrich/*",
+            "cluster:admin/xpack/enrich/get"
+        )),
+        SGS_MONITOR_ESQL_CUSTOM("SGS_MONITOR_ESQL_CUSTOM", List.of(
+            "cluster:monitor/xpack/esql/*"
+        )),
+        SGS_MONITOR_INFERENCE_CUSTOM("SGS_MONITOR_INFERENCE_CUSTOM", List.of(
+            "cluster:monitor/xpack/inference*",
+            "cluster:monitor/xpack/ml/trained_models/deployment/infer"
+        )),
+        SGS_MONITOR_ML_CUSTOM("SGS_MONITOR_ML_CUSTOM", List.of(
+            "cluster:monitor/xpack/ml/*"
+        )),
+        SGS_MONITOR_ROLLUP_CUSTOM("SGS_MONITOR_ROLLUP_CUSTOM", List.of(
+            "cluster:monitor/xpack/rollup/*"
+        )),
+        SGS_MONITOR_SNAPSHOT_CUSTOM("SGS_MONITOR_SNAPSHOT_CUSTOM", List.of(
+            // TODO
+        )),
+        SGS_MONITOR_STATS_CUSTOM("SGS_MONITOR_STATS_CUSTOM", List.of(
+            "cluster:monitor/stats*"
+        )),
+        SGS_MONITOR_TEXT_STRUCTURE_CUSTOM("SGS_MONITOR_TEXT_STRUCTURE_CUSTOM", List.of(
+            "cluster:monitor/text_structure/*"
+        )),
+        SGS_MONITOR_TRANSFORM_CUSTOM("SGS_MONITOR_TRANSFORM_CUSTOM", List.of(
+            "cluster:monitor/data_frame/*",
+            "cluster:monitor/transform/*"
+        )),
+        SGS_MONITOR_WATCHER_CUSTOM("SGS_MONITOR_WATCHER_CUSTOM", List.of(
+            "cluster:monitor/xpack/watcher/*"
+        )),
+        SGS_READ_CCR_CUSTOM("SGS_READ_CCR_CUSTOM", List.of(
+            // TODO
+        )),
+        SGS_READ_ILM_CUSTOM("SGS_READ_ILM_CUSTOM", List.of(
+            // TODO
+        )),
+        SGS_READ_PIPELINE_CUSTOM("SGS_READ_PIPELINE_CUSTOM", List.of(
+            // TODO
+        )),
+        SGS_READ_SECURITY_CUSTOM("SGS_READ_SECURITY_CUSTOM", List.of(
+            // TODO
+        )),
+        SGS_TRANSPORT_CLIENT_CUSTOM("SGS_TRANSPORT_CLIENT_CUSTOM", List.of(
+            "cluster:monitor/nodes/liveness",
+            "cluster:monitor/state"
+        ));
+
+        private final String name;
+        private final List<String> pattern;
+
+        CustomClusterActionGroup(String name, List<String> pattern) {
+            this.name = name;
             this.pattern = pattern;
+        } 
+        
+        public String getName() {
+            return name;
+        } 
+        public List<String> getPattern() {
+            return pattern;
+        }
+ 
+        public static CustomClusterActionGroup from(String name) {
+            for (CustomClusterActionGroup group : CustomClusterActionGroup.values()) {
+                if (group.name.equals(name)) {
+                    return group;
+                }
+            }
+            return SGS_MANAGE_SECURITY_CUSTOM;
         }
     }
 }
