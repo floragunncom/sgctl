@@ -42,18 +42,11 @@ INDEX_READ_WITH_CROSS_CLUSTER:
   allowed_actions:
     - "indices:data/read/*"
     - "indices:monitor/*"
-    - "read"
-    - "read_cross_cluster"
 
 CLUSTER_MONITOR_WATCHER:
   type: "cluster"
   allowed_actions:
     - "cluster:monitor/xpack/watcher/*"
-
-INDEX_READ_WATCHER:
-  type: "index"
-  allowed_actions:
-    -"READ"
 
 KIBANA_REPORTING_USER:
   type: "tenant"
@@ -66,11 +59,6 @@ CLUSTER_CREATE_SNAPSHOT:
   allowed_actions:
     - "cluster:admin/snapshot/create"
     - "cluster:admin/repository/get"
-
-INDEX_VIEW_METADATA:
-  type: "index"
-  allowed_actions:
-    - "METADATA_READ"
   
 CLUSTER_MONITOR_TRANSFORM:
   type: "cluster"

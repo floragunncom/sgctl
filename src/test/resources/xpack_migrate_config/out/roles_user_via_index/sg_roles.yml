@@ -61,30 +61,32 @@ machine_learning_admin:
     - index_patterns:
         - ".ml-annotations*"
       allowed_actions:
-        - "ML_READ_GROUP"
-        - "ML_WRITE_GROUP"
+        - "METADATA_READ_GROUP"
+        - SGS_READ
+        - SGS_WRITE
 
 monitoring_user:
   cluster_permissions:
-    - "METADATA_READ_GROUP"
-    - SGS_READ
-    - SGS_WRITE
+   - "CLUSTER_MONITOR"
 
   index_permissions:
     - index_patterns:
         - ".monitoring-*"
       allowed_actions:
         - "INDEX_READ_WITH_CROSS_CLUSTER"
+        - SGS_READ
 
     - index_patterns:
         - "/metrics-(beats|elasticsearch|enterprisesearch|kibana|logstash).*/"
       allowed_actions:
         - "INDEX_READ_WITH_CROSS_CLUSTER"
+        - SGS_READ
 
     - index_patterns:
         - "metricbeat-*"
       allowed_actions:
         - "INDEX_READ_WITH_CROSS_CLUSTER"
+        - SGS_READ
 
 inference_admin:
   cluster_permissions:
@@ -118,12 +120,12 @@ watcher_user:
     - index_patterns:
         - ".watches"
       allowed_actions:
-        - "INDEX_READ_WATCHER"
+        - "SGS_READ"
 
     - index_patterns:
         - ".watcher-history-*"
       allowed_actions:
-        - "INDEX_READ_WATCHER"
+        - "SGS_READ"
 
 reporting_user:
   cluster_permissions: []
@@ -144,7 +146,7 @@ snapshot_user:
     - index_patterns:
         - "*"
       allowed_actions:
-        - "INDEX_VIEW_METADATA"
+        - "METADATA_READ_GROUP"
 
 transform_user:
   cluster_permissions:
