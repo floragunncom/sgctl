@@ -7,24 +7,11 @@ METADATA_READ_GROUP:
     - "indices:admin/settings/get"
 
 ML_CLUSTER:
+  type: "cluster"
+  allowed_actions:
   - "cluster:admin/xpack/ml/*"
   - "cluster:monitor/state"
   - "cluster:monitor/health"
-
-ML_READ_GROUP:
-  type: "index"
-  allowed_actions:
-    - "READ"
-    - "GET"
-    - "SEARCH"
-    - "METADATA_READ"
-
-ML_WRITE_GROUP:
-  type: "index"
-  allowed_actions:
-    - "WRITE"
-    - "INDEX"
-    - "CREATE"
 
 CLUSTER_MONITOR:
   type: "cluster"
