@@ -1,6 +1,5 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.floragunn.codova.documents.*;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
@@ -11,8 +10,7 @@ import com.sun.jdi.InvalidTypeException;
 
 import java.security.InvalidKeyException;
 import java.util.*;
-
-import static com.floragunn.codova.documents.Format.JSON;
+import java.util.regex.Pattern;
 
 public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private IntermediateRepresentation ir;
@@ -58,6 +56,20 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
 
     private void createSGRoles() {
         for (var role : ir.getRoles()) {
+            if ((role.getRemoteClusters() != null && !role.getRemoteClusters().isEmpty()) ||
+                    (role.getRemoteIndices() != null && !role.getRemoteIndices().isEmpty())) {
+                report.addWarning(FILE_NAME, role.getName(),
+                        "Remote indices and clusters are not supported in Search Guard. The role can not be migrated.");
+                continue;
+            }
+            if (role.getRunAs() != null && !role.getRunAs().isEmpty()) {
+                report.addWarning(FILE_NAME, role.getName(),
+                        "There is no equivalent to 'run as' in Search Guard. Run as is therefor ignored.");
+            }
+            if (role.getApplications() != null && !role.getApplications().isEmpty()) {
+                report.addWarning(FILE_NAME, role.getName(),
+                        "There is no equivalent to 'application' in Search Guard. All its entries are therefor ignored.");
+            }
             var name = role.getName();
             var description = role.getDescription();
             var clusterPermissions = toSGClusterPrivileges(role);
@@ -70,12 +82,32 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     private List<SGRole.SGIndex> toSGIndices(Role role) {
         List<SGRole.SGIndex> sgIndices = new ArrayList<>();
         for (var index : role.getIndices()) {
-            var indexPatterns = index.getNames();
+            var indexPatterns = toSGIndexPattern(index.getNames());
             var indexPermissions = toSGIndexPrivileges(index.getPrivileges(), role);
             var fls = toSGFLS(index, role);
             var dls = toSGDLS(index, role);
             var sgIndex = new SGRole.SGIndex(indexPatterns, indexPermissions, dls, fls);
             sgIndices.add(sgIndex);
+        }
+        return sgIndices;
+    }
+
+    private ArrayList<String> toSGIndexPattern(List<String> indices) {
+        var sgIndices = new ArrayList<String>(indices.size());
+        try {
+            LuceneRegexParser.toJavaRegex("/<10-100>/");
+        } catch (Exception e) {
+            printErr(e.getMessage());
+        }
+        for (var index : indices) {
+            if (index.matches("^/.*/$")) {
+                if (index.matches("[^\\\\]~.+")) {
+                    return null;
+                }
+                print("regex found: " + index);
+            } else {
+                sgIndices.add(index);
+            }
         }
         return sgIndices;
     }
