@@ -32,6 +32,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             var roles = rm.getRoles();
             var templates = rm.getRoleTemplates();
 
+            // TODO: Templates wahrscheinlich nicht migrierbar (nochmal abklären)
             if (templates != null && !templates.isEmpty()) {
                 report.addManualAction(FILE_NAME, mappingName + "role_templates", "X-Pack role_templates are not automatically migrated.");
                 continue;
@@ -40,6 +41,8 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             for (String roleName : roles) {
                 var users = getSGUsers(rm, roleName);
                 var backendRoles = getSGBackendRoles(rm, roleName);
+
+                // hosts und ips nicht in XPack vorhanden (aktuell leere Listen)
                 var hosts = new ArrayList<String>();
                 var ips = new ArrayList<String>();
 
@@ -78,6 +81,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     private void collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName,  List<String> usernames) {
         var field = rules.getField();
+        // TODO: Möglicherweise müssen wir noch any, all und except behandeln (noch unklar)
         if (field != null && field.containsKey("username")) {
             usernames.addAll(extractStringValues(field.get("username"), mappingName + "->rules.field.username"));
         }
@@ -116,7 +120,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
     }
 
     public List<String> getSGBackendRoles(RoleMapping rm, String roleName) {
-        // TODO: backendRoles migrieren?
+        // TODO: backendRoles migrieren (Müssen aus den rules aus XPack abgleitet werden)
         return new ArrayList<>();
     }
 
