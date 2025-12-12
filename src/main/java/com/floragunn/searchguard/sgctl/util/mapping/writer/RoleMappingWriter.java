@@ -122,12 +122,25 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     @Override
     public Object toBasicObject() {
-        Map<String, SGRoleMapping> contents = new LinkedHashMap<>();
+        Map<String, SGRoleMapping> merged = new LinkedHashMap<>();
         for (var mapping : rolesMappings) {
-            // TODO: Key = SG-Rollenname → überschreiben bei gleicher Rolle? Oder merge?
-            contents.put(mapping.roleName, mapping);
+            var existing = merged.get(mapping.roleName);
+
+            if (existing == null) {
+                merged.put(mapping.roleName, new SGRoleMapping(
+                        mapping.roleName,
+                        new ArrayList<>(mapping.users),
+                        new ArrayList<>(mapping.backendRoles),
+                        new ArrayList<>(mapping.hosts),
+                        new ArrayList<>(mapping.ips)));
+            } else {
+                existing.users.addAll(mapping.users);
+                existing.backendRoles.addAll(mapping.backendRoles);
+                existing.hosts.addAll(mapping.hosts);
+                existing.ips.addAll(mapping.ips);
+            }
         }
-        return contents;
+        return merged;
     }
 
     static class SGRoleMapping implements Document<SGRoleMapping> {
