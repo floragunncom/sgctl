@@ -1,6 +1,5 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
-import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
@@ -22,12 +21,6 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
         this.report = MigrationReport.shared;
         this.users = new ArrayList<>(ir.getUsers().size());
         createSGInternalUser();
-//        try {
-//            Files.write(new File("/Users/fynntorke/Desktop/SWP-Data/", FILE_NAME).toPath(), DocWriter.yaml().writeAsString(this).getBytes());
-//        } catch (IOException e) {
-//            printErr(e);
-//        }
-//        print(DocWriter.yaml().writeAsString(this));
     }
 
     private void createSGInternalUser() {

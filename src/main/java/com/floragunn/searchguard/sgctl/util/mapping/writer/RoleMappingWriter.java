@@ -1,6 +1,5 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
-import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
@@ -16,14 +15,13 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
     private final MigrationReport report;
     private final List<SGRoleMapping> rolesMappings;
 
-    private static final String FILE_NAME = "sg_roles_mapping.yml";
+    static final String FILE_NAME = "sg_roles_mapping.yml";
 
     public RoleMappingWriter(IntermediateRepresentation ir) {
         this.ir = ir;
         this.report = MigrationReport.shared;
         this.rolesMappings = new ArrayList<>();
         createSGRoleMappings();
-        print(DocWriter.yaml().writeAsString(this));
     }
 
     public void createSGRoleMappings() {

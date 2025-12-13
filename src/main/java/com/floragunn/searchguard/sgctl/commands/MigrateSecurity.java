@@ -9,6 +9,7 @@ import picocli.CommandLine.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.IIOException;
 import java.io.File;
 import java.util.concurrent.Callable;
 //names of files: user.json, role.json, role_mapping.json
@@ -35,7 +36,15 @@ public class MigrateSecurity implements Callable<Integer> {
         var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
         var ir = reader.generateIR();
         var writer = new SearchGuardConfigWriter(ir);
-//        MigrationReport.shared.printReport();
+        if (outputDir != null) {
+            try {
+                writer.writeTo(outputDir);
+            } catch (IIOException e) {
+                System.err.println("An error occurred while trying to write a file to: " + outputDir.getAbsolutePath() + "\nError: " + e.getMessage());
+            }
+        }
+        writer.printFiles();
+        MigrationReport.shared.printReport();
         return 0;
     }
 

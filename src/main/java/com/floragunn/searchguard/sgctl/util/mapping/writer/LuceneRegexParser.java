@@ -7,8 +7,11 @@ public class LuceneRegexParser {
     private static final Pattern emptyPattern = Pattern.compile("[^\\\\]#");
     private static final Pattern andPattern = Pattern.compile("[^\\\\]&");
     private static final Pattern doubleAndPattern = Pattern.compile("[^\\\\]&.*?[^\\\\]&");
+    private static final Pattern complementPattern = Pattern.compile("[^\\\\]~");
 
     static public String toJavaRegex(String luceneReg) throws Exception {
+        if (!luceneReg.matches("^/.*/$")) return luceneReg;
+        if (complementPattern.matcher(luceneReg).find()) throw new Exception("Encountered a complement operator '~'. This can not be perfectly represented in Java regex.");
         var matcher = rangePattern.matcher(luceneReg);
         while (matcher.find()) {
             var match = matcher.group();
@@ -27,16 +30,13 @@ public class LuceneRegexParser {
     }
 
     static private String luceneAndToJavaRegex(String luceneReg) {
-
         var matcher = doubleAndPattern.matcher(luceneReg);
         var firstMatchIndex = 0;
         while (matcher.find()) {
-            var matchStart = matcher.start();
-            if (firstMatchIndex == 0) {
-                firstMatchIndex = matchStart+1;
-            }
-            var matchEnd = matcher.end();
-            var match = matcher.group();
+            final var matchStart = matcher.start();
+            if (firstMatchIndex == 0) firstMatchIndex = matchStart+1;
+            final var matchEnd = matcher.end();
+            final var match = matcher.group();
             luceneReg = luceneReg.substring(0, matchStart+1) + "(?=" + match.substring(2, match.length()-1) + ")&" + luceneReg.substring(matchEnd);
             matcher = doubleAndPattern.matcher(luceneReg);
         }
@@ -49,12 +49,13 @@ public class LuceneRegexParser {
         return luceneReg;
     }
 
-    static private String luceneRangeToJavaRegex(String luceneReg) {
+    static private String luceneRangeToJavaRegex(String luceneReg) throws Exception {
         var separatorIndex = luceneReg.indexOf('-');
         var startStr = luceneReg.substring(1, separatorIndex);
         var endStr = luceneReg.substring(separatorIndex + 1, luceneReg.length() - 1);
         var start = Integer.parseInt(startStr);
         var end = Integer.parseInt(endStr);
+        if (start > end) throw new Exception("The minimum of a range property can not be larger then the maximum. (" + start + "≰" + end + ")");
         var regex = new StringBuilder("(");
         for (var i = 0; i < endStr.length(); i++) {
             if (i == separatorIndex) {
@@ -80,9 +81,5 @@ public class LuceneRegexParser {
 
     static void print(Object line) {
         System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
     }
 }
