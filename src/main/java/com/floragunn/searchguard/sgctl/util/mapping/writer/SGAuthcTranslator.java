@@ -10,8 +10,8 @@ import java.util.*;
 
 public class SGAuthcTranslator {
     private final Map<String, RealmTranslator> realmMapping = new HashMap<>();
-    private MigrateConfig.SgAuthc config;
-    private MigrateConfig.SgAuthc frontEndConfig;
+    private final MigrateConfig.SgAuthc config;
+    private final MigrateConfig.SgAuthc frontEndConfig;
 
     public MigrateConfig.SgAuthc getConfig() {
         return config;
@@ -24,6 +24,9 @@ public class SGAuthcTranslator {
 
 
     public SGAuthcTranslator(IntermediateRepresentationElasticSearchYml ir) {
+        config = new MigrateConfig.SgAuthc();
+        frontEndConfig = new MigrateConfig.SgAuthc();
+
         realmMapping.put("ldap", new LdapTranslator());
         realmMapping.put("file", new FileTranslator());
         realmMapping.put("native", new NativeTranslator());
@@ -31,6 +34,7 @@ public class SGAuthcTranslator {
         realmMapping.put("pki", new PkiTranslator());
         realmMapping.put("oidc", new OidcTranslator());
         realmMapping.put("kerberos", new KerberosTranslator());
+
         createAuthcConfig(ir);
     }
 
