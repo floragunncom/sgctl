@@ -120,6 +120,10 @@ public class SGAuthcTranslator {
 
     }
 
+    private static String toBasicType(String type) {
+        return String.format("basic/%s", type);
+    }
+
     /**
      * Converts Xpack Attribute filter to Searchguard one. Defaults to "sub"
      *
@@ -209,7 +213,7 @@ public class SGAuthcTranslator {
         ldapConfig.putIfAbsent("ldap.idp.connection_pool.max_size", 10);
 
         return new MigrateConfig.NewAuthDomain(
-                ir.getType(),
+                toBasicType(ir.getType()),
                 null,
                 null,
                 null,
@@ -239,7 +243,7 @@ public class SGAuthcTranslator {
         }
 
         return new MigrateConfig.NewAuthDomain(
-                ir.getType(),
+                toBasicType(ir.getType()),
                 null,
                 null,
                 null,
@@ -261,7 +265,7 @@ public class SGAuthcTranslator {
         addOptionalConfigProperty(kerberosConfig, "kerberos.strip_realm_from_principal", ir.getRemoveRealmName(), true);
 
         return new MigrateConfig.NewAuthDomain(
-                ir.getType(),
+                toBasicType(ir.getType()),
                 null,
                 null,
                 null,
@@ -310,7 +314,7 @@ public class SGAuthcTranslator {
 
 
         return new MigrateConfig.NewAuthDomain(
-                ir.getType(),
+                toBasicType(ir.getType()),
                 null,
                 null,
                 null,
