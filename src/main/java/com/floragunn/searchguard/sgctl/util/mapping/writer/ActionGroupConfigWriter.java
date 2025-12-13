@@ -130,7 +130,10 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             "cluster:monitor/xpack/rollup/*"
         )),
         SGS_MONITOR_SNAPSHOT_CUSTOM("SGS_MONITOR_SNAPSHOT_CUSTOM", List.of(
-            // TODO
+            "cluster:admin/snapshot/status*",
+            "cluster:admin/snapshot/get",
+            "cluster:admin/snapshot/status",
+            "cluster:admin/repository/get"
         )),
         SGS_MONITOR_STATS_CUSTOM("SGS_MONITOR_STATS_CUSTOM", List.of(
             "cluster:monitor/stats*"
@@ -146,16 +149,35 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             "cluster:monitor/xpack/watcher/*"
         )),
         SGS_READ_CCR_CUSTOM("SGS_READ_CCR_CUSTOM", List.of(
-            // TODO
+            "cluster:monitor/state",
+            "cluster:admin/xpack/security/user/has_privileges"
         )),
         SGS_READ_ILM_CUSTOM("SGS_READ_ILM_CUSTOM", List.of(
-            // TODO
+            "cluster:admin/ilm/get",
+            "cluster:admin/ilm/operation_mode/get"
         )),
         SGS_READ_PIPELINE_CUSTOM("SGS_READ_PIPELINE_CUSTOM", List.of(
-            // TODO
+            "cluster:admin/ingest/pipeline/get",
+            "cluster:admin/ingest/pipeline/simulate"
         )),
         SGS_READ_SECURITY_CUSTOM("SGS_READ_SECURITY_CUSTOM", List.of(
-            // TODO
+            "cluster:admin/xpack/security/api_key/get",
+            "cluster:admin/xpack/security/api_key/query",
+            "cluster:admin/xpack/security/privilege/builtin/get",
+            "cluster:admin/xpack/security/privilege/get",
+            "cluster:admin/xpack/security/profile/get",
+            "cluster:admin/xpack/security/profile/has_privileges",
+            "cluster:admin/xpack/security/profile/suggest",
+            "cluster:admin/xpack/security/role/get",
+            "cluster:admin/xpack/security/role/query",
+            "cluster:admin/xpack/security/role_mapping/get",
+            "cluster:admin/xpack/security/service_account/get",
+            "cluster:admin/xpack/security/service_account/credential/get*",
+            "cluster:admin/xpack/security/user/get",
+            "cluster:admin/xpack/security/user/query",
+            "cluster:admin/xpack/security/user/list_privileges",
+            "cluster:admin/xpack/security/user/has_privileges",
+            "cluster:admin/xpack/security/settings/get"
         )),
         SGS_TRANSPORT_CLIENT_CUSTOM("SGS_TRANSPORT_CLIENT_CUSTOM", List.of(
             "cluster:monitor/nodes/liveness",
