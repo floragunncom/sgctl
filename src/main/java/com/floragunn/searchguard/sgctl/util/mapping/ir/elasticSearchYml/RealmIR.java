@@ -312,6 +312,7 @@ public class RealmIR {
 
         public String getAttributesPrincipal() { return attributesPrincipal; }
         public String getIdpMetadataPath() { return idpMetadataPath; }
+        public String getIdpEntityID() { return idpEntityID; }
         public String getSpEntityID() { return spEntityID; }
         public String getSpAcs() { return spAcs; }
 
