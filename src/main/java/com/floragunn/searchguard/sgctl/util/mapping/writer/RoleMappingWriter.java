@@ -30,6 +30,11 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             var roles = rm.getRoles();
             var templates = rm.getRoleTemplates();
 
+            if (!rm.isEnabled()) { // TODO: Ist dies so im Einklang mit SG?
+                report.addWarning(FILE_NAME, mappingName, "Role Mapping Disabled and will hence be ignored");
+                continue;
+            }
+
             // TODO: Templates wahrscheinlich nicht migrierbar (nochmal abklären)
             if (templates != null && !templates.isEmpty()) {
                 report.addManualAction(FILE_NAME, mappingName + "role_templates", "X-Pack role_templates are not automatically migrated.");
@@ -119,7 +124,31 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     public List<String> getSGBackendRoles(RoleMapping rm, String roleName) {
         // TODO: backendRoles migrieren (Müssen aus den rules aus XPack abgleitet werden)
-        return new ArrayList<>();
+        var result = new ArrayList<String>();
+        var rules = rm.getRules();
+
+        // if there are no rules derivable
+        if  (rules == null || rules.getField() == null) {
+            return result;
+        }
+
+        var field = rules.getField();
+
+        // XPack groups are SG backend_roles
+        if (field.containsKey("groups")) {
+            result.addAll(
+                extractStringValues(
+                    field.get("groups"), rm.getMappingName() + "rules.fields.groups"
+                )
+            );
+        }
+
+        if (field.containsKey("realm.name")) {
+            report.addManualAction(FILE_NAME, roleName + "rules.field.realm.name",
+                "Realm-based role mappings cannot be migrated automatically.");
+        }
+
+        return result;
     }
 
     @Override
