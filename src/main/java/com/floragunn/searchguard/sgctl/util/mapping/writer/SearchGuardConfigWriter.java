@@ -9,14 +9,15 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.Intermed
  * Generates sg_authc.yml with LDAP, SAML, OIDC realms mapped.
  */
 public class SearchGuardConfigWriter {
-    MigrateConfig.SgAuthc  sg_authc;
+    SGAuthcTranslator authcTranslator;
+    MigrateConfig.SgAuthc  sgAuthc;
     MigrateConfig.SgAuthc sg_frontend_authc;
 
     public SearchGuardConfigWriter(IntermediateRepresentationElasticSearchYml irElasticSearchYml, IntermediateRepresentation ir) {
         //If there is a specific reason why we can't just make one initial call please tell me.
-        SGAuthcTranslator.Configs configs = SGAuthcTranslator.createAuthcConfig(irElasticSearchYml);
-        sg_authc = configs.config();
-        sg_frontend_authc = configs.fconfig();
+        authcTranslator = new SGAuthcTranslator(irElasticSearchYml);
+        sgAuthc = authcTranslator.getConfig();
+        sg_frontend_authc = authcTranslator.getFrontEndConfig();
     }
 
     public MigrateConfig.SgAuthc getSg_frontend_authc() {
