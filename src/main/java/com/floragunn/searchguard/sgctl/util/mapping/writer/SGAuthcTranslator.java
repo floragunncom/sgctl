@@ -102,19 +102,48 @@ public class SGAuthcTranslator {
      * @param config The config that the value gets added to
      * @param key The Key which needs to be added
      * @param value Optional value that gets added if present
-     * @param sg_frontend_authc true if in sg_frontend_authc section
+     * @param sgAuthcFrontend true if in sg_frontend_authc section
      */
-    private static void addOptionalConfigProperty(Map<String, Object> config, String key, Object value, Boolean sg_frontend_authc) {
+    private static void addOptionalConfigProperty(Map<String, Object> config, String key, Object value, Boolean sgAuthcFrontend) {
         if (value == null)
             return;
-        if(sg_frontend_authc){
-            config.put(key, value);
-            MigrationReport.shared.addMigrated(SG_FRONTEND_AUTHC_FILE_NAME, key);
-        }else{
-            config.put(key, value);
-            MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, key);
-        }
+        config.put(key, value);
 
+        String fileName;
+        if(Boolean.TRUE.equals(sgAuthcFrontend)){
+            fileName = SG_FRONTEND_AUTHC_FILE_NAME;
+        }else{
+            fileName = SG_AUTHC_FILE_NAME;
+        }
+        MigrationReport.shared.addMigrated(fileName, key);
+
+
+    }
+
+    /**
+     * Converts Xpack Attribute filter to Searchguard one. Defaults to "sub"
+     *
+     * @param xpackFilter the filter expression in xpack
+     * @return converted filter
+     */
+
+    private static String convertXpackFilterToSearchguard(String xpackFilter) {
+        // Handles conversion from X-Pack formats
+        // sub_level → sub
+        // one_level → one
+        // subordinate_subtree → sub (fallback)
+        // etc.
+        switch (xpackFilter) {
+            case "sub_level":
+                return "sub";
+            case "one_level":
+                return "one";
+            case "base":
+                return "base_dn";
+            default:
+                MigrationReport.shared.addManualAction(SG_AUTHC_FILE_NAME, "ldap.user_search.filter.by_attribute", String.format("Unkown Attribute %s, defaulted to sub", xpackFilter));
+                return "sub";
+        }
     }
 
     /**
@@ -127,12 +156,57 @@ public class SGAuthcTranslator {
         String url = ir.getUrl();
         if (url != null) {
             List<String> ldapHosts = Arrays.asList(url);
-            ldapConfig.put("ldap.idp.hosts", ldapHosts);
+            addOptionalConfigProperty(ldapConfig, "ldap.idp.hosts", ldapHosts, false);
         }
+
         addOptionalConfigProperty(ldapConfig, "ldap.idp.bind_dn", ir.getBindDn(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.idp.password", ir.getBindPassword(), false);
+
+        // User Search
         addOptionalConfigProperty(ldapConfig, "ldap.user_search.base_dn", ir.getUserSearchBaseDn(), false);
         addOptionalConfigProperty(ldapConfig, "ldap.user_search.filter.raw", ir.getUserSearchFilter(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.user_search.scope", ir.getUserSearchScope(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.user_search.filter.by_attribute", convertXpackFilterToSearchguard(ir.getUserSearchAttribute()), false);
+        addOptionalConfigProperty(ldapConfig, "user_mapping.user_name.from", ir.getUserSearchUsernameAttribute(), false);
+
+        // Group Search
         addOptionalConfigProperty(ldapConfig, "ldap.group_search.base_dn", ir.getGroupSearchBaseDn(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.group_search.scope", ir.getGroupSearchScope(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.group_search.filter.raw", ir.getGroupSearchFilter(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.group_search.role_name_attribute", ir.getGroupSearchAttribute(), false);
+
+        // Recursive groups
+        Boolean unmappedGroups = ir.getUnmappedGroupsAsRoles();
+        addOptionalConfigProperty(ldapConfig, "ldap.group_search.recursive.enabled", unmappedGroups, false);
+
+        // TLS/SSL
+        addOptionalConfigProperty(ldapConfig, "ldap.idp.tls.verify_hostnames", ir.getSslVerificationMode(), false);
+
+        List<String> cas = ir.getCertificateAuthorities();
+        if (cas != null && !cas.isEmpty()) {
+            addOptionalConfigProperty(ldapConfig, "ldap.idp.tls.trusted_cas", cas, false);
+        }
+
+        addOptionalConfigProperty(ldapConfig, "ldap.idp.tls.client_auth.certificate", ir.getSslKeystorePath(), false);
+        addOptionalConfigProperty(ldapConfig, "ldap.idp.tls.client_auth.private_key_password", ir.getSslKeystorePassword(), false);
+
+        // Connection Pool
+        addOptionalConfigProperty(ldapConfig, "ldap.idp.connection_strategy", ir.getLoadBalanceType(), false);
+
+        // getTimeoutTcpConnect(), getTimeoutLdapRead(), getTimeoutLdapSearch() are not supported
+        if (ir.getTimeoutTcpConnect() != null) {
+            MigrationReport.shared.addWarning(SG_AUTHC_FILE_NAME, "Timeout Tcp Connect", "Timeout Tcp Connect is not supported in Searchguard");
+        }
+        if (ir.getTimeoutLdapSearch() != null) {
+            MigrationReport.shared.addWarning(SG_AUTHC_FILE_NAME, "Timeout Tcp Search", "Timeout Tcp Search is not supported in Searchguard");
+        }
+        if (ir.getTimeoutLdapRead() != null) {
+            MigrationReport.shared.addWarning(SG_AUTHC_FILE_NAME, "Timeout Tcp Read", "Timeout Tcp Read is not supported in Searchguard");
+        }
+
+        // Set default connection pool sizes if not already configured
+        ldapConfig.putIfAbsent("ldap.idp.connection_pool.min_size", 3);
+        ldapConfig.putIfAbsent("ldap.idp.connection_pool.max_size", 10);
 
         return new MigrateConfig.NewAuthDomain(
                 ir.getType(),
@@ -198,6 +272,8 @@ public class SGAuthcTranslator {
 
     //TODO Implement these functions. They are just place holders for now
     private static MigrateConfig.NewAuthDomain createFileDomain(RealmIR.FileRealmIR ir) {
+        //TODO: This is technically a roles thing I think so it doesn't really work here (Needs to be discussed)
+
         return null;
     }
     private static MigrateConfig.NewAuthDomain createNativeDomain(RealmIR.NativeRealmIR ir) {
@@ -225,11 +301,12 @@ public class SGAuthcTranslator {
         addOptionalConfigProperty(oidcConfig, "user_mapping.user_name.from.json_path", "oidc_id_token."+ ir.getClaimName(), true);
         addOptionalConfigProperty(oidcConfig, "user_mapping.user_name.from.pattern", "oidc_id_token."+ ir.getClaimMail(), true);
         addOptionalConfigProperty(oidcConfig, "oidc.idp.openid_configuration_url", ir.getOpIssuer()+ ".well-known/openid-configuration", true);
-
-        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.idp.tls.trusted_cas", "needs to be added manualy");
-        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "user_mapping.roles.from_comma_separated_string", "needs to be added manualy");
-        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.idp.proxy", "needs to be added manualy");
-        MigrationReport.shared.addManualAction("sg_frontend_authc.yml", "oidc.client_secret", "needs to be added manualy");
+        //Sonar Cube was unhappy so I just added this rq
+        String needsToBeAddedManually = "needs to be added manualy";
+        MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "oidc.idp.tls.trusted_cas", needsToBeAddedManually);
+        MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "user_mapping.roles.from_comma_separated_string", needsToBeAddedManually);
+        MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "oidc.idp.proxy", needsToBeAddedManually);
+        MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "oidc.client_secret", needsToBeAddedManually);
 
 
         return new MigrateConfig.NewAuthDomain(
