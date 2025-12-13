@@ -305,6 +305,7 @@ public class RealmIR {
     public static class SamlRealmIR extends RealmIR {
 
         String idpMetadataPath;
+        String idpEntityID;
         String spEntityID;
         String spAcs;
         String attributesPrincipal;
@@ -330,6 +331,7 @@ public class RealmIR {
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
+                    case "idp.entity_id": this.idpEntityID = (String) value; break;
                     case "idp.metadata.path": this.idpMetadataPath = (String) value; break;
                     case "sp.entity_id": this.spEntityID = (String) value; break;
                     case "sp.acs": this.spAcs = (String) value; break;
