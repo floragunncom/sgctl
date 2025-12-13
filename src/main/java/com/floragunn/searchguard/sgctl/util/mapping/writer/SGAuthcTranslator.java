@@ -61,8 +61,6 @@ public class SGAuthcTranslator {
                     break;
                 case "pki":
                     newDomain = createPkiDomain((RealmIR.PkiRealmIR) realm);
-                    realmNotImplementedReport(realmName, realm);
-
                     break;
                 case "oidc":
                     newDomain = createOidcDomain((RealmIR.OidcRealmIR) realm);
@@ -284,9 +282,52 @@ public class SGAuthcTranslator {
         return null;
     }
 
-    private static MigrateConfig.NewAuthDomain createPkiDomain(RealmIR.PkiRealmIR ir) {
+    private static String convertXpackUsernamePatternToSearchGuard(String usernamePattern, String usernameAttribute) {
+        // If usernameAttribute is set, use it directly
+        if (usernameAttribute != null && !usernameAttribute.isEmpty()) {
+            return "clientcert.subject." + usernameAttribute.toLowerCase();
+        }
 
-        return null;
+        // If pattern is provided, try to extract the component
+        if (usernamePattern != null && !usernamePattern.isEmpty()) {
+            String pattern = usernamePattern.toUpperCase();
+
+            // Common patterns
+            if (pattern.contains("CN=")) {
+                return "clientcert.subject.cn";
+            } else if (pattern.contains("EMAILADDRESS=") || pattern.contains("EMAIL=")) {
+                return "clientcert.subject.email_address";
+            } else if (pattern.contains("O=")) {
+                return "clientcert.subject.o";
+            } else if (pattern.contains("OU=")) {
+                return "clientcert.subject.ou";
+            } else if (pattern.contains("C=")) {
+                return "clientcert.subject.c";
+            } else {
+                // Pattern is too complex to convert automatically
+                MigrationReport.shared.addManualAction(SG_AUTHC_FILE_NAME, "user_mapping.user_name.from", "Pattern is too complex to be converted, please add it manually");
+                return null;
+            }
+        }
+
+        // Default: use full DN
+        return "clientcert.subject";
+    }
+
+    private static MigrateConfig.NewAuthDomain createPkiDomain(RealmIR.PkiRealmIR ir) {
+        //TODO This has a few things that need to be added to the TLS Config in Elasticsearch.yml
+        Map<String, Object> clientCertConfig = new HashMap<>();
+
+        addOptionalConfigProperty(clientCertConfig, "user_mapping.user_name.from", convertXpackUsernamePatternToSearchGuard(ir.getUsernamePattern(), ir.getUsernameAttribute()), false);
+
+        return new MigrateConfig.NewAuthDomain(
+                "clientcert",
+                null,
+                null,
+                null,
+                clientCertConfig,
+                null
+        );
     }
 
 
