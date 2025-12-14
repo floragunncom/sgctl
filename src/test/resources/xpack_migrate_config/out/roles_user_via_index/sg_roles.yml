@@ -224,7 +224,7 @@ read_only_role_test:
     - index_patterns:
         - "*"
       allowed_actions:
-        - READ
+        - SGS_READ
 
 admin_role_test:
   cluster_permissions:
