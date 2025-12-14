@@ -8,5 +8,5 @@ auth_domains:
     - "ldap://ldap.example.com:389"
   user_search:
     base_dn: "ou=users,dc=example,dc=com"
-    scope: "sub_tree"
+    scope: "sub"
     filter.raw: "(uid={0})"

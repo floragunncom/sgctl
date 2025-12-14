@@ -49,9 +49,9 @@ public class AuthMigrator implements SubMigrator {
       if (realm.get() instanceof Realm.NativeRealm || realm.get() instanceof Realm.FileRealm) {
         domain = new SgAuthC.AuthDomain.Internal();
       } else if (realm.get() instanceof Realm.LdapRealm ldapRealm) {
-        domain = migrateLdapRealm(ldapRealm, reporter);
+        domain = migrateLdapRealm(Traceable.of(realm.getSource(), ldapRealm), reporter);
       } else if (realm.get() instanceof Realm.ActiveDirectoryRealm adRealm) {
-        domain = migrateActiveDirectoryRealm(adRealm);
+        domain = migrateActiveDirectoryRealm(Traceable.of(realm.getSource(), adRealm));
       } else {
         reporter.critical(realm, "Unrecognized realm type");
         return List.of();
@@ -100,18 +100,27 @@ public class AuthMigrator implements SubMigrator {
 
   private SgAuthC.AuthDomain<?> migrateActiveDirectoryRealm(
       Traceable<Realm.ActiveDirectoryRealm> realm) {
+    var realmUntraced = realm.get();
+
+    var hosts =
+        realmUntraced
+            .url()
+            .get()
+            .map(urls -> ImmutableList.of(urls.stream().map(Traceable::get).toList()))
+            .orElse(ImmutableList.of("ldap://%s:389".formatted(realmUntraced.domainName().get())));
+
     var identityProvider =
         new IdentityProvider(
-            realm.url(),
+            hosts,
             Optional.empty(),
-            Optional.ofNullable(realm.bindDn()),
+            realmUntraced.bindDn().get(),
             Optional.empty(),
             Optional.empty(),
             Optional.empty());
     var userSearch =
         Optional.of(
             new UserSearch(
-                Optional.ofNullable(realm.userSearchBaseDn()), Optional.empty(), Optional.empty()));
+                realmUntraced.userSearchBaseDn().get(), Optional.empty(), Optional.empty()));
     return new Ldap(identityProvider, userSearch, Optional.empty());
   }
 
