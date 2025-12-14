@@ -24,17 +24,18 @@ public class LdapTranslator extends RealmTranslator {
         // one_level → one
         // subordinate_subtree → sub (fallback)
         // etc.
-        switch (xpackFilter) {
-            case "sub_level":
-                return "sub";
-            case "one_level":
-                return "one";
-            case "base":
-                return "base_dn";
-            default:
-                MigrationReport.shared.addManualAction(SG_AUTHC_FILE_NAME, "ldap.user_search.filter.by_attribute", String.format("Unkown Attribute %s, defaulted to sub", xpackFilter));
-                return "sub";
+        if (xpackFilter == null) {
+            return null;
         }
+        return switch (xpackFilter) {
+            case "sub_level" -> "sub";
+            case "one_level" -> "one";
+            case "base" -> "base_dn";
+            default -> {
+                MigrationReport.shared.addManualAction(SG_AUTHC_FILE_NAME, "ldap.user_search.filter.by_attribute", String.format("Unkown Attribute %s, defaulted to sub", xpackFilter));
+                yield "sub";
+            }
+        };
     }
 
     @Override
