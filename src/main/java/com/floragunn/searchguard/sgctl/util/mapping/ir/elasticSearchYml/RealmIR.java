@@ -12,7 +12,7 @@ public class RealmIR {
     String type; // ldap, saml, oidc, ...
     String name;
     int order;
-    boolean enabled;
+    boolean enabled = true;
 
     public String getType() { return type; }
     public String getName() { return name; }

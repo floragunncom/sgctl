@@ -38,14 +38,14 @@ public class MigrateSecurity implements Callable<Integer> {
             return 1;
         }
 
-
-
         IntermediateRepresentationElasticSearchYml irElasticSearchYml = new IntermediateRepresentationElasticSearchYml();
         new ElasticsearchYamlReader(elasticsearch, irElasticSearchYml);
         IntermediateRepresentation ir = new IntermediateRepresentation();
         SearchGuardConfigWriter sgcw = new SearchGuardConfigWriter(irElasticSearchYml, ir);
 
-        writeYamlConfig(sgcw.getSg_frontend_authc(), outputDir, "sg_frontend_authc.yml");
+        writeYamlConfig(sgcw.getSgAuthc(), outputDir, "sg_authc.yml");
+        writeYamlConfig(sgcw.getSgFrontendAuthc(), outputDir, "sg_frontend_authc.yml");
+
         MigrationReport.shared.printReport();
         return 0;
     }
@@ -129,7 +129,14 @@ public class MigrateSecurity implements Callable<Integer> {
      * @throws IOException If writing fails.
      */
     private void writeYamlConfig(Object configObject, File outputDir, String filename) throws IOException {
+        String outputString = DocWriter.yaml().writeAsString(configObject);
+        if (outputDir == null) {
+            System.out.printf("---------- %s ----------%n", filename);
+            System.out.println(outputString);
+            System.out.println("---------- File End ----------");
+            return;
+        }
         File outputFile = new File(outputDir, filename);
-        Files.writeString(outputFile.toPath(), DocWriter.yaml().writeAsString(configObject));
+        Files.writeString(outputFile.toPath(), outputString);
     }
 }
