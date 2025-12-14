@@ -15,7 +15,5 @@ alice:
   
 bob:
   hash: changeit
-  backend_roles:
-    - admin_role_test
   attributes:
     full_name: "Bob Admin"
