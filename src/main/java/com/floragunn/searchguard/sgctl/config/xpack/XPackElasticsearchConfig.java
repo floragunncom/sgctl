@@ -102,9 +102,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Integer> order,
         Traceable<Boolean> enabled,
         Traceable<ImmutableList<Traceable<String>>> url,
-        Traceable<String> bindDn,
-        Traceable<String> bindPassword,
-        Traceable<String> secureBindPassword,
+        OptTraceable<String> bindDn,
+        OptTraceable<String> bindPassword,
+        OptTraceable<String> secureBindPassword,
         OptTraceable<String> userDnTemplates,
         Traceable<ImmutableList<Traceable<String>>> authorizationRealms,
         Traceable<String> userGroupAttr,
@@ -195,9 +195,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> enabled,
         TraceableDocNode tDoc) {
       var url = tDoc.get("url").asListOfStrings(ImmutableList.empty());
-      var bindDn = tDoc.get("bind_dn").asString("");
-      var bindPassword = tDoc.get("bind_password").asString("");
-      var secureBindPassword = tDoc.get("secure_bind_password").asString("");
+      var bindDn = tDoc.get("bind_dn").asString();
+      var bindPassword = tDoc.get("bind_password").asString();
+      var secureBindPassword = tDoc.get("secure_bind_password").asString();
       // authorization realms can be a string or list; normalize to a list
       // TODO: authorization_realms can be a List or just a String. Only the List case is handled
       // here.
