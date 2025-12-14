@@ -1,6 +1,7 @@
-cluster.name: ldap-sec-cluster
+cluster.name: ldap-sec_bind
 node.name: es-sec-01
 
+network.host: 192.168.10.10
 
 xpack.security.enabled: false
 
@@ -15,6 +16,9 @@ searchguard.ssl.transport.client_authentication: REQUIRED
 
 searchguard.ssl.http.enabled: true
 searchguard.ssl.http.keystore_filepath: certs/node-sec01.p12
-searchguard.ssl.http.truststore_filepath: certs/ca.p12
+searchguard.ssl.http.keystore_type: PKCS12
 searchguard.ssl.http.keystore_password: changeit
+
+searchguard.ssl.http.truststore_filepath: certs/ca.p12
+searchguard.ssl.http.truststore_type: PKCS12
 searchguard.ssl.http.truststore_password: changeit

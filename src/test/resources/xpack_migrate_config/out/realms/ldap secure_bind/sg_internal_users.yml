@@ -1,0 +1,15 @@
+alice:
+  hash: changeit
+  attributes:
+    full_name: "Alice Example"
+    email: "alice@example.com"
+  
+bob:
+  hash: changeit
+  attributes:
+    full_name: "Bob Admin"
+
+carol:
+  hash: changeit
+  attributes:
+    full_name: "Carol Dev"

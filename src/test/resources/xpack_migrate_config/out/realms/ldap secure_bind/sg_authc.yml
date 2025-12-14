@@ -1,0 +1,15 @@
+authc:
+  native_auth_domain:
+    order: 0
+    authentication_backend:
+      type: internal
+
+ldap_auth_domain:
+    order: 1
+    ldap.idp.hosts:
+      - "ldap.corp.local:636"
+    ldap.idp.bind_dn: "cn=elastic,ou=service,dc=corp,dc=local"
+    ldap.idp.password: "secret_password"
+    ldap.group_search.base_dn: "dc=corp,dc=local"
+
+    ldap.user_search.base_dn: "dc=corp,dc=local"

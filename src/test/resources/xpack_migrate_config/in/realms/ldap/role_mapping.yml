@@ -1,14 +1,14 @@
 
-admin_role_test:
+admin:
   - "CN=ESAdmins,OU=Groups,DC=corp,DC=local"
   - "elastic_admin"
 
-watcher_user:
+dev_poweruser:
   - "CN=DevOps,OU=Groups,DC=corp,DC=local"
 
 dev_readonly:
   - "CN=Developers,OU=Groups,DC=corp,DC=local"
 
-read_only_role_test:
+audit_reader:
   - "CN=SecurityTeam,OU=Groups,DC=corp,DC=local"
 
