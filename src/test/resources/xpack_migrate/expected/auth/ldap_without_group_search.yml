@@ -6,5 +6,5 @@ auth_domains:
     - "ldaps://ldap.example.com:636"
   user_search:
     base_dn: "ou=users,dc=example,dc=com"
-    scope: "sub"
+    scope: "sub_tree"
     filter.raw: "(uid={0})"
