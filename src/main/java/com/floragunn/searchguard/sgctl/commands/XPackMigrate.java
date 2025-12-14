@@ -25,6 +25,23 @@ import picocli.CommandLine;
     description = "Converts X-Pack configs to Search Guard configs")
 public class XPackMigrate implements Callable<Integer> {
 
+  public static final String HELP_MESSAGE =
+      """
+      This migration tool expects the following files in the input directory (--input-dir):
+      - role_mapping.json, from the .security index via GET /_security/role_mapping
+      - roles.json, from the .security index via GET /_security/role
+      - users.json, from the .security index via GET /_security/user
+      - elasticsearch.yml, from the Elasticsearch config directory
+      - kibana.yml, from the Kibana config directory
+      The tool will automatically convert them and write the results to the output directory (--output-dir), alongside a migration report (report.md).
+      """;
+
+  @CommandLine.Option(
+      names = {"-h", "--help"},
+      usageHelp = true,
+      description = "Show help screen and exit")
+  boolean help;
+
   @CommandLine.Option(
       names = {"-i", "--input-dir"},
       description = "Location of the old x-pack configuration files",
