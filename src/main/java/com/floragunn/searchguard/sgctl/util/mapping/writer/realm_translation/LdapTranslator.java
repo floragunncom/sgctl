@@ -24,7 +24,7 @@ public class LdapTranslator extends RealmTranslator {
         // one_level → one
         // subordinate_subtree → sub (fallback)
         // etc.
-        if (xpackFilter == null) {
+        if (xpackFilter == null || xpackFilter.isEmpty()) {
             return null;
         }
         return switch (xpackFilter) {
