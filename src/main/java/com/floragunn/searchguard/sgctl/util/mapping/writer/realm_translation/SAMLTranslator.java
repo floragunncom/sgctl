@@ -39,15 +39,13 @@ public class SAMLTranslator extends RealmTranslator {
     public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
         RealmIR.SamlRealmIR ir = (RealmIR.SamlRealmIR) originalIR;
 
-        Map<String, Object> samlConfig = new HashMap<>();
-
-        addOptionalConfigProperty(samlConfig, "saml.idp.metadata_url", ir.getIdpMetadataPath());
-        addOptionalConfigProperty(samlConfig, "saml.idp.entity_id", ir.getIdpEntityID());
-        addOptionalConfigProperty(samlConfig, "saml.sp.entity_id", ir.getSpEntityID());
+        addOptionalConfigProperty("saml.idp.metadata_url", ir.getIdpMetadataPath());
+        addOptionalConfigProperty("saml.idp.entity_id", ir.getIdpEntityID());
+        addOptionalConfigProperty("saml.sp.entity_id", ir.getSpEntityID());
 
         // Username mapping from attributes.principal
         String userNameMapping = convertAttributesToUserMapping(ir.getAttributesPrincipal());
-        addOptionalConfigProperty(samlConfig, "user_mapping.user_name.from", userNameMapping);
+        addOptionalConfigProperty("user_mapping.user_name.from", userNameMapping);
 
         // SP ACS - convert X-Pack format to FLX format
         String spAcs = ir.getSpAcs();
@@ -55,13 +53,13 @@ public class SAMLTranslator extends RealmTranslator {
             String convertedAcs = spAcs.contains("/api/security/saml/callback")
                     ? spAcs.replace("/api/security/saml/callback", "/searchguard/saml/acs")
                     : spAcs;
-            addOptionalConfigProperty(samlConfig, "saml.sp.acs", convertedAcs);
+            addOptionalConfigProperty("saml.sp.acs", convertedAcs);
         }
         /*
         // Roles mapping - extract from X-Pack if available
         if (ir.getAttributesGroups() != null) {
             String rolesMapping = convertAttributesToRolesMapping(ir.getAttributesGroups());
-            addOptionalConfigProperty(samlConfig, "user_mapping.roles.from", rolesMapping);
+            addOptionalConfigProperty("user_mapping.roles.from", rolesMapping);
         } else {
             MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "SAML Roles", "Configure user_mapping.roles.from or use sg_roles_mapping.yml");
         }
@@ -73,7 +71,7 @@ public class SAMLTranslator extends RealmTranslator {
                 null,
                 null,
                 null,
-                samlConfig,
+                config,
                 null
         );
     }

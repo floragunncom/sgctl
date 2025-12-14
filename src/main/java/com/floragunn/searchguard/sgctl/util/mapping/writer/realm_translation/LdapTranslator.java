@@ -40,46 +40,45 @@ public class LdapTranslator extends RealmTranslator {
     @Override
     public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
         RealmIR.LdapRealmIR ir = (RealmIR.LdapRealmIR) originalIR;
-        Map<String, Object> ldapConfig = new HashMap<>();
         String url = ir.getUrl();
         if (url != null) {
             List<String> ldapHosts = Arrays.asList(url);
-            addOptionalConfigProperty(ldapConfig, "ldap.idp.hosts", ldapHosts);
+            addOptionalConfigProperty("ldap.idp.hosts", ldapHosts);
         }
 
-        addOptionalConfigProperty(ldapConfig, "ldap.idp.bind_dn", ir.getBindDn());
-        addOptionalConfigProperty(ldapConfig, "ldap.idp.password", ir.getBindPassword());
+        addOptionalConfigProperty("ldap.idp.bind_dn", ir.getBindDn());
+        addOptionalConfigProperty("ldap.idp.password", ir.getBindPassword());
 
         // User Search
-        addOptionalConfigProperty(ldapConfig, "ldap.user_search.base_dn", ir.getUserSearchBaseDn());
-        addOptionalConfigProperty(ldapConfig, "ldap.user_search.filter.raw", ir.getUserSearchFilter());
-        addOptionalConfigProperty(ldapConfig, "ldap.user_search.scope", ir.getUserSearchScope());
-        addOptionalConfigProperty(ldapConfig, "ldap.user_search.filter.by_attribute", convertXpackFilterToSearchguard(ir.getUserSearchAttribute()));
-        addOptionalConfigProperty(ldapConfig, "user_mapping.user_name.from", ir.getUserSearchUsernameAttribute());
+        addOptionalConfigProperty("ldap.user_search.base_dn", ir.getUserSearchBaseDn());
+        addOptionalConfigProperty("ldap.user_search.filter.raw", ir.getUserSearchFilter());
+        addOptionalConfigProperty("ldap.user_search.scope", ir.getUserSearchScope());
+        addOptionalConfigProperty("ldap.user_search.filter.by_attribute", convertXpackFilterToSearchguard(ir.getUserSearchAttribute()));
+        addOptionalConfigProperty("user_mapping.user_name.from", ir.getUserSearchUsernameAttribute());
 
         // Group Search
-        addOptionalConfigProperty(ldapConfig, "ldap.group_search.base_dn", ir.getGroupSearchBaseDn());
-        addOptionalConfigProperty(ldapConfig, "ldap.group_search.scope", ir.getGroupSearchScope());
-        addOptionalConfigProperty(ldapConfig, "ldap.group_search.filter.raw", ir.getGroupSearchFilter());
-        addOptionalConfigProperty(ldapConfig, "ldap.group_search.role_name_attribute", ir.getGroupSearchAttribute());
+        addOptionalConfigProperty("ldap.group_search.base_dn", ir.getGroupSearchBaseDn());
+        addOptionalConfigProperty("ldap.group_search.scope", ir.getGroupSearchScope());
+        addOptionalConfigProperty("ldap.group_search.filter.raw", ir.getGroupSearchFilter());
+        addOptionalConfigProperty("ldap.group_search.role_name_attribute", ir.getGroupSearchAttribute());
 
         // Recursive groups
         Boolean unmappedGroups = ir.getUnmappedGroupsAsRoles();
-        addOptionalConfigProperty(ldapConfig, "ldap.group_search.recursive.enabled", unmappedGroups);
+        addOptionalConfigProperty("ldap.group_search.recursive.enabled", unmappedGroups);
 
         // TLS/SSL
-        addOptionalConfigProperty(ldapConfig, "ldap.idp.tls.verify_hostnames", ir.getSslVerificationMode());
+        addOptionalConfigProperty("ldap.idp.tls.verify_hostnames", ir.getSslVerificationMode());
 
         List<String> cas = ir.getCertificateAuthorities();
         if (cas != null && !cas.isEmpty()) {
-            addOptionalConfigProperty(ldapConfig, "ldap.idp.tls.trusted_cas", cas);
+            addOptionalConfigProperty("ldap.idp.tls.trusted_cas", cas);
         }
 
-        addOptionalConfigProperty(ldapConfig, "ldap.idp.tls.client_auth.certificate", ir.getSslKeystorePath());
-        addOptionalConfigProperty(ldapConfig, "ldap.idp.tls.client_auth.private_key_password", ir.getSslKeystorePassword());
+        addOptionalConfigProperty("ldap.idp.tls.client_auth.certificate", ir.getSslKeystorePath());
+        addOptionalConfigProperty("ldap.idp.tls.client_auth.private_key_password", ir.getSslKeystorePassword());
 
         // Connection Pool
-        addOptionalConfigProperty(ldapConfig, "ldap.idp.connection_strategy", ir.getLoadBalanceType());
+        addOptionalConfigProperty("ldap.idp.connection_strategy", ir.getLoadBalanceType());
 
         // getTimeoutTcpConnect(), getTimeoutLdapRead(), getTimeoutLdapSearch() are not supported
         if (ir.getTimeoutTcpConnect() != null) {
@@ -93,15 +92,15 @@ public class LdapTranslator extends RealmTranslator {
         }
 
         // Set default connection pool sizes if not already configured
-        ldapConfig.putIfAbsent("ldap.idp.connection_pool.min_size", 3);
-        ldapConfig.putIfAbsent("ldap.idp.connection_pool.max_size", 10);
+        config.putIfAbsent("ldap.idp.connection_pool.min_size", 3);
+        config.putIfAbsent("ldap.idp.connection_pool.max_size", 10);
 
         return new MigrateConfig.NewAuthDomain(
                 toBasicType(ir.getType()),
                 null,
                 null,
                 null,
-                ldapConfig,
+                config,
                 null
         );
     }

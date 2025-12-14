@@ -21,8 +21,6 @@ public class SGAuthcTranslator {
         return frontEndConfig;
     }
 
-
-
     public SGAuthcTranslator(IntermediateRepresentationElasticSearchYml ir) {
         config = new MigrateConfig.SgAuthc();
         frontEndConfig = new MigrateConfig.SgAuthc();

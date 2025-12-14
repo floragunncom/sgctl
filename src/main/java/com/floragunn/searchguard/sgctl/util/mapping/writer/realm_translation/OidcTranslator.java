@@ -19,11 +19,11 @@ public class OidcTranslator extends RealmTranslator {
         //TODO review mapping: oidc.idp.openid_configuration_url, oidc.idp.tls.trusted_cas
 
         // 1. RP settings
-        addOptionalConfigProperty(oidcConfig, "oidc.client_id", ir.getRpClientId());
-        addOptionalConfigProperty(oidcConfig, "oidc.logout_url", ir.getRpPostLogoutRedirectUri());
-        addOptionalConfigProperty(oidcConfig, "user_mapping.user_name.from.json_path", "oidc_id_token."+ ir.getClaimName());
-        addOptionalConfigProperty(oidcConfig, "user_mapping.user_name.from.pattern", "oidc_id_token."+ ir.getClaimMail());
-        addOptionalConfigProperty(oidcConfig, "oidc.idp.openid_configuration_url", ir.getOpIssuer()+ ".well-known/openid-configuration");
+        addOptionalConfigProperty("oidc.client_id", ir.getRpClientId());
+        addOptionalConfigProperty("oidc.logout_url", ir.getRpPostLogoutRedirectUri());
+        addOptionalConfigProperty("user_mapping.user_name.from.json_path", "oidc_id_token."+ ir.getClaimName());
+        addOptionalConfigProperty("user_mapping.user_name.from.pattern", "oidc_id_token."+ ir.getClaimMail());
+        addOptionalConfigProperty("oidc.idp.openid_configuration_url", ir.getOpIssuer()+ ".well-known/openid-configuration");
         //Sonar Cube was unhappy so I just added this rq
         String needsToBeAddedManually = "needs to be added manualy";
         MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "oidc.idp.tls.trusted_cas", needsToBeAddedManually);
@@ -37,7 +37,7 @@ public class OidcTranslator extends RealmTranslator {
                 null,
                 null,
                 null,
-                oidcConfig,
+                config,
                 null
         );
     }

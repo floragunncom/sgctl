@@ -13,19 +13,18 @@ public class KerberosTranslator extends RealmTranslator {
     @Override
     public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
         RealmIR.KerberosRealmIR ir = (RealmIR.KerberosRealmIR) originalIR;
-        
-        Map<String, Object> kerberosConfig = new HashMap<>();
-        addOptionalConfigProperty(kerberosConfig, "kerberos.krb_debug", ir.getKrbDebug());
-        addOptionalConfigProperty(kerberosConfig, "kerberos.acceptor_keytab", ir.getPrincipal());
-        addOptionalConfigProperty(kerberosConfig, "kerberos.acceptor_principal", ir.getKeytabPath());
-        addOptionalConfigProperty(kerberosConfig, "kerberos.strip_realm_from_principal", ir.getRemoveRealmName());
+
+        addOptionalConfigProperty("kerberos.krb_debug", ir.getKrbDebug());
+        addOptionalConfigProperty("kerberos.acceptor_keytab", ir.getPrincipal());
+        addOptionalConfigProperty("kerberos.acceptor_principal", ir.getKeytabPath());
+        addOptionalConfigProperty("kerberos.strip_realm_from_principal", ir.getRemoveRealmName());
 
         return new MigrateConfig.NewAuthDomain(
                 ir.getType(),
                 null,
                 null,
                 null,
-                kerberosConfig,
+                config,
                 null
         );
     }
