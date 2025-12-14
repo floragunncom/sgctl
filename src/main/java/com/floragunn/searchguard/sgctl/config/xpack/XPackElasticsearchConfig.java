@@ -40,8 +40,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
 
   /** xpack.security.authc.* */
   public record AuthcConfig(
-      OptTraceable<ImmutableMap<String, Traceable<ImmutableMap<String, Traceable<Realm>>>>>
-          realms) {
+      Traceable<ImmutableMap<String, Traceable<ImmutableMap<String, Traceable<Realm>>>>> realms) {
 
     public AuthcConfig {
       Objects.requireNonNull(realms, "realms must not be null");
@@ -59,7 +58,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
     }
 
     public static AuthcConfig parse(TraceableDocNode tDoc) throws ConfigValidationException {
-      var realms = tDoc.get("realms").asMapOf(AuthcConfig::parseRealmType);
+      var realms = tDoc.get("realms").asMapOf(AuthcConfig::parseRealmType, ImmutableMap.empty());
 
       return new AuthcConfig(realms);
     }
@@ -213,8 +212,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
       var userFullNameAttr = tDoc.get("user_full_name_attribute").asString("cn");
       var userEmailAttr = tDoc.get("user_email_attribute").asString("mail");
 
-      // TODO: Use default value "sub_tree" for enum
-      var userSearchScopeString = tDoc.get("user_search.scope").asEnum(LdapRealm.Scope.class);
+      var userSearchScopeString =
+          tDoc.get("user_search.scope").asEnum(LdapRealm.Scope.class, LdapRealm.Scope.SUB_TREE);
       //      var userSearchScope = LdapRealm.Scope.valueOf(userSearchScopeString.);
       var userSearchBaseDn = userSearchNode.getAsString("base_dn");
       var userSearchFilter =
