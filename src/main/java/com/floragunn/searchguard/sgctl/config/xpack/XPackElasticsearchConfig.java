@@ -48,8 +48,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         TraceableAttribute.Required tAttr) {
       var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart());
       return tAttr.asMapOf(
-          (TraceableDocNodeParser<Realm>)
-              (realmTDoc) -> {
+          
+              (TraceableDocNode realmTDoc) -> {
                 var name = Traceable.of(realmTDoc.getSource(), realmTDoc.getSource().pathPart());
                 return Realm.parse(type, name, realmTDoc);
               });
