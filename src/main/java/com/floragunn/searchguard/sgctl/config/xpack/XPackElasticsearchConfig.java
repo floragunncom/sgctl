@@ -183,7 +183,16 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         OptTraceable<String> attributePatternsName,
         OptTraceable<String> attributePatternsMail,
         OptTraceable<String> attributePatternsDn,
-        OptTraceable<String> attributeDelimitersGroups)
+        OptTraceable<String> attributeDelimitersGroups,
+        OptTraceable<String> nameidFormat,
+        Traceable<Boolean> nameidAllowCreate,
+        OptTraceable<String> namidSpQualifier,
+        Traceable<Boolean> faceAuthn,
+        Traceable<Boolean> populateUserMetadata,
+        /* TODO: Make this compatible with list of strings */
+        OptTraceable<String> authorizationRealms,
+        Traceable<String> allowedClockSkew,
+        OptTraceable<ImmutableList<Traceable<String>>> reqAuthnContextClassRef)
         implements Realm {
       public SAMLRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -331,6 +340,16 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
 
       var attributeDelimitersGroups = tDoc.get("attribute_delimiters.groups").asString();
 
+      var nameidFormat = tDoc.get("nameid_format").asString();
+      var nameidAllowCreate = tDoc.get("nameid.allow_create").asBoolean(false);
+      var nameidSpQualifier = tDoc.get("nameid.sp_qualifier").asString();
+
+      var forceAuthn = tDoc.get("force_authn").asBoolean(false);
+      var populateUserMetadata = tDoc.get("populateUserMetadata").asBoolean(true);
+      var authorizationRealms = tDoc.get("authorization_realms").asString();
+      var allowedClockSkew = tDoc.get("allowed_clock_skew").asString("3m");
+      var reqAuthnContextClassRef = tDoc.get("req_authn_context_class_ref").asListOfStrings();
+
       return new SAMLRealm(
           type,
           name,
@@ -357,7 +376,15 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           attributePatternsName,
           attributePatternsMail,
           attributePatternsDn,
-          attributeDelimitersGroups);
+          attributeDelimitersGroups,
+          nameidFormat,
+          nameidAllowCreate,
+          nameidSpQualifier,
+          forceAuthn,
+          populateUserMetadata,
+          authorizationRealms,
+          allowedClockSkew,
+          reqAuthnContextClassRef);
     }
 
     private static ActiveDirectoryRealm parseActiveDirectoryRealm(
