@@ -192,8 +192,39 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         /* TODO: Make this compatible with list of strings */
         OptTraceable<String> authorizationRealms,
         Traceable<String> allowedClockSkew,
-        OptTraceable<ImmutableList<Traceable<String>>> reqAuthnContextClassRef)
+        OptTraceable<ImmutableList<Traceable<String>>> reqAuthnContextClassRef,
+        Traceable<ImmutableList<Traceable<String>>> signingSamlMessages,
+        OptTraceable<String> signingKey,
+        OptTraceable<String> signingSecureKeyPassphrase,
+        OptTraceable<String> signingCertificate,
+        /* NOTE: Maybe unify the keystore structure? Seems to be shared with other realms */
+        OptTraceable<Keystore> signingKeystore,
+        OptTraceable<String> encryptionKey,
+        OptTraceable<String> encryptionSecureKeyPassphrase,
+        OptTraceable<String> encryptionCertificate,
+        OptTraceable<Keystore> encryptionKeystore)
         implements Realm {
+      public record Keystore(
+          OptTraceable<String> path,
+          Traceable<KeystoreType> type,
+          OptTraceable<String> alias,
+          OptTraceable<String> securePassword,
+          OptTraceable<String> secureKeyPassword) {
+        public enum KeystoreType {
+          jks,
+          PKCS12
+        }
+
+        public static Keystore parse(TraceableDocNode tDoc) {
+          var path = tDoc.get("path").asString();
+          var type = tDoc.get("type").asEnum(KeystoreType.class, KeystoreType.jks);
+          var alias = tDoc.get("alias").asString();
+          var securePassword = tDoc.get("secure_password").asString();
+          var secureKeyPassword = tDoc.get("secure_key_password").asString();
+          return new Keystore(path, type, alias, securePassword, secureKeyPassword);
+        }
+      }
+
       public SAMLRealm {
         Objects.requireNonNull(type, "type must not be null");
         Objects.requireNonNull(name, "name must not be null");
@@ -350,6 +381,19 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
       var allowedClockSkew = tDoc.get("allowed_clock_skew").asString("3m");
       var reqAuthnContextClassRef = tDoc.get("req_authn_context_class_ref").asListOfStrings();
 
+      var signingSamlMessages =
+          tDoc.get("signing.saml_messages")
+              .asListOfStrings(new ImmutableList.Builder<String>(1).with("*").build());
+      var signingKey = tDoc.get("signing.key").asString();
+      var signingSecureKeyPassphrase = tDoc.get("signing.secure_key_passphrase").asString();
+      var signingCertificate = tDoc.get("signing.certificate").asString();
+      var signingKeystore = tDoc.get("signing.keystore").as(SAMLRealm.Keystore::parse);
+
+      var encryptionKey = tDoc.get("encryption.key").asString();
+      var encryptionSecureKeyPassphrase = tDoc.get("encryption.secure_key_passphrase").asString();
+      var encryptionCertificate = tDoc.get("encryption.certificate").asString();
+      var encryptionKeystore = tDoc.get("encryption.keystore").as(SAMLRealm.Keystore::parse);
+
       return new SAMLRealm(
           type,
           name,
@@ -384,7 +428,16 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           populateUserMetadata,
           authorizationRealms,
           allowedClockSkew,
-          reqAuthnContextClassRef);
+          reqAuthnContextClassRef,
+          signingSamlMessages,
+          signingKey,
+          signingSecureKeyPassphrase,
+          signingCertificate,
+          signingKeystore,
+          encryptionKey,
+          encryptionSecureKeyPassphrase,
+          encryptionCertificate,
+          encryptionKeystore);
     }
 
     private static ActiveDirectoryRealm parseActiveDirectoryRealm(
