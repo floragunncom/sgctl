@@ -168,7 +168,10 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> idpMetadataHttpReadTimeout,
         Traceable<String> idpMetadataHttpRefresh,
         Traceable<String> idpMetadataHttpMinimumRefresh,
-        Traceable<Boolean> idpUseSingleLogout)
+        Traceable<Boolean> idpUseSingleLogout,
+        OptTraceable<String> spEntityId,
+        OptTraceable<String> spAcs,
+        OptTraceable<String> spLogout)
         implements Realm {
       public SAMLRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -297,6 +300,10 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
       var idpMetadataHttpMinimumRefresh =
           tDoc.get("idp.metadata.http.minimum_refresh").asString("5m");
       var idpUseSingleLogout = tDoc.get("idp.use_single_logout").asBoolean(true);
+
+      var spEntityId = tDoc.get("sp.entity_id").asString();
+      var spAcs = tDoc.get("sp.acs").asString();
+      var spLogout = tDoc.get("sp.logout").asString();
       return new SAMLRealm(
           type,
           name,
@@ -309,7 +316,10 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           idpMetadataHttpReadTimeout,
           idpMetadataHttpRefresh,
           idpMetadataHttpMinimumRefresh,
-          idpUseSingleLogout);
+          idpUseSingleLogout,
+          spEntityId,
+          spAcs,
+          spLogout);
     }
 
     private static ActiveDirectoryRealm parseActiveDirectoryRealm(
