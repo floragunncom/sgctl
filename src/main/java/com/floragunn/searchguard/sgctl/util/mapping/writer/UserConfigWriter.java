@@ -29,7 +29,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
             if (!user.getEnabled()) {
                 report.addWarning(FILE_NAME,
                         user.getUsername() + "->enabled",
-                        "The user has set 'enabled' to false. This can not be done in Search Guard and the user is not translated");
+                        "The user has 'enabled' set to false. This can not be done in Search Guard and the user is not migrated.");
                 continue;
             }
             var attributes = user.getAttributes();

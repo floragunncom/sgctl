@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
@@ -53,7 +54,7 @@ public class SearchGuardConfigWriter {
     }
 
     static private void printHeader(String filename) {
-        print("\n-----------------------------" + filename + "--------------------------------------");
+        print("\n----------------------------- " + filename + " --------------------------------------");
     }
 
     static private void printFooter() {
