@@ -171,7 +171,19 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> idpUseSingleLogout,
         OptTraceable<String> spEntityId,
         OptTraceable<String> spAcs,
-        OptTraceable<String> spLogout)
+        OptTraceable<String> spLogout,
+        OptTraceable<String> attributesPrincipal,
+        OptTraceable<String> attributesGroups,
+        OptTraceable<String> attributesName,
+        OptTraceable<String> attributesMail,
+        OptTraceable<String> attributesDn,
+        /* TODO: Look into making this a regex type maybe? Idk whether yaml handles these */
+        OptTraceable<String> attributePatternsPrincipal,
+        OptTraceable<String> attributePatternsGroups,
+        OptTraceable<String> attributePatternsName,
+        OptTraceable<String> attributePatternsMail,
+        OptTraceable<String> attributePatternsDn,
+        OptTraceable<String> attributeDelimitersGroups)
         implements Realm {
       public SAMLRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -304,6 +316,21 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
       var spEntityId = tDoc.get("sp.entity_id").asString();
       var spAcs = tDoc.get("sp.acs").asString();
       var spLogout = tDoc.get("sp.logout").asString();
+
+      var attributesPrincipal = tDoc.get("attributes.principal").asString();
+      var attributesGroups = tDoc.get("attributes.groups").asString();
+      var attributesName = tDoc.get("attributes.name").asString();
+      var attributesMail = tDoc.get("attributes.mail").asString();
+      var attributesDn = tDoc.get("attributes.dn").asString();
+
+      var attributePatternsPrincipal = tDoc.get("attribute_patterns.principal").asString();
+      var attributePatternsGroups = tDoc.get("attribute_patterns.groups").asString();
+      var attributePatternsName = tDoc.get("attribute_patterns.name").asString();
+      var attributePatternsMail = tDoc.get("attribute_patterns.mail").asString();
+      var attributePatternsDn = tDoc.get("attribute_patterns.dn").asString();
+
+      var attributeDelimitersGroups = tDoc.get("attribute_delimiters.groups").asString();
+
       return new SAMLRealm(
           type,
           name,
@@ -319,7 +346,18 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           idpUseSingleLogout,
           spEntityId,
           spAcs,
-          spLogout);
+          spLogout,
+          attributesPrincipal,
+          attributesGroups,
+          attributesName,
+          attributesMail,
+          attributesDn,
+          attributePatternsPrincipal,
+          attributePatternsGroups,
+          attributePatternsName,
+          attributePatternsMail,
+          attributePatternsDn,
+          attributeDelimitersGroups);
     }
 
     private static ActiveDirectoryRealm parseActiveDirectoryRealm(
