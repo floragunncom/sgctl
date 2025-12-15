@@ -256,8 +256,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         case "file" -> new FileRealm(tType, name, order, enabled);
         case "ldap" -> parseLdapRealm(tType, name, order, enabled, tDoc);
         case "active_directory" -> parseActiveDirectoryRealm(tType, name, order, enabled, tDoc);
+        case "saml" -> parseSAMLRealm(tType, name, order, enabled, tDoc);
         // Stretch goals - store as generic for future implementation
-        case "jwt", "saml", "oidc", "kerberos", "pki" ->
+        case "jwt", "oidc", "kerberos", "pki" ->
             new GenericRealm(tType, name, order, enabled, tDoc.asAttribute().asDocNode());
         default -> new GenericRealm(tType, name, order, enabled, tDoc.asAttribute().asDocNode());
       };
