@@ -163,7 +163,12 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> enabled,
         OptTraceable<String> idpEntityId,
         OptTraceable<String> idpMetadataPath,
-        OptTraceable<Boolean> idpMetadataHttpFailOnError)
+        Traceable<Boolean> idpMetadataHttpFailOnError,
+        Traceable<String> idpMetadataHttpConnectTimeout,
+        Traceable<String> idpMetadataHttpReadTimeout,
+        Traceable<String> idpMetadataHttpRefresh,
+        Traceable<String> idpMetadataHttpMinimumRefresh,
+        Traceable<Boolean> idpUseSingleLogout)
         implements Realm {
       public SAMLRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -284,9 +289,27 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         TraceableDocNode tDoc) {
       var idpEntityId = tDoc.get("idp.entity_id").asString();
       var idpMetadataPath = tDoc.get("idp.metadata.path").asString();
-      var idpMetadataHttpFailOnError = tDoc.get("idp.metadata.http.fail_on_error").asBoolean();
+      var idpMetadataHttpFailOnError = tDoc.get("idp.metadata.http.fail_on_error").asBoolean(false);
+      var idpMetadataHttpConnectTimeout =
+          tDoc.get("idp.metadata.http.connect_timeout").asString("5s");
+      var idpMetadataHttpReadTimeout = tDoc.get("idp.metadata.http.read_timeout").asString("10s");
+      var idpMetadataHttpRefresh = tDoc.get("idp.metadata.http.refresh").asString("1h");
+      var idpMetadataHttpMinimumRefresh =
+          tDoc.get("idp.metadata.http.minimum_refresh").asString("5m");
+      var idpUseSingleLogout = tDoc.get("idp.use_single_logout").asBoolean(true);
       return new SAMLRealm(
-          type, name, order, enabled, idpEntityId, idpMetadataPath, idpMetadataHttpFailOnError);
+          type,
+          name,
+          order,
+          enabled,
+          idpEntityId,
+          idpMetadataPath,
+          idpMetadataHttpFailOnError,
+          idpMetadataHttpConnectTimeout,
+          idpMetadataHttpReadTimeout,
+          idpMetadataHttpRefresh,
+          idpMetadataHttpMinimumRefresh,
+          idpUseSingleLogout);
     }
 
     private static ActiveDirectoryRealm parseActiveDirectoryRealm(
