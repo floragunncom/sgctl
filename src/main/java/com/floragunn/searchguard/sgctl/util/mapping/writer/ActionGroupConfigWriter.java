@@ -93,6 +93,82 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
     enum CustomClusterActionGroup {
 
         // Might be cleaner to use static final patterns like in the elasticsearch repo
+        SGS_CANCEL_TASK_CUSTOM("SGS_CANCEL_TASK_CUSTOM", List.of(
+            "cluster:admin/tasks/cancel*"
+        )),
+        SGS_CREATE_SNAPSHOT_CUSTOM("SGS_CREATE_SNAPSHOT_CUSTOM", List.of(
+            "cluster:admin/snapshot/create",
+            "cluster:admin/snapshot/status*",
+            "cluster:admin/snapshot/get",
+            "cluster:admin/snapshot/status",
+            "cluster:admin/repository/get"
+        )),
+        SGS_GRANT_API_KEY_CUSTOM("SGS_GRANT_API_KEY_CUSTOM", List.of(
+            "cluster:admin/xpack/security/api_key/grant*"
+        )),
+        SGS_MANAGE_CUSTOM("SGS_MANAGE_CUSTOM", List.of(
+            "cluster:*",
+            "indices:admin/template/*",
+            "indices:admin/index_template/*",
+            "cluster:admin/xpack/security/*"
+        )),
+        SGS_MANAGE_API_KEY_CUSTOM("SGS_MANAGE_API_KEY_CUSTOM", List.of(
+            "cluster:admin/xpack/security/api_key/*"
+        )),
+        SGS_MANAGE_AUTOSCALING_CUSTOM("SGS_MANAGE_AUTOSCALING_CUSTOM", List.of(
+            "cluster:admin/autoscaling/*"
+        )),
+        SGS_MANAGE_CCR_CUSTOM("SGS_MANAGE_CCR_CUSTOM", List.of(
+            "cluster:admin/xpack/ccr/*",
+            "cluster:monitor/state",
+            "cluster:admin/xpack/security/user/has_privileges"
+        )),
+        SGS_MANAGE_ENRICH_CUSTOM("SGS_MANAGE_ENRICH_CUSTOM", List.of(
+            "cluster:admin/xpack/enrich/*", 
+            "cluster:monitor/xpack/enrich/*"
+        )),
+        SGS_MANAGE_INFERENCE_CUSTOM("SGS_MANAGE_INFERENCE_CUSTOM", List.of(
+            "cluster:admin/xpack/inference/*",
+            "cluster:monitor/xpack/inference*",
+            "cluster:admin/xpack/ml/trained_models/deployment/start",
+            "cluster:admin/xpack/ml/trained_models/deployment/stop",
+            "cluster:monitor/xpack/ml/trained_models/deployment/infer"
+        )),
+        SGS_MANAGE_LOGSTASH_PIPELINES_CUSTOM("SGS_MANAGE_LOGSTASH_PIPELINES_CUSTOM", List.of(
+            "cluster:admin/logstash/pipeline/*"
+        )),
+        SGS_MANAGE_ML_CUSTOM("SGS_MANAGE_ML_CUSTOM", List.of(
+            "cluster:admin/xpack/ml/*", 
+            "cluster:monitor/xpack/ml/*"
+        )),
+        SGS_MANAGE_OIDC_CUSTOM("SGS_MANAGE_OIDC_CUSTOM", List.of(
+            "cluster:admin/xpack/security/oidc/*"
+        )),
+        SGS_MANAGE_OWN_API_KEY_CUSTOM("SGS_MANAGE_OWN_API_KEY_CUSTOM", List.of(
+            // Not sure, needs second look
+            "cluster:admin/xpack/security/api_key/*"
+        )),
+        SGS_MANAGE_ROLLUP_CUSTOM("SGS_MANAGE_ROLLUP_CUSTOM", List.of(
+            "cluster:admin/xpack/rollup/*", 
+            "cluster:monitor/xpack/rollup/*"
+        )),
+        SGS_MANAGE_SAML_CUSTOM("SGS_MANAGE_SAML_CUSTOM", List.of(
+            "cluster:admin/xpack/security/saml/*",
+            "cluster:admin/xpack/security/token/invalidate",
+            "cluster:admin/xpack/security/token/refresh",
+            "cluster:monitor/xpack/security/saml/metadata"
+        )),
+        SGS_MANAGE_SEARCH_APPLICATION_CUSTOM("SGS_MANAGE_SEARCH_APPLICATION_CUSTOM", List.of(
+            "cluster:admin/xpack/application/search_application/*"
+        )),
+        SGS_MANAGE_SEARCH_QUERY_RULES_CUSTOM("SGS_MANAGE_SEARCH_QUERY_RULES_CUSTOM", List.of(
+            "cluster:admin/xpack/query_rules/*"
+        )),
+        SGS_MANAGE_SEARCH_SYNONYMS_CUSTOM("SGS_MANAGE_SEARCH_SYNONYMS_CUSTOM", List.of(
+            "cluster:admin/synonyms/*",
+            "cluster:admin/synonyms_sets/*",
+            "cluster:admin/synonym_rules/*"           
+        )),
         SGS_MANAGE_SECURITY_CUSTOM("SGS_MANAGE_SECURITY_CUSTOM", List.of(
             "cluster:admin/xpack/security/*"    
         )),
