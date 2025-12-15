@@ -156,6 +156,21 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
       }
     }
 
+    record SAMLRealm(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        OptTraceable<String> idpEntityId,
+        OptTraceable<String> idpMetadataPath,
+        OptTraceable<Boolean> idpMetadataHttpFailOnError)
+        implements Realm {
+      public SAMLRealm {
+        Objects.requireNonNull(type, "type must not be null");
+        Objects.requireNonNull(name, "name must not be null");
+      }
+    }
+
     /** TODO jwt, saml, oidc, kerberos, pki */
     record GenericRealm(
         Traceable<String> type,
@@ -259,6 +274,19 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           sslKeystoreType,
           sslKeystoreSecurePassword,
           sslKeystoreSecureKeyPassword);
+    }
+
+    private static SAMLRealm parseSAMLRealm(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        TraceableDocNode tDoc) {
+      var idpEntityId = tDoc.get("idp.entity_id").asString();
+      var idpMetadataPath = tDoc.get("idp.metadata.path").asString();
+      var idpMetadataHttpFailOnError = tDoc.get("idp.metadata.http.fail_on_error").asBoolean();
+      return new SAMLRealm(
+          type, name, order, enabled, idpEntityId, idpMetadataPath, idpMetadataHttpFailOnError);
     }
 
     private static ActiveDirectoryRealm parseActiveDirectoryRealm(
