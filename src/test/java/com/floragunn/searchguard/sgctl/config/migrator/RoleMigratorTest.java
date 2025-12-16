@@ -24,9 +24,11 @@ import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
 
@@ -78,8 +80,9 @@ public class RoleMigratorTest {
     Map<String, Object> testRole2 = (Map<String, Object>) testRoles.get("test_role2");
 
     List<String> clusterActionGroups = (List<String>) testRole2.get("cluster_permissions");
-    List<Map<String, Object>> indexPrivileges = (List<Map<String, Object>>) testRole2.get("index_permissions");
-    List<String> indexActionGroups = (List<String>) indexPrivileges.get(0).get("index");
+    List<Map<String, Object>> indexPermissions = (List<Map<String, Object>>) testRole2.get("index_permissions");
+    Map<String, Object> testPermissions = indexPermissions.get(0);
+    List<String> indexActionGroups = (List<String>) testPermissions.get("allowed_actions");
 
 
     assertTrue(clusterActionGroups.contains("SGS_CLUSTER_ALL"));
