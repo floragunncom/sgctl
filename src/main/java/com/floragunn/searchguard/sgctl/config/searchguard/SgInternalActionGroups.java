@@ -3,10 +3,7 @@ package com.floragunn.searchguard.sgctl.config.searchguard;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 public record SgInternalActionGroups(ImmutableMap<String, ActionGroup> actionGroups)
   implements NamedConfig<SgInternalActionGroups>{
@@ -21,6 +18,13 @@ public record SgInternalActionGroups(ImmutableMap<String, ActionGroup> actionGro
     Optional<String> description,
     String type,
     ImmutableList<String> allowed_actions) {
+
+
+      public ActionGroup{
+          Objects.requireNonNull(type, "type must not be null");
+          Objects.requireNonNull(allowed_actions, "allowed actions must not be null")
+      }
+
 
       public Map<String, Object> toBasicObject(){
         Map<String, Object> result = new HashMap<>();
