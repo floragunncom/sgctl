@@ -22,7 +22,7 @@ public record SgInternalActionGroups(ImmutableMap<String, ActionGroup> actionGro
 
       public ActionGroup{
           Objects.requireNonNull(type, "type must not be null");
-          Objects.requireNonNull(allowed_actions, "allowed actions must not be null")
+          Objects.requireNonNull(allowed_actions, "allowed actions must not be null");
       }
 
 
