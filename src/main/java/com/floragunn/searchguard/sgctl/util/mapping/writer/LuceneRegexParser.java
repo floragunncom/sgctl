@@ -108,7 +108,7 @@ public class LuceneRegexParser {
         return regex.toString();
     }
 
-    static private List<Range> splitIntoDigitAlignedRanges(Range range) {
+    private static List<Range> splitIntoDigitAlignedRanges(Range range) {
         var leadingSubranges = new ArrayList<Range>();
         var middleStartPoint = addLeadingSubranges(leadingSubranges, range);
         var trailingSubranges = new ArrayList<Range>();
@@ -186,7 +186,7 @@ public class LuceneRegexParser {
         return Integer.parseInt(String.valueOf(chars));
     }
 
-    record Range(int min, int max) { }
+    private record Range(int min, int max) { }
 
     private static void print(Object line) {
         System.out.println(line);

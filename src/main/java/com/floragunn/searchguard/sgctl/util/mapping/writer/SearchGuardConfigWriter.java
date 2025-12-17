@@ -3,7 +3,6 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import picocli.CommandLine;
 
 import java.io.File;
 import java.io.IOException;
