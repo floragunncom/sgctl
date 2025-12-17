@@ -32,7 +32,7 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
     public void addCustomActionGroups(Set<CustomClusterActionGroup> agSet ) {
 
         for (var ag : agSet) {
-            this.actionGroups.add(ActionGroup.fromCustomClusterActionGroup(ag));
+            this.actionGroups.add(ag.toActionGroup());
         }
 
     }
@@ -82,7 +82,7 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             return contents;
         }   
 
-        // Depricated: CustomClusterActionGroup has an own toActionGroup() method
+        // Deprecated: CustomClusterActionGroup has an own toActionGroup() method
         static ActionGroup fromCustomClusterActionGroup(CustomClusterActionGroup cag) {
             var desc = "todo";
             return new ActionGroup(cag.getName(), cag.getPattern(), "cluster", desc);
@@ -400,7 +400,7 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
                     return group;
                 }
             }
-            // TODO: should there be at least a note in the migration report?
+            // TODO: should there be at least a note in the migration report? (Or is it intended behaviour that this case could happen?)
             return SGS_MANAGE_SECURITY_CUSTOM;
         }
 
