@@ -45,6 +45,10 @@ import picocli.CommandLine.Parameters;
 @Command(name = "add-user", description = "Adds a new user")
 public class AddUser extends ConnectingCommand implements Callable<Integer> {
 
+    /** Creates a new add-user command. */
+    public AddUser() {
+    }
+
     @Parameters(index = "0", arity = "1", description = "User name")
     private String userName;
 

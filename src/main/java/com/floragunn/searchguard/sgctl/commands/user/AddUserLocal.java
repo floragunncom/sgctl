@@ -44,6 +44,10 @@ import picocli.CommandLine.Parameters;
 @Command(name = "add-user-local", description = "Adds a new user to a local sg_internal_users.yml file")
 public class AddUserLocal implements Callable<Integer> {
 
+    /** Creates a new add-user-local command. */
+    public AddUserLocal() {
+    }
+
     @Parameters(index = "0", arity = "1", description = "User name")
     private String userName;
 
