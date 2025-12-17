@@ -22,6 +22,9 @@ import org.apache.http.StatusLine;
 
 import com.floragunn.codova.validation.ValidationErrors;
 
+/**
+ * Wraps HTTP-level errors returned by the Search Guard REST API.
+ */
 public class ApiException extends Exception {
 
     private static final long serialVersionUID = -2613151852034285098L;
@@ -30,6 +33,9 @@ public class ApiException extends Exception {
     private final String httpResponseBody;
     private ValidationErrors validationErrors;
 
+    /**
+     * Creates an exception containing the raw HTTP status and payload.
+     */
     public ApiException(String message, StatusLine statusLine, HttpResponse httpResponse,  String httpResponseBody) {
         super(message);
         this.statusLine = statusLine;
@@ -37,6 +43,7 @@ public class ApiException extends Exception {
         this.httpResponseBody = httpResponseBody;
     }
 
+    /** Creates an exception with a cause. */
     public ApiException(String message, Throwable cause) {
         super(message, cause);
         this.statusLine = null;
@@ -44,6 +51,7 @@ public class ApiException extends Exception {
         this.httpResponseBody = null;
     }
 
+    /** Creates an exception with only a message. */
     public ApiException(String message) {
         super(message);
         this.statusLine = null;
@@ -51,23 +59,28 @@ public class ApiException extends Exception {
         this.httpResponseBody = null;
     }
 
+    /** @return HTTP status line, if available. */
     public StatusLine getStatusLine() {
         return statusLine;
     }
 
+    /** @return raw HTTP response, if available. */
     public HttpResponse getHttpResponse() {
         return httpResponse;
     }
 
+    /** @return validation errors returned by the server, if any. */
     public ValidationErrors getValidationErrors() {
         return validationErrors;
     }
 
+    /** Attaches validation errors to this exception. */
     public ApiException validationErrors(ValidationErrors validationErrors) {
         this.validationErrors = validationErrors;
         return this;
     }
 
+    /** @return response body as text, if available. */
     public String getHttpResponseBody() {
         return httpResponseBody;
     }
