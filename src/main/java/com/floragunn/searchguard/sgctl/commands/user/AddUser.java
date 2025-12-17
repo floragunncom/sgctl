@@ -39,6 +39,9 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+/**
+ * Command to create a new user via the Search Guard REST API.
+ */
 @Command(name = "add-user", description = "Adds a new user")
 public class AddUser extends ConnectingCommand implements Callable<Integer> {
 
