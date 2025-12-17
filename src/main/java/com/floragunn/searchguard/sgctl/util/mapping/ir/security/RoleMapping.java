@@ -2,6 +2,8 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.security;
 
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -22,25 +24,25 @@ public class RoleMapping {
 
     // Getter-Methods
     public @NonNull String getMappingName() { return mappingName; }
-    public List<String> getRoles() { return roles; }
-    public List<String> getUsers() { return users; }
+    public List<String> getRoles() { return copyOrNull(roles); }
+    public List<String> getUsers() { return copyOrNull(users); }
     public boolean isEnabled() { return enabled; }
-    public List<String> getRunAs() { return runAs; }
-    public List<String> getRunAS() { return runAs; }
+    public List<String> getRunAs() { return copyOrNull(runAs); }
+    public List<String> getRunAS() { return copyOrNull(runAs); }
     public Rules getRules() { return rules; }
     public Metadata getMetadata() { return metadata; }
-    public List<RoleTemplate> getRoleTemplates() { return roleTemplates; }
+    public List<RoleTemplate> getRoleTemplates() { return copyOrNull(roleTemplates); }
 
     // Setter-Methods
     public void setMappingName(@NonNull String mappingName) { this.mappingName = mappingName; }
-    public void setRoles(List<String> roles) { this.roles = roles; }
-    public void setUsers(List<String> users) { this.users = users; }
+    public void setRoles(List<String> roles) { this.roles = mutableCopy(roles); }
+    public void setUsers(List<String> users) { this.users = mutableCopy(users); }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public void setRunAs(List<String> runAS) { this.runAs = runAS; }
-    public void setRunAS(List<String> runAS) { this.runAs = runAS; }
+    public void setRunAs(List<String> runAS) { this.runAs = mutableCopy(runAS); }
+    public void setRunAS(List<String> runAS) { this.runAs = mutableCopy(runAS); }
     public void setRules(Rules rules) { this.rules = rules; }
     public void setMetadata(Metadata metadata) { this.metadata = metadata; }
-    public void setRoleTemplates(List<RoleTemplate> roleTemplates) { this.roleTemplates = roleTemplates; }
+    public void setRoleTemplates(List<RoleTemplate> roleTemplates) { this.roleTemplates = mutableCopy(roleTemplates); }
 
 
     public static class Rules {
@@ -50,15 +52,15 @@ public class RoleMapping {
         private Rules except;
 
         // Getter
-        public Map<String, Object> getField() { return field; }
-        public List<Rules> getAny() { return any; }
-        public List<Rules> getAll() { return all; }
+        public Map<String, Object> getField() { return field == null ? null : Map.copyOf(field); }
+        public List<Rules> getAny() { return copyOrNull(any); }
+        public List<Rules> getAll() { return copyOrNull(all); }
         public Rules getExcept() { return except; }
 
         // Setter
-        public void setField(Map<String, Object> field) { this.field = field; }
-        public void setAny(List<Rules> any) { this.any = any; }
-        public void setAll(List<Rules> all) { this.all = all; }
+        public void setField(Map<String, Object> field) { this.field = field == null ? null : new LinkedHashMap<>(field); }
+        public void setAny(List<Rules> any) { this.any = mutableCopy(any); }
+        public void setAll(List<Rules> all) { this.all = mutableCopy(all); }
         public void setExcept(Rules except) { this.except = except; }
 
         @Override
@@ -73,8 +75,8 @@ public class RoleMapping {
     public static class Metadata {
         private Map<String, Object> entries;
 
-        public Map<String, Object> getEntries() { return entries; }
-        public void setEntries(Map<String, Object> entries) { this.entries = entries; }
+        public Map<String, Object> getEntries() { return entries == null ? null : Map.copyOf(entries); }
+        public void setEntries(Map<String, Object> entries) { this.entries = entries == null ? null : new LinkedHashMap<>(entries); }
 
         @Override
         public String toString() {
@@ -129,5 +131,13 @@ public class RoleMapping {
                 "\n\tmetadata=" + metadata +
                 "\n\troleTemplates=" + roleTemplates +
                 "\n]";
+    }
+
+    private static <T> List<T> copyOrNull(List<T> list) {
+        return list == null ? null : List.copyOf(list);
+    }
+
+    private static <T> List<T> mutableCopy(List<T> list) {
+        return list == null ? null : new ArrayList<>(list);
     }
 }
