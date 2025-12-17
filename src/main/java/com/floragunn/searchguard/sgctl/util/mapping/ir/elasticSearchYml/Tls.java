@@ -4,7 +4,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -46,7 +45,8 @@ public class Tls {
     /** Optional password for the private key. */
     private String privateKeyPassword;
     /** List of certificate authority file paths. */
-    private List<String> certificateAuthorities = List.of();
+    private final List<String> certificateAuthorities = new ArrayList<>();
+    private final List<String> certificateAuthoritiesView = java.util.Collections.unmodifiableList(certificateAuthorities);
 
     // TLS modes
     /**
@@ -62,19 +62,25 @@ public class Tls {
 
     // Constraints
     /** Supported protocol versions (e.g. TLSv1.2, TLSv1.3). */
-    private List<String> supportedProtocols = List.of();
+    private final List<String> supportedProtocols = new ArrayList<>();
+    private final List<String> supportedProtocolsView = java.util.Collections.unmodifiableList(supportedProtocols);
     /** List of cipher suites. */
-    private List<String> ciphers = List.of();
+    private final List<String> ciphers = new ArrayList<>();
+    private final List<String> ciphersView = java.util.Collections.unmodifiableList(ciphers);
 
     // IP filtering (https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/security-settings#ip-filtering-settings)
     /** List of allowed IP addresses for this TLS context. */
-    private List<String> allowedIPs = List.of();
+    private final List<String> allowedIPs = new ArrayList<>();
+    private final List<String> allowedIPsView = java.util.Collections.unmodifiableList(allowedIPs);
     /** List of denied IP addresses for this TLS context. */
-    private List<String> deniedIPs = List.of();
+    private final List<String> deniedIPs = new ArrayList<>();
+    private final List<String> deniedIPsView = java.util.Collections.unmodifiableList(deniedIPs);
     /** List of allowed IP addresses for remote clusters. */
-    private List<String> remoteClusterAllowedIPs = List.of();
+    private final List<String> remoteClusterAllowedIPs = new ArrayList<>();
+    private final List<String> remoteClusterAllowedIPsView = java.util.Collections.unmodifiableList(remoteClusterAllowedIPs);
     /** List of denied IP addresses for remote clusters. */
-    private List<String> remoteClusterDeniedIPs = List.of();
+    private final List<String> remoteClusterDeniedIPs = new ArrayList<>();
+    private final List<String> remoteClusterDeniedIPsView = java.util.Collections.unmodifiableList(remoteClusterDeniedIPs);
 
     private static final String THIS_FILE = "elasticsearch.yml";
 
@@ -84,42 +90,42 @@ public class Tls {
      * @return list of supported protocol versions.
      */
     public List<String> getSupportedProtocols() {
-        return supportedProtocols;
+        return supportedProtocolsView;
     }
 
     /**
      * @return list of configured cipher suites.
      */
     public List<String> getCiphers() {
-        return ciphers;
+        return ciphersView;
     }
 
     /**
      * @return list of allowed IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getAllowedIPs() {
-        return allowedIPs;
+        return allowedIPsView;
     }
 
     /**
      * @return list of denied IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getDeniedIPs() {
-        return deniedIPs;
+        return deniedIPsView;
     }
 
     /**
      * @return list of allowed IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterAllowedIPs() {
-        return remoteClusterAllowedIPs;
+        return remoteClusterAllowedIPsView;
     }
 
     /**
      * @return list of denied IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterDeniedIPs() {
-        return remoteClusterDeniedIPs;
+        return remoteClusterDeniedIPsView;
     }
 
     /**
@@ -203,7 +209,7 @@ public class Tls {
      * @return list of certificate authority paths, possibly empty but never {@code null}.
      */
     public List<String> getCertificateAuthorities() {
-        return certificateAuthorities;
+        return certificateAuthoritiesView;
     }
 
     /**
@@ -396,31 +402,31 @@ public class Tls {
             } else {
                 switch (optionName) {
                     case "certificate_authorities":
-                        certificateAuthorities = freezeStrings(value);
+                        replace(certificateAuthorities, copyStrings(value));
                         break;
 
                     case "supported_protocols":
-                        supportedProtocols = freezeStrings(value);
+                        replace(supportedProtocols, copyStrings(value));
                         break;
 
                     case "cipher_suites":
-                        ciphers = freezeStrings(value);
+                        replace(ciphers, copyStrings(value));
                         break;
 
                     case "filter.allow":
-                        allowedIPs = freezeStrings(value);
+                        replace(allowedIPs, copyStrings(value));
                         break;
 
                     case "filter.deny":
-                        deniedIPs = freezeStrings(value);
+                        replace(deniedIPs, copyStrings(value));
                         break;
 
                     case "remote_cluster.filter.allow":
-                        remoteClusterAllowedIPs = freezeStrings(value);
+                        replace(remoteClusterAllowedIPs, copyStrings(value));
                         break;
 
                     case "remote_cluster.filter.deny":
-                        remoteClusterDeniedIPs = freezeStrings(value);
+                        replace(remoteClusterDeniedIPs, copyStrings(value));
                         break;
 
                     default:
@@ -441,15 +447,17 @@ public class Tls {
         }
     }
 
-    private static List<String> freezeStrings(List<?> value) {
+    private static List<String> copyStrings(List<?> value) {
         Objects.requireNonNull(value, "value");
-        if (value.isEmpty()) {
-            return List.of();
-        }
         ArrayList<String> copy = new ArrayList<>(value.size());
         for (Object element : value) {
             copy.add((String) element);
         }
-        return Collections.unmodifiableList(copy);
+        return copy;
+    }
+
+    private static void replace(List<String> target, List<String> source) {
+        target.clear();
+        target.addAll(source);
     }
 }

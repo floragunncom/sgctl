@@ -9,12 +9,29 @@ import java.util.Objects;
 
 public class Role {
     @NonNull private String name;
-    private List<Application>  applications;
-    private List<String> cluster;
-    private List<RemoteCluster> remoteClusters;
-    private List<Index> indices;
-    private List<RemoteIndex> remoteIndices;
-    private List<String> runAs;
+    private final List<Application> applications = new ArrayList<>();
+    private final List<Application> applicationsView = Collections.unmodifiableList(applications);
+    private boolean applicationsSet;
+
+    private final List<String> cluster = new ArrayList<>();
+    private final List<String> clusterView = Collections.unmodifiableList(cluster);
+    private boolean clusterSet;
+
+    private final List<RemoteCluster> remoteClusters = new ArrayList<>();
+    private final List<RemoteCluster> remoteClustersView = Collections.unmodifiableList(remoteClusters);
+    private boolean remoteClustersSet;
+
+    private final List<Index> indices = new ArrayList<>();
+    private final List<Index> indicesView = Collections.unmodifiableList(indices);
+    private boolean indicesSet;
+
+    private final List<RemoteIndex> remoteIndices = new ArrayList<>();
+    private final List<RemoteIndex> remoteIndicesView = Collections.unmodifiableList(remoteIndices);
+    private boolean remoteIndicesSet;
+
+    private final List<String> runAs = new ArrayList<>();
+    private final List<String> runAsView = Collections.unmodifiableList(runAs);
+    private boolean runAsSet;
     private String description;
 
     public Role(@NonNull String name) {
@@ -23,23 +40,23 @@ public class Role {
 
     // Getter-Methods
     public @NonNull String getName() { return name; }
-    public List<Application> getApplications() { return applications; }
-    public List<String> getCluster() { return cluster; }
-    public List<Index> getIndices() { return indices; }
-    public List<String> getRunAs() { return runAs; }
+    public List<Application> getApplications() { return applicationsSet ? applicationsView : null; }
+    public List<String> getCluster() { return clusterSet ? clusterView : null; }
+    public List<Index> getIndices() { return indicesSet ? indicesView : null; }
+    public List<String> getRunAs() { return runAsSet ? runAsView : null; }
     public String getDescription() { return description; }
-    public List<RemoteIndex> getRemoteIndices() { return remoteIndices; }
-    public List<RemoteCluster> getRemoteClusters() { return remoteClusters; }
+    public List<RemoteIndex> getRemoteIndices() { return remoteIndicesSet ? remoteIndicesView : null; }
+    public List<RemoteCluster> getRemoteClusters() { return remoteClustersSet ? remoteClustersView : null; }
 
     // Setter-Methods
     public void setName(@NonNull String name) { this.name = name; }
-    public void setApplications(List<Application> applications) { this.applications = freezeApplications(applications); }
-    public void setCluster(List<String> cluster) { this.cluster = freezeList(cluster); }
-    public void setIndices(List<Index> indices) { this.indices = freezeIndices(indices); }
-    public void setRunAs(List<String> runAs) { this.runAs = freezeList(runAs); }
+    public void setApplications(List<Application> applications) { replaceApplications(applications); }
+    public void setCluster(List<String> cluster) { replaceStrings(cluster, this.cluster, () -> clusterSet = true, () -> clusterSet = false); }
+    public void setIndices(List<Index> indices) { replaceIndices(indices, this.indices, () -> indicesSet = true, () -> indicesSet = false); }
+    public void setRunAs(List<String> runAs) { replaceStrings(runAs, this.runAs, () -> runAsSet = true, () -> runAsSet = false); }
     public void setDescription(String description) { this.description = description; }
-    public void setRemoteIndices(List<RemoteIndex> remoteIndices) { this.remoteIndices = freezeRemoteIndices(remoteIndices); }
-    public void setRemoteClusters(List<RemoteCluster> remoteClusters) { this.remoteClusters = freezeRemoteClusters(remoteClusters); }
+    public void setRemoteIndices(List<RemoteIndex> remoteIndices) { replaceRemoteIndices(remoteIndices); }
+    public void setRemoteClusters(List<RemoteCluster> remoteClusters) { replaceRemoteClusters(remoteClusters); }
 
     public static class Application {
         @NonNull private String name;
@@ -243,70 +260,67 @@ public class Role {
         return "Role[\n\tname=" + name + "\n\tapplications=" + applications + "\n\tcluster=" + cluster + "\n\tremoteCluster=" + remoteClusters + "\n\tindices=" + indices + "\n\tremote_indices=" + remoteIndices + "\n]";
     }
 
-    private static <T> List<T> freezeList(List<T> source) {
+    private void replaceApplications(List<Application> source) {
         if (source == null) {
-            return null;
+            applications.clear();
+            applicationsSet = false;
+            return;
         }
-        if (source.isEmpty()) {
-            return List.of();
-        }
-        return Collections.unmodifiableList(new ArrayList<>(source));
-    }
-
-    private static List<Application> freezeApplications(List<Application> source) {
-        if (source == null) {
-            return null;
-        }
-        if (source.isEmpty()) {
-            return List.of();
-        }
-        List<Application> frozen = new ArrayList<>(source.size());
+        applicationsSet = true;
+        applications.clear();
         for (Application application : source) {
-            frozen.add(application == null ? null : application.freeze());
+            applications.add(application == null ? null : application.freeze());
         }
-        return Collections.unmodifiableList(frozen);
     }
 
-    private static List<RemoteCluster> freezeRemoteClusters(List<RemoteCluster> source) {
+    private void replaceRemoteClusters(List<RemoteCluster> source) {
         if (source == null) {
-            return null;
+            remoteClusters.clear();
+            remoteClustersSet = false;
+            return;
         }
-        if (source.isEmpty()) {
-            return List.of();
-        }
-        List<RemoteCluster> frozen = new ArrayList<>(source.size());
+        remoteClustersSet = true;
+        remoteClusters.clear();
         for (RemoteCluster remoteCluster : source) {
-            frozen.add(remoteCluster == null ? null : remoteCluster.freeze());
+            remoteClusters.add(remoteCluster == null ? null : remoteCluster.freeze());
         }
-        return Collections.unmodifiableList(frozen);
     }
 
-    private static List<Index> freezeIndices(List<Index> source) {
+    private void replaceIndices(List<? extends Index> source, List<Index> target, Runnable setFlag, Runnable unsetFlag) {
         if (source == null) {
-            return null;
+            target.clear();
+            unsetFlag.run();
+            return;
         }
-        if (source.isEmpty()) {
-            return List.of();
-        }
-        List<Index> frozen = new ArrayList<>(source.size());
+        setFlag.run();
+        target.clear();
         for (Index index : source) {
-            frozen.add(index == null ? null : index.freeze());
+            target.add(index == null ? null : index.freeze());
         }
-        return Collections.unmodifiableList(frozen);
     }
 
-    private static List<RemoteIndex> freezeRemoteIndices(List<RemoteIndex> source) {
+    private void replaceRemoteIndices(List<RemoteIndex> source) {
         if (source == null) {
-            return null;
+            remoteIndices.clear();
+            remoteIndicesSet = false;
+            return;
         }
-        if (source.isEmpty()) {
-            return List.of();
-        }
-        List<RemoteIndex> frozen = new ArrayList<>(source.size());
+        remoteIndicesSet = true;
+        remoteIndices.clear();
         for (RemoteIndex index : source) {
-            frozen.add(index == null ? null : index.freeze());
+            remoteIndices.add(index == null ? null : index.freeze());
         }
-        return Collections.unmodifiableList(frozen);
+    }
+
+    private static void replaceStrings(List<String> source, List<String> target, Runnable setFlag, Runnable unsetFlag) {
+        if (source == null) {
+            target.clear();
+            unsetFlag.run();
+            return;
+        }
+        setFlag.run();
+        target.clear();
+        target.addAll(source);
     }
 
     private static List<String> freezeStringList(List<String> source) {

@@ -11,7 +11,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.Intermed
 public final class ElasticsearchYamlReader {
 
     private final File configFile;
-    protected final IntermediateRepresentationElasticSearchYml ir;
+    private final IntermediateRepresentationElasticSearchYml ir;
     private Map<String, Object> flattenedMap;
 
     public ElasticsearchYamlReader(File configFile, IntermediateRepresentationElasticSearchYml ir) {

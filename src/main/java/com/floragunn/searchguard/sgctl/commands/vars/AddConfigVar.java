@@ -17,8 +17,6 @@
 
 package com.floragunn.searchguard.sgctl.commands.vars;
 
-import java.util.concurrent.Callable;
-
 import org.apache.http.Header;
 
 import com.floragunn.searchguard.sgctl.client.ConditionalRequestHeader.IfNoneMatch;
@@ -29,7 +27,7 @@ import picocli.CommandLine.Command;
  * Command to add a new configuration variable if it does not yet exist.
  */
 @Command(name = "add-var", description = "Adds a new configuration variable")
-public class AddConfigVar extends AddOrUpdateConfigVar implements Callable<Integer> {
+public class AddConfigVar extends AddOrUpdateConfigVar {
 
     /** Creates a command instance for adding configuration variables. */
     public AddConfigVar() {
