@@ -22,11 +22,15 @@ public class UserConfigReader {
 
     static final String FILE_NAME = "user.json";
 
-    public UserConfigReader(File userFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
+    public UserConfigReader(File userFile, IntermediateRepresentation ir) {
         this.userFile = userFile;
         this.ir = ir;
         this.report = MigrationReport.shared;
-        readUserFile();
+        try {
+            readUserFile();
+        } catch (DocumentParseException | IOException e) {
+            report.addWarning(FILE_NAME, "origin", e.getMessage());
+        }
     }
 
     private void readUserFile() throws DocumentParseException, IOException {
