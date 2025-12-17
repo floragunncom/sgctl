@@ -34,6 +34,9 @@ import java.util.Stack;
  * <p>Supports both expression mode (containing {@code =}) and value mode (single value or list).</p>
  */
 public class ClonParser {
+    /** Utility class: do not instantiate. */
+    private ClonParser() {
+    }
     private static final List<Character> STRING_INDICATORS = Arrays.asList('"', '\'');
     private static final char ASSIGN_OPERATOR = '=';
     private static final char PARENTHESIS_OPEN = '[';
@@ -87,6 +90,13 @@ public class ClonParser {
         return result;
     }
 
+    /**
+     * Parses either expressions or values depending on the first entry.
+     *
+     * @param inputs expression/value strings
+     * @return parsed structure
+     * @throws ClonException when parsing fails
+     */
     public static Object parse(List<String> inputs) throws ClonException {
         if (isExpression(inputs.get(0))) {
             return parseExpressions(inputs);
@@ -601,6 +611,12 @@ public class ClonParser {
             /**
              * Finalizes the exception using the iterator to populate context information.
              */
+            /**
+             * Finalizes the exception using the iterator to populate context information.
+             *
+             * @param iterator token iterator providing context
+             * @return constructed exception
+             */
             protected ClonException build(TokenIterator iterator) {
                 expression = iterator.getCompleteExpression();
                 part = iterator.getCurrentExpressionPart();
@@ -611,6 +627,11 @@ public class ClonParser {
 
             /**
              * Finalizes the exception using the builder state.
+             */
+            /**
+             * Finalizes the exception using the builder state.
+             *
+             * @return constructed exception
              */
             protected ClonException build() {
                 StringBuilder builder = new StringBuilder();
@@ -626,30 +647,60 @@ public class ClonParser {
             }
 
             /** Sets the base error message. */
+            /**
+             * Sets the base error message.
+             *
+             * @param message message text
+             * @return builder
+             */
             protected Builder setMessage(String message) {
                 this.message = message;
                 return this;
             }
 
             /** Sets the full expression that failed to parse. */
+            /**
+             * Sets the full expression that failed to parse.
+             *
+             * @param expression expression text
+             * @return builder
+             */
             protected Builder setExpression(String expression) {
                 this.expression = expression;
                 return this;
             }
 
             /** Sets the specific expression part that caused the error. */
+            /**
+             * Sets the specific expression part that caused the error.
+             *
+             * @param part failing part
+             * @return builder
+             */
             protected Builder setPart(String part) {
                 this.part = part;
                 return this;
             }
 
             /** Sets the absolute error index in the expression. */
+            /**
+             * Sets the absolute error index in the expression.
+             *
+             * @param errorIndex index of error
+             * @return builder
+             */
             protected Builder setErrorIndex(int errorIndex) {
                 this.errorIndex = errorIndex;
                 return this;
             }
 
             /** Sets the starting offset of the failing part within the expression. */
+            /**
+             * Sets the starting offset of the failing part within the expression.
+             *
+             * @param partStartIndex start index of part
+             * @return builder
+             */
             protected Builder setPartStartIndex(int partStartIndex) {
                 this.partStartIndex = partStartIndex;
                 return this;
