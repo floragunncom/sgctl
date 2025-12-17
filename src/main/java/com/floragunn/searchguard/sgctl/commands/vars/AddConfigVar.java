@@ -31,6 +31,10 @@ import picocli.CommandLine.Command;
 @Command(name = "add-var", description = "Adds a new configuration variable")
 public class AddConfigVar extends AddOrUpdateConfigVar implements Callable<Integer> {
 
+    /** Creates a command instance for adding configuration variables. */
+    public AddConfigVar() {
+    }
+
     @Override
     protected Header[] getHeaders() {
         return new Header[] { new IfNoneMatch("*") };
