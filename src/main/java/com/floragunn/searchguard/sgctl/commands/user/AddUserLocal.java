@@ -38,6 +38,9 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+/**
+ * Command to add a user directly to a local {@code sg_internal_users.yml} file.
+ */
 @Command(name = "add-user-local", description = "Adds a new user to a local sg_internal_users.yml file")
 public class AddUserLocal implements Callable<Integer> {
 
