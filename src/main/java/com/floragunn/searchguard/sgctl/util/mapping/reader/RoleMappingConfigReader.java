@@ -22,11 +22,15 @@ public class RoleMappingConfigReader {
 
     static final String FILE_NAME = "role_mapping.json";
 
-    public RoleMappingConfigReader(File roleMappingFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
+    public RoleMappingConfigReader(File roleMappingFile, IntermediateRepresentation ir) {
         this.roleMappingFile = roleMappingFile;
         this.ir = ir;
         this.report = MigrationReport.shared;
-        readRoleMappingFile();
+        try {
+            readRoleMappingFile();
+        } catch (DocumentParseException | IOException e) {
+            report.addWarning(FILE_NAME, "origin", e.getMessage());
+        }
     }
 
     private void readRoleMappingFile() throws DocumentParseException, IOException {
