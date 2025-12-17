@@ -36,6 +36,9 @@ import com.google.common.io.Files;
 
 import picocli.CommandLine.Option;
 
+/**
+ * Common base for sgctl commands, providing config directory handling and cluster selection utilities.
+ */
 public class BaseCommand {
 
     static final File DEFAULT_CONFIG_DIR = new File(System.getProperty("user.home"), ".searchguard");
@@ -43,20 +46,26 @@ public class BaseCommand {
     @Option(names = { "-c", "--cluster" }, description = "The ID of the cluster configuration to be used by this command")
     String clusterIdOption;
 
+    /** Enables verbose debug output. */
     @Option(names = { "--debug" }, description = "Print debug information")
     protected boolean debug;
 
+    /** Enables additional informational output. */
     @Option(names = { "-v", "--verbose" }, description = "Print more information")
     protected boolean verbose;
 
     @Option(names = { "--sgctl-config-dir" }, description = "The directory where sgctl reads from and writes to its configuration")
     File customConfigDir;
 
+    /** Container for validation messages collected while parsing options. */
     protected final ValidationErrors validationErrors = new ValidationErrors();
 
     private String selectedClusterId;
     private boolean selectedClusterIdInitialized;
 
+    /**
+     * Resolves the cluster id to operate on either from CLI options or the persisted selection.
+     */
     protected String getSelectedClusterId() throws SgctlException {
         if (!selectedClusterIdInitialized) {
             if (clusterIdOption != null) {
@@ -84,6 +93,9 @@ public class BaseCommand {
         return selectedClusterId;
     }
 
+    /**
+     * Persists the given cluster id as the current selection.
+     */
     protected void writeSelectedClusterId(String selectedClusterId) throws SgctlException {
         File configFile = new File(getConfigDir(), "sgctl-selected-config.txt");
 
@@ -94,6 +106,9 @@ public class BaseCommand {
         }
     }
 
+    /**
+     * Loads the selected cluster configuration or returns {@code null} if none is selected.
+     */
     protected SgctlConfig.Cluster getSelectedClusterConfig() throws SgctlException {
         String selectedClusterId = getSelectedClusterId();
 
@@ -104,6 +119,9 @@ public class BaseCommand {
         return SgctlConfig.Cluster.read(getConfigDir(), selectedClusterId);
     }
 
+    /**
+     * Resolves the directory sgctl should use for configuration files.
+     */
     protected File getConfigDir() throws SgctlException {
         if (customConfigDir != null) {
             if (customConfigDir.isFile()) {
@@ -115,6 +133,9 @@ public class BaseCommand {
         }
     }
 
+    /**
+     * Executes an operation with retry support for concurrency conflicts.
+     */
     protected void retryOnConcurrencyConflict(RetryableProcedure retryableProcedure) throws SgctlException, InvalidResponseException,
             FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException, UnexpectedDocumentStructureException {
         int maxRetries = 3;
@@ -135,6 +156,9 @@ public class BaseCommand {
         }
     }
 
+    /**
+     * Operation that can be re-run when a concurrency conflict occurs.
+     */
     @FunctionalInterface
     protected static interface RetryableProcedure {
         void run() throws SgctlException, InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException,
