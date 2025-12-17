@@ -29,6 +29,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Stack;
 
+/**
+ * Parser for the compact "clon" syntax used to express key/value or nested structures on the command line.
+ * <p>Supports both expression mode (containing {@code =}) and value mode (single value or list).</p>
+ */
 public class ClonParser {
     private static final List<Character> STRING_INDICATORS = Arrays.asList('"', '\'');
     private static final char ASSIGN_OPERATOR = '=';
@@ -36,8 +40,18 @@ public class ClonParser {
     private static final char PARENTHESIS_CLOSE = ']';
     private static final char SEPARATOR = ',';
 
+    /**
+     * Marker for the parser context that is currently validated or reported.
+     */
     protected enum PartType {KEY, VALUE, EXPRESSION}
 
+    /**
+     * Parses a list of expressions (each containing an assignment) into a nested map.
+     *
+     * @param expressions list of expression strings like {@code key=value}
+     * @return parsed key/value structure
+     * @throws ClonException when the input is malformed
+     */
     public static Map<String, Object> parseExpressions(List<String> expressions) throws ClonException {
         Map<String, Object> result = new LinkedHashMap<>();
         for (String expression : expressions) {
@@ -50,6 +64,13 @@ public class ClonParser {
         return result;
     }
 
+    /**
+     * Parses a list of values (without assignment) into either a single value or list.
+     *
+     * @param inputs values to parse
+     * @return parsed value or list of values
+     * @throws ClonException when the input is malformed
+     */
     public static Object parseValues(List<String> inputs) throws ClonException {
         if (inputs.size() < 2) {
             TokenIterator iterator = new TokenIterator(inputs.get(0), 0, inputs.get(0).length());
@@ -73,10 +94,24 @@ public class ClonParser {
         return parseValues(inputs);
     }
 
+    /**
+     * Entry point that accepts string varargs.
+     *
+     * @param inputs expression or value strings
+     * @return parsed structure
+     * @throws ClonException when the input is malformed
+     */
     public static Object parse(String ... inputs) throws ClonException {
         return parse(Arrays.asList(inputs));
     }
 
+    /**
+     * Detects whether an input string contains an assignment at the top level.
+     *
+     * @param input candidate expression
+     * @return true if the input represents an expression
+     * @throws ClonException when parenthesis structure is invalid
+     */
     public static boolean isExpression(String input) throws ClonException {
         TokenIterator iterator = new TokenIterator(input, 0, input.length());
         return TokenIterator.peekContainsOnDepth(iterator, 0, ASSIGN_OPERATOR);
@@ -90,6 +125,9 @@ public class ClonParser {
         return Character.isLetterOrDigit(c) || c == '_' || c == '-' || c == '.';
     }
 
+    /**
+     * Reads a single expression of the form {@code key=value} into the target map.
+     */
     private static class ExpressionReader {
         private final TokenIterator it;
 
@@ -116,6 +154,9 @@ public class ClonParser {
         }
     }
 
+    /**
+     * Parses keys (with optional nested brackets) and returns an applier to attach values.
+     */
     private static class KeyReader {
         private final TokenIterator it;
 
@@ -197,6 +238,9 @@ public class ClonParser {
         }
     }
 
+    /**
+     * Parses values, arrays or nested objects.
+     */
     private static class ValueReader {
         private final TokenIterator it;
 
@@ -313,6 +357,9 @@ public class ClonParser {
         }
     }
 
+    /**
+     * Iterator over a clon expression that keeps track of current character and indices.
+     */
     protected static class TokenIterator {
         private final String expression;
         private final StringCharacterIterator it;
@@ -320,6 +367,9 @@ public class ClonParser {
         private final int start;
         private final int end;
 
+        /**
+         * Creates a new iterator over the supplied expression range.
+         */
         protected TokenIterator(String expression, int start, int end) {
             this.expression = expression;
             it = new StringCharacterIterator(expression, start, end, start);
@@ -327,10 +377,16 @@ public class ClonParser {
             this.end = end;
         }
 
+        /**
+         * Creates an iterator for a sub-range based on an existing iterator.
+         */
         protected TokenIterator(TokenIterator it, int start, int end) {
             this(it.expression, start, end);
         }
 
+        /**
+         * Copy-constructor keeping the same expression boundaries.
+         */
         protected TokenIterator(TokenIterator other) {
             this(other, other.start, other.end);
         }
@@ -362,6 +418,7 @@ public class ClonParser {
             return expression.substring(start, end);
         }
 
+        /** @return the full expression string. */
         protected String getCompleteExpression() {
             return expression;
         }
@@ -453,6 +510,7 @@ public class ClonParser {
             return !parenthesis.empty() && STRING_INDICATORS.contains(parenthesis.peek());
         }
 
+        /** @return current character or {@link CharacterIterator#DONE} if exhausted. */
         protected char current() {
             return it.current();
         }
@@ -520,6 +578,9 @@ public class ClonParser {
         }
     }
 
+    /**
+     * Exception indicating a parsing error in the clon input.
+     */
     public static class ClonException extends Exception {
         private static final long serialVersionUID = -821669828214088092L;
 
@@ -527,6 +588,9 @@ public class ClonParser {
             super(message);
         }
 
+        /**
+         * Fluent builder used to construct detailed {@link ClonException} instances.
+         */
         protected static class Builder {
             String message;
             String expression;
@@ -534,6 +598,9 @@ public class ClonParser {
             int errorIndex;
             int partStartIndex;
 
+            /**
+             * Finalizes the exception using the iterator to populate context information.
+             */
             protected ClonException build(TokenIterator iterator) {
                 expression = iterator.getCompleteExpression();
                 part = iterator.getCurrentExpressionPart();
@@ -542,6 +609,9 @@ public class ClonParser {
                 return build();
             }
 
+            /**
+             * Finalizes the exception using the builder state.
+             */
             protected ClonException build() {
                 StringBuilder builder = new StringBuilder();
                 builder.append(message).append("\n");
@@ -555,71 +625,87 @@ public class ClonParser {
                 return new ClonException(builder.toString());
             }
 
+            /** Sets the base error message. */
             protected Builder setMessage(String message) {
                 this.message = message;
                 return this;
             }
 
+            /** Sets the full expression that failed to parse. */
             protected Builder setExpression(String expression) {
                 this.expression = expression;
                 return this;
             }
 
+            /** Sets the specific expression part that caused the error. */
             protected Builder setPart(String part) {
                 this.part = part;
                 return this;
             }
 
+            /** Sets the absolute error index in the expression. */
             protected Builder setErrorIndex(int errorIndex) {
                 this.errorIndex = errorIndex;
                 return this;
             }
 
+            /** Sets the starting offset of the failing part within the expression. */
             protected Builder setPartStartIndex(int partStartIndex) {
                 this.partStartIndex = partStartIndex;
                 return this;
             }
 
+            /** Builds an exception for encountering an unexpected character. */
             public static Builder getUnexpectedCharacterExceptionBuilder(Character ... expected) {
                 return new Builder().setMessage("Expected '" + Arrays.toString(expected) + "'");
             }
 
+            /** Builds an exception when the iterator did not reach the end. */
             public static Builder getNotEndExceptionBuilder() {
                 return new Builder().setMessage("Expected expression to end");
             }
 
+            /** Builds an exception when a required character is missing. */
             public static Builder getCharacterNotFoundExceptionBuilder(Character ... expected) {
                 return new Builder().setMessage("Expected " + Arrays.toString(expected));
             }
 
+            /** Builds an exception when a closing bracket is missing. */
             public static Builder getParenthesisOpenExceptionBuilder() {
                 return new Builder().setMessage("Expected '" + PARENTHESIS_CLOSE + "'");
             }
 
+            /** Builds an exception when a closing bracket appears unexpectedly. */
             public static Builder getParenthesisCloseExceptionBuilder() {
                 return new Builder().setMessage("Unexpected '" + PARENTHESIS_CLOSE + "'");
             }
 
+            /** Builds an exception when a quoted string is not terminated. */
             public static Builder getNoStringEndExceptionBuilder() {
                 return new Builder().setMessage("Expected string or key name to end");
             }
 
+            /** Builds an exception when the current part is empty. */
             public static Builder getEmptyExceptionBuilder(PartType context) {
                 return new Builder().setMessage(context != PartType.VALUE ? context + " can not be empty" : "Empty string value must be surrounded by ' or \"");
             }
 
+            /** Builds an exception for an unsupported character. */
             public static Builder getUnsupportedSymbolExceptionBuilder(Character c) {
                 return new Builder().setMessage("Unsupported symbol '" + c + "'. Consider using quotes");
             }
 
+            /** Builds an exception when a key or value name is empty. */
             public static Builder getNameEmptyExceptionBuilder(PartType context) {
                 return new Builder().setMessage(context == PartType.KEY ? "Key names can not be empty" : "String values can not be empty");
             }
 
+            /** Builds an exception when the same key is encountered twice. */
             public static Builder getOverrideExceptionBuilder(String key) {
                 return new Builder().setMessage("Can not override field '" + key + "'");
             }
 
+            /** Builds an exception when value/expression types are mixed in input. */
             public static Builder getExpressionValueMixException(PartType context) {
                 return new Builder().setMessage("Expected input to be " + context.name() + "s only");
             }
