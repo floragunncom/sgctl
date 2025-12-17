@@ -3,62 +3,77 @@ package com.floragunn.searchguard.sgctl.config.xpack;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
-import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
+import java.util.Objects;
 
-public record Users(ImmutableMap<String, User> mappings) {
+public record Users(Traceable<ImmutableMap<String, User>> users) {
+
+  public Users {
+    Objects.requireNonNull(users, "users must not be null");
+  }
 
   public static Users parse(DocNode config, Parser.Context parserContext)
       throws ConfigValidationException {
 
-    ValidatingDocNode vNode = new ValidatingDocNode(config, new ValidationErrors(), parserContext);
+    var errors = new ValidationErrors();
+    // ValidatingDocNode vNode = new ValidatingDocNode(config, errors, parserContext);
+    var tDoc = TraceableDocNode.of(config, new Source.Config("users.json"), errors);
     var builder = new ImmutableMap.Builder<String, User>(config.toListOfNodes().size());
 
     for (String name : config.keySet()) {
-      User user = vNode.get(name).by(Users.User::parse);
-      if (user != null) builder.with(name, user);
+      User user = tDoc.get(name).as(User::parse).getValue();
+      if (user != null) {
+        builder.with(name, user);
+      }
     }
 
-    vNode.throwExceptionForPresentErrors();
-    return new Users(builder.build());
+    errors.throwExceptionForPresentErrors();
+    return new Users(Traceable.of(tDoc.getSource(), builder.build()));
   }
 
   public record User(
-      String username, ImmutableList<String> roles, ImmutableMap<String, Object> metadata) {
+      Traceable<String> username,
+      Traceable<ImmutableList<Traceable<String>>> roles,
+      Traceable<ImmutableMap<String, Traceable<String>>>
+          metadata) { // metadata zu string string geändert, sonst hats irgendwie nicht geklappt
 
-    public static User parse(DocNode config, Parser.Context parserContext)
-        throws ConfigValidationException {
-      ValidationErrors vErrors = new ValidationErrors();
-      ValidatingDocNode vNode = new ValidatingDocNode(config, vErrors, parserContext);
+    public static User parse(TraceableDocNode tDoc) {
 
-      if (!vNode.get("enabled").asBoolean()) return null;
+      if (!tDoc.get("enabled").asBoolean().getValue()) return null;
 
-      ImmutableMap<String, Object> metadata = vNode.get("metadata").required().asMap();
+      var username = tDoc.get("username").required().asString();
+      var roles = tDoc.get("roles").required().asListOfStrings();
 
-      String fullName = vNode.get("full_name").asString();
+      var metadataBuilder = new ImmutableMap.Builder<String, Traceable<String>>();
+      var metadataMap = tDoc.get("metadata").asMapOfStrings();
+      for (var entry : metadataMap.getValue().entrySet()) {
+        metadataBuilder.with(entry.getKey(), entry.getValue());
+      }
+
+      var fullName = tDoc.get("full_name").asString().orElse(null);
       if (fullName != null) {
-        metadata = metadata.with("full_name", fullName);
+        metadataBuilder.with("full_name", fullName);
       }
 
-      String email = vNode.get("email").asString();
+      var email = tDoc.get("email").asString().orElse(null);
       if (email != null) {
-        metadata = metadata.with("email", email);
+        metadataBuilder.with("email", email);
       }
 
-      String profileUid = vNode.get("profile_uid").asString();
+      var profileUid = tDoc.get("profileUid").asString().orElse(null);
       if (profileUid != null) {
-        metadata = metadata.with("profile_uid", profileUid);
+        metadataBuilder.with("profileUid", profileUid);
       }
 
-      User user =
-          new User(
-              vNode.get("username").required().asString(),
-              vNode.get("roles").required().asListOfStrings(),
-              metadata);
+      var metadata = metadataBuilder.build();
 
-      vErrors.throwExceptionForPresentErrors();
+      User user = new User(username, roles, Traceable.of(tDoc.getSource(), metadata));
+
       return user;
     }
   }

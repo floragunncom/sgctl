@@ -40,7 +40,7 @@ public class UserMigrator implements SubMigrator {
     }
 
     logger.warn(
-        "Passwords are empty for all migrated users. Each user must reset their password or a admin nmust set them manually.");
+        "Passwords are empty for all migrated users. Each user must reset their password or a admin must set them manually.");
     return List.of(new SgInternalUsers(builder.build()));
   }
 }
