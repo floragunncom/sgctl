@@ -25,6 +25,9 @@ import com.floragunn.searchguard.sgctl.client.ConditionalRequestHeader.IfNoneMat
 
 import picocli.CommandLine.Command;
 
+/**
+ * Command to add a new configuration variable if it does not yet exist.
+ */
 @Command(name = "add-var", description = "Adds a new configuration variable")
 public class AddConfigVar extends AddOrUpdateConfigVar implements Callable<Integer> {
 
