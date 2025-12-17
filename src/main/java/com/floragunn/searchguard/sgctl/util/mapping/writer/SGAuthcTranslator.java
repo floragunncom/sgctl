@@ -32,6 +32,7 @@ public class SGAuthcTranslator {
         realmMapping.put("pki", new PkiTranslator());
         realmMapping.put("oidc", new OidcTranslator());
         realmMapping.put("kerberos", new KerberosTranslator());
+        realmMapping.put("jwt", new JwtTranslator());
 
         createAuthcConfig(ir);
     }
@@ -75,6 +76,4 @@ public class SGAuthcTranslator {
 
         });
     }
-
-
 }
