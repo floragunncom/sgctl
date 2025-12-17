@@ -42,39 +42,44 @@ public class AuthenticationIR {
     private final Map<String, RealmIR> realms = new HashMap<>();
 
     // Getter
-    /** @return configured password hashing algorithm. */
+    /** Returns the configured password hashing algorithm. */
     public String getPasswordHashingAlgoritm() { return passwordHashingAlgorithm; }
-    /** @return anonymous user name or {@code null}. */
+    /** Returns the anonymous user name or {@code null}. */
     public String getAnonymousUserName() { return anonymousUserName; }
-    /** @return comma-separated anonymous roles. */
+    /** Returns comma-separated anonymous roles. */
     public String getAnonymousRoles() { return  anonymousRoles; }
-    /** @return whether anonymous authz exceptions are enabled. */
+    /** Returns whether anonymous authz exceptions are enabled. */
     public boolean getAnonymousAuthzException() { return anonymousAuthzException; }
-    /** @return whether tokens are enabled. */
+    /** Returns whether tokens are enabled. */
     public boolean getTokenEnabled() { return tokenEnabled; }
-    /** @return token timeout value. */
+    /** Returns the token timeout value. */
     public String getTokenTimeout() { return tokenTimeout; }
-    /** @return true if API key support is enabled. */
+    /** Returns true if API key support is enabled. */
     public boolean getApiKeyEnabled() { return apiKeyEnabled; }
-    /** @return API key cache TTL. */
+    /** Returns the API key cache TTL. */
     public String getApiKeyCacheTtl() { return apiKeyCacheTtl; }
-    /** @return maximum number of API keys. */
+    /** Returns the maximum number of API keys. */
     public String getMaxTokens() { return maxKeys; }
-    /** @return in-memory hashing algorithm for API keys. */
+    /** Returns the in-memory hashing algorithm for API keys. */
     public String getApiKeyInMemoryHashingAlgorithm() { return apiKeyInMemoryHashingAlgorithm; }
-    /** @return retention period for expired API keys. */
+    /** Returns the retention period for expired API keys. */
     public String getApiKeyRetentionPeriod() { return apiKeyRetentionPeriod; }
-    /** @return deletion interval for API keys. */
+    /** Returns the deletion interval for API keys. */
     public String getApiKeyDeleteInterval() { return apiKeyDeleteInterval; }
-    /** @return deletion timeout for API keys. */
+    /** Returns the deletion timeout for API keys. */
     public String getApiKeyDeleteTimeout() { return apiKeyDeleteTimeout; }
-    /** @return hashing algorithm for API keys. */
+    /** Returns the hashing algorithm for API keys. */
     public String getApiKeyHashingAlgorithm() { return apiKeyHashingAlgorithm; }
-    /** @return immutable view of configured realms. */
+    /** Returns an immutable view of configured realms. */
     public Map<String, RealmIR> getRealms() { return Map.copyOf(realms); }
 
     /**
      * Handles a single authentication-related option and records migration results.
+     *
+     * @param optionName option name relative to the xpack authc prefix
+     * @param optionValue option value parsed from the config
+     * @param keyPrefix prefix used for reporting
+     * @param configFile source configuration file
      */
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean keyKnown = true;
