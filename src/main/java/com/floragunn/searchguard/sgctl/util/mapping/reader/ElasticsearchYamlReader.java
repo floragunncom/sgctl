@@ -8,7 +8,7 @@ import com.floragunn.codova.documents.DocReader;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 
-public class ElasticsearchYamlReader {
+public final class ElasticsearchYamlReader {
 
     private final File configFile;
     protected final IntermediateRepresentationElasticSearchYml ir;
@@ -24,14 +24,14 @@ public class ElasticsearchYamlReader {
             Map<String, Object> map = read();
             flattenedMap = flattenMap(map);
             toIR(flattenedMap);
-        } catch (Exception e) {
+        } catch (com.floragunn.codova.documents.DocumentParseException | java.io.IOException e) {
             MigrationReport.shared.addWarning("elasticsearch.yml", "origin", e.getMessage());
         }
     }
 
     // read a config and return its contents as a map
     @SuppressWarnings("unchecked")
-    public Map<String, Object> read() throws Exception {
+    private Map<String, Object> read() throws com.floragunn.codova.documents.DocumentParseException, java.io.IOException {
         // the read method returns indeed a Map
         return (Map<String, Object>) DocReader.yaml().read(configFile);
     }
@@ -108,8 +108,8 @@ public class ElasticsearchYamlReader {
                 result.append(field.getName()).append(": ").append(val).append('\n');
             }
             return result.toString();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IllegalAccessException | IllegalArgumentException | SecurityException e) {
+            MigrationReport.shared.addWarning("elasticsearch.yml", "origin", e.getMessage());
         }
         return result.toString();
     }
@@ -117,11 +117,11 @@ public class ElasticsearchYamlReader {
 
     @Override
     public String toString() {
-        String out = null;
+        String out = "";
         try {
             out = read().toString();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (com.floragunn.codova.documents.DocumentParseException | java.io.IOException e) {
+            MigrationReport.shared.addWarning("elasticsearch.yml", "origin", e.getMessage());
         }
         return out;
     }
