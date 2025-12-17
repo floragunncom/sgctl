@@ -4,6 +4,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -24,10 +25,14 @@ public class SslTlsIR {
     private final Map<String, List<String>> profileAllowedIPs = new HashMap<>();
     private final Map<String, List<String>> profileDeniedIPs = new HashMap<>();
 
+    /** @return TLS settings for the transport layer. */
     public Tls getTransport() { return transport; }
+    /** @return TLS settings for the HTTP layer. */
     public Tls getHttp() { return http; }
-    public Map<String, List<String>> getProfileAllowedIPs() { return profileAllowedIPs; }
-    public Map<String, List<String>> getProfileDeniedIPs() { return profileDeniedIPs; }
+    /** @return per-profile allow lists for transport IP filtering. */
+    public Map<String, List<String>> getProfileAllowedIPs() { return unmodifiableProfileMap(profileAllowedIPs); }
+    /** @return per-profile deny lists for transport IP filtering. */
+    public Map<String, List<String>> getProfileDeniedIPs() { return unmodifiableProfileMap(profileDeniedIPs); }
 
     public SslTlsIR() {
         transport = new Tls();
@@ -73,5 +78,17 @@ public class SslTlsIR {
             result.add(s);
         }
         return result;
+    }
+
+    private Map<String, List<String>> unmodifiableProfileMap(Map<String, List<String>> source) {
+        if (source.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        Map<String, List<String>> copy = new HashMap<>(source.size());
+        for (var entry : source.entrySet()) {
+            copy.put(entry.getKey(), List.copyOf(entry.getValue()));
+        }
+        return Collections.unmodifiableMap(copy);
     }
 }
