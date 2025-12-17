@@ -1,10 +1,10 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
 import com.floragunn.fluent.collections.ImmutableList;
-import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalUsers;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import java.util.List;
 import java.util.Map;
@@ -23,20 +23,23 @@ public class UserMigrator implements SubMigrator {
     }
 
     var builder =
-        new ImmutableList.Builder<SgInternalUsers.User>(xpackUsers.get().mappings().size());
+        new ImmutableList.Builder<SgInternalUsers.User>(xpackUsers.get().users().get().size());
 
-    for (Map.Entry<String, Users.User> entry : xpackUsers.get().mappings().entrySet()) {
+    for (Map.Entry<String, Users.User> entry : xpackUsers.get().users().get().entrySet()) {
 
       // convert ImmutableMap<String, Object> from xpack to ImmutableMap<String, String> for search
       // guard
-      ImmutableMap<String, String> sgMetaData =
-          entry.getValue().metadata() != null
-              ? entry.getValue().metadata().map(key -> key, value -> String.valueOf(value))
-              : ImmutableMap.empty();
+      /*ImmutableMap<String, String> sgMetaData =
+      entry.getValue().metadata() != null
+          ? entry.getValue().metadata().map(key -> key, value -> String.valueOf(value))
+          : ImmutableMap.empty();*/
 
       builder.add(
           new SgInternalUsers.User(
-              entry.getValue().username(), "", entry.getValue().roles(), sgMetaData));
+              entry.getValue().username().get(),
+              "",
+              entry.getValue().roles().get().map(Traceable::get),
+              entry.getValue().metadata().get().map(key -> key, Traceable::get)));
     }
 
     logger.warn(
