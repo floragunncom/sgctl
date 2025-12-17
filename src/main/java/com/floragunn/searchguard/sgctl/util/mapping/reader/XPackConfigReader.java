@@ -11,23 +11,28 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Aggregates X-Pack configuration files into a unified intermediate representation.
+ */
 public class XPackConfigReader {
 
     private final File elasticsearch;
     private final File userFile;
     private final File roleFile;
     private final File roleMappingFile;
-    private final IntermediateRepresentation ir;
 
     public XPackConfigReader(File elasticsearch, File user, File role, File roleMappingFile) {
         this.elasticsearch = elasticsearch;
         this.userFile = user;
         this.roleFile = role;
         this.roleMappingFile = roleMappingFile;
-        this.ir = new IntermediateRepresentation();
     }
 
+    /**
+     * Reads all configured files and produces an {@link IntermediateRepresentation}.
+     */
     public IntermediateRepresentation generateIR() {
+        IntermediateRepresentation ir = new IntermediateRepresentation();
         readConfig(RoleConfigReader.FILE_NAME, () -> new RoleConfigReader(roleFile, ir));
         readConfig(UserConfigReader.FILE_NAME, () -> new UserConfigReader(userFile, ir));
         readConfig(RoleMappingConfigReader.FILE_NAME, () -> new RoleMappingConfigReader(roleMappingFile, ir));
