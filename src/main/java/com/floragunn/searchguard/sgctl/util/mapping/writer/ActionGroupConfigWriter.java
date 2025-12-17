@@ -24,7 +24,7 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
         this.ir = ir;
         this.report = MigrationReport.shared;
 
-        // Should action groups be inititialized with all possible custom groups, or should they only be added when needed in RoleConfigWriter?
+        // TODO: Should action groups be inititialized with all possible custom groups, or should they only be added when needed in RoleConfigWriter?
         print(DocWriter.yaml().writeAsString(this));
 
     }
