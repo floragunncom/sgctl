@@ -5,6 +5,7 @@ import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomClusterActionGroup;
 import com.sun.jdi.InvalidTypeException;
 
 import java.security.InvalidKeyException;
@@ -255,6 +256,94 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return null;
     }
 
+    // TODO remove other method versions
+    private List<String> toSGClusterPrivilegesCOMPLETE(Role role) {
+
+    var privileges = role.getCluster();
+    var sgPrivileges = new ArrayList<String>();
+    var agSet = new HashSet<CustomClusterActionGroup>() ;
+
+    for (var privilege : privileges) {
+        var agName = "";
+        switch (privilege) {
+
+            // Built-in action groups
+            case "all" -> agName = "SGS_CLUSTER_ALL";
+            case "manage_ilm" -> agName = "SGS_CLUSTER_MANAGE_ILM";
+            case "manage_index_templates" -> agName = "SGS_CLUSTER_MANAGE_INDEX_TEMPLATES";
+            case "manage_ingest_pipelines" -> agName = "SGS_CLUSTER_MANAGE_PIPELINES";
+            case "manage_pipeline" -> agName = "SGS_CLUSTER_MANAGE_PIPELINES";
+            case "monitor" -> agName = "SGS_CLUSTER_MONITOR";
+            case "read_ilm" -> agName = "SGS_CLUSTER_READ_ILM";
+            
+            // Custom action groups
+            // TODO: As naming convention is clear, this can be simplified dramatically
+            case "cancel_task" -> agName = "SGS_CANCEL_TASK_CUSTOM";
+            case "create_snapshot" -> agName = "SGS_CREATE_SNAPSHOT_CUSTOM";
+            case "cross_cluster_replication" -> agName = "SGS_CROSS_CLUSTER_REPLICATION_CUSTOM";
+            case "cross_cluster_search" -> agName = "SGS_CROSS_CLUSTER_SEARCH_CUSTOM";
+            case "grant_api_key" -> agName = "SGS_GRANT_API_KEY_CUSTOM";
+            case "manage" -> agName = "SGS_MANAGE_CUSTOM";
+            case "manage_api_key" -> agName = "SGS_MANAGE_API_KEY_CUSTOM";
+            case "manage_autoscaling" -> agName = "SGS_MANAGE_AUTOSCALING_CUSTOM";
+            case "manage_ccr" -> agName = "SGS_MANAGE_CCR_CUSTOM";
+            case "manage_data_frame_transforms" -> {} // deprecated 7.5.0
+            case "manage_data_stream_global_retention" -> {} // deprecated 8.16.0
+            case "manage_enrich" -> agName = "SGS_MANAGE_ENRICH_CUSTOM";
+            case "manage_inference" -> agName = "SGS_MANAGE_INFERENCE_CUSTOM";
+            case "manage_logstash_pipelines" -> agName = "SGS_MANAGE_LOGSTASH_PIPELINES_CUSTOM";
+            case "manage_ml" -> agName = "SGS_MANAGE_ML_CUSTOM";
+            case "manage_oidc" -> agName = "SGS_MANAGE_OIDC_CUSTOM";
+            case "manage_own_api_key" -> agName = "SGS_MANAGE_OWN_API_KEY_CUSTOM";
+            case "manage_rollup" -> agName = "SGS_MANAGE_ROLLUP_CUSTOM";
+            case "manage_saml" -> agName = "SGS_MANAGE_SAML_CUSTOM";
+            case "manage_search_application" -> agName = "SGS_MANAGE_SEARCH_APPLICATION_CUSTOM";
+            case "manage_search_query_rules" -> agName = "SGS_MANAGE_SEARCH_QUERY_RULES_CUSTOM";
+            case "manage_search_synonyms" -> agName = "SGS_MANAGE_SEARCH_SYNONYMS_CUSTOM";
+            case "manage_security" -> agName = "SGS_MANAGE_SECURITY_CUSTOM";
+            case "manage_service_account" -> agName = "SGS_MANAGE_SERVICE_ACCOUNT_CUSTOM";
+            case "manage_slm" -> {} // deprecated 8.15.0
+            case "manage_token" -> agName = "SGS_MANAGE_TOKEN_CUSTOM";
+            case "manage_transform" -> agName = "SGS_MANAGE_TRANSFORM_CUSTOM";
+            case "manage_watcher" -> agName = "SGS_MANAGE_WATCHER_CUSTOM";
+            case "monitor_data_stream_global_retention" -> {} // deprecated 8.16.0
+            case "monitor_enrich" -> agName = "SGS_MONITOR_ENRICH_CUSTOM";
+            case "monitor_esql" -> agName = "SGS_MONITOR_ESQL_CUSTOM";
+            case "monitor_inference" -> agName = "SGS_MONITOR_INFERENCE_CUSTOM";
+            case "monitor_ml" -> agName = "SGS_MONITOR_ML_CUSTOM";
+            case "monitor_rollup" -> agName = "SGS_MONITOR_ROLLUP_CUSTOM";
+            case "monitor_snapshot" -> agName = "SGS_MONITOR_SNAPSHOT_CUSTOM";
+            case "monitor_stats" -> agName = "SGS_MONITOR_STATS_CUSTOM";
+            case "monitor_text_structure" -> agName = "SGS_MONITOR_TEXT_STRUCTURE_CUSTOM";
+            case "monitor_transform" -> agName = "SGS_MONITOR_TRANSFORM_CUSTOM";
+            case "monitor_watcher" -> agName = "SGS_MONITOR_WATCHER_CUSTOM";
+            case "read_ccr" -> agName = "SGS_READ_CCR_CUSTOM";
+            case "read_pipeline" -> agName = "SGS_READ_PIPELINE_CUSTOM";
+            case "read_slm" -> {} // deprecated 8.16.0
+            case "read_security" -> agName = "SGS_READ_SECURITY_CUSTOM";
+            case "transport_client" -> agName = "SGS_TRANSPORT_CLIENT_CUSTOM";
+
+            default -> report.addManualAction(
+                FILE_NAME,
+                role.getName() + "->cluster_permissions",
+                "The privilege: " + privilege + " is unknown and can not be automatically mapped."
+            );
+        }
+
+        // skip if deprecated or default case was hit
+        if (agName.equals("")) continue;
+        sgPrivileges.add(agName);
+
+        if (!agName.contains("CUSTOM")) continue;
+        agSet.add(CustomClusterActionGroup.from(agName));
+
+    }
+    agWriter.addCustomActionGroups(agSet);
+    return sgPrivileges;
+}
+
+
+    // TODO: remove
     private List<String> toSGClusterPrivileges(Role role) {
         var privileges = role.getCluster();
         var sgPrivileges = new ArrayList<String>() ;
