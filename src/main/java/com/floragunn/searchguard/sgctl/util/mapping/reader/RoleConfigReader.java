@@ -23,11 +23,15 @@ public class RoleConfigReader {
 
     static final String FILE_NAME = "role.json";
 
-    public RoleConfigReader(File roleFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
+    public RoleConfigReader(File roleFile, IntermediateRepresentation ir) {
         this.roleFile = roleFile;
         this.ir = ir;
         this.report = MigrationReport.shared;
-        readRoleFile();
+        try {
+            readRoleFile();
+        } catch (DocumentParseException | IOException e) {
+            report.addWarning(FILE_NAME, "origin", e.getMessage());
+        }
     }
 
     private void readRoleFile() throws DocumentParseException, IOException {
