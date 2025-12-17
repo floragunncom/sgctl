@@ -30,9 +30,9 @@ public class SslTlsIR {
     /** @return TLS settings for the HTTP layer. */
     public Tls getHttp() { return http; }
     /** @return per-profile allow lists for transport IP filtering. */
-    public Map<String, List<String>> getProfileAllowedIPs() { return unmodifiableProfileMap(profileAllowedIPs); }
+    public Map<String, List<String>> getProfileAllowedIPs() { return Collections.unmodifiableMap(profileAllowedIPs); }
     /** @return per-profile deny lists for transport IP filtering. */
-    public Map<String, List<String>> getProfileDeniedIPs() { return unmodifiableProfileMap(profileDeniedIPs); }
+    public Map<String, List<String>> getProfileDeniedIPs() { return Collections.unmodifiableMap(profileDeniedIPs); }
 
     public SslTlsIR() {
         transport = new Tls();
@@ -60,7 +60,14 @@ public class SslTlsIR {
             String action  = profileMatch.group(2);
 
             Map<String, List<String>> target = "allow".equals(action) ? profileAllowedIPs : profileDeniedIPs;
-            target.computeIfAbsent(profile, k -> new ArrayList<>()).addAll(values);
+            target.merge(profile, freezeList(values), (oldList, newList) -> {
+                if (oldList.isEmpty()) {
+                    return newList;
+                }
+                ArrayList<String> merged = new ArrayList<>(oldList);
+                merged.addAll(newList);
+                return Collections.unmodifiableList(merged);
+            });
             report.addMigrated(FILE_NAME, keyPrefix + optionName);
             return;
         }
@@ -80,15 +87,10 @@ public class SslTlsIR {
         return result;
     }
 
-    private Map<String, List<String>> unmodifiableProfileMap(Map<String, List<String>> source) {
-        if (source.isEmpty()) {
-            return Collections.emptyMap();
+    private List<String> freezeList(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return List.of();
         }
-
-        Map<String, List<String>> copy = new HashMap<>(source.size());
-        for (var entry : source.entrySet()) {
-            copy.put(entry.getKey(), List.copyOf(entry.getValue()));
-        }
-        return Collections.unmodifiableMap(copy);
+        return Collections.unmodifiableList(new ArrayList<>(list));
     }
 }

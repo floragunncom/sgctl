@@ -7,12 +7,16 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
 import com.floragunn.searchguard.sgctl.util.mapping.reader.ElasticsearchYamlReader;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class IntermediateRepresentation {
     private final List<User> users = new ArrayList<>();
+    private final List<User> usersView = Collections.unmodifiableList(users);
     private final List<Role> roles = new ArrayList<>();
+    private final List<Role> rolesView = Collections.unmodifiableList(roles);
     private final List<RoleMapping> roleMappings = new ArrayList<RoleMapping>();
+    private final List<RoleMapping> roleMappingsView = Collections.unmodifiableList(roleMappings);
     private final IntermediateRepresentationElasticSearchYml elasticSearchYml = new IntermediateRepresentationElasticSearchYml();
 
     // Setter-Methods
@@ -22,9 +26,9 @@ public class IntermediateRepresentation {
 
 
     // Getter-Methods
-    public List<User> getUsers() { return List.copyOf(users); }
-    public List<Role> getRoles() { return List.copyOf(roles); }
-    public List<RoleMapping> getRoleMappings() { return List.copyOf(roleMappings); }
+    public List<User> getUsers() { return usersView; }
+    public List<Role> getRoles() { return rolesView; }
+    public List<RoleMapping> getRoleMappings() { return roleMappingsView; }
     public IntermediateRepresentationElasticSearchYml getElasticSearchYml() { return elasticSearchYml; }
 
 }

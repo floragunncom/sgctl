@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.security;
 import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -12,11 +13,11 @@ public class RoleMapping {
     private List<String> roles;
     private List<String> users;
     private boolean enabled = true;
-    private List<String> runAs;
+    private List<String> runAs = List.of();
 
     private Rules rules;
     private Metadata metadata;
-    private List<RoleTemplate> roleTemplates;
+    private List<RoleTemplate> roleTemplates = List.of();
 
     public RoleMapping(@NonNull String mappingName) {
         this.mappingName = mappingName;
@@ -24,42 +25,51 @@ public class RoleMapping {
 
     // Getter-Methods
     public @NonNull String getMappingName() { return mappingName; }
-    public List<String> getRoles() { return copyOrNull(roles); }
-    public List<String> getUsers() { return copyOrNull(users); }
+    public List<String> getRoles() { return roles; }
+    public List<String> getUsers() { return users; }
     public boolean isEnabled() { return enabled; }
-    public List<String> getRunAs() { return copyOrNull(runAs); }
+    public List<String> getRunAs() { return runAs; }
     public Rules getRules() { return rules; }
     public Metadata getMetadata() { return metadata; }
-    public List<RoleTemplate> getRoleTemplates() { return copyOrNull(roleTemplates); }
+    public List<RoleTemplate> getRoleTemplates() { return roleTemplates; }
 
     // Setter-Methods
     public void setMappingName(@NonNull String mappingName) { this.mappingName = mappingName; }
-    public void setRoles(List<String> roles) { this.roles = mutableCopy(roles); }
-    public void setUsers(List<String> users) { this.users = mutableCopy(users); }
+    public void setRoles(List<String> roles) { this.roles = freezeList(roles); }
+    public void setUsers(List<String> users) { this.users = freezeList(users); }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public void setRunAs(List<String> runAS) { this.runAs = mutableCopy(runAS); }
-    public void setRules(Rules rules) { this.rules = rules; }
-    public void setMetadata(Metadata metadata) { this.metadata = metadata; }
-    public void setRoleTemplates(List<RoleTemplate> roleTemplates) { this.roleTemplates = mutableCopy(roleTemplates); }
+    public void setRunAs(List<String> runAS) { this.runAs = freezeList(runAS); }
+    public void setRules(Rules rules) { this.rules = rules == null ? null : rules.freeze(); }
+    public void setMetadata(Metadata metadata) { this.metadata = metadata == null ? null : metadata.freeze(); }
+    public void setRoleTemplates(List<RoleTemplate> roleTemplates) { this.roleTemplates = freezeList(roleTemplates); }
 
 
     public static class Rules {
-        private Map<String, Object> field;
-        private List<Rules> any;
-        private List<Rules> all;
+        private Map<String, Object> field = Map.of();
+        private List<Rules> any = List.of();
+        private List<Rules> all = List.of();
         private Rules except;
 
         // Getter
-        public Map<String, Object> getField() { return field == null ? null : Map.copyOf(field); }
-        public List<Rules> getAny() { return copyOrNull(any); }
-        public List<Rules> getAll() { return copyOrNull(all); }
+        public Map<String, Object> getField() { return field; }
+        public List<Rules> getAny() { return any; }
+        public List<Rules> getAll() { return all; }
         public Rules getExcept() { return except; }
 
         // Setter
-        public void setField(Map<String, Object> field) { this.field = field == null ? null : new LinkedHashMap<>(field); }
-        public void setAny(List<Rules> any) { this.any = mutableCopy(any); }
-        public void setAll(List<Rules> all) { this.all = mutableCopy(all); }
-        public void setExcept(Rules except) { this.except = except; }
+        public void setField(Map<String, Object> field) { this.field = freezeMap(field); }
+        public void setAny(List<Rules> any) { this.any = freezeList(any); }
+        public void setAll(List<Rules> all) { this.all = freezeList(all); }
+        public void setExcept(Rules except) { this.except = except == null ? null : except.freeze(); }
+
+        private Rules freeze() {
+            var copy = new Rules();
+            copy.field = this.field;
+            copy.any = this.any;
+            copy.all = this.all;
+            copy.except = this.except == null ? null : this.except.freeze();
+            return copy;
+        }
 
         @Override
         public String toString() {
@@ -71,10 +81,16 @@ public class RoleMapping {
     }
 
     public static class Metadata {
-        private Map<String, Object> entries;
+        private Map<String, Object> entries = Map.of();
 
-        public Map<String, Object> getEntries() { return entries == null ? null : Map.copyOf(entries); }
-        public void setEntries(Map<String, Object> entries) { this.entries = entries == null ? null : new LinkedHashMap<>(entries); }
+        public Map<String, Object> getEntries() { return entries; }
+        public void setEntries(Map<String, Object> entries) { this.entries = freezeMap(entries); }
+
+        private Metadata freeze() {
+            var copy = new Metadata();
+            copy.entries = this.entries;
+            return copy;
+        }
 
         @Override
         public String toString() {
@@ -131,11 +147,17 @@ public class RoleMapping {
                 "\n]";
     }
 
-    private static <T> List<T> copyOrNull(List<T> list) {
-        return list == null ? null : List.copyOf(list);
+    private static <T> List<T> freezeList(List<T> list) {
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
+        return Collections.unmodifiableList(new ArrayList<>(list));
     }
 
-    private static <T> List<T> mutableCopy(List<T> list) {
-        return list == null ? null : new ArrayList<>(list);
+    private static <K, V> Map<K, V> freezeMap(Map<K, V> map) {
+        if (map == null || map.isEmpty()) {
+            return Map.of();
+        }
+        return Collections.unmodifiableMap(new LinkedHashMap<>(map));
     }
 }

@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Logger;
@@ -40,6 +41,7 @@ public class AuthenticationIR {
 
     // realms collection
     private final Map<String, RealmIR> realms = new HashMap<>();
+    private final Map<String, RealmIR> realmsView = Collections.unmodifiableMap(realms);
 
     // Getter
     /** Returns the configured password hashing algorithm. */
@@ -71,7 +73,7 @@ public class AuthenticationIR {
     /** Returns the hashing algorithm for API keys. */
     public String getApiKeyHashingAlgorithm() { return apiKeyHashingAlgorithm; }
     /** Returns an immutable view of configured realms. */
-    public Map<String, RealmIR> getRealms() { return Map.copyOf(realms); }
+    public Map<String, RealmIR> getRealms() { return realmsView; }
 
     /**
      * Handles a single authentication-related option and records migration results.

@@ -4,6 +4,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -46,7 +47,7 @@ public class Tls {
     /** Optional password for the private key. */
     private String privateKeyPassword;
     /** List of certificate authority file paths. */
-    private List<String> certificateAuthorities = new ArrayList<>();
+    private List<String> certificateAuthorities = List.of();
 
     // TLS modes
     /**
@@ -62,19 +63,19 @@ public class Tls {
 
     // Constraints
     /** Supported protocol versions (e.g. TLSv1.2, TLSv1.3). */
-    private List<String> supportedProtocols = new ArrayList<>();
+    private List<String> supportedProtocols = List.of();
     /** List of cipher suites. */
-    private List<String> ciphers = new ArrayList<>();
+    private List<String> ciphers = List.of();
 
     // IP filtering (https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/security-settings#ip-filtering-settings)
     /** List of allowed IP addresses for this TLS context. */
-    private List<String> allowedIPs;
+    private List<String> allowedIPs = List.of();
     /** List of denied IP addresses for this TLS context. */
-    private List<String> deniedIPs;
+    private List<String> deniedIPs = List.of();
     /** List of allowed IP addresses for remote clusters. */
-    private List<String> remoteClusterAllowedIPs;
+    private List<String> remoteClusterAllowedIPs = List.of();
     /** List of denied IP addresses for remote clusters. */
-    private List<String> remoteClusterDeniedIPs;
+    private List<String> remoteClusterDeniedIPs = List.of();
 
     private static final String THIS_FILE = "elasticsearch.yml";
 
@@ -84,42 +85,42 @@ public class Tls {
      * @return list of supported protocol versions.
      */
     public List<String> getSupportedProtocols() {
-        return List.copyOf(supportedProtocols);
+        return supportedProtocols;
     }
 
     /**
      * @return list of configured cipher suites.
      */
     public List<String> getCiphers() {
-        return List.copyOf(ciphers);
+        return ciphers;
     }
 
     /**
      * @return list of allowed IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getAllowedIPs() {
-        return allowedIPs != null ? List.copyOf(allowedIPs) : List.of();
+        return allowedIPs;
     }
 
     /**
      * @return list of denied IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getDeniedIPs() {
-        return deniedIPs != null ? List.copyOf(deniedIPs) : List.of();
+        return deniedIPs;
     }
 
     /**
      * @return list of allowed IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterAllowedIPs() {
-        return remoteClusterAllowedIPs != null ? List.copyOf(remoteClusterAllowedIPs) : List.of();
+        return remoteClusterAllowedIPs;
     }
 
     /**
      * @return list of denied IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterDeniedIPs() {
-        return remoteClusterDeniedIPs != null ? List.copyOf(remoteClusterDeniedIPs) : List.of();
+        return remoteClusterDeniedIPs;
     }
 
     /**
@@ -203,7 +204,7 @@ public class Tls {
      * @return list of certificate authority paths, possibly empty but never {@code null}.
      */
     public List<String> getCertificateAuthorities() {
-        return List.copyOf(certificateAuthorities);
+        return certificateAuthorities;
     }
 
     /**
@@ -396,31 +397,31 @@ public class Tls {
             } else {
                 switch (optionName) {
                     case "certificate_authorities":
-                        certificateAuthorities = copyList(value);
+                        certificateAuthorities = freezeStrings(value);
                         break;
 
                     case "supported_protocols":
-                        supportedProtocols = copyList(value);
+                        supportedProtocols = freezeStrings(value);
                         break;
 
                     case "cipher_suites":
-                        ciphers = copyList(value);
+                        ciphers = freezeStrings(value);
                         break;
 
                     case "filter.allow":
-                        allowedIPs = copyList(value);
+                        allowedIPs = freezeStrings(value);
                         break;
 
                     case "filter.deny":
-                        deniedIPs = copyList(value);
+                        deniedIPs = freezeStrings(value);
                         break;
 
                     case "remote_cluster.filter.allow":
-                        remoteClusterAllowedIPs = copyList(value);
+                        remoteClusterAllowedIPs = freezeStrings(value);
                         break;
 
                     case "remote_cluster.filter.deny":
-                        remoteClusterDeniedIPs = copyList(value);
+                        remoteClusterDeniedIPs = freezeStrings(value);
                         break;
 
                     default:
@@ -441,8 +442,11 @@ public class Tls {
         }
     }
 
-    private static List<String> copyList(List<?> value) {
+    private static List<String> freezeStrings(List<?> value) {
         Objects.requireNonNull(value, "value");
+        if (value.isEmpty()) {
+            return List.of();
+        }
         ArrayList<String> copy = new ArrayList<>(value.size());
         for (Object element : value) {
             copy.add((String) element);
