@@ -28,7 +28,6 @@ public class RoleMapping {
     public List<String> getUsers() { return copyOrNull(users); }
     public boolean isEnabled() { return enabled; }
     public List<String> getRunAs() { return copyOrNull(runAs); }
-    public List<String> getRunAS() { return copyOrNull(runAs); }
     public Rules getRules() { return rules; }
     public Metadata getMetadata() { return metadata; }
     public List<RoleTemplate> getRoleTemplates() { return copyOrNull(roleTemplates); }
@@ -39,7 +38,6 @@ public class RoleMapping {
     public void setUsers(List<String> users) { this.users = mutableCopy(users); }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
     public void setRunAs(List<String> runAS) { this.runAs = mutableCopy(runAS); }
-    public void setRunAS(List<String> runAS) { this.runAs = mutableCopy(runAS); }
     public void setRules(Rules rules) { this.rules = rules; }
     public void setMetadata(Metadata metadata) { this.metadata = metadata; }
     public void setRoleTemplates(List<RoleTemplate> roleTemplates) { this.roleTemplates = mutableCopy(roleTemplates); }

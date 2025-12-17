@@ -110,7 +110,7 @@ class XPackConfigReaderTest extends TestBase {
         assertTrue(mapping.isEnabled());
         assertEquals(List.of("admin"), mapping.getRoles());
         assertEquals(List.of("test-user"), mapping.getUsers());
-        assertEquals(List.of("other-user"), mapping.getRunAS());
+        assertEquals(List.of("other-user"), mapping.getRunAs());
 
         // Current implementation only sets a non-null Rules instance without details.
         assertNotNull(mapping.getRules());
