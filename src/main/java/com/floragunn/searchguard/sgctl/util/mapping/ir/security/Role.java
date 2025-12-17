@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.security;
 
 import org.jspecify.annotations.NonNull;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -21,23 +22,23 @@ public class Role {
 
     // Getter-Methods
     public @NonNull String getName() { return name; }
-    public List<Application> getApplications() { return applications; }
-    public List<String> getCluster() { return cluster; }
-    public List<Index> getIndices() { return indices; }
-    public List<String> getRunAs() { return runAs; }
+    public List<Application> getApplications() { return copyOrNull(applications); }
+    public List<String> getCluster() { return copyOrNull(cluster); }
+    public List<Index> getIndices() { return copyOrNull(indices); }
+    public List<String> getRunAs() { return copyOrNull(runAs); }
     public String getDescription() { return description; }
-    public List<RemoteIndex> getRemoteIndices() { return remoteIndices; }
-    public List<RemoteCluster> getRemoteClusters() { return remoteClusters; }
+    public List<RemoteIndex> getRemoteIndices() { return copyOrNull(remoteIndices); }
+    public List<RemoteCluster> getRemoteClusters() { return copyOrNull(remoteClusters); }
 
     // Setter-Methods
     public void setName(@NonNull String name) { this.name = name; }
-    public void setApplications(List<Application> applications) { this.applications = applications; }
-    public void setCluster(List<String> cluster) { this.cluster = cluster; }
-    public void setIndices(List<Index> indices) { this.indices = indices; }
-    public void setRunAs(List<String> runAs) { this.runAs = runAs; }
+    public void setApplications(List<Application> applications) { this.applications = mutableCopy(applications); }
+    public void setCluster(List<String> cluster) { this.cluster = mutableCopy(cluster); }
+    public void setIndices(List<Index> indices) { this.indices = mutableCopy(indices); }
+    public void setRunAs(List<String> runAs) { this.runAs = mutableCopy(runAs); }
     public void setDescription(String description) { this.description = description; }
-    public void setRemoteIndices(List<RemoteIndex> remoteIndices) { this.remoteIndices = remoteIndices; }
-    public void setRemoteClusters(List<RemoteCluster> remoteClusters) { this.remoteClusters = remoteClusters; }
+    public void setRemoteIndices(List<RemoteIndex> remoteIndices) { this.remoteIndices = mutableCopy(remoteIndices); }
+    public void setRemoteClusters(List<RemoteCluster> remoteClusters) { this.remoteClusters = mutableCopy(remoteClusters); }
 
     public static class Application {
         @NonNull private String name;
@@ -54,22 +55,18 @@ public class Role {
         public @NonNull String getName() {
             return name;
         }
-        public @NonNull List<String> getPrivileges() {
-            return privileges;
-        }
-        public @NonNull List<String> getResources() {
-            return resources;
-        }
+        public @NonNull List<String> getPrivileges() { return List.copyOf(privileges); }
+        public @NonNull List<String> getResources() { return List.copyOf(resources); }
 
         // Setter-Methods
         public void  setName(@NonNull String name) {
             this.name = name;
         }
         public void  setPrivileges(@NonNull List<String> privileges) {
-            this.privileges = privileges;
+            this.privileges = new ArrayList<>(Objects.requireNonNull(privileges));
         }
         public void  setResources(@NonNull List<String> resources) {
-            this.resources = resources;
+            this.resources = new ArrayList<>(Objects.requireNonNull(resources));
         }
 
         @Override
@@ -83,12 +80,12 @@ public class Role {
         private List<String> privileges;
 
         // Getter-Methods
-        public List<String> getClusters() { return clusters; }
-        public List<String> getPrivileges() { return privileges; }
+        public List<String> getClusters() { return copyOrNull(clusters); }
+        public List<String> getPrivileges() { return copyOrNull(privileges); }
 
         // Setter-Methods
-        public void setClusters(List<String> clusters) { this.clusters = clusters; }
-        public void setPrivileges(List<String> privileges) { this.privileges = privileges; }
+        public void setClusters(List<String> clusters) { this.clusters = mutableCopy(clusters); }
+        public void setPrivileges(List<String> privileges) { this.privileges = mutableCopy(privileges); }
 
         @Override
         public String toString() {
@@ -114,15 +111,15 @@ public class Role {
         }
 
         // Getter-Methods
-        public @NonNull List<String> getNames() { return names; }
-        public @NonNull List<String> getPrivileges() { return privileges; }
+        public @NonNull List<String> getNames() { return List.copyOf(names); }
+        public @NonNull List<String> getPrivileges() { return List.copyOf(privileges); }
         public FieldSecurity getFieldSecurity() { return fieldSecurity; }
         public String getQuery() { return query; }
         public Boolean isAllowRestrictedIndices() { return allowRestrictedIndices; }
 
         // Setter-Methods
-        public void setNames(@NonNull List<String> names) { this.names = names; }
-        public void setPrivileges(@NonNull List<String> privileges) { this.privileges = privileges; }
+        public void setNames(@NonNull List<String> names) { this.names = new ArrayList<>(Objects.requireNonNull(names)); }
+        public void setPrivileges(@NonNull List<String> privileges) { this.privileges = new ArrayList<>(Objects.requireNonNull(privileges)); }
         public void setFieldSecurity(FieldSecurity fieldSecurity) { this.fieldSecurity = fieldSecurity; }
         public void setQuery(String query) { this.query = query; }
         public void setAllowRestrictedIndices(Boolean allowRestrictedIndices) { this.allowRestrictedIndices = allowRestrictedIndices; }
@@ -141,9 +138,9 @@ public class Role {
             this.cluster = cluster;
         }
 
-        public @NonNull List<String> getCluster() { return cluster; }
+        public @NonNull List<String> getCluster() { return List.copyOf(cluster); }
 
-        public void setCluster(@NonNull List<String> cluster) { this.cluster = cluster; }
+        public void setCluster(@NonNull List<String> cluster) { this.cluster = new ArrayList<>(Objects.requireNonNull(cluster)); }
 
         @Override
         public String toString() {
@@ -161,12 +158,12 @@ public class Role {
         private List<String> grant;
 
         // Getter-Methods
-        public List<String> getExcept() { return except; }
-        public List<String> getGrant() { return grant; }
+        public List<String> getExcept() { return copyOrNull(except); }
+        public List<String> getGrant() { return copyOrNull(grant); }
 
         // Setter-methods
-        public void setExcept(List<String> except) { this.except = except; }
-        public void setGrant(List<String> grant) { this.grant = grant; }
+        public void setExcept(List<String> except) { this.except = mutableCopy(except); }
+        public void setGrant(List<String> grant) { this.grant = mutableCopy(grant); }
 
         @Override
         public String toString() {
@@ -177,6 +174,14 @@ public class Role {
     @Override
     public String toString() {
         return "Role[\n\tname=" + name + "\n\tapplications=" + applications + "\n\tcluster=" + cluster + "\n\tremoteCluster=" + remoteClusters + "\n\tindices=" + indices + "\n\tremote_indices=" + remoteIndices + "\n]";
+    }
+
+    private static <T> List<T> copyOrNull(List<T> source) {
+        return source == null ? null : List.copyOf(source);
+    }
+
+    private static <T> List<T> mutableCopy(List<T> source) {
+        return source == null ? null : new ArrayList<>(source);
     }
 
     @Override
