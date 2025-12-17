@@ -10,10 +10,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class IntermediateRepresentation {
-    List<User> users = new ArrayList<>();
-    List<Role> roles = new ArrayList<>();
-    List<RoleMapping> roleMappings = new ArrayList<RoleMapping>();
-    IntermediateRepresentationElasticSearchYml elasticSearchYml = new IntermediateRepresentationElasticSearchYml();
+    private final List<User> users = new ArrayList<>();
+    private final List<Role> roles = new ArrayList<>();
+    private final List<RoleMapping> roleMappings = new ArrayList<RoleMapping>();
+    private final IntermediateRepresentationElasticSearchYml elasticSearchYml = new IntermediateRepresentationElasticSearchYml();
 
     // Setter-Methods
     public void addUser(User user) { users.add(user); }
@@ -22,8 +22,9 @@ public class IntermediateRepresentation {
 
 
     // Getter-Methods
-    public List<User> getUsers() { return users; }
-    public List<Role> getRoles() { return roles; }
-    public List<RoleMapping> getRoleMappings() { return roleMappings; }
+    public List<User> getUsers() { return List.copyOf(users); }
+    public List<Role> getRoles() { return List.copyOf(roles); }
+    public List<RoleMapping> getRoleMappings() { return List.copyOf(roleMappings); }
     public IntermediateRepresentationElasticSearchYml getElasticSearchYml() { return elasticSearchYml; }
+
 }
