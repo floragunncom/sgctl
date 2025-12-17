@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.testsupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.nio.file.Files;
@@ -36,5 +37,19 @@ class TestBaseExampleTest extends TestBase {
         assertTrue(content.contains("Hello TestBase"), "Content should contain marker text");
         String normalized = normalizeLineEndings(content);
         assertEquals(normalized, normalizeLineEndings(content), "Normalization should be stable");
+    }
+
+    @Test
+    void shouldNormalizeVariousLineEndings() {
+        String mixed = "a\r\nb\rc\n";
+
+        assertEquals("a\nb\nc\n", normalizeLineEndings(mixed));
+        assertEquals("", normalizeLineEndings(null));
+    }
+
+    @Test
+    void shouldRejectBlankOrMissingResources() {
+        assertThrows(IllegalArgumentException.class, () -> resolveResourcePath(""));
+        assertThrows(IllegalArgumentException.class, () -> resolveResourcePath("does-not-exist.txt"));
     }
 }
