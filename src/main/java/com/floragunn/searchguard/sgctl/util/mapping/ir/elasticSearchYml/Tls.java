@@ -4,7 +4,9 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents TLS/SSL configuration options as read from {@code elasticsearch.yml}.
@@ -74,7 +76,7 @@ public class Tls {
     /** List of denied IP addresses for remote clusters. */
     private List<String> remoteClusterDeniedIPs;
 
-    private final String THIS_FILE = "elasticsearch.yml";
+    private static final String THIS_FILE = "elasticsearch.yml";
 
     // region Getters
 
@@ -82,42 +84,42 @@ public class Tls {
      * @return list of supported protocol versions.
      */
     public List<String> getSupportedProtocols() {
-        return supportedProtocols;
+        return List.copyOf(supportedProtocols);
     }
 
     /**
      * @return list of configured cipher suites.
      */
     public List<String> getCiphers() {
-        return ciphers;
+        return List.copyOf(ciphers);
     }
 
     /**
      * @return list of allowed IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getAllowedIPs() {
-        return allowedIPs != null ? allowedIPs : List.of();
+        return allowedIPs != null ? List.copyOf(allowedIPs) : List.of();
     }
 
     /**
      * @return list of denied IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getDeniedIPs() {
-        return deniedIPs != null ? deniedIPs : List.of();
+        return deniedIPs != null ? List.copyOf(deniedIPs) : List.of();
     }
 
     /**
      * @return list of allowed IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterAllowedIPs() {
-        return remoteClusterAllowedIPs != null ? remoteClusterAllowedIPs : List.of();
+        return remoteClusterAllowedIPs != null ? List.copyOf(remoteClusterAllowedIPs) : List.of();
     }
 
     /**
      * @return list of denied IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterDeniedIPs() {
-        return remoteClusterDeniedIPs != null ? remoteClusterDeniedIPs : List.of();
+        return remoteClusterDeniedIPs != null ? List.copyOf(remoteClusterDeniedIPs) : List.of();
     }
 
     /**
@@ -201,7 +203,7 @@ public class Tls {
      * @return list of certificate authority paths, possibly empty but never {@code null}.
      */
     public List<String> getCertificateAuthorities() {
-        return certificateAuthorities;
+        return List.copyOf(certificateAuthorities);
     }
 
     /**
@@ -394,31 +396,31 @@ public class Tls {
             } else {
                 switch (optionName) {
                     case "certificate_authorities":
-                        certificateAuthorities = (List<String>) value;
+                        certificateAuthorities = copyList(value);
                         break;
 
                     case "supported_protocols":
-                        supportedProtocols = (List<String>) value;
+                        supportedProtocols = copyList(value);
                         break;
 
                     case "cipher_suites":
-                        ciphers = (List<String>) value;
+                        ciphers = copyList(value);
                         break;
 
                     case "filter.allow":
-                        allowedIPs = (List<String>) value;
+                        allowedIPs = copyList(value);
                         break;
 
                     case "filter.deny":
-                        deniedIPs = (List<String>) value;
+                        deniedIPs = copyList(value);
                         break;
 
                     case "remote_cluster.filter.allow":
-                        remoteClusterAllowedIPs = (List<String>) value;
+                        remoteClusterAllowedIPs = copyList(value);
                         break;
 
                     case "remote_cluster.filter.deny":
-                        remoteClusterDeniedIPs = (List<String>) value;
+                        remoteClusterDeniedIPs = copyList(value);
                         break;
 
                     default:
@@ -437,5 +439,14 @@ public class Tls {
         } else {
             MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
         }
+    }
+
+    private static List<String> copyList(List<?> value) {
+        Objects.requireNonNull(value, "value");
+        ArrayList<String> copy = new ArrayList<>(value.size());
+        for (Object element : value) {
+            copy.add((String) element);
+        }
+        return Collections.unmodifiableList(copy);
     }
 }
