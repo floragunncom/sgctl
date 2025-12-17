@@ -9,12 +9,12 @@ import java.util.Objects;
 
 public class Role {
     @NonNull private String name;
-    private List<Application>  applications = List.of();
-    private List<String> cluster = List.of();
-    private List<RemoteCluster> remoteClusters = List.of();
-    private List<Index> indices = List.of();
-    private List<RemoteIndex> remoteIndices = List.of();
-    private List<String> runAs = List.of();
+    private List<Application>  applications;
+    private List<String> cluster;
+    private List<RemoteCluster> remoteClusters;
+    private List<Index> indices;
+    private List<RemoteIndex> remoteIndices;
+    private List<String> runAs;
     private String description;
 
     public Role(@NonNull String name) {
@@ -33,23 +33,24 @@ public class Role {
 
     // Setter-Methods
     public void setName(@NonNull String name) { this.name = name; }
-    public void setApplications(List<Application> applications) { this.applications = freezeList(applications); }
+    public void setApplications(List<Application> applications) { this.applications = freezeApplications(applications); }
     public void setCluster(List<String> cluster) { this.cluster = freezeList(cluster); }
-    public void setIndices(List<Index> indices) { this.indices = freezeList(indices); }
+    public void setIndices(List<Index> indices) { this.indices = freezeIndices(indices); }
     public void setRunAs(List<String> runAs) { this.runAs = freezeList(runAs); }
     public void setDescription(String description) { this.description = description; }
-    public void setRemoteIndices(List<RemoteIndex> remoteIndices) { this.remoteIndices = freezeList(remoteIndices); }
-    public void setRemoteClusters(List<RemoteCluster> remoteClusters) { this.remoteClusters = freezeList(remoteClusters); }
+    public void setRemoteIndices(List<RemoteIndex> remoteIndices) { this.remoteIndices = freezeRemoteIndices(remoteIndices); }
+    public void setRemoteClusters(List<RemoteCluster> remoteClusters) { this.remoteClusters = freezeRemoteClusters(remoteClusters); }
 
     public static class Application {
         @NonNull private String name;
         @NonNull private List<String> privileges;
         @NonNull private List<String> resources;
+        private boolean frozen;
 
         public Application(@NonNull String name, @NonNull List<String> privileges, @NonNull List<String> resources) {
             this.name = name;
-            this.privileges = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(privileges)));
-            this.resources = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(resources)));
+            this.privileges = freezeStringList(privileges);
+            this.resources = freezeStringList(resources);
         }
 
         // Getter-Methods
@@ -61,13 +62,28 @@ public class Role {
 
         // Setter-Methods
         public void  setName(@NonNull String name) {
+            ensureMutable();
             this.name = name;
         }
         public void  setPrivileges(@NonNull List<String> privileges) {
-            this.privileges = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(privileges)));
+            ensureMutable();
+            this.privileges = freezeStringList(privileges);
         }
         public void  setResources(@NonNull List<String> resources) {
-            this.resources = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(resources)));
+            ensureMutable();
+            this.resources = freezeStringList(resources);
+        }
+
+        Application freeze() {
+            var copy = new Application(name, privileges, resources);
+            copy.frozen = true;
+            return copy;
+        }
+
+        private void ensureMutable() {
+            if (frozen) {
+                throw new IllegalStateException("Application is frozen");
+            }
         }
 
         @Override
@@ -79,14 +95,29 @@ public class Role {
     public static class RemoteCluster {
         private List<String> clusters = List.of();
         private List<String> privileges = List.of();
+        private boolean frozen;
 
         // Getter-Methods
         public List<String> getClusters() { return clusters; }
         public List<String> getPrivileges() { return privileges; }
 
         // Setter-Methods
-        public void setClusters(List<String> clusters) { this.clusters = freezeList(clusters); }
-        public void setPrivileges(List<String> privileges) { this.privileges = freezeList(privileges); }
+        public void setClusters(List<String> clusters) { ensureMutable(); this.clusters = freezeList(clusters); }
+        public void setPrivileges(List<String> privileges) { ensureMutable(); this.privileges = freezeList(privileges); }
+
+        RemoteCluster freeze() {
+            var copy = new RemoteCluster();
+            copy.clusters = this.clusters;
+            copy.privileges = this.privileges;
+            copy.frozen = true;
+            return copy;
+        }
+
+        private void ensureMutable() {
+            if (frozen) {
+                throw new IllegalStateException("RemoteCluster is frozen");
+            }
+        }
 
         @Override
         public String toString() {
@@ -102,11 +133,12 @@ public class Role {
         private String query;
         // TODO: Add query property
         private Boolean allowRestrictedIndices;
+        protected boolean frozen;
 
         public Index(@NonNull List<String> names, @NonNull List<String> privileges, FieldSecurity fieldSecurity, String query, Boolean allowRestrictedIndices) {
             this.names = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(names)));
             this.privileges = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(privileges)));
-            this.fieldSecurity = fieldSecurity;
+            this.fieldSecurity = fieldSecurity == null ? null : fieldSecurity.freeze();
             this.query = query;
             this.allowRestrictedIndices = allowRestrictedIndices;
         }
@@ -119,11 +151,23 @@ public class Role {
         public Boolean isAllowRestrictedIndices() { return allowRestrictedIndices; }
 
         // Setter-Methods
-        public void setNames(@NonNull List<String> names) { this.names = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(names))); }
-        public void setPrivileges(@NonNull List<String> privileges) { this.privileges = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(privileges))); }
-        public void setFieldSecurity(FieldSecurity fieldSecurity) { this.fieldSecurity = fieldSecurity; }
-        public void setQuery(String query) { this.query = query; }
-        public void setAllowRestrictedIndices(Boolean allowRestrictedIndices) { this.allowRestrictedIndices = allowRestrictedIndices; }
+        public void setNames(@NonNull List<String> names) { ensureMutable(); this.names = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(names))); }
+        public void setPrivileges(@NonNull List<String> privileges) { ensureMutable(); this.privileges = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(privileges))); }
+        public void setFieldSecurity(FieldSecurity fieldSecurity) { ensureMutable(); this.fieldSecurity = fieldSecurity == null ? null : fieldSecurity.freeze(); }
+        public void setQuery(String query) { ensureMutable(); this.query = query; }
+        public void setAllowRestrictedIndices(Boolean allowRestrictedIndices) { ensureMutable(); this.allowRestrictedIndices = allowRestrictedIndices; }
+
+        Index freeze() {
+            var copy = new Index(names, privileges, fieldSecurity == null ? null : fieldSecurity.freeze(), query, allowRestrictedIndices);
+            copy.frozen = true;
+            return copy;
+        }
+
+        protected void ensureMutable() {
+            if (frozen) {
+                throw new IllegalStateException("Index is frozen");
+            }
+        }
 
         @Override
         public String toString() {
@@ -141,7 +185,14 @@ public class Role {
 
         public @NonNull List<String> getCluster() { return cluster; }
 
-        public void setCluster(@NonNull List<String> cluster) { this.cluster = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(cluster))); }
+        public void setCluster(@NonNull List<String> cluster) { ensureMutable(); this.cluster = Collections.unmodifiableList(new ArrayList<>(Objects.requireNonNull(cluster))); }
+
+        @Override
+        RemoteIndex freeze() {
+            var copy = new RemoteIndex(cluster, getNames(), getPrivileges(), getFieldSecurity() == null ? null : getFieldSecurity().freeze(), getQuery(), isAllowRestrictedIndices());
+            copy.frozen = true;
+            return copy;
+        }
 
         @Override
         public String toString() {
@@ -157,14 +208,29 @@ public class Role {
     public static class FieldSecurity {
         private List<String> except = List.of();
         private List<String> grant = List.of();
+        private boolean frozen;
 
         // Getter-Methods
         public List<String> getExcept() { return except; }
         public List<String> getGrant() { return grant; }
 
         // Setter-methods
-        public void setExcept(List<String> except) { this.except = freezeList(except); }
-        public void setGrant(List<String> grant) { this.grant = freezeList(grant); }
+        public void setExcept(List<String> except) { ensureMutable(); this.except = freezeList(except); }
+        public void setGrant(List<String> grant) { ensureMutable(); this.grant = freezeList(grant); }
+
+        FieldSecurity freeze() {
+            var copy = new FieldSecurity();
+            copy.except = this.except;
+            copy.grant = this.grant;
+            copy.frozen = true;
+            return copy;
+        }
+
+        private void ensureMutable() {
+            if (frozen) {
+                throw new IllegalStateException("FieldSecurity is frozen");
+            }
+        }
 
         @Override
         public String toString() {
@@ -178,7 +244,74 @@ public class Role {
     }
 
     private static <T> List<T> freezeList(List<T> source) {
-        if (source == null || source.isEmpty()) {
+        if (source == null) {
+            return null;
+        }
+        if (source.isEmpty()) {
+            return List.of();
+        }
+        return Collections.unmodifiableList(new ArrayList<>(source));
+    }
+
+    private static List<Application> freezeApplications(List<Application> source) {
+        if (source == null) {
+            return null;
+        }
+        if (source.isEmpty()) {
+            return List.of();
+        }
+        List<Application> frozen = new ArrayList<>(source.size());
+        for (Application application : source) {
+            frozen.add(application == null ? null : application.freeze());
+        }
+        return Collections.unmodifiableList(frozen);
+    }
+
+    private static List<RemoteCluster> freezeRemoteClusters(List<RemoteCluster> source) {
+        if (source == null) {
+            return null;
+        }
+        if (source.isEmpty()) {
+            return List.of();
+        }
+        List<RemoteCluster> frozen = new ArrayList<>(source.size());
+        for (RemoteCluster remoteCluster : source) {
+            frozen.add(remoteCluster == null ? null : remoteCluster.freeze());
+        }
+        return Collections.unmodifiableList(frozen);
+    }
+
+    private static List<Index> freezeIndices(List<Index> source) {
+        if (source == null) {
+            return null;
+        }
+        if (source.isEmpty()) {
+            return List.of();
+        }
+        List<Index> frozen = new ArrayList<>(source.size());
+        for (Index index : source) {
+            frozen.add(index == null ? null : index.freeze());
+        }
+        return Collections.unmodifiableList(frozen);
+    }
+
+    private static List<RemoteIndex> freezeRemoteIndices(List<RemoteIndex> source) {
+        if (source == null) {
+            return null;
+        }
+        if (source.isEmpty()) {
+            return List.of();
+        }
+        List<RemoteIndex> frozen = new ArrayList<>(source.size());
+        for (RemoteIndex index : source) {
+            frozen.add(index == null ? null : index.freeze());
+        }
+        return Collections.unmodifiableList(frozen);
+    }
+
+    private static List<String> freezeStringList(List<String> source) {
+        Objects.requireNonNull(source);
+        if (source.isEmpty()) {
             return List.of();
         }
         return Collections.unmodifiableList(new ArrayList<>(source));

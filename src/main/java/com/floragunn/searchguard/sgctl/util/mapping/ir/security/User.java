@@ -4,14 +4,15 @@ import org.jspecify.annotations.NonNull;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 
 public class User {
     @NonNull private String username;
     private List<String> roles;
     private Boolean enabled;
-    private LinkedHashMap<String, Object> attributes;
+    private Map<String, Object> attributes;
     private String fullName;
     private String email;
     private String profileUID;
@@ -31,7 +32,7 @@ public class User {
     public List<String> getRoles() { return roles; }
     public String getFullName() { return fullName; }
     public String getEmail() { return email; }
-    public LinkedHashMap<String, Object> getAttributes() { return attributes; }
+    public Map<String, Object> getAttributes() { return attributes; }
     public Boolean getEnabled() { return enabled; }
     public String getProfileUID() { return profileUID; }
 
@@ -45,17 +46,20 @@ public class User {
     public void setEnabled(Boolean enabled) { this.enabled = enabled; }
 
     private static List<String> freezeList(List<String> list) {
-        if (list == null || list.isEmpty()) {
+        if (list == null) {
+            return null;
+        }
+        if (list.isEmpty()) {
             return List.of();
         }
         return Collections.unmodifiableList(new ArrayList<>(list));
     }
 
-    private static LinkedHashMap<String, Object> freezeMap(LinkedHashMap<String, Object> map) {
+    private static Map<String, Object> freezeMap(LinkedHashMap<String, Object> map) {
         if (map == null || map.isEmpty()) {
-            return new LinkedHashMap<>();
+            return Map.of();
         }
-        return new LinkedHashMap<>(Collections.unmodifiableMap(new LinkedHashMap<>(map)));
+        return Collections.unmodifiableMap(new LinkedHashMap<>(map));
     }
 
     @Override

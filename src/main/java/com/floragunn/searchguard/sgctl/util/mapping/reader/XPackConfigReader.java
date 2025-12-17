@@ -42,7 +42,7 @@ public class XPackConfigReader {
             MigrationReport.shared.addWarning("elasticsearch.yml", "origin", safeMessage(e));
         }
 
-        return ir;
+        return ir.freeze();
     }
 
     private void readConfig(String fileName, ReaderAction action) {

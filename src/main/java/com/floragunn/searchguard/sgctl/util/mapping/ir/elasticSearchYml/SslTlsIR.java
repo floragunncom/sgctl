@@ -24,15 +24,17 @@ public class SslTlsIR {
     // transport only: List of IP addresses (value) to allow/deny for this profile (key)
     private final Map<String, List<String>> profileAllowedIPs = new HashMap<>();
     private final Map<String, List<String>> profileDeniedIPs = new HashMap<>();
+    private final Map<String, List<String>> profileAllowedIPsView = Collections.unmodifiableMap(profileAllowedIPs);
+    private final Map<String, List<String>> profileDeniedIPsView = Collections.unmodifiableMap(profileDeniedIPs);
 
     /** @return TLS settings for the transport layer. */
     public Tls getTransport() { return transport; }
     /** @return TLS settings for the HTTP layer. */
     public Tls getHttp() { return http; }
     /** @return per-profile allow lists for transport IP filtering. */
-    public Map<String, List<String>> getProfileAllowedIPs() { return Collections.unmodifiableMap(profileAllowedIPs); }
+    public Map<String, List<String>> getProfileAllowedIPs() { return profileAllowedIPsView; }
     /** @return per-profile deny lists for transport IP filtering. */
-    public Map<String, List<String>> getProfileDeniedIPs() { return Collections.unmodifiableMap(profileDeniedIPs); }
+    public Map<String, List<String>> getProfileDeniedIPs() { return profileDeniedIPsView; }
 
     public SslTlsIR() {
         transport = new Tls();

@@ -18,11 +18,23 @@ public class IntermediateRepresentation {
     private final List<RoleMapping> roleMappings = new ArrayList<RoleMapping>();
     private final List<RoleMapping> roleMappingsView = Collections.unmodifiableList(roleMappings);
     private final IntermediateRepresentationElasticSearchYml elasticSearchYml = new IntermediateRepresentationElasticSearchYml();
+    private boolean frozen;
 
     // Setter-Methods
-    public void addUser(User user) { users.add(user); }
-    public void addRole(Role role) { roles.add(role); }
-    public void addRoleMapping(RoleMapping roleMapping) { roleMappings.add(roleMapping); }
+    public void addUser(User user) {
+        ensureMutable();
+        users.add(user);
+    }
+
+    public void addRole(Role role) {
+        ensureMutable();
+        roles.add(role);
+    }
+
+    public void addRoleMapping(RoleMapping roleMapping) {
+        ensureMutable();
+        roleMappings.add(roleMapping);
+    }
 
 
     // Getter-Methods
@@ -31,4 +43,14 @@ public class IntermediateRepresentation {
     public List<RoleMapping> getRoleMappings() { return roleMappingsView; }
     public IntermediateRepresentationElasticSearchYml getElasticSearchYml() { return elasticSearchYml; }
 
+    public IntermediateRepresentation freeze() {
+        frozen = true;
+        return this;
+    }
+
+    private void ensureMutable() {
+        if (frozen) {
+            throw new IllegalStateException("IntermediateRepresentation is frozen");
+        }
+    }
 }
