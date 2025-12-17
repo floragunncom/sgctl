@@ -8,6 +8,9 @@ import java.util.logging.Logger;
 
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
+/**
+ * Intermediate representation for authentication-related options read from {@code elasticsearch.yml}.
+ */
 public class AuthenticationIR {
     private static final String THIS_FILE = "elasticsearch.yml";
     private static final String REALMS_PREFIX = "realms.";
@@ -39,22 +42,40 @@ public class AuthenticationIR {
     private final Map<String, RealmIR> realms = new HashMap<>();
 
     // Getter
+    /** @return configured password hashing algorithm. */
     public String getPasswordHashingAlgoritm() { return passwordHashingAlgorithm; }
+    /** @return anonymous user name or {@code null}. */
     public String getAnonymousUserName() { return anonymousUserName; }
+    /** @return comma-separated anonymous roles. */
     public String getAnonymousRoles() { return  anonymousRoles; }
+    /** @return whether anonymous authz exceptions are enabled. */
     public boolean getAnonymousAuthzException() { return anonymousAuthzException; }
+    /** @return whether tokens are enabled. */
     public boolean getTokenEnabled() { return tokenEnabled; }
+    /** @return token timeout value. */
     public String getTokenTimeout() { return tokenTimeout; }
+    /** @return true if API key support is enabled. */
     public boolean getApiKeyEnabled() { return apiKeyEnabled; }
+    /** @return API key cache TTL. */
     public String getApiKeyCacheTtl() { return apiKeyCacheTtl; }
+    /** @return maximum number of API keys. */
     public String getMaxTokens() { return maxKeys; }
+    /** @return in-memory hashing algorithm for API keys. */
     public String getApiKeyInMemoryHashingAlgorithm() { return apiKeyInMemoryHashingAlgorithm; }
+    /** @return retention period for expired API keys. */
     public String getApiKeyRetentionPeriod() { return apiKeyRetentionPeriod; }
+    /** @return deletion interval for API keys. */
     public String getApiKeyDeleteInterval() { return apiKeyDeleteInterval; }
+    /** @return deletion timeout for API keys. */
     public String getApiKeyDeleteTimeout() { return apiKeyDeleteTimeout; }
+    /** @return hashing algorithm for API keys. */
     public String getApiKeyHashingAlgorithm() { return apiKeyHashingAlgorithm; }
-    public Map<String, RealmIR> getRealms() { return realms; }
+    /** @return immutable view of configured realms. */
+    public Map<String, RealmIR> getRealms() { return Map.copyOf(realms); }
 
+    /**
+     * Handles a single authentication-related option and records migration results.
+     */
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean keyKnown = true;
 
