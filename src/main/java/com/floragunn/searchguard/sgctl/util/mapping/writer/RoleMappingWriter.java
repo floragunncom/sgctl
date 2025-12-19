@@ -118,6 +118,46 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
         }
     }
 
+    private void collectBackendRoles(RoleMapping.Rules rules, String mappingName, String roleName,  List<String> backendRoles) {
+        var field = rules.getField();
+        if (field != null) {
+            if (field.containsKey("groups")) {
+                backendRoles.addAll(extractStringValues(field.get("groups"), mappingName + "->rules.field.groups"));
+            }
+
+            if (field.containsKey("realm.name")) {
+                report.addManualAction(FILE_NAME, roleName + "rules.field.realm.name",
+                        "Realm-based role mappings cannot be migrated automatically.");
+            }
+        }
+
+        var anyRules = rules.getAny();
+        if (anyRules != null) {
+            for (int i = 0; i < anyRules.size(); i++) {
+                var anyRule = anyRules.get(i);
+                var anyField = anyRule.getField();
+                if (anyField == null) continue;
+
+                if (anyField.containsKey("groups")) {
+                    backendRoles.addAll(extractStringValues(anyField.get("groups"), mappingName + "->rules.any[" + i + "].field.groups"));
+                }
+
+                if (anyField.containsKey("realm.name")) {
+                    report.addManualAction(FILE_NAME, roleName + "rules.field.realm.name",
+                            "Realm-based role mappings cannot be migrated automatically.");
+                }
+            }
+        }
+
+        if (rules.getAll() != null) {
+            report.addManualAction(FILE_NAME, roleName + "->rules.all", "XPack rule uses all which cannot be migrated.");
+        }
+        if (rules.getExcept() != null) {
+            report.addManualAction(FILE_NAME, roleName + "->rules.except", "XPack rule uses except which cannot be migrated.");
+        }
+
+    }
+
     public List<String> getSGUsers(RoleMapping rm, String roleName) {
         var result = new ArrayList<String>();
         var rules = rm.getRules();
