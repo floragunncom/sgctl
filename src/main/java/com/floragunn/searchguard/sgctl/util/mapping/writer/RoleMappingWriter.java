@@ -175,26 +175,11 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
         var rules = rm.getRules();
 
         // if there are no rules derivable
-        if  (rules == null || rules.getField() == null) {
+        if  (rules == null) {
             return result;
         }
 
-        var field = rules.getField();
-
-        // XPack groups are SG backend_roles
-        if (field.containsKey("groups")) {
-            result.addAll(
-                extractStringValues(
-                    field.get("groups"), rm.getMappingName() + "rules.fields.groups"
-                )
-            );
-        }
-
-        if (field.containsKey("realm.name")) {
-            report.addManualAction(FILE_NAME, roleName + "rules.field.realm.name",
-                "Realm-based role mappings cannot be migrated automatically.");
-        }
-
+        collectBackendRoles(rules, rm.getMappingName(), roleName, result);
         return result;
     }
 
