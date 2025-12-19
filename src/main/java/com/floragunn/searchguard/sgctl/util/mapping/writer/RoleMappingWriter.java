@@ -30,12 +30,11 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             var roles = rm.getRoles();
             var templates = rm.getRoleTemplates();
 
-            if (!rm.isEnabled()) { // TODO: Ist dies so im Einklang mit SG?
+            if (!rm.isEnabled()) {
                 report.addWarning(FILE_NAME, mappingName, "Role Mapping Disabled and will hence be ignored");
                 continue;
             }
 
-            // TODO: Templates wahrscheinlich nicht migrierbar (nochmal abklären)
             if (templates != null && !templates.isEmpty()) {
                 report.addManualAction(FILE_NAME, mappingName + "role_templates", "X-Pack role_templates are not automatically migrated.");
                 continue;
@@ -63,16 +62,26 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
         }
 
         if (raw instanceof String s) {
-            result.add(s);
+            try {
+                result.add(LuceneRegexParser.toJavaRegex(s));
+            } catch (Exception e) {
+                report.addManualAction(FILE_NAME, path, "An error occurred while trying to convert a Lucene regex to a Java regex: " + e.getMessage());
+            }
             return result;
         }
 
         if (raw instanceof List<?> list) {
-            for (Object o : list) {
+            for (int i = 0; i < list.size(); i++) {
+                Object o = list.get(i);
+                String itemPath = path + "[" + i + "]";
                 if (o instanceof String s) {
-                    result.add(s);
+                    try {
+                        result.add(LuceneRegexParser.toJavaRegex(s));
+                    } catch (Exception e) {
+                        report.addManualAction(FILE_NAME, path, "An error occurred while trying to convert a Lucene regex to a Java regex: " + e.getMessage());
+                    }
                 } else {
-                    report.addInvalidType(FILE_NAME, path, String.class, o);
+                    report.addInvalidType(FILE_NAME, itemPath, String.class, o);
                 }
             }
             return result;
@@ -84,7 +93,6 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
     private void collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName,  List<String> usernames) {
         var field = rules.getField();
-        // TODO: Möglicherweise müssen wir noch any, all und except behandeln (noch unklar)
         if (field != null && field.containsKey("username")) {
             usernames.addAll(extractStringValues(field.get("username"), mappingName + "->rules.field.username"));
         }
@@ -123,7 +131,6 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
     }
 
     public List<String> getSGBackendRoles(RoleMapping rm, String roleName) {
-        // TODO: backendRoles migrieren (Müssen aus den rules aus XPack abgleitet werden)
         var result = new ArrayList<String>();
         var rules = rm.getRules();
 
