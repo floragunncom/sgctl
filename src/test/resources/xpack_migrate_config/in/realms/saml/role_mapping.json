@@ -1,0 +1,53 @@
+{
+  "saml-admins": {
+    "enabled": true,
+    "roles": ["admin_role_test"],
+    "rules": {
+      "all": [
+        { "field": { "realm.name": "saml1" } },
+        { "field": { "groups": "admin" } }
+      ]
+    },
+    "metadata": {
+      "description": "SAML admins mapped via IdP group"
+    }
+  },
+
+  "saml-analytics": {
+    "enabled": true,
+    "roles": ["dev_read_only"],
+    "rules": {
+      "any": [
+        { "field": { "realm.name": "saml1" } },
+        { "field": { "groups": "analytics" } }
+      ]
+    },
+    "metadata": {}
+  },
+
+  "saml-users": {
+    "enabled": true,
+    "roles": ["read_only_role_test"],
+    "rules": {
+      "all": [
+        { "field": { "realm.name": "saml1" } },
+        { "any": [
+            { "field": { "groups": "users" } },
+            { "field": { "groups": "employees" } }
+        ]}
+      ]
+    },
+    "metadata": {}
+  },
+
+  "native-log-readers": {
+    "enabled": true,
+    "roles": ["watcher_user"],
+    "rules": {
+      "any": [
+        { "field": { "realm.name": "native1" } }
+      ]
+    },
+    "metadata": {}
+  }
+}
