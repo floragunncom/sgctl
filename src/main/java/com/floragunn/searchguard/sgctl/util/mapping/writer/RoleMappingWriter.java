@@ -121,6 +121,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
     private void collectBackendRoles(RoleMapping.Rules rules, String mappingName, String roleName,  List<String> backendRoles) {
         var field = rules.getField();
         if (field != null) {
+            // TODO: Add array handling
             if (field.containsKey("groups")) {
                 backendRoles.addAll(extractStringValues(field.get("groups"), mappingName + "->rules.field.groups"));
             }
