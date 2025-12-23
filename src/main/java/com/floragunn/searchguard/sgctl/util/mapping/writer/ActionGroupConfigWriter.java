@@ -3,7 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer;
 import java.util.*;
 
 import com.floragunn.codova.documents.Document;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+
 
 public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter> {
     private final Set<ActionGroup> actionGroups = new HashSet<>();
@@ -346,12 +346,14 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
         
         public String getName() { return name; }
         public List<String> getPattern() { return pattern; }
- 
-        public static CustomClusterActionGroup from(String name) throws IllegalArgumentException {
-            for (CustomClusterActionGroup group : CustomClusterActionGroup.values()) {
-                if (group.name.equals(name)) {
-                    return group;
-                }
+
+        public static CustomClusterActionGroup fromESPrivilege(String name) throws IllegalArgumentException {
+            return from("SGS_" + name.toUpperCase() + "_CUSTOM");
+        }
+
+        private static CustomClusterActionGroup from(String name) throws IllegalArgumentException {
+            for (var group : CustomClusterActionGroup.values()) {
+                if (group.name.equals(name)) return group;
             }
             throw new IllegalArgumentException();
         }

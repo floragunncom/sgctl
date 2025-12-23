@@ -7,6 +7,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentatio
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomClusterActionGroup;
 import com.sun.jdi.InvalidTypeException;
+import org.jspecify.annotations.NonNull;
 
 import java.security.InvalidKeyException;
 import java.util.*;
@@ -20,6 +21,15 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private Set<String> userMappingAttributes = new HashSet<>();
 
     static final String FILE_NAME = "sg_roles.yml";
+    static final Set<String> noEquivalentClusterActionGroupKeys = Set.of(
+            "cancel_task", "create_snapshot", "cross_cluster_replication", "cross_cluster_search", "grant_api_key", "manage", "manage_api_key",
+            "manage_autoscaling", "manage_ccr", "manage_data_frame_transforms", "manage_data_stream_global_retention", "manage_enrich", "manage_inference",
+            "manage_logstash_pipelines", "manage_ml", "manage_oidc", "manage_own_api_key", "manage_rollup", "manage_saml", "manage_search_application",
+            "manage_search_query_rules", "manage_search_synonyms", "manage_security", "manage_service_account", "manage_slm", "manage_token", "manage_transform",
+            "manage_watcher", "monitor_data_stream_global_retention", "monitor_enrich", "monitor_esql", "monitor_inference", "monitor_ml", "monitor_rollup",
+            "monitor_snapshot", "monitor_stats", "monitor_text_structure", "monitor_transform", "monitor_watcher", "read_ccr", "read_pipeline", "read_slm",
+            "read_security", "transport_client"
+            );
     private static final Set<String> validQueryKeys = Set.of(
             // Full-text queries https://www.elastic.co/docs/reference/query-languages/query-dsl/full-text-queries
             "match", "match_phrase", "match_phrase_prefix", "match_bool_prefix", "multi_match", "intervals", "query_string", "simple_query_string",
@@ -259,94 +269,52 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     }
 
     private List<String> toSGClusterPrivileges(Role role) {
+        var privileges = role.getCluster();
+        var sgPrivileges = new ArrayList<String>();
 
-    var privileges = role.getCluster();
-    var sgPrivileges = new ArrayList<String>();
+        for (var privilege : privileges) {
+            if (privilege.matches("^((cluster)|(indices)):((admin)|(monitor))/.+$")) {
+                sgPrivileges.add(privilege);
+                continue;
+            }
+            if (noEquivalentClusterActionGroupKeys.contains(privilege)) {
+                try {
+                    agWriter.addActionGroup(CustomClusterActionGroup.fromESPrivilege(privilege));
+                } catch (IllegalArgumentException e) {
+                    report.addWarning(FILE_NAME, role.getName() + "->cluster", "Unexpectedly failed to create custom Action Group.");
+                    continue;
+                }
+                sgPrivileges.add(privilege);
+                continue;
+            }
 
-    for (var privilege : privileges) {
-        if (privilege.matches("^((cluster)|(indices)):((admin)|(monitor))/.+$")) {
-            sgPrivileges.add(privilege);
-            continue;
+            var agName = matchesStandardSGRole(privilege);
+
+            if (agName == null) {
+                report.addManualAction(
+                        FILE_NAME,
+                        role.getName() + "->cluster_permissions",
+                        "The privilege: " + privilege + " is unknown and can not be automatically mapped."
+                );
+            } else {
+                sgPrivileges.add(agName);
+            }
         }
-        var agName = "";
-        switch (privilege) {
-
-            // Built-in action groups
-            case "all" -> agName = "SGS_CLUSTER_ALL";
-            case "manage_ilm" -> agName = "SGS_CLUSTER_MANAGE_ILM";
-            case "manage_index_templates" -> agName = "SGS_CLUSTER_MANAGE_INDEX_TEMPLATES";
-            case "manage_ingest_pipelines" -> agName = "SGS_CLUSTER_MANAGE_PIPELINES";
-            case "manage_pipeline" -> agName = "SGS_CLUSTER_MANAGE_PIPELINES";
-            case "monitor" -> agName = "SGS_CLUSTER_MONITOR";
-            case "read_ilm" -> agName = "SGS_CLUSTER_READ_ILM";
-            
-            // Custom action groups
-            // TODO: As naming convention is clear, this can be simplified dramatically
-            case "cancel_task" -> agName = "SGS_CANCEL_TASK_CUSTOM";
-            case "create_snapshot" -> agName = "SGS_CREATE_SNAPSHOT_CUSTOM";
-            case "cross_cluster_replication" -> agName = "SGS_CROSS_CLUSTER_REPLICATION_CUSTOM";
-            case "cross_cluster_search" -> agName = "SGS_CROSS_CLUSTER_SEARCH_CUSTOM";
-            case "grant_api_key" -> agName = "SGS_GRANT_API_KEY_CUSTOM";
-            case "manage" -> agName = "SGS_MANAGE_CUSTOM";
-            case "manage_api_key" -> agName = "SGS_MANAGE_API_KEY_CUSTOM";
-            case "manage_autoscaling" -> agName = "SGS_MANAGE_AUTOSCALING_CUSTOM";
-            case "manage_ccr" -> agName = "SGS_MANAGE_CCR_CUSTOM";
-            case "manage_data_frame_transforms" -> {} // deprecated 7.5.0
-            case "manage_data_stream_global_retention" -> {} // deprecated 8.16.0
-            case "manage_enrich" -> agName = "SGS_MANAGE_ENRICH_CUSTOM";
-            case "manage_inference" -> agName = "SGS_MANAGE_INFERENCE_CUSTOM";
-            case "manage_logstash_pipelines" -> agName = "SGS_MANAGE_LOGSTASH_PIPELINES_CUSTOM";
-            case "manage_ml" -> agName = "SGS_MANAGE_ML_CUSTOM";
-            case "manage_oidc" -> agName = "SGS_MANAGE_OIDC_CUSTOM";
-            case "manage_own_api_key" -> agName = "SGS_MANAGE_OWN_API_KEY_CUSTOM";
-            case "manage_rollup" -> agName = "SGS_MANAGE_ROLLUP_CUSTOM";
-            case "manage_saml" -> agName = "SGS_MANAGE_SAML_CUSTOM";
-            case "manage_search_application" -> agName = "SGS_MANAGE_SEARCH_APPLICATION_CUSTOM";
-            case "manage_search_query_rules" -> agName = "SGS_MANAGE_SEARCH_QUERY_RULES_CUSTOM";
-            case "manage_search_synonyms" -> agName = "SGS_MANAGE_SEARCH_SYNONYMS_CUSTOM";
-            case "manage_security" -> agName = "SGS_MANAGE_SECURITY_CUSTOM";
-            case "manage_service_account" -> agName = "SGS_MANAGE_SERVICE_ACCOUNT_CUSTOM";
-            case "manage_slm" -> {} // deprecated 8.15.0
-            case "manage_token" -> agName = "SGS_MANAGE_TOKEN_CUSTOM";
-            case "manage_transform" -> agName = "SGS_MANAGE_TRANSFORM_CUSTOM";
-            case "manage_watcher" -> agName = "SGS_MANAGE_WATCHER_CUSTOM";
-            case "monitor_data_stream_global_retention" -> {} // deprecated 8.16.0
-            case "monitor_enrich" -> agName = "SGS_MONITOR_ENRICH_CUSTOM";
-            case "monitor_esql" -> agName = "SGS_MONITOR_ESQL_CUSTOM";
-            case "monitor_inference" -> agName = "SGS_MONITOR_INFERENCE_CUSTOM";
-            case "monitor_ml" -> agName = "SGS_MONITOR_ML_CUSTOM";
-            case "monitor_rollup" -> agName = "SGS_MONITOR_ROLLUP_CUSTOM";
-            case "monitor_snapshot" -> agName = "SGS_MONITOR_SNAPSHOT_CUSTOM";
-            case "monitor_stats" -> agName = "SGS_MONITOR_STATS_CUSTOM";
-            case "monitor_text_structure" -> agName = "SGS_MONITOR_TEXT_STRUCTURE_CUSTOM";
-            case "monitor_transform" -> agName = "SGS_MONITOR_TRANSFORM_CUSTOM";
-            case "monitor_watcher" -> agName = "SGS_MONITOR_WATCHER_CUSTOM";
-            case "read_ccr" -> agName = "SGS_READ_CCR_CUSTOM";
-            case "read_pipeline" -> agName = "SGS_READ_PIPELINE_CUSTOM";
-            case "read_slm" -> {} // deprecated 8.16.0
-            case "read_security" -> agName = "SGS_READ_SECURITY_CUSTOM";
-            case "transport_client" -> agName = "SGS_TRANSPORT_CLIENT_CUSTOM";
-
-            default -> report.addManualAction(
-                FILE_NAME,
-                role.getName() + "->cluster_permissions",
-                "The privilege: " + privilege + " is unknown and can not be automatically mapped."
-            );
-        }
-        // TODO: Never skip without a migration report entry (Add Migration report entry to deprecated cases)
-        // skip if deprecated or default case was hit
-        if (agName.isEmpty()) continue;
-        sgPrivileges.add(agName);
-
-        if (!agName.matches("^SGS_.+_CUSTOM$")) continue;
-        try {
-            agWriter.addActionGroup(CustomClusterActionGroup.from(agName));
-        } catch (IllegalArgumentException e) {
-            report.addWarning(FILE_NAME, role.getName() + "->cluster", "Unexpectedly failed to create custom Action Group.");
-        }
+        return sgPrivileges;
     }
-    return sgPrivileges;
-}
+
+    private static String matchesStandardSGRole(String privilege) {
+        return switch (privilege) {
+            case "all" ->  "SGS_CLUSTER_ALL";
+            case "manage_ilm" -> "SGS_CLUSTER_MANAGE_ILM";
+            case "manage_index_templates" -> "SGS_CLUSTER_MANAGE_INDEX_TEMPLATES";
+            case "manage_ingest_pipelines" -> "SGS_CLUSTER_MANAGE_PIPELINES";
+            case "manage_pipeline" -> "SGS_CLUSTER_MANAGE_PIPELINES";
+            case "monitor" -> "SGS_CLUSTER_MONITOR";
+            case "read_ilm" -> "SGS_CLUSTER_READ_ILM";
+            default -> null;
+        };
+    }
 
     private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
         var sgPrivileges = new ArrayList<String>() ;
@@ -473,9 +441,5 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
 
     static void print(Object line) {
         System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
     }
 }
