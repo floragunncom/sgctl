@@ -347,14 +347,13 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
         public String getName() { return name; }
         public List<String> getPattern() { return pattern; }
  
-        public static CustomClusterActionGroup from(String name) {
+        public static CustomClusterActionGroup from(String name) throws IllegalArgumentException {
             for (CustomClusterActionGroup group : CustomClusterActionGroup.values()) {
                 if (group.name.equals(name)) {
                     return group;
                 }
             }
-            // TODO: should there be at least a note in the migration report? (Or is it intended behaviour that this case could happen?)
-            return SGS_MANAGE_SECURITY_CUSTOM;
+            throw new IllegalArgumentException();
         }
 
         public ActionGroup toActionGroup() {

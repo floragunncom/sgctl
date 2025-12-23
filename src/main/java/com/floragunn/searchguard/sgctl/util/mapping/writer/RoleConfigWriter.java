@@ -333,13 +333,17 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 "The privilege: " + privilege + " is unknown and can not be automatically mapped."
             );
         }
-
+        // TODO: Never skip without a migration report entry (Add Migration report entry to deprecated cases)
         // skip if deprecated or default case was hit
         if (agName.isEmpty()) continue;
         sgPrivileges.add(agName);
 
         if (!agName.matches("^SGS_.+_CUSTOM$")) continue;
-        agWriter.addActionGroup(CustomClusterActionGroup.from(agName));
+        try {
+            agWriter.addActionGroup(CustomClusterActionGroup.from(agName));
+        } catch (IllegalArgumentException e) {
+            report.addWarning(FILE_NAME, role.getName() + "->cluster", "Unexpectedly failed to create custom Action Group.");
+        }
     }
     return sgPrivileges;
 }

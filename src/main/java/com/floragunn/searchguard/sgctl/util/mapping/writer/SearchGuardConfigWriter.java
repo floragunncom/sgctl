@@ -19,7 +19,7 @@ public class SearchGuardConfigWriter {
     public SearchGuardConfigWriter(IntermediateRepresentation ir) {
         sg_authc = new MigrateConfig.SgAuthc();
         userConfig = new UserConfigWriter(ir);
-        actionGroupConfig = new ActionGroupConfigWriter(ir);
+        actionGroupConfig = new ActionGroupConfigWriter();
         roleConfig = new RoleConfigWriter(ir, sg_authc, actionGroupConfig);
         mappingWriter = new RoleMappingWriter(ir);
     }
@@ -29,7 +29,7 @@ public class SearchGuardConfigWriter {
 //        Files.write(new File(directory.getPath(), MigrateConfig.SgAuthc.FILE_NAME).toPath(), writer.writeAsString(sg_authc).getBytes());
         Files.write(new File(directory.getPath(), UserConfigWriter.FILE_NAME).toPath(), writer.writeAsString(userConfig).getBytes());
         Files.write(new File(directory.getPath(), RoleConfigWriter.FILE_NAME).toPath(), writer.writeAsString(roleConfig).getBytes());
-//        Files.write(new File(directory.getPath(), ActionGroupConfigWriter.FILE_NAME).toPath(), writer.writeAsString(actionGroupConfig).getBytes());
+        Files.write(new File(directory.getPath(), ActionGroupConfigWriter.FILE_NAME).toPath(), writer.writeAsString(actionGroupConfig).getBytes());
         Files.write(new File(directory.getPath(), RoleMappingWriter.FILE_NAME).toPath(), writer.writeAsString(mappingWriter).getBytes());
     }
 
@@ -45,8 +45,8 @@ public class SearchGuardConfigWriter {
         printHeader(RoleConfigWriter.FILE_NAME);
         print(writer.writeAsString(roleConfig));
 
-//        printHeader(ActionGroupConfigWriter.FILE_NAME);
-//        print(writer.writeAsString(actionGroupConfig));
+        printHeader(ActionGroupConfigWriter.FILE_NAME);
+        print(writer.writeAsString(actionGroupConfig));
 
         printHeader(RoleMappingWriter.FILE_NAME);
         print(writer.writeAsString(mappingWriter));
