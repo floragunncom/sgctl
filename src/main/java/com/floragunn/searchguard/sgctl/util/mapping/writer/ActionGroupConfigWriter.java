@@ -1,48 +1,17 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
-import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
-import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
 public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter> {
-    private List<ActionGroup> actionGroups;
-    private IntermediateRepresentation ir;
-    private MigrationReport report;
+    private final Set<ActionGroup> actionGroups = new HashSet<>();
 
-    private static final String FILE_NAME = "sg_action_groups.yml";
+    static final String FILE_NAME = "sg_action_groups.yml";
 
-
-    public ActionGroupConfigWriter(IntermediateRepresentation ir) {
-        this.actionGroups = new ArrayList<>();
-        this.ir = ir;
-        this.report = MigrationReport.shared;
-
-        // TODO: Should action groups be inititialized with all possible custom groups, or should they only be added when needed in RoleConfigWriter?
-        print(DocWriter.yaml().writeAsString(this));
-
-    }
-
-    public void addCustomActionGroups(Set<CustomClusterActionGroup> agSet ) {
-
-        for (var ag : agSet) {
-            this.actionGroups.add(ag.toActionGroup());
-        }
-
-    }
-
-    public boolean contains(String name){
-        if (actionGroups == null) return false;
-        for (var ag : actionGroups){
-            if (Objects.equals(ag.name, name)) return true;
-        }
-        return false;
+    void addActionGroup(CustomClusterActionGroup actionGroup) {
+        this.actionGroups.add(actionGroup.toActionGroup());
     }
 
     @Override
@@ -52,10 +21,6 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             contents.put(actionGroup.name, actionGroup);
         }
         return contents;
-    }
-
-    static void print(Object line) {
-        System.out.println(line);
     }
 
     static class ActionGroup implements Document<ActionGroup>{
@@ -80,14 +45,7 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
                 contents.put("description", description);
             }
             return contents;
-        }   
-
-        // Deprecated: CustomClusterActionGroup has an own toActionGroup() method
-        static ActionGroup fromCustomClusterActionGroup(CustomClusterActionGroup cag) {
-            var desc = "todo";
-            return new ActionGroup(cag.getName(), cag.getPattern(), "cluster", desc);
         }
-
     }
 
     enum CustomClusterActionGroup {
@@ -386,13 +344,8 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             this.pattern = pattern;
         } 
         
-        // Getter are not realy needed anymore
-        public String getName() {
-            return name;
-        } 
-        public List<String> getPattern() {
-            return pattern;
-        }
+        public String getName() { return name; }
+        public List<String> getPattern() { return pattern; }
  
         public static CustomClusterActionGroup from(String name) {
             for (CustomClusterActionGroup group : CustomClusterActionGroup.values()) {
@@ -405,12 +358,7 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
         }
 
         public ActionGroup toActionGroup() {
-            return new ActionGroup(
-                name,
-                pattern,
-                TYPE,
-                description
-            );
+            return new ActionGroup(name, pattern, TYPE, description);
         }
     }
 }
