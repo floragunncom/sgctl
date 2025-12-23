@@ -13,11 +13,11 @@ import java.util.*;
 
 public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private IntermediateRepresentation ir;
-    private MigrationReport report;
-    private List<SGRole> roles;
+    final private MigrationReport report;
+    final private List<SGRole> roles;
     private MigrateConfig.SgAuthc sgAuthc;
-    private ActionGroupConfigWriter agWriter;
-    private Set<String> userMappingAttributes = new HashSet<>();
+    final private ActionGroupConfigWriter agWriter;
+    final private Set<String> userMappingAttributes = new HashSet<>();
 
     static final String FILE_NAME = "sg_roles.yml";
     private static final Set<String> validQueryKeys = Set.of(
@@ -262,9 +262,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
 
     var privileges = role.getCluster();
     var sgPrivileges = new ArrayList<String>();
-    var agSet = new HashSet<CustomClusterActionGroup>() ;
 
     for (var privilege : privileges) {
+        if (privilege.matches("^((cluster)|(indices)):((admin)|(monitor))/.+$")) {
+            sgPrivileges.add(privilege);
+            continue;
+        }
         var agName = "";
         switch (privilege) {
 
@@ -332,14 +335,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         }
 
         // skip if deprecated or default case was hit
-        if (agName.equals("")) continue;
+        if (agName.isEmpty()) continue;
         sgPrivileges.add(agName);
 
-        if (!agName.contains("CUSTOM")) continue;
-        agSet.add(CustomClusterActionGroup.from(agName));
-
+        if (!agName.matches("^SGS_.+_CUSTOM$")) continue;
+        agWriter.addActionGroup(CustomClusterActionGroup.from(agName));
     }
-    agWriter.addCustomActionGroups(agSet);
     return sgPrivileges;
 }
 
