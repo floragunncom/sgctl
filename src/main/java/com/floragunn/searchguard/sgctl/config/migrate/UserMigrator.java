@@ -1,18 +1,16 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
-import com.floragunn.fluent.collections.ImmutableList;
-import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalUsers;
-import com.floragunn.searchguard.sgctl.config.trace.Traceable;
-import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.slf4j.Logger;
 
 public class UserMigrator implements SubMigrator {
+  public List<NamedConfig<?>> migrate(
+      Migrator.IMigrationContext context, MigrationReporter reporter) {
 
+    return users;
+  }
+
+  /*
   public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
       throws SgctlException {
     logger.info("Migrating Users"); // needed ?
@@ -32,7 +30,7 @@ public class UserMigrator implements SubMigrator {
       /*ImmutableMap<String, String> sgMetaData =
       entry.getValue().metadata() != null
           ? entry.getValue().metadata().map(key -> key, value -> String.valueOf(value))
-          : ImmutableMap.empty();*/
+          : ImmutableMap.empty();
 
       builder.add(
           new SgInternalUsers.User(
@@ -45,5 +43,5 @@ public class UserMigrator implements SubMigrator {
     logger.warn(
         "Passwords are empty for all migrated users. Each user must reset their password or a admin must set them manually.");
     return List.of(new SgInternalUsers(builder.build()));
-  }
+  }*/
 }
