@@ -1,14 +1,11 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
-import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
-import java.util.List;
-
 public class UserMigrator implements SubMigrator {
-  public List<NamedConfig<?>> migrate(
+  /*public List<NamedConfig<?>> migrate(
       Migrator.IMigrationContext context, MigrationReporter reporter) {
 
     return users;
-  }
+  }*/
 
   /*
   public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)

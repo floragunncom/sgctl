@@ -6,9 +6,7 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import com.floragunn.searchguard.sgctl.config.trace.Source;
-import com.floragunn.searchguard.sgctl.config.trace.Traceable;
-import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
+import com.floragunn.searchguard.sgctl.config.trace.*;
 import java.util.Objects;
 
 public record Users(Traceable<ImmutableMap<String, User>> users) {
@@ -21,18 +19,17 @@ public record Users(Traceable<ImmutableMap<String, User>> users) {
       throws ConfigValidationException {
 
     var errors = new ValidationErrors();
-    // ValidatingDocNode vNode = new ValidatingDocNode(config, errors, parserContext);
     var tDoc = TraceableDocNode.of(config, new Source.Config("users.json"), errors);
     var builder = new ImmutableMap.Builder<String, User>(config.toListOfNodes().size());
 
     for (String name : config.keySet()) {
-      User user = tDoc.get(name).as(User::parse).getValue();
-      if (user != null) {
-        builder.with(name, user);
+      var user = tDoc.get(name).as(User::parse).getValue();
+      if (!user.get().isEmpty()) {
+        builder.with(name, user.getValue());
       }
     }
 
-    errors.throwExceptionForPresentErrors();
+    tDoc.throwExceptionForPresentErrors();
     return new Users(Traceable.of(tDoc.getSource(), builder.build()));
   }
 
@@ -42,17 +39,21 @@ public record Users(Traceable<ImmutableMap<String, User>> users) {
       Traceable<ImmutableMap<String, Traceable<String>>>
           metadata) { // metadata zu string string geändert, sonst hats irgendwie nicht geklappt
 
-    public static User parse(TraceableDocNode tDoc) {
+    public static OptTraceable<User> parse(TraceableDocNode tDoc) {
 
-      if (!tDoc.get("enabled").asBoolean().getValue()) return null;
+      if (!tDoc.get("enabled").asBoolean().getValue()) {
+        return OptTraceable.empty(tDoc.getSource());
+      }
 
       var username = tDoc.get("username").required().asString();
       var roles = tDoc.get("roles").required().asListOfStrings();
 
       var metadataBuilder = new ImmutableMap.Builder<String, Traceable<String>>();
-      var metadataMap = tDoc.get("metadata").asMapOfStrings();
-      for (var entry : metadataMap.getValue().entrySet()) {
-        metadataBuilder.with(entry.getKey(), entry.getValue());
+      var metadataMap = tDoc.get("metadata").required().asMapOfStrings();
+      if (!metadataMap.get().isEmpty()) {
+        for (var entry : metadataMap.get().entrySet()) {
+          metadataBuilder.with(entry.getKey(), entry.getValue());
+        }
       }
 
       var fullName = tDoc.get("full_name").asString().orElse(null);
@@ -74,7 +75,7 @@ public record Users(Traceable<ImmutableMap<String, User>> users) {
 
       User user = new User(username, roles, Traceable.of(tDoc.getSource(), metadata));
 
-      return user;
+      return OptTraceable.of(tDoc.getSource(), user);
     }
   }
 }
