@@ -331,6 +331,10 @@ public class Role {
         return Collections.unmodifiableList(new ArrayList<>(source));
     }
 
+    private static List<String> freezeList(List<String> source) {
+        return freezeStringList(source);
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

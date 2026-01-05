@@ -105,14 +105,16 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
 
     private List<String> toSGFLS(Role.Index index, Role role) {
         if (index.getFieldSecurity() == null) return Collections.emptyList();
-        var fls = index.getFieldSecurity().getGrant();
-        for (var field : fls) {
+        var grants = index.getFieldSecurity().getGrant();
+        var fls = grants == null ? new ArrayList<String>() : new ArrayList<>(grants);
+        for (var iterator = fls.iterator(); iterator.hasNext(); ) {
+            var field = iterator.next();
             if (field.isEmpty()) continue;
             if (field.charAt(0) == '~') {
                 report.addManualAction(FILE_NAME,
                         role.getName() + "->index->field_security->" + field,
                         "There is a '~' at the start of a field security key. In SG this is used to mark an exclusion.");
-                fls.remove(field);
+                iterator.remove();
             }
         }
         if (index.getFieldSecurity().getExcept() == null) return fls;

@@ -5,9 +5,9 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class UserConfigWriter implements Document<UserConfigWriter> {
     private IntermediateRepresentation ir;
@@ -32,7 +32,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
                         "The user has 'enabled' set to false. This can not be done in Search Guard and the user is not migrated.");
                 continue;
             }
-            var attributes = user.getAttributes();
+            var attributes = new LinkedHashMap<String, Object>(user.getAttributes());
             if (user.getEmail() != null) {
                 attributes.put("email", user.getEmail());
             }
@@ -64,10 +64,10 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
         String name;
         String hash;
         String description;
-        HashMap<String, Object> attributes;
+        Map<String, Object> attributes;
         List<String> roles;
 
-        public SGInternalUser(String name, String description, HashMap<String, Object> attributes, List<String> roles) {
+        public SGInternalUser(String name, String description, Map<String, Object> attributes, List<String> roles) {
             this.name = name;
             this.hash = "Change it";
             this.description = description;
