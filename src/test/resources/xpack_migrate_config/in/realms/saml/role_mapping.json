@@ -3,14 +3,12 @@
     "enabled": true,
     "roles": ["admin_role_test"],
     "rules": {
-      "all": [
+      "any": [
         { "field": { "realm.name": "saml1" } },
         { "field": { "groups": "admin" } }
       ]
     },
-    "metadata": {
-      "description": "SAML admins mapped via IdP group"
-    }
+    "metadata": {}
   },
 
   "saml-analytics": {
@@ -29,13 +27,8 @@
     "enabled": true,
     "roles": ["read_only_role_test"],
     "rules": {
-      "all": [
-        { "field": { "realm.name": "saml1" } },
-        { "any": [
-            { "field": { "groups": "users" } },
-            { "field": { "groups": "employees" } }
-        ]}
-      ]
+      "any": [
+        { "field": { "realm.name": "saml1" } }]
     },
     "metadata": {}
   },

@@ -1,0 +1,36 @@
+authz:
+  saml_admins:
+    enabled: true
+    roles:
+      - admin_role_test
+    rules:
+      - field:
+          realm.name: saml1
+      - field:
+          roles: admin
+
+  saml_analytics:
+    enabled: true
+    roles:
+      - dev_read_only
+    rules:
+      - field:
+          realm.name: saml1
+      - field:
+          roles: analytics
+
+  saml_users:
+    enabled: true
+    roles:
+      - read_only_role_test
+    rules:
+        - field:
+            realm.name: saml1
+
+  native_log_readers:
+    enabled: true
+    roles:
+      - watcher_user
+    rules:
+        - field:
+            realm.name: native1

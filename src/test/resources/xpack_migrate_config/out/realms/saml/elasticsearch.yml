@@ -1,0 +1,15 @@
+xpack.security.enabled: false
+searchguard:
+  ssl:
+    transport:
+      enabled: true
+      keystore_filepath: certs/node-sec01.p12
+      truststore_filepath: certs/ca.p12
+      enforce_hostname_verification: false
+      client_authentication: REQUIRE
+
+    http:
+      enabled: true
+      pemkey_filepath: certs/http.key
+      pemcert_filepath: certs/http.crt
+      pemtrustedcas_filepath: certs/ca.crt
