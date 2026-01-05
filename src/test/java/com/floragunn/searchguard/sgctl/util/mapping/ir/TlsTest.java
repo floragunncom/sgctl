@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.io.File;
 import java.util.List;
 
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.Tls;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -192,8 +193,13 @@ class TlsTest {
      */
     @Test
     void handleTlsOptionsShouldRejectListWithNonStringElements() {
+        MigrationReport report = MigrationReport.shared;
+        report.clear();
         List<Integer> invalidList = List.of(1, 2, 3);
         tls.handleTlsOptions("certificate_authorities", invalidList, KEY_PREFIX, configFile);
         assertTrue(tls.getCertificateAuthorities().isEmpty());
+        assertTrue(report.getEntries("elasticsearch.yml", MigrationReport.Category.MANUAL)
+                .stream()
+                .anyMatch(entry -> (KEY_PREFIX + "certificate_authorities").equals(entry.getParameter())));
     }
 }

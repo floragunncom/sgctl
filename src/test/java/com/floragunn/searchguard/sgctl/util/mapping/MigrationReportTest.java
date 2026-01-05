@@ -15,12 +15,18 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+/**
+ * Tests for {@link MigrationReport} behavior and reporting output.
+ */
 class MigrationReportTest {
 
     private MigrationReport report;
     private ByteArrayOutputStream out;
     private PrintStream printStream;
 
+    /**
+     * Sets up an isolated report with a fresh output stream.
+     */
     @BeforeEach
     void setUp() {
         report = MigrationReport.shared;
@@ -29,11 +35,17 @@ class MigrationReportTest {
         printStream = new PrintStream(out);
     }
 
+    /**
+     * Closes the report output stream.
+     */
     @AfterEach
     void tearDown() {
         printStream.close();
     }
 
+    /**
+     * Verifies unknown key warnings use the correct preset and message.
+     */
     @Test
     void addUnknownKeyCreatesPresetWarning() {
         report.addUnknownKey("file1", "key1", "path1");
@@ -46,6 +58,9 @@ class MigrationReportTest {
         assertEquals(MigrationReport.ReportPreset.UNKNOWN_KEY, entry.getPreset());
     }
 
+    /**
+     * Verifies invalid type warnings are created for concrete and null values.
+     */
     @Test
     void addInvalidTypeHandlesConcreteAndNullValues() {
         report.addInvalidType("file1", "path1", String.class, 123);
@@ -61,6 +76,9 @@ class MigrationReportTest {
         assertEquals(MigrationReport.ReportPreset.INVALID_TYPE, entries.get(1).getPreset());
     }
 
+    /**
+     * Verifies missing parameter errors are recorded as manual entries.
+     */
     @Test
     void addMissingParameterCreatesManualEntry() {
         report.addMissingParameter("file1", "param1", "path1");
@@ -73,6 +91,9 @@ class MigrationReportTest {
         assertEquals(MigrationReport.ReportPreset.MISSING_PARAMETER, entry.getPreset());
     }
 
+    /**
+     * Verifies ignored keys create warnings with the ignored preset.
+     */
     @Test
     void addIgnoredKeyCreatesWarningEntry() {
         report.addIgnoredKey("file1", "key1", "path1");
@@ -85,6 +106,9 @@ class MigrationReportTest {
         assertEquals(MigrationReport.ReportPreset.IGNORED_KEY, entry.getPreset());
     }
 
+    /**
+     * Verifies migrated entries support old/new and old-only parameters.
+     */
     @Test
     void addMigratedSupportsOldAndNewParameters() {
         report.addMigrated("file1", "oldParam", "newParam");
@@ -102,6 +126,9 @@ class MigrationReportTest {
         assertNull(withoutNew.getMessage());
     }
 
+    /**
+     * Verifies warning and manual entries do not set report presets.
+     */
     @Test
     void addWarningAndManualActionDoNotSetPreset() {
         report.addWarning("file1", "param1", "Check this");
@@ -119,6 +146,9 @@ class MigrationReportTest {
         assertNull(manuals.get(0).getPreset());
     }
 
+    /**
+     * Verifies clear() resets entries and counts.
+     */
     @Test
     void clearResetsStateAndCounts() {
         report.addMigrated("file1", "old", "new");
@@ -133,6 +163,9 @@ class MigrationReportTest {
         assertEquals(0, report.count("file1", MigrationReport.Category.WARNING));
     }
 
+    /**
+     * Verifies report output includes headers and sections for populated entries.
+     */
     @Test
     void printReportIncludesHeaderAndSections() {
         report.addMigrated("file1", "old", "new");
@@ -152,6 +185,21 @@ class MigrationReportTest {
         assertTrue(output.contains("---------- End Migration Report ----------"));
     }
 
+    /**
+     * Verifies report output remains valid when no entries exist.
+     */
+    @Test
+    void printReportWithNoEntriesStillHasHeaderAndFooter() {
+        report.printReport(printStream);
+
+        String output = output();
+        assertTrue(output.contains("---------- Migration Report ----------"));
+        assertTrue(output.contains("---------- End Migration Report ----------"));
+    }
+
+    /**
+     * Verifies report output groups preset warnings before free-form warnings.
+     */
     @Test
     void presetsAreGroupedAndOrderedBeforeFreeWarnings() {
         report.addWarning("file1", "freeWarn", "a free warning");
@@ -183,6 +231,9 @@ class MigrationReportTest {
         assertTrue(lastPresetPos < idxFree1 && lastPresetPos < idxFree2, "free warnings should appear after preset groups");
     }
 
+    /**
+     * Verifies warning groups are contiguous within report output.
+     */
     @Test
     void presetEntriesAreContiguous() {
         report.addInvalidType("file1", "I1", Integer.class, "x");
@@ -229,6 +280,9 @@ class MigrationReportTest {
             "Interleaving detected inside INVALID block");
     }
 
+    /**
+     * Verifies entries are isolated per file.
+     */
     @Test
     void multipleFilesRemainIsolated() {
         report.addMigrated("fileA", "pA", "npA");
@@ -239,6 +293,9 @@ class MigrationReportTest {
         assertEquals(1, report.getEntries("fileB", MigrationReport.Category.WARNING).size());
     }
 
+    /**
+     * Verifies snapshot immutability and content.
+     */
     @Test
     void snapshotIsImmutableAndReflectsState() {
         report.addWarning("fileX", "p1", "m1");
@@ -250,6 +307,9 @@ class MigrationReportTest {
         assertThrows(UnsupportedOperationException.class, () -> snapshot.put("foo", null));
     }
 
+    /**
+     * Verifies entry equality and string output include core fields.
+     */
     @Test
     void entryEqualityAndToStringReflectFields() {
         report.addWarning("file1", "p", "m");
@@ -261,6 +321,12 @@ class MigrationReportTest {
         assertTrue(e.toString().contains("parameter='p'"));
     }
 
+    /**
+     * Finds the line index containing a token.
+     *
+     * @param token token to search for
+     * @return index of the line containing the token, or -1
+     */
     private int indexOfLineContaining(String token) {
         List<String> lines = outputLines();
         for (int i = 0; i < lines.size(); i++) {
@@ -271,6 +337,12 @@ class MigrationReportTest {
         return -1;
     }
 
+    /**
+     * Computes the starting offset of a line in the output.
+     *
+     * @param lineIndex index of line in the output
+     * @return character offset for the line start
+     */
     private int lineStartOffset(int lineIndex) {
         int offset = 0;
         List<String> lines = outputLines();
@@ -280,10 +352,20 @@ class MigrationReportTest {
         return offset;
     }
 
+    /**
+     * Splits the output into lines.
+     *
+     * @return list of output lines
+     */
     private List<String> outputLines() {
         return output().lines().toList();
     }
 
+    /**
+     * Returns the captured report output.
+     *
+     * @return output as string
+     */
     private String output() {
         return out.toString();
     }

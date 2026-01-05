@@ -6,22 +6,28 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.Intermed
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 import com.floragunn.searchguard.sgctl.util.mapping.reader.ElasticsearchYamlReader;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 import java.io.File;
 import java.lang.reflect.Constructor;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 
 /**
  * Verifies that {@link ElasticsearchYamlReader} populates the intermediate representation from an elasticsearch.yml.
  */
 class ElasticsearchYamlReaderTest extends TestBase {
 
+    /**
+     * Verifies core TLS and global settings are parsed from a base config file.
+     */
     @Test
     void shouldPopulateIntermediateRepresentationFromElasticsearchYaml() {
         IntermediateRepresentationElasticSearchYml ir = readIr("xpack_config/elasticsearch.yml");
@@ -39,12 +45,18 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals("certs/transport.p12", transport.getTruststorePath(), "Transport truststore path should be parsed");
     }
 
+    /**
+     * Verifies that the rich configuration enables security features.
+     */
     @Test
     void shouldParseExtendedElasticsearchConfiguration() {
         IntermediateRepresentationElasticSearchYml ir = readIr("xpack_config/elasticsearch-rich.yml");
         assertTrue(ir.getGlobal().getXpackSecEnabled(), "xpack.security.enabled should be true");
     }
 
+    /**
+     * Verifies full HTTP TLS settings are parsed from the rich configuration.
+     */
     @Test
     void shouldParseRichHttpTls() {
         var http = readIr("xpack_config/elasticsearch-rich.yml").getSslTls().getHttp();
@@ -68,6 +80,9 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(List.of("0.0.0.0/0"), http.getDeniedIPs());
     }
 
+    /**
+     * Verifies full transport TLS settings are parsed from the rich configuration.
+     */
     @Test
     void shouldParseRichTransportTls() {
         var transport = readIr("xpack_config/elasticsearch-rich.yml").getSslTls().getTransport();
@@ -90,6 +105,9 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(List.of("172.21.0.0/16"), transport.getRemoteClusterDeniedIPs());
     }
 
+    /**
+     * Verifies transport profile filter settings are parsed from the rich configuration.
+     */
     @Test
     void shouldParseTransportProfiles() {
         var sslTls = readIr("xpack_config/elasticsearch-rich.yml").getSslTls();
@@ -99,6 +117,9 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(List.of("172.16.0.0/12"), sslTls.getProfileDeniedIPs().get("backend"));
     }
 
+    /**
+     * Verifies authentication-related settings are parsed from the rich configuration.
+     */
     @Test
     void shouldParseAuthSettings() {
         var auth = readIr("xpack_config/elasticsearch-rich.yml").getAuthent();
@@ -118,6 +139,9 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals("pbkdf2_1000", auth.getPasswordHashingAlgoritm());
     }
 
+    /**
+     * Verifies file and native realms are parsed with expected attributes.
+     */
     @Test
     void shouldParseFileAndNativeRealms() {
         var realms = readIr("xpack_config/elasticsearch-rich.yml").getAuthent().getRealms();
@@ -139,6 +163,9 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(1, fileRealm.getOrder());
     }
 
+    /**
+     * Verifies LDAP and PKI realms are parsed with expected attributes.
+     */
     @Test
     void shouldParseLdapAndPkiRealms() {
         var realms = readIr("xpack_config/elasticsearch-rich.yml").getAuthent().getRealms();
@@ -167,6 +194,9 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertEquals(3, pkiRealm.getOrder());
     }
 
+    /**
+     * Verifies OIDC, SAML, and Kerberos realms are parsed with expected attributes.
+     */
     @Test
     void shouldParseOidcSamlAndKerberosRealms() {
         var realms = readIr("xpack_config/elasticsearch-rich.yml").getAuthent().getRealms();
@@ -233,6 +263,56 @@ class ElasticsearchYamlReaderTest extends TestBase {
         assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.http.filter.enabled"));
     }
 
+    /**
+     * Verifies malformed YAML inputs are reported as warnings.
+     *
+     * @param tempDir temporary directory provided by JUnit
+     */
+    @Test
+    void shouldReportMalformedYaml(@TempDir Path tempDir) throws IOException {
+        MigrationReport report = newEmptyReport();
+        File config = tempDir.resolve("elasticsearch.yml").toFile();
+        Files.writeString(config.toPath(), "xpack.security: [");
+
+        MigrationReport previous = MigrationReport.shared;
+        try {
+            MigrationReport.shared = report;
+            new ElasticsearchYamlReader(config, new IntermediateRepresentationElasticSearchYml());
+        } finally {
+            MigrationReport.shared = previous;
+        }
+
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "origin"));
+    }
+
+    /**
+     * Verifies type mismatches are surfaced as unknown keys in the report.
+     *
+     * @param tempDir temporary directory provided by JUnit
+     */
+    @Test
+    void shouldReportWrongTypeForTlsFlag(@TempDir Path tempDir) throws IOException {
+        MigrationReport report = newEmptyReport();
+        File config = tempDir.resolve("elasticsearch.yml").toFile();
+        Files.writeString(config.toPath(), "xpack.security.http.ssl.enabled: \"true\"");
+
+        MigrationReport previous = MigrationReport.shared;
+        try {
+            MigrationReport.shared = report;
+            new ElasticsearchYamlReader(config, new IntermediateRepresentationElasticSearchYml());
+        } finally {
+            MigrationReport.shared = previous;
+        }
+
+        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.http.ssl.enabled"));
+    }
+
+    /**
+     * Reads an elasticsearch.yml resource into a fresh intermediate representation.
+     *
+     * @param resourceName resource path
+     * @return populated intermediate representation
+     */
     private IntermediateRepresentationElasticSearchYml readIr(String resourceName) {
         Path configPath = resolveResourcePath(resourceName);
         MigrationReport previousReport = MigrationReport.shared;
@@ -246,6 +326,13 @@ class ElasticsearchYamlReaderTest extends TestBase {
         }
     }
 
+    /**
+     * Reads an elasticsearch.yml resource into an intermediate representation using a given report.
+     *
+     * @param resourceName resource path
+     * @param report report to collect warnings
+     * @return populated intermediate representation
+     */
     private IntermediateRepresentationElasticSearchYml readIrWithReport(String resourceName, MigrationReport report) {
         Path configPath = resolveResourcePath(resourceName);
         MigrationReport previousReport = MigrationReport.shared;
@@ -259,6 +346,11 @@ class ElasticsearchYamlReaderTest extends TestBase {
         }
     }
 
+    /**
+     * Creates a fresh report instance using reflection.
+     *
+     * @return empty migration report
+     */
     private MigrationReport newEmptyReport() {
         try {
             Constructor<MigrationReport> ctor = MigrationReport.class.getDeclaredConstructor();
@@ -269,10 +361,27 @@ class ElasticsearchYamlReaderTest extends TestBase {
         }
     }
 
+    /**
+     * Checks whether the report has an entry with the given parameter.
+     *
+     * @param report report instance
+     * @param file file name
+     * @param category report category
+     * @param parameter parameter to match
+     * @return true when an entry exists
+     */
     private boolean hasReportEntry(MigrationReport report, String file, MigrationReport.Category category, String parameter) {
         return report.getEntries(file, category).stream().anyMatch(e -> parameter.equals(e.getParameter()));
     }
 
+    /**
+     * Checks whether the report has any entries for a file and category.
+     *
+     * @param report report instance
+     * @param file file name
+     * @param category report category
+     * @return true when at least one entry exists
+     */
     private boolean hasAnyEntry(MigrationReport report, String file, MigrationReport.Category category) {
         return !report.getEntries(file, category).isEmpty();
     }
