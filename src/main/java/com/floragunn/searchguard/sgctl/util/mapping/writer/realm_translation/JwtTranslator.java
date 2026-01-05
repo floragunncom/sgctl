@@ -3,22 +3,30 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
+import java.util.*;
 
 public class JwtTranslator extends RealmTranslator{
     @Override
-    public MigrateConfig.NewAuthDomain translate(RealmIR ir) {
+    public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
+        //TODO: Not yet final
+        RealmIR.JwtRealmIR ir = (RealmIR.JwtRealmIR) originalIR;
         //Todo: Use getter and remove addManualAction
-        addOptionalConfigProperty("jwt.jwks_endpoint.url", "https://EXAMPLE/jwt/jwkset.json");
-        MigrationReport.shared.addManualAction("sg_authc.yml", "jwt.jwks_endpoint.url", "Not yet implemented");
+        addOptionalConfigProperty("jwt.jwks_endpoint.url", ir.getPkcJwksetPath());
 
-        addOptionalConfigProperty("jwt.required_issuer", "https://EXAMPLE/jwt/jwkset.json");
-        MigrationReport.shared.addManualAction("sg_authc.yml", "jwt.required_issuer", "Not yet implemented");
+        String issuer = getFirstAndWarnIfMultiple("allowed_issuers", ir.getAllowedIssuersList());
+        addOptionalConfigProperty("jwt.required_issuer", issuer);
 
-        addOptionalConfigProperty("jwt.required_audience", "https://EXAMPLE/jwt/jwkset.json");
-        MigrationReport.shared.addManualAction("sg_authc.yml", "jwt.required_audience", "Not yet implemented");
+        String audience = getFirstAndWarnIfMultiple("allowed_audiences", ir.getAllowedAudiences());
+        addOptionalConfigProperty("jwt.required_audience", audience);
 
-        addOptionalConfigProperty("user_mapping.user_name.from", "https://EXAMPLE/jwt/jwkset.json");
-        MigrationReport.shared.addManualAction("sg_authc.yml", "user_mapping.user_name.from", "Not yet implemented");
+        String algorithm = getFirstAndWarnIfMultiple("allowed_algorithms", ir.getAllowedSignatureAlgorithms());
+        addOptionalConfigProperty("jwt.allowed_algorithms", algorithm);
+
+        String principalClaim = ir.getClaimsPrincipal() != null ? ir.getClaimsPrincipal() : "sub";
+        addOptionalConfigProperty("user_mapping.user_name.from", principalClaim);
+
+        String groupsClaim = ir.getClaimsGroups() != null ? ir.getClaimsGroups() : "roles";
+        addOptionalConfigProperty("user_mapping.roles.from", groupsClaim);
 
         return new MigrateConfig.NewAuthDomain(
                 "jwt",
@@ -28,5 +36,22 @@ public class JwtTranslator extends RealmTranslator{
                 config,
                 null
         );
+    }
+
+    private static String getFirstAndWarnIfMultiple(String fieldName, List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return null;
+        }
+
+        if (list.size() > 1) {
+            MigrationReport.shared.addManualAction(
+                    "sg_authc.yml",
+                    "jwt" + "." + fieldName,
+                    "Multiple values found in Elasticsearch config. " +
+                            "Only the first one ('" + list.get(0) + "') was migrated. Please check if this is correct."
+            );
+        }
+
+        return list.get(0);
     }
 }

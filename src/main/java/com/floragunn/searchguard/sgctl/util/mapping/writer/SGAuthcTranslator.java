@@ -41,7 +41,6 @@ public class SGAuthcTranslator {
      * Creates Authc Config
      *
      * @param ir The intermediate representation.
-     * @return Populated SgAuthc object.
      */
     private void createAuthcConfig(IntermediateRepresentationElasticSearchYml ir) {
         config.authDomains = new ArrayList<>();
@@ -52,7 +51,10 @@ public class SGAuthcTranslator {
         ir.getAuthent().getRealms().forEach((String realmName, RealmIR realm) -> {
             //Handle disabled realms, like discussed
             String type = realm.getType().toLowerCase().trim();
-            System.out.println(realm.isEnabled());
+
+            //TODO: Is this a Debug-Flag?
+            //System.out.println(realm.isEnabled());
+
             if (!realm.isEnabled()) {
                 MigrationReport.shared.addIgnoredKey(RealmTranslator.SG_AUTHC_FILE_NAME, type, "authdomains");
                 return;
@@ -73,7 +75,6 @@ public class SGAuthcTranslator {
                     MigrationReport.shared.addMigrated(RealmTranslator.SG_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_authc.yml");
                 }
             }
-
         });
     }
 }

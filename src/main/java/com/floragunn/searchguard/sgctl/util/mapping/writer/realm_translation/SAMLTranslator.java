@@ -3,8 +3,6 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 
-import java.util.HashMap;
-import java.util.Map;
 
 public class SAMLTranslator extends RealmTranslator {
     public SAMLTranslator() {
@@ -40,7 +38,9 @@ public class SAMLTranslator extends RealmTranslator {
         RealmIR.SamlRealmIR ir = (RealmIR.SamlRealmIR) originalIR;
 
         addOptionalConfigProperty("saml.idp.metadata_url", ir.getIdpMetadataPath());
-        addOptionalConfigProperty("saml.idp.entity_id", ir.getIdpEntityID());
+        //TODO: Change getIdpEntityID to current version
+        //addOptionalConfigProperty("saml.idp.entity_id", ir.getIdpEntityID());
+
         addOptionalConfigProperty("saml.sp.entity_id", ir.getSpEntityID());
 
         // Username mapping from attributes.principal
