@@ -8,10 +8,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RealmIR {
-    String type; // ldap, saml, oidc, ...
-    String name;
-    int order;
-    boolean enabled;
+    protected String type; // ldap, saml, oidc, ...
+    protected String name;
+    protected int order;
+    protected boolean enabled;
 
     public String getType() { return type; }
     public String getName() { return name; }
@@ -45,11 +45,11 @@ public class RealmIR {
     }
 
     public static class LdapRealmIR extends RealmIR {
-        String url;
-        String bindDn;
-        String userSearchBaseDn;
-        String userSearchFilter;
-        String groupSearchBaseDn;
+        private String url;
+        private String bindDn;
+        private String userSearchBaseDn;
+        private String userSearchFilter;
+        private String groupSearchBaseDn;
 
         public String getUrl() { return url; }
         public String getBindDn() { return bindDn; }
@@ -65,12 +65,12 @@ public class RealmIR {
         public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
             boolean keyKnown = true;
 
-            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+            if (IntermediateRepresentationElasticSearchYml.isType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
                     case "url": this.url = (String) value; break;
@@ -80,7 +80,7 @@ public class RealmIR {
                     case "group_search.base_dn": this.groupSearchBaseDn = (String) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
                 switch (attribute) {
                     case "order": this.order = (Integer) value; break;
                     default: keyKnown = false; break;
@@ -103,8 +103,8 @@ public class RealmIR {
     }
 
     public static class FileRealmIR extends RealmIR {
-        String filesUsers;
-        String filesUsersRoles;
+        private String filesUsers;
+        private String filesUsersRoles;
 
         public String getFilesUsersRoles() { return filesUsersRoles; }
         public String getFilesUsers() { return filesUsers; }
@@ -117,19 +117,19 @@ public class RealmIR {
         public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
             boolean keyKnown = true;
 
-            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+            if (IntermediateRepresentationElasticSearchYml.isType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
                     case "files.users": this.filesUsers = (String) value;break;
                     case "files.users_roles": this.filesUsersRoles = (String) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
                 switch (attribute) {
                     case "order": this.order = (Integer) value; break;
                     default: keyKnown = false; break;
@@ -148,8 +148,8 @@ public class RealmIR {
 
     public static class NativeRealmIR extends RealmIR {
 
-        String cacheTtl;
-        int cacheMaxUsers;
+        private String cacheTtl;
+        private int cacheMaxUsers;
 
         public String getCacheTtl() { return cacheTtl; }
         public int getCacheMaxUsers() { return cacheMaxUsers; }
@@ -162,18 +162,18 @@ public class RealmIR {
         public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
             boolean keyKnown = true;
 
-            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+            if (IntermediateRepresentationElasticSearchYml.isType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
                     case "cache.ttl": this.cacheTtl = (String) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
                 switch (attribute) {
                     case "order": this.order = (Integer) value; break;
                     case "cache.max_users": this.cacheMaxUsers = (Integer) value; break;
@@ -193,10 +193,10 @@ public class RealmIR {
 
     public static class SamlRealmIR extends RealmIR {
 
-        String idpMetadataPath;
-        String spEntityID;
-        String spAcs;
-        String attributesPrincipal;
+        private String idpMetadataPath;
+        private String spEntityID;
+        private String spAcs;
+        private String attributesPrincipal;
 
         public String getAttributesPrincipal() { return attributesPrincipal; }
         public String getIdpMetadataPath() { return idpMetadataPath; }
@@ -211,12 +211,12 @@ public class RealmIR {
         public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
             boolean keyKnown = true;
 
-            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+            if (IntermediateRepresentationElasticSearchYml.isType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
                     case "idp.metadata.path": this.idpMetadataPath = (String) value; break;
@@ -225,7 +225,7 @@ public class RealmIR {
                     case "attributes.principal": this.attributesPrincipal = (String) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
                 switch (attribute) {
                     case "order": this.order = (Integer) value; break;
                     default: keyKnown = false; break;
@@ -244,15 +244,15 @@ public class RealmIR {
 
     public static class PkiRealmIR extends RealmIR {
 
-        List<String> certificateAuthorities = new ArrayList<>();
+        private List<String> certificateAuthorities = new ArrayList<>();
 
-        String usernamePattern;
-        String usernameAttribute;
-        Boolean delegationEnabled;
+        private String usernamePattern;
+        private String usernameAttribute;
+        private Boolean delegationEnabled;
 
-        String truststorePath;
-        String truststoreType;
-        String truststorePassword;
+        private String truststorePath;
+        private String truststoreType;
+        private String truststorePassword;
 
         public List<String> getCertificateAuthorities() { return certificateAuthorities; }
         public String getUsernamePattern() { return usernamePattern; }
@@ -270,13 +270,13 @@ public class RealmIR {
         public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
             boolean keyKnown = true;
 
-            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+            if (IntermediateRepresentationElasticSearchYml.isType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
                     case "delegation.enabled": this.delegationEnabled = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
                     case "username_pattern": this.usernamePattern = (String) value; break;
@@ -286,12 +286,12 @@ public class RealmIR {
                     case "truststore.password": this.truststorePassword = (String) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
                 switch (attribute) {
                     case "order": this.order = (Integer) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, List.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, List.class)) {
                 List<?> v = (List<?>) value;
 
                 if (v.isEmpty()) {
@@ -323,21 +323,21 @@ public class RealmIR {
     public static class OidcRealmIR extends RealmIR {
 
         // RP settings
-        String rpClientId;
-        String rpResponseType;
-        String rpPostLogoutRedirectUri;
+        private String rpClientId;
+        private String rpResponseType;
+        private String rpPostLogoutRedirectUri;
 
         // OP settings
-        String opIssuer;
-        String opAuthEndpoint;
-        String opTokenEndpoint;
-        String opJwkSetPath;
+        private String opIssuer;
+        private String opAuthEndpoint;
+        private String opTokenEndpoint;
+        private String opJwkSetPath;
 
         // Claims
-        String claimPrincipal;
-        String claimName;
-        String claimMail;
-        String claimGroups;
+        private String claimPrincipal;
+        private String claimName;
+        private String claimMail;
+        private String claimGroups;
 
         public String getRpClientId() { return rpClientId; }
         public String getRpResponseType() { return rpResponseType; }
@@ -359,12 +359,12 @@ public class RealmIR {
         public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
             boolean keyKnown = true;
 
-            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+            if (IntermediateRepresentationElasticSearchYml.isType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
                     case "rp.client_id": this.rpClientId = (String) value; break;
@@ -380,7 +380,7 @@ public class RealmIR {
                     case "claims.groups": this.claimGroups = (String) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
                 switch (attribute) {
                     case "order": this.order = (Integer) value; break;
                     default: keyKnown = false; break;
@@ -399,10 +399,10 @@ public class RealmIR {
 
     public static class KerberosRealmIR extends RealmIR {
 
-        String keytabPath;
-        String principal;
-        Boolean krbDebug;
-        Boolean removeRealmName;
+        private String keytabPath;
+        private String principal;
+        private Boolean krbDebug;
+        private Boolean removeRealmName;
 
         public String getKeytabPath() { return keytabPath; }
         public String getPrincipal() { return principal; }
@@ -417,21 +417,21 @@ public class RealmIR {
         public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
             boolean keyKnown = true;
 
-            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+            if (IntermediateRepresentationElasticSearchYml.isType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
                     case "krb.debug": this.krbDebug = (Boolean) value; break;
                     case "remove_realm_name": this.removeRealmName = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
                     case "keytab.path": this.keytabPath = (String) value; break;
                     case "principal": this.principal = (String) value; break;
                     default: keyKnown = false; break;
                 }
-            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+            } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
                 switch (attribute) {
                     case "order": this.order = (Integer) value; break;
                     default: keyKnown = false; break;

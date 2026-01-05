@@ -28,6 +28,12 @@
 		<license.excludedGroups>.*floragunn.*</license.excludedGroups>
 		<license.excludedScopes>test,provided</license.excludedScopes>
         <log4j2.version>2.25.2</log4j2.version>
+		<sg.plugin.skip>false</sg.plugin.skip>
+		<sg.plugin.version>4.0.1-es-9.1.0</sg.plugin.version>
+		<sg.plugin.file>${project.build.directory}/sg-plugin.zip</sg.plugin.file>
+		<sg.plugin.file.basename>sg-plugin.zip</sg.plugin.file.basename>
+		<sg.plugin.url>https://maven.search-guard.com/search-guard-flx-release/com/floragunn/search-guard-flx-elasticsearch-plugin/${sg.plugin.version}/search-guard-flx-elasticsearch-plugin-${sg.plugin.version}.zip</sg.plugin.url>
+		<sg.plugin.argline>-Dsg.tests.sg_plugin.file=${sg.plugin.file}</sg.plugin.argline>
 	</properties>
 
 	<repositories>
@@ -155,6 +161,12 @@
 			<groupId>com.floragunn</groupId>
 			<artifactId>codova</artifactId>
 			<version>[1.10.1,)</version>
+		</dependency>
+
+		<dependency>
+			<groupId>org.jspecify</groupId>
+			<artifactId>jspecify</artifactId>
+			<version>1.0.0</version>
 		</dependency>
 
 		<dependency>
@@ -288,13 +300,6 @@
 		<dependency>
 			<groupId>org.elasticsearch</groupId>
 			<artifactId>elasticsearch-ssl-config</artifactId>
-			<version>${elasticsearch.version}</version>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>org.elasticsearch.plugin</groupId>
-			<artifactId>rest-root</artifactId>
 			<version>${elasticsearch.version}</version>
 			<scope>test</scope>
 		</dependency>
@@ -461,10 +466,27 @@
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>3.10.0</version>
+				<configuration>
+					<source>${maven.compiler.source}</source>
+					<failOnError>true</failOnError>
+					<doclint>all</doclint>
+					<additionalJOptions>
+						<additionalJOption>-Xdoclint:all</additionalJOption>
+					</additionalJOptions>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.5.4</version>
 				<configuration>
-					<argLine>-Xmx3072m ${surefireArgLine}</argLine>
+					<argLine>-Xmx3072m ${surefireArgLine} ${sg.plugin.argline}</argLine>
+					<environmentVariables>
+						<SG_TESTS_JAVA_OPTS>-Des.entitlements.enabled=false -Djava.security.manager=</SG_TESTS_JAVA_OPTS>
+						<ES_JAVA_OPTS>-Des.entitlements.enabled=false -Djava.security.manager=</ES_JAVA_OPTS>
+					</environmentVariables>
 					<includes>
 						<include>**/*.java</include>
 					</includes>
@@ -475,6 +497,32 @@
 					<forkCount>1</forkCount>
 					<reuseForks>false</reuseForks>
 				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>copy-search-guard-plugin</id>
+						<phase>process-test-resources</phase>
+						<goals>
+							<goal>copy</goal>
+						</goals>
+						<configuration>
+							<skip>${sg.plugin.skip}</skip>
+							<artifactItems>
+								<artifactItem>
+									<groupId>com.floragunn</groupId>
+									<artifactId>search-guard-flx-elasticsearch-plugin</artifactId>
+									<version>${sg.plugin.version}</version>
+									<type>zip</type>
+									<outputDirectory>${project.build.directory}</outputDirectory>
+									<destFileName>${sg.plugin.file.basename}</destFileName>
+								</artifactItem>
+							</artifactItems>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
@@ -608,6 +656,56 @@
 					</execution>
 				</executions>
 			</plugin>
+			<plugin>
+				<groupId>com.diffplug.spotless</groupId>
+				<artifactId>spotless-maven-plugin</artifactId>
+				<version>2.44.0</version>
+				<configuration>
+					<java>
+						<googleJavaFormat>
+							<version>1.17.0</version>
+						</googleJavaFormat>
+						<target>
+							<target>src/main/java/**/*.java</target>
+							<target>src/test/java/**/*.java</target>
+						</target>
+					</java>
+				</configuration>
+			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>spotbugs</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>com.github.spotbugs</groupId>
+						<artifactId>spotbugs-maven-plugin</artifactId>
+						<version>4.9.2.0</version>
+						<configuration>
+							<effort>Max</effort>
+							<threshold>Low</threshold>
+						</configuration>
+						<executions>
+							<execution>
+								<phase>verify</phase>
+								<goals>
+									<goal>check</goal>
+								</goals>
+							</execution>
+						</executions>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+		<profile>
+			<id>with-sg-plugin</id>
+			<properties>
+				<sg.plugin.skip>false</sg.plugin.skip>
+				<sg.plugin.argline>-Dsg.tests.sg_plugin.file=${sg.plugin.file}</sg.plugin.argline>
+			</properties>
+		</profile>
+	</profiles>
 </project>

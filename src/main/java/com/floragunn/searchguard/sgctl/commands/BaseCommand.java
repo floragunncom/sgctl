@@ -36,6 +36,9 @@ import com.google.common.io.Files;
 
 import picocli.CommandLine.Option;
 
+/**
+ * Common base for sgctl commands, providing config directory handling and cluster selection utilities.
+ */
 public class BaseCommand {
 
     static final File DEFAULT_CONFIG_DIR = new File(System.getProperty("user.home"), ".searchguard");
@@ -43,20 +46,32 @@ public class BaseCommand {
     @Option(names = { "-c", "--cluster" }, description = "The ID of the cluster configuration to be used by this command")
     String clusterIdOption;
 
+    /** Enables verbose debug output. */
     @Option(names = { "--debug" }, description = "Print debug information")
     protected boolean debug;
 
+    /** Enables additional informational output. */
     @Option(names = { "-v", "--verbose" }, description = "Print more information")
     protected boolean verbose;
 
     @Option(names = { "--sgctl-config-dir" }, description = "The directory where sgctl reads from and writes to its configuration")
     File customConfigDir;
 
+    /** Container for validation messages collected while parsing options. */
     protected final ValidationErrors validationErrors = new ValidationErrors();
 
     private String selectedClusterId;
     private boolean selectedClusterIdInitialized;
 
+    /**
+     * Resolves the cluster id to operate on either from CLI options or the persisted selection.
+     */
+    /**
+     * Resolves the cluster id to operate on either from CLI options or the persisted selection.
+     *
+     * @return cluster id or {@code null} if none selected
+     * @throws SgctlException if reading the persisted selection fails
+     */
     protected String getSelectedClusterId() throws SgctlException {
         if (!selectedClusterIdInitialized) {
             if (clusterIdOption != null) {
@@ -84,6 +99,15 @@ public class BaseCommand {
         return selectedClusterId;
     }
 
+    /**
+     * Persists the given cluster id as the current selection.
+     */
+    /**
+     * Persists the given cluster id as the current selection.
+     *
+     * @param selectedClusterId the cluster id to persist
+     * @throws SgctlException when writing fails
+     */
     protected void writeSelectedClusterId(String selectedClusterId) throws SgctlException {
         File configFile = new File(getConfigDir(), "sgctl-selected-config.txt");
 
@@ -94,6 +118,15 @@ public class BaseCommand {
         }
     }
 
+    /**
+     * Loads the selected cluster configuration or returns {@code null} if none is selected.
+     */
+    /**
+     * Loads the selected cluster configuration or returns {@code null} if none is selected.
+     *
+     * @return selected cluster config or {@code null}
+     * @throws SgctlException on IO or parse issues
+     */
     protected SgctlConfig.Cluster getSelectedClusterConfig() throws SgctlException {
         String selectedClusterId = getSelectedClusterId();
 
@@ -104,6 +137,15 @@ public class BaseCommand {
         return SgctlConfig.Cluster.read(getConfigDir(), selectedClusterId);
     }
 
+    /**
+     * Resolves the directory sgctl should use for configuration files.
+     */
+    /**
+     * Resolves the directory sgctl should use for configuration files.
+     *
+     * @return configuration directory
+     * @throws SgctlException when a provided path is invalid
+     */
     protected File getConfigDir() throws SgctlException {
         if (customConfigDir != null) {
             if (customConfigDir.isFile()) {
@@ -115,6 +157,21 @@ public class BaseCommand {
         }
     }
 
+    /**
+     * Executes an operation with retry support for concurrency conflicts.
+     */
+    /**
+     * Executes an operation with retry support for concurrency conflicts.
+     *
+     * @param retryableProcedure the work to perform
+     * @throws SgctlException on sgctl errors
+     * @throws InvalidResponseException on invalid API responses
+     * @throws FailedConnectionException on connection failures
+     * @throws ServiceUnavailableException when the service is unavailable
+     * @throws UnauthorizedException on authentication failures
+     * @throws ApiException on API protocol errors
+     * @throws UnexpectedDocumentStructureException on parsing errors
+     */
     protected void retryOnConcurrencyConflict(RetryableProcedure retryableProcedure) throws SgctlException, InvalidResponseException,
             FailedConnectionException, ServiceUnavailableException, UnauthorizedException, ApiException, UnexpectedDocumentStructureException {
         int maxRetries = 3;
@@ -135,6 +192,9 @@ public class BaseCommand {
         }
     }
 
+    /**
+     * Operation that can be re-run when a concurrency conflict occurs.
+     */
     @FunctionalInterface
     protected static interface RetryableProcedure {
         void run() throws SgctlException, InvalidResponseException, FailedConnectionException, ServiceUnavailableException, UnauthorizedException,

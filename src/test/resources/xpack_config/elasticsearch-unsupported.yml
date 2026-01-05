@@ -1,0 +1,285 @@
+###############################################
+# Baseline cluster settings (coverage payload)
+###############################################
+
+cluster.name: ir-coverage-cluster
+node.name: ir-node-1
+node.roles: ["master", "data_hot", "ingest", "ml", "transform"]
+path.data: /var/lib/elasticsearch/data
+path.logs: /var/log/elasticsearch
+network.host: 0.0.0.0
+http.port: 9200
+transport.port: 9300
+
+discovery.seed_hosts: ["es-node-1", "es-node-2"]
+cluster.initial_master_nodes: ["es-node-1", "es-node-2"]
+
+action.auto_create_index: "+.security,-*"
+indices.recovery.max_bytes_per_sec: 50mb
+
+###############################################
+# X-Pack Security – global and authz cache
+###############################################
+
+xpack.security.enabled: true
+xpack.security.enrollment.enabled: false
+xpack.security.hide_settings: "xpack.security.authc.realms.ldap.corp.*,xpack.security.authc.realms.saml.*"
+xpack.security.authz.store.roles.index.cache.max_size: 10000
+xpack.security.authz.store.roles.index.cache.ttl: 20m
+
+###############################################
+# xpack.security.authc – Authentication
+###############################################
+
+xpack.security.authc:
+  password_hashing:
+    algorithm: pbkdf2_1000
+
+  anonymous:
+    username: anon_user
+    roles: ["sg_anonymous"]
+    authz_exception: true
+
+  token:
+    enabled: true
+    timeout: 30m
+
+  api_key:
+    enabled: true
+    cache:
+      ttl: 45m
+      max_keys: "8000"
+      hash_algo: pbkdf2
+    delete:
+      retention_period: 14d
+      interval: 2h
+      timeout: 1m
+    hashing:
+      algorithm: pbkdf2_1000
+
+  realms:
+    native:
+      native1:
+        enabled: true
+        order: 0
+        cache.ttl: 10m
+        cache.max_users: 10000
+
+    file:
+      file1:
+        enabled: true
+        order: 1
+        files.users: users
+        files.roles: roles
+        files.role_mapping: role_mapping.yml
+
+    ldap:
+      corp:
+        enabled: true
+        order: 2
+        url: "ldaps://ldap.example.com:636"
+        bind_dn: "cn=ldap-bind,ou=service,dc=example,dc=com"
+        user_search:
+          base_dn: "ou=users,dc=example,dc=com"
+          filter: "(uid={0})"
+        group_search:
+          base_dn: "ou=groups,dc=example,dc=com"
+        files:
+          role_mapping: "config/ldap-role-mapping.yml"
+        unmapped_groups_as_roles: false
+        ssl:
+          certificate_authorities: ["config/ldap-ca.pem"]
+          verification_mode: full
+          supported_protocols: ["TLSv1.2", "TLSv1.3"]
+
+      templates:
+        enabled: true
+        order: 3
+        url: "ldap://ldap2.example.com:389"
+        user_dn_templates:
+          - "uid={0},ou=eng,dc=example,dc=com"
+          - "uid={0},ou=ops,dc=example,dc=com"
+        group_search:
+          base_dn: "ou=groups,dc=example,dc=com"
+        timeout.tcp_connect: 5s
+        timeout.ldap_search: 20s
+
+    active_directory:
+      ad1:
+        enabled: true
+        order: 4
+        domain_name: "example.com"
+        url: "ldaps://dc1.example.com:636"
+        user_search.base_dn: "dc=example,dc=com"
+        load_balance.type: "round_robin"
+
+    pki:
+      pki1:
+        enabled: true
+        order: 5
+        username_pattern: "EMAILADDRESS=(.*)"
+        username_attribute: mail
+        allow_legacy_dn: false
+        delegation.enabled: true
+
+    saml:
+      saml1:
+        enabled: true
+        order: 6
+        idp.metadata.path: "config/idp.xml"
+        idp.entity_id: "https://idp.example.com"
+        sp.entity_id: "https://es.example.com/"
+        sp.acs: "https://es.example.com/api/security/saml/callback"
+        sp.logout: "https://es.example.com/logout"
+        attributes.principal: "nameid"
+        attributes.groups: "groups"
+        attributes.mail: "mail"
+        attributes.name: "displayName"
+        nameid_format: "urn:oasis:names:tc:SAML:1.1:nameid-format:emailAddress"
+        signing:
+          keystore.path: "config/saml-signing.p12"
+          keystore.type: PKCS12
+          keystore.password: "changeit"
+          keystore.key_password: "changeit"
+        encryption:
+          keystore.path: "config/saml-encryption.p12"
+          keystore.password: "changeit"
+        ssl:
+          certificate_authorities: ["config/saml-idp-ca.pem"]
+
+    oidc:
+      oidc1:
+        enabled: true
+        order: 7
+        rp.client_id: "sg-client"
+        rp.response_type: "code"
+        rp.response_mode: "query"
+        rp.post_logout_redirect_uri: "https://example.com/logout"
+        op.issuer: "https://issuer.example.com"
+        op.authorization_endpoint: "https://issuer.example.com/auth"
+        op.token_endpoint: "https://issuer.example.com/token"
+        op.jwkset_path: "https://issuer.example.com/keys.jwks"
+        op.userinfo_endpoint: "https://issuer.example.com/userinfo"
+        claims.principal: "sub"
+        claims.name: "name"
+        claims.mail: "email"
+        claims.groups: "groups"
+
+    kerberos:
+      krb1:
+        enabled: true
+        order: 8
+        keytab.path: "/etc/krb5.keytab"
+        principal: "HTTP/es.example.com@EXAMPLE.COM"
+        krb.debug: true
+        remove_realm_name: false
+        acceptor_principal: "HTTP/es.example.com@EXAMPLE.COM"
+
+###############################################
+# TLS / SSL – HTTP
+###############################################
+
+xpack.security.http.ssl:
+  enabled: true
+  client_authentication: optional
+  verification_mode: full
+  keystore.path: "certs/http-keystore.p12"
+  keystore.type: PKCS12
+  keystore.password: "httpStorePass"
+  keystore.key_password: "httpKeyPass"
+  truststore.path: "certs/http-truststore.p12"
+  truststore.type: PKCS12
+  truststore.password: "httpTrustPass"
+
+  certificate: "certs/http.pem"
+  key: "certs/http.key"
+  key_passphrase: "httpSecret"
+  certificate_authorities: ["certs/http-ca.pem", "certs/http-ca2.pem"]
+
+  supported_protocols: ["TLSv1.2", "TLSv1.3"]
+  cipher_suites:
+    - "TLS_AES_256_GCM_SHA384"
+    - "TLS_AES_128_GCM_SHA256"
+
+  filter:
+    allow: ["127.0.0.1", "10.0.0.0/8", "localhost"]
+    deny: ["0.0.0.0/0"]
+
+###############################################
+# TLS / SSL – Transport
+###############################################
+
+xpack.security.transport.ssl:
+  enabled: true
+  verification_mode: certificate
+  client_authentication: required
+  keystore.path: "certs/transport-keystore.p12"
+  keystore.type: PKCS12
+  keystore.password: "changeit"
+  keystore.key_password: "transKeyPass"
+  truststore.path: "certs/transport-truststore.p12"
+  truststore.type: PKCS12
+  truststore.password: "transTrustPass"
+  certificate_authorities: ["certs/ca1.pem", "certs/ca2.pem"]
+
+  supported_protocols: ["TLSv1.2", "TLSv1.3"]
+  cipher_suites: ["TLS_AES_128_GCM_SHA256"]
+
+  filter:
+    allow: ["10.0.0.1", "10.0.0.2"]
+    deny: ["_all"]
+
+  remote_cluster:
+    filter:
+      allow: ["172.20.0.0/16"]
+      deny: ["172.21.0.0/16"]
+
+###############################################
+# Transport profiles with dedicated TLS/filter
+###############################################
+
+transport:
+  profiles:
+    edge:
+      port: 9400
+      xpack.security.ssl.enabled: true
+      xpack.security.ssl.certificate_authorities: ["certs/edge-ca.pem"]
+      xpack.security.filter.allow: ["192.168.1.10"]
+      xpack.security.filter.deny: ["192.168.1.0/24"]
+
+    backend:
+      port: 9500
+      xpack.security.ssl.enabled: true
+      xpack.security.ssl.certificate_authorities: ["certs/backend-ca.pem"]
+      xpack.security.filter.allow: ["10.0.0.0/8"]
+      xpack.security.filter.deny: ["172.16.0.0/12"]
+
+###############################################
+# IP filters (transport/http/remote)
+###############################################
+
+xpack.security.transport.filter.enabled: true
+xpack.security.transport.filter.allow: ["192.168.0.1", "192.168.0.2"]
+xpack.security.transport.filter.deny: "_all"
+
+xpack.security.http.filter.enabled: true
+xpack.security.http.filter.allow: ["localhost", "2001:0db8:1234::/48"]
+xpack.security.http.filter.deny: "1234:0db8:85a3:0000:0000:8a2e:0370:7334"
+
+xpack.security.remote_cluster.filter.allow: ["198.51.100.0/24"]
+xpack.security.remote_cluster.filter.deny: ["_all"]
+
+###############################################
+# Audit Logging
+###############################################
+
+xpack.security.audit.enabled: true
+xpack.security.audit.outputs: ["index", "logfile"]
+xpack.security.audit.logfile.events.include:
+  - authentication_success
+  - authentication_failed
+  - access_denied
+xpack.security.audit.logfile.events.exclude:
+  - connection_granted
+xpack.security.audit.logfile.prefix: "es_audit"
+xpack.security.audit.index.events.emit_request_body: true

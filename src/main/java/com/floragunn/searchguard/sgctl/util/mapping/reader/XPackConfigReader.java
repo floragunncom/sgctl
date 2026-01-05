@@ -11,29 +11,55 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.function.Function;
 
+/**
+ * Aggregates X-Pack configuration files into a unified intermediate representation.
+ */
 public class XPackConfigReader {
 
-    File elasticsearch;
-    File userFile;
-    File roleFile;
-    File roleMappingFile;
-    IntermediateRepresentation ir;
+    private final File elasticsearch;
+    private final File userFile;
+    private final File roleFile;
+    private final File roleMappingFile;
 
     public XPackConfigReader(File elasticsearch, File user, File role, File roleMappingFile) {
         this.elasticsearch = elasticsearch;
         this.userFile = user;
         this.roleFile = role;
         this.roleMappingFile = roleMappingFile;
-        this.ir = new IntermediateRepresentation();
     }
 
-    public IntermediateRepresentation generateIR() throws DocumentParseException, IOException {
-        new RoleConfigReader(roleFile, ir);
-        new UserConfigReader(userFile, ir);
-        new RoleMappingConfigReader(roleMappingFile, ir);
-        new ElasticsearchYamlReader(elasticsearch, ir.getElasticSearchYml());
+    /**
+     * Reads all configured files and produces an {@link IntermediateRepresentation}.
+     */
+    public IntermediateRepresentation generateIR() {
+        IntermediateRepresentation ir = new IntermediateRepresentation();
+        readConfig(RoleConfigReader.FILE_NAME, () -> new RoleConfigReader(roleFile, ir));
+        readConfig(UserConfigReader.FILE_NAME, () -> new UserConfigReader(userFile, ir));
+        readConfig(RoleMappingConfigReader.FILE_NAME, () -> new RoleMappingConfigReader(roleMappingFile, ir));
+        try {
+            new ElasticsearchYamlReader(elasticsearch, ir.getElasticSearchYml());
+        } catch (Exception e) {
+            MigrationReport.shared.addWarning("elasticsearch.yml", "origin", safeMessage(e));
+        }
 
-        return ir;
+        return ir.freeze();
+    }
+
+    private void readConfig(String fileName, ReaderAction action) {
+        try {
+            action.run();
+        } catch (DocumentParseException | IOException e) {
+            MigrationReport.shared.addWarning(fileName, "origin", safeMessage(e));
+        }
+    }
+
+    private String safeMessage(Exception e) {
+        return e.getMessage() != null ? e.getMessage() : e.getClass().getSimpleName();
+    }
+
+    @FunctionalInterface
+    private interface ReaderAction {
+        void run() throws DocumentParseException, IOException;
     }
 
     static <T> List<T> readList(List<?> rawList, Function<LinkedHashMap<?, ?>, T> reader, String fileName, String origin) {

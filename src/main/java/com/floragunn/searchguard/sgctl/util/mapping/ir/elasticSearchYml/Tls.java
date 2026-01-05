@@ -5,6 +5,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Represents TLS/SSL configuration options as read from {@code elasticsearch.yml}.
@@ -16,65 +17,72 @@ import java.util.List;
 public class Tls {
 
     /** Activation flag for TLS. */
-    boolean enabled;
+    private boolean enabled;
 
     // Keystore
     /** Path to the keystore containing certificate and private key. */
-    String keystorePath;
+    private String keystorePath;
     /** Type/format of the keystore (e.g. jks, PKCS12). */
-    String keystoreType;
+    private String keystoreType;
     /** Password of the keystore (plain value – secure_* variants are ignored). */
-    String keystorePassword;
+    private String keystorePassword;
     /** Password of the key inside the keystore. */
-    String keystoreKeyPassword;
+    private String keystoreKeyPassword;
 
     // Truststore
     /** Path to the truststore containing trusted CAs. */
-    String truststorePath;
+    private String truststorePath;
     /** Type/format of the truststore (e.g. PKCS12). */
-    String truststoreType;
+    private String truststoreType;
     /** Password of the truststore. */
-    String truststorePassword;
+    private String truststorePassword;
 
     // PEM -> can be used instead of keystores
     /** Path to the certificate in PEM format. */
-    String certificatePath;
+    private String certificatePath;
     /** Path to the private key in PEM format. */
-    String privateKeyPath;
+    private String privateKeyPath;
     /** Optional password for the private key. */
-    String privateKeyPassword;
+    private String privateKeyPassword;
     /** List of certificate authority file paths. */
-    List<String> certificateAuthorities = new ArrayList<>();
+    private final List<String> certificateAuthorities = new ArrayList<>();
+    private final List<String> certificateAuthoritiesView = java.util.Collections.unmodifiableList(certificateAuthorities);
 
     // TLS modes
     /**
      * Verification mode defining how hostnames are validated in certificates.
      * Valid values: {@code full}, {@code certificate}, {@code none}.
      */
-    String verificationMode;
+    private String verificationMode;
     /**
      * Client authentication mode defining if client certificates are required.
      * Valid values: {@code required}, {@code optional}, {@code none}.
      */
-    String clientAuthMode;
+    private String clientAuthMode;
 
     // Constraints
     /** Supported protocol versions (e.g. TLSv1.2, TLSv1.3). */
-    List<String> supportedProtocols = new ArrayList<>();
+    private final List<String> supportedProtocols = new ArrayList<>();
+    private final List<String> supportedProtocolsView = java.util.Collections.unmodifiableList(supportedProtocols);
     /** List of cipher suites. */
-    List<String> ciphers = new ArrayList<>();
+    private final List<String> ciphers = new ArrayList<>();
+    private final List<String> ciphersView = java.util.Collections.unmodifiableList(ciphers);
 
     // IP filtering (https://www.elastic.co/docs/reference/elasticsearch/configuration-reference/security-settings#ip-filtering-settings)
     /** List of allowed IP addresses for this TLS context. */
-    List<String> allowedIPs;
+    private final List<String> allowedIPs = new ArrayList<>();
+    private final List<String> allowedIPsView = java.util.Collections.unmodifiableList(allowedIPs);
     /** List of denied IP addresses for this TLS context. */
-    List<String> deniedIPs;
+    private final List<String> deniedIPs = new ArrayList<>();
+    private final List<String> deniedIPsView = java.util.Collections.unmodifiableList(deniedIPs);
     /** List of allowed IP addresses for remote clusters. */
-    List<String> remoteClusterAllowedIPs;
+    private final List<String> remoteClusterAllowedIPs = new ArrayList<>();
+    private final List<String> remoteClusterAllowedIPsView = java.util.Collections.unmodifiableList(remoteClusterAllowedIPs);
     /** List of denied IP addresses for remote clusters. */
-    List<String> remoteClusterDeniedIPs;
+    private final List<String> remoteClusterDeniedIPs = new ArrayList<>();
+    private final List<String> remoteClusterDeniedIPsView = java.util.Collections.unmodifiableList(remoteClusterDeniedIPs);
 
-    private final String THIS_FILE = "elasticsearch.yml";
+    private static final String THIS_FILE = "elasticsearch.yml";
 
     // region Getters
 
@@ -82,42 +90,42 @@ public class Tls {
      * @return list of supported protocol versions.
      */
     public List<String> getSupportedProtocols() {
-        return supportedProtocols;
+        return supportedProtocolsView;
     }
 
     /**
      * @return list of configured cipher suites.
      */
     public List<String> getCiphers() {
-        return ciphers;
+        return ciphersView;
     }
 
     /**
      * @return list of allowed IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getAllowedIPs() {
-        return allowedIPs;
+        return allowedIPsView;
     }
 
     /**
      * @return list of denied IP addresses for this TLS context, or {@code null} if none set.
      */
     public List<String> getDeniedIPs() {
-        return deniedIPs;
+        return deniedIPsView;
     }
 
     /**
      * @return list of allowed IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterAllowedIPs() {
-        return remoteClusterAllowedIPs;
+        return remoteClusterAllowedIPsView;
     }
 
     /**
      * @return list of denied IP addresses for remote clusters, or {@code null} if none set.
      */
     public List<String> getRemoteClusterDeniedIPs() {
-        return remoteClusterDeniedIPs;
+        return remoteClusterDeniedIPsView;
     }
 
     /**
@@ -201,7 +209,7 @@ public class Tls {
      * @return list of certificate authority paths, possibly empty but never {@code null}.
      */
     public List<String> getCertificateAuthorities() {
-        return certificateAuthorities;
+        return certificateAuthoritiesView;
     }
 
     /**
@@ -251,7 +259,7 @@ public class Tls {
         boolean keyIgnore = false; // ignore all secure_* keys since they are not even visible
 
         // Booleans
-        if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
+        if (IntermediateRepresentationElasticSearchYml.isType(optionValue, Boolean.class)) {
             boolean value = (Boolean) optionValue;
             switch (optionName) {
                 case "enabled":
@@ -263,7 +271,7 @@ public class Tls {
         }
 
         // Strings
-        else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
+        else if (IntermediateRepresentationElasticSearchYml.isType(optionValue, String.class)) {
             String value = (String) optionValue;
             switch (optionName) {
                 case "keystore.path":
@@ -376,7 +384,7 @@ public class Tls {
         }
 
         // Lists
-        else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, List.class)) {
+        else if (IntermediateRepresentationElasticSearchYml.isType(optionValue, List.class)) {
             List<?> value = (List<?>) optionValue;
 
             if (value.isEmpty()) {
@@ -394,31 +402,31 @@ public class Tls {
             } else {
                 switch (optionName) {
                     case "certificate_authorities":
-                        certificateAuthorities = (List<String>) value;
+                        replace(certificateAuthorities, copyStrings(value));
                         break;
 
                     case "supported_protocols":
-                        supportedProtocols = (List<String>) value;
+                        replace(supportedProtocols, copyStrings(value));
                         break;
 
                     case "cipher_suites":
-                        ciphers = (List<String>) value;
+                        replace(ciphers, copyStrings(value));
                         break;
 
                     case "filter.allow":
-                        allowedIPs = (List<String>) value;
+                        replace(allowedIPs, copyStrings(value));
                         break;
 
                     case "filter.deny":
-                        deniedIPs = (List<String>) value;
+                        replace(deniedIPs, copyStrings(value));
                         break;
 
                     case "remote_cluster.filter.allow":
-                        remoteClusterAllowedIPs = (List<String>) value;
+                        replace(remoteClusterAllowedIPs, copyStrings(value));
                         break;
 
                     case "remote_cluster.filter.deny":
-                        remoteClusterDeniedIPs = (List<String>) value;
+                        replace(remoteClusterDeniedIPs, copyStrings(value));
                         break;
 
                     default:
@@ -437,5 +445,19 @@ public class Tls {
         } else {
             MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, configFile.getPath());
         }
+    }
+
+    private static List<String> copyStrings(List<?> value) {
+        Objects.requireNonNull(value, "value");
+        ArrayList<String> copy = new ArrayList<>(value.size());
+        for (Object element : value) {
+            copy.add((String) element);
+        }
+        return copy;
+    }
+
+    private static void replace(List<String> target, List<String> source) {
+        target.clear();
+        target.addAll(source);
     }
 }

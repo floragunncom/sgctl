@@ -17,17 +17,21 @@ import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigRea
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
 public class RoleConfigReader {
-    File roleFile;
-    IntermediateRepresentation ir;
-    MigrationReport report;
+    private final File roleFile;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
 
     static final String FILE_NAME = "role.json";
 
-    public RoleConfigReader(File roleFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
+    public RoleConfigReader(File roleFile, IntermediateRepresentation ir) {
         this.roleFile = roleFile;
         this.ir = ir;
         this.report = MigrationReport.shared;
-        readRoleFile();
+        try {
+            readRoleFile();
+        } catch (DocumentParseException | IOException e) {
+            report.addWarning(FILE_NAME, "origin", e.getMessage());
+        }
     }
 
     private void readRoleFile() throws DocumentParseException, IOException {

@@ -2,66 +2,97 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
 import java.io.File;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Logger;
 
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
+/**
+ * Intermediate representation for authentication-related options read from {@code elasticsearch.yml}.
+ */
 public class AuthenticationIR {
     private static final String THIS_FILE = "elasticsearch.yml";
+    private static final String REALMS_PREFIX = "realms.";
+    private static final Logger LOG = Logger.getLogger(AuthenticationIR.class.getName());
 
     // Password hashing
-    String passwordHashingAlgorithm;
+    private String passwordHashingAlgorithm;
 
     // Anonymous access
-    String anonymousUserName;
-    String anonymousRoles;
-    boolean anonymousAuthzException;
+    private String anonymousUserName;
+    private String anonymousRoles;
+    private boolean anonymousAuthzException;
 
     // Token service
-    boolean tokenEnabled;
-    String tokenTimeout;
+    private boolean tokenEnabled;
+    private String tokenTimeout;
 
     // API Key
-    boolean apiKeyEnabled; 
-    String apiKeyCacheTtl; // Time-to-live for API Keys
-    String maxKeys; // Maximum number of API keys
-    String apiKeyInMemoryHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.cache.hash_algo"
-    String apiKeyRetentionPeriod; // Time after which a expired key can be deleted
-    String apiKeyDeleteInterval; // Schedule for automatic deletion of expired keys
-    String apiKeyDeleteTimeout;
-    String apiKeyHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.hashing.algorithm" (x-pack makes a distinction between in memory)
+    private boolean apiKeyEnabled;
+    private String apiKeyCacheTtl; // Time-to-live for API Keys
+    private String maxKeys; // Maximum number of API keys
+    private String apiKeyInMemoryHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.cache.hash_algo"
+    private String apiKeyRetentionPeriod; // Time after which a expired key can be deleted
+    private String apiKeyDeleteInterval; // Schedule for automatic deletion of expired keys
+    private String apiKeyDeleteTimeout;
+    private String apiKeyHashingAlgorithm; // From x-pack "xpack.security.authc.api_key.hashing.algorithm" (x-pack makes a distinction between in memory)
 
     // realms collection
-    Map<String, RealmIR> realms = new HashMap<>();
+    private final Map<String, RealmIR> realms = new HashMap<>();
+    private final Map<String, RealmIR> realmsView = Collections.unmodifiableMap(realms);
 
     // Getter
+    /** Returns the configured password hashing algorithm. */
     public String getPasswordHashingAlgoritm() { return passwordHashingAlgorithm; }
+    /** Returns the anonymous user name or {@code null}. */
     public String getAnonymousUserName() { return anonymousUserName; }
+    /** Returns comma-separated anonymous roles. */
     public String getAnonymousRoles() { return  anonymousRoles; }
+    /** Returns whether anonymous authz exceptions are enabled. */
     public boolean getAnonymousAuthzException() { return anonymousAuthzException; }
+    /** Returns whether tokens are enabled. */
     public boolean getTokenEnabled() { return tokenEnabled; }
+    /** Returns the token timeout value. */
     public String getTokenTimeout() { return tokenTimeout; }
+    /** Returns true if API key support is enabled. */
     public boolean getApiKeyEnabled() { return apiKeyEnabled; }
+    /** Returns the API key cache TTL. */
     public String getApiKeyCacheTtl() { return apiKeyCacheTtl; }
+    /** Returns the maximum number of API keys. */
     public String getMaxTokens() { return maxKeys; }
+    /** Returns the in-memory hashing algorithm for API keys. */
     public String getApiKeyInMemoryHashingAlgorithm() { return apiKeyInMemoryHashingAlgorithm; }
+    /** Returns the retention period for expired API keys. */
     public String getApiKeyRetentionPeriod() { return apiKeyRetentionPeriod; }
+    /** Returns the deletion interval for API keys. */
     public String getApiKeyDeleteInterval() { return apiKeyDeleteInterval; }
+    /** Returns the deletion timeout for API keys. */
     public String getApiKeyDeleteTimeout() { return apiKeyDeleteTimeout; }
+    /** Returns the hashing algorithm for API keys. */
     public String getApiKeyHashingAlgorithm() { return apiKeyHashingAlgorithm; }
-    public Map<String, RealmIR> getRealms() { return realms; }
+    /** Returns an immutable view of configured realms. */
+    public Map<String, RealmIR> getRealms() { return realmsView; }
 
+    /**
+     * Handles a single authentication-related option and records migration results.
+     *
+     * @param optionName option name relative to the xpack authc prefix
+     * @param optionValue option value parsed from the config
+     * @param keyPrefix prefix used for reporting
+     * @param configFile source configuration file
+     */
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean keyKnown = true;
 
         // realms, they have this pattern: xpack.security.authc.realms.<type>.<name>.<setting>
-        if (optionName.startsWith("realms.")) {
-            String substring = optionName.substring("realms.".length());
+        if (optionName.startsWith(REALMS_PREFIX)) {
+            String substring = optionName.substring(REALMS_PREFIX.length());
             String[] parts = substring.split("\\.");
 
             if (parts.length < 3) {
-                System.out.println("Invalid option: %s" + substring);
+                LOG.warning(() -> "Invalid option: " + substring);
                 return;
             }
 
@@ -71,11 +102,11 @@ public class AuthenticationIR {
 
             RealmIR realm = realms.computeIfAbsent(name, n -> RealmIR.create(type, n));
 
-            realm.handleAttribute(attr, optionValue, keyPrefix + "realms." + type + "." + name + ".", configFile);
+            realm.handleAttribute(attr, optionValue, keyPrefix + REALMS_PREFIX + type + "." + name + ".", configFile);
             return;
         }
         // Booleans
-        else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
+        else if (IntermediateRepresentationElasticSearchYml.isType(optionValue, Boolean.class)) {
             boolean value = (Boolean) optionValue;
             switch (optionName) {
                 case "token.enabled":
@@ -94,7 +125,7 @@ public class AuthenticationIR {
                     keyKnown = false;
             }
         // Strings
-        } else if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, String.class)) {
+        } else if (IntermediateRepresentationElasticSearchYml.isType(optionValue, String.class)) {
             String value = (String) optionValue;
             switch (optionName) {
                 case "password_hashing.algorithm":

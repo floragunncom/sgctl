@@ -8,28 +8,30 @@ import com.floragunn.codova.documents.DocReader;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 
-public class ElasticsearchYamlReader {
+public final class ElasticsearchYamlReader {
 
     private final File configFile;
-    protected IntermediateRepresentationElasticSearchYml ir;
-    Map<String, Object> flattenedMap;
+    private final IntermediateRepresentationElasticSearchYml ir;
+    private Map<String, Object> flattenedMap;
 
     public ElasticsearchYamlReader(File configFile, IntermediateRepresentationElasticSearchYml ir) {
         this.configFile = configFile;
         this.ir = ir;
+        if (configFile == null) {
+            return;
+        }
         try {
             Map<String, Object> map = read();
             flattenedMap = flattenMap(map);
             toIR(flattenedMap);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
+        } catch (com.floragunn.codova.documents.DocumentParseException | java.io.IOException e) {
+            MigrationReport.shared.addWarning("elasticsearch.yml", "origin", e.getMessage());
         }
     }
 
     // read a config and return its contents as a map
     @SuppressWarnings("unchecked")
-    public Map<String, Object> read() throws Exception {
+    private Map<String, Object> read() throws com.floragunn.codova.documents.DocumentParseException, java.io.IOException {
         // the read method returns indeed a Map
         return (Map<String, Object>) DocReader.yaml().read(configFile);
     }
@@ -97,29 +99,29 @@ public class ElasticsearchYamlReader {
     }
 
     public static String getFieldsAsString(Object o) {
-        String result = "";
+        StringBuilder result = new StringBuilder();
         try {
             Class<?> c = o.getClass();
             for (var field : c.getDeclaredFields()) {
                 field.setAccessible(true);
                 Object val = field.get(o);
-                result += field.getName() + ": " + val + '\n';
+                result.append(field.getName()).append(": ").append(val).append('\n');
             }
-            return result;
-        } catch (Exception e) {
-            e.printStackTrace();
+            return result.toString();
+        } catch (IllegalAccessException | IllegalArgumentException | SecurityException e) {
+            MigrationReport.shared.addWarning("elasticsearch.yml", "origin", e.getMessage());
         }
-        return result;
+        return result.toString();
     }
 
 
     @Override
     public String toString() {
-        String out = null;
+        String out = "";
         try {
             out = read().toString();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (com.floragunn.codova.documents.DocumentParseException | java.io.IOException e) {
+            MigrationReport.shared.addWarning("elasticsearch.yml", "origin", e.getMessage());
         }
         return out;
     }

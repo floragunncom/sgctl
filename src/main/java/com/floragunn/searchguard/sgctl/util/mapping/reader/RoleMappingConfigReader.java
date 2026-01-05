@@ -16,17 +16,21 @@ import java.util.Map;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
 public class RoleMappingConfigReader {
-    File roleMappingFile;
-    IntermediateRepresentation ir;
-    MigrationReport report;
+    private final File roleMappingFile;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
 
     static final String FILE_NAME = "role_mapping.json";
 
-    public RoleMappingConfigReader(File roleMappingFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
+    public RoleMappingConfigReader(File roleMappingFile, IntermediateRepresentation ir) {
         this.roleMappingFile = roleMappingFile;
         this.ir = ir;
         this.report = MigrationReport.shared;
-        readRoleMappingFile();
+        try {
+            readRoleMappingFile();
+        } catch (DocumentParseException | IOException e) {
+            report.addWarning(FILE_NAME, "origin", e.getMessage());
+        }
     }
 
     private void readRoleMappingFile() throws DocumentParseException, IOException {
@@ -87,6 +91,13 @@ public class RoleMappingConfigReader {
                     var roles = toStringList(value, FILE_NAME, mappingName, key);
                     if (roles != null) {
                         roleMapping.setRoles(roles);
+                    }
+                    break;
+
+                case "users":
+                    var users = toStringList(value, FILE_NAME, mappingName, key);
+                    if (users != null) {
+                        roleMapping.setUsers(users);
                     }
                     break;
 
