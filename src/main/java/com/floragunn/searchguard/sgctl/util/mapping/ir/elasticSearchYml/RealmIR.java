@@ -560,7 +560,7 @@ public class RealmIR {
         }
     }
 
-    static class JwtRealmIR extends RealmIR {
+    public static class JwtRealmIR extends RealmIR {
 
         String tokenType;
         String clientAuthenticationType;
