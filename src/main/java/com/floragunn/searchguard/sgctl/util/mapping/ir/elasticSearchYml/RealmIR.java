@@ -560,7 +560,7 @@ public class RealmIR {
         }
     }
 
-    static class JwtRealmIR extends RealmIR {
+    public static class JwtRealmIR extends RealmIR {
 
         String tokenType;
         String clientAuthenticationType;
@@ -572,15 +572,15 @@ public class RealmIR {
         String claimsPrincipal;
         String claimsGroups;
 
-        String getTokenType() { return tokenType; }
-        String getClientAuthenticationType() { return clientAuthenticationType; }
-        String getAllowedIssuers() { return allowedIssuers; }
-        List<String> getAllowedIssuersList() { return allowedIssuersList; }
-        List<String> getAllowedAudiences() { return allowedAudiences; }
-        List<String> getAllowedSignatureAlgorithms() { return allowedSignatureAlgorithms; }
-        String getPkcJwksetPath() { return pkcJwksetPath; }
-        String getClaimsPrincipal() { return claimsPrincipal; }
-        String getClaimsGroups() { return claimsGroups; }
+        public String getTokenType() { return tokenType; }
+        public String getClientAuthenticationType() { return clientAuthenticationType; }
+        public String getAllowedIssuers() { return allowedIssuers; }
+        public List<String> getAllowedIssuersList() { return allowedIssuersList; }
+        public List<String> getAllowedAudiences() { return allowedAudiences; }
+        public List<String> getAllowedSignatureAlgorithms() { return allowedSignatureAlgorithms; }
+        public String getPkcJwksetPath() { return pkcJwksetPath; }
+        public String getClaimsPrincipal() { return claimsPrincipal; }
+        public String getClaimsGroups() { return claimsGroups; }
 
         JwtRealmIR(String name) { super("jwt", name); }
 
