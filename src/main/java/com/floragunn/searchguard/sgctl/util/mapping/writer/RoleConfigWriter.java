@@ -6,6 +6,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomClusterActionGroup;
+import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomIndexActionGroup;
 import com.sun.jdi.InvalidTypeException;
 import org.jspecify.annotations.NonNull;
 
@@ -30,6 +31,23 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             "monitor_snapshot", "monitor_stats", "monitor_text_structure", "monitor_transform", "monitor_watcher", "read_ccr", "read_pipeline", "read_slm",
             "read_security", "transport_client"
             );
+            static final Set<String> noEquivalentIndexActionGroupKeys = Set.of(
+                "create_doc",
+                "create_index",
+                "cross_cluster_replication",
+                "cross_cluster_replication_internal",
+                "delete_index",
+                "maintenance",
+                "manage_data_stream_lifecycle",
+                "manage_failure_store",
+                "manage_follow_index",
+                "manage_ilm",
+                "manage_leader_index",
+                "read_cross_cluster",
+                "read_failure_store",
+                "view_index_metadata"
+        );
+
     private static final Set<String> validQueryKeys = Set.of(
             // Full-text queries https://www.elastic.co/docs/reference/query-languages/query-dsl/full-text-queries
             "match", "match_phrase", "match_phrase_prefix", "match_bool_prefix", "multi_match", "intervals", "query_string", "simple_query_string",
@@ -319,66 +337,55 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         };
     }
 
-    private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
-        var sgPrivileges = new ArrayList<String>() ;
-        for (var privilege : privileges) {
-            switch (privilege) {
-                case "all":
-                    sgPrivileges.add("SGS_INDICES_ALL");
-                    break;
-                case "create":
-                    sgPrivileges.add("SGS_CREATE_INDEX");
-                    break;
-                case "create_doc":
-                    break;
-                case "create_index":
-                    break;
-                case "cross_cluster_replication":
-                    break;
-                case "cross_cluster_replication_internal":
-                    break;
-                case "delete":
-                    sgPrivileges.add("SGS_DELETE");
-                    break;
-                case "delete_index":
-                    break;
-                case "index", "write":
-                    sgPrivileges.add("SGS_WRITE");
-                    break;
-                case "maintenance":
-                    break;
-                case "manage":
-                    sgPrivileges.add("SGS_MANAGE");
-                    break;
-                case "manage_data_stream_lifecycle":
-                    break;
-                case "manage_failure_store":
-                    break;
-                case "manage_follow_index":
-                    break;
-                case "manage_ilm":
-                    break;
-                case "manage_leader_index":
-                    break;
-                case "monitor":
-                    sgPrivileges.add("SGS_INDICES_MONITOR");
-                    break;
-                case "read":
-                    sgPrivileges.add("SGS_READ");
-                    break;
-                case "read_cross_cluster":
-                    break;
-                case "read_failure_store":
-                    break;
-                case "view_index_metadata":
-                    break;
-                default:
+  private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
+    var sgPrivileges = new ArrayList<String>();
 
-                    break;
+     for (var privilege : privileges) {
+            if (privilege.matches("^((cluster)|(indices)):((admin)|(monitor))/.+$")) {
+                sgPrivileges.add(privilege);
+                continue;
+            }
+            if (noEquivalentIndexActionGroupKeys.contains(privilege)) {
+                try {
+                    agWriter.addActionGroup(CustomIndexActionGroup.fromESPrivilege(privilege));
+                } catch (IllegalArgumentException e) {
+                    report.addWarning(FILE_NAME, role.getName() + "->index",
+                            "Unexpectedly failed to create custom Action Group. This must be an issue in the migration code and not your input file. Received value: " + e.getMessage());
+                    continue;
+                }
+                // Shouldn't we add the custom action group here instead of privilage? If so also change in toSGClusterPrivileges above
+                sgPrivileges.add(privilege); 
+                continue;
+            }
+
+            var agName = matchesStandardSGIndexRole(privilege);
+
+            if (agName == null) {
+                report.addManualAction(
+                        FILE_NAME,
+                        role.getName() + "->index_permissions",
+                        "The privilege: " + privilege + " is unknown and can not be automatically mapped."
+                );
+            } else {
+                sgPrivileges.add(agName);
             }
         }
         return sgPrivileges;
     }
+
+    private static String matchesStandardSGIndexRole(String privilege) {
+        return switch (privilege) {
+            case "all" -> "SGS_INDICES_ALL";
+            case "create" -> "SGS_CREATE_INDEX";
+            case "delete" -> "SGS_DELETE";
+            case "index", "write" -> "SGS_WRITE";
+            case "manage" -> "SGS_MANAGE";
+            case "monitor" -> "SGS_INDICES_MONITOR";
+            case "read" -> "SGS_READ";
+            default -> null;
+        };
+    }
+
 
     @Override
     public Object toBasicObject() {

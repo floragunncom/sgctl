@@ -15,6 +15,11 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
         this.actionGroups.add(actionGroup.toActionGroup());
     }
 
+    // obviously a temporary solution
+    void addActionGroup(CustomIndexActionGroup actionGroup) {
+        this.actionGroups.add(actionGroup.toActionGroup());
+    }
+
     @Override
     public Object toBasicObject() {
         var contents = new LinkedHashMap<String, ActionGroup>();
@@ -355,6 +360,166 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
 
         private static CustomClusterActionGroup from(String name) throws IllegalArgumentException {
             for (var group : CustomClusterActionGroup.values()) {
+                if (group.name.equals(name)) return group;
+            }
+            throw new IllegalArgumentException(name);
+        }
+
+        public ActionGroup toActionGroup() {
+            return new ActionGroup(name, pattern, TYPE, description);
+        }
+    }
+
+
+    // TODO: Combine with above class to reduce redundancy. Maybe add a third abstract class or interface?
+    enum CustomIndexActionGroup {
+
+        SGS_CREATE_DOC_CUSTOM(
+                "SGS_CREATE_DOC_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'create_doc'",
+                List.of("indices:data/write/index",
+                        "indices:data/write/index[*",
+                        "indices:data/write/index:op_type/create",
+                        "indices:data/write/bulk*",
+                        "indices:data/write/simulate/bulk*",
+                        "indices:data/write/otlp/*")),
+
+        SGS_CREATE_INDEX_CUSTOM(
+                "SGS_CREATE_INDEX_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'create_index'",
+                List.of("indices:admin/create", "indices:admin/auto_create", "indices:admin/data_stream/create")),
+
+        SGS_CROSS_CLUSTER_REPLICATION_CUSTOM(
+                "SGS_CROSS_CLUSTER_REPLICATION_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'cross_cluster_replication'",
+                List.of(
+                        "indices:data/read/xpack/ccr/shard_changes*",
+                        "indices:monitor/stats*",
+                        "indices:admin/seq_no/add_retention_lease*",
+                        "indices:admin/seq_no/renew_retention_lease*",
+                        "indices:admin/seq_no/remove_retention_lease*")),
+
+        SGS_CROSS_CLUSTER_REPLICATION_INTERNAL_CUSTOM(
+                "SGS_CROSS_CLUSTER_REPLICATION_INTERNAL_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'cross_cluster_replication_internal'",
+                List.of("indices:internal/admin/ccr/restore/session/clear*",
+                        "indices:internal/admin/ccr/restore/file_chunk/get*",
+                        "indices:internal/admin/ccr/restore/session/put*",
+                        "internal:transport/proxy/indices:internal/admin/ccr/restore/session/clear*",
+                        "internal:transport/proxy/indices:internal/admin/ccr/restore/file_chunk/get*")),
+
+        SGS_DELETE_INDEX_CUSTOM(
+                "SGS_DELETE_INDEX_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'delete_index'",
+                List.of(
+                        "indices:admin/delete",
+                        "indices:admin/data_stream/delete")),
+
+        SGS_MAINTENANCE_CUSTOM(
+                "SGS_MAINTENANCE_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'maintenance'",
+                List.of("indices:admin/refresh*",
+                        "indices:admin/flush*",
+                        "indices:admin/synced_flush",
+                        "indices:admin/forcemerge*")),
+
+        SGS_MANAGE_DATA_STREAM_LIFECYCLE_CUSTOM(
+                "SGS_MANAGE_DATA_STREAM_LIFECYCLE_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_data_stream_lifecycle'",
+                List.of("indices:admin/data_stream/lifecycle/*")),
+
+        SGS_MANAGE_FAILURE_STORE_CUSTOM(
+                "SGS_MANAGE_FAILURE_STORE_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_failure_store'",
+                List.of(
+                    "indices:monitor/*",
+                    "indices:admin/*",
+                    "indices:data/read/field_caps*",
+                    "indices:data/read/xpack/rollup/get/index/caps*"
+                )),
+
+        SGS_MANAGE_FOLLOW_INDEX_CUSTOM(
+                "SGS_MANAGE_FOLLOW_INDEX_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_follow_index'",
+                List.of(
+                        "indices:admin/xpack/ccr/put_follow",
+                        "indices:admin/xpack/ccr/unfollow",
+                        "indices:admin/close*",
+                        "indices:admin/data_stream/promote",
+                        "indices:admin/rollover")),
+
+        SGS_MANAGE_ILM_CUSTOM(
+                "SGS_MANAGE_ILM_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_ilm'",
+                List.of("indices:admin/ilm/*")),
+
+        SGS_MANAGE_LEADER_INDEX_CUSTOM(
+                "SGS_MANAGE_LEADER_INDEX_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_leader_index'",
+                List.of("indices:admin/xpack/ccr/forget_follower*")),
+
+        SGS_READ_CROSS_CLUSTER_CUSTOM(
+                "SGS_READ_CROSS_CLUSTER_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'read_cross_cluster'",
+                List.of(
+                        "internal:transport/proxy/indices:data/read/*",
+                        "indices:admin/shards/search_shards",
+                        "indices:admin/search/search_shards",
+                        "indices:admin/resolve/cluster",
+                        "indices:data/read/esql",
+                        "indices:data/read/esql/compute")),
+
+        SGS_READ_FAILURE_STORE_CUSTOM(
+                "SGS_READ_FAILURE_STORE_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'read_failure_store'",
+                List.of("indices:data/read/*", "indices:admin/resolve/index")),
+
+        SGS_VIEW_INDEX_METADATA_CUSTOM(
+                "SGS_VIEW_INDEX_METADATA_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'view_index_metadata'",
+                List.of(
+                        "indices:admin/aliases/get",
+                        "indices:admin/get",
+                        "indices:admin/mappings/fields/get*",
+                        "indices:admin/mappings/get",
+                        "indices:admin/shards/search_shards",
+                        "indices:admin/search/search_shards",
+                        "indices:admin/validate/query*",
+                        "indices:monitor/settings/get",
+                        "indices:admin/ilm/explain",
+                        "indices:admin/data_stream/lifecycle/get",
+                        "indices:admin/data_stream/lifecycle/explain",
+                        "indices:admin/data_stream/get",
+                        "indices:admin/resolve/index",
+                        "indices:admin/resolve/cluster",
+                        "indices:data/read/field_caps*",
+                        "indices:data/read/xpack/rollup/get/index/caps*",
+                        "indices:monitor/transform/checkpoint*",
+                        "indices:monitor/get/metering/stats", // serverless only
+                        "indices:admin/get/metering/stats"// serverless only
+                ));
+
+        private static final String TYPE = "index";
+
+        private final String name;
+        private final List<String> pattern;
+        private final String description;
+
+        CustomIndexActionGroup(String name, String description, List<String> pattern) {
+            this.name = name;
+            this.description = description;
+            this.pattern = pattern;
+        } 
+        
+        public String getName() { return name; }
+        public List<String> getPattern() { return pattern; }
+
+        public static CustomIndexActionGroup fromESPrivilege(String name) throws IllegalArgumentException {
+            return from("SGS_" + name.toUpperCase() + "_CUSTOM");
+        }
+
+        private static CustomIndexActionGroup from(String name) throws IllegalArgumentException {
+            for (var group : CustomIndexActionGroup.values()) {
                 if (group.name.equals(name)) return group;
             }
             throw new IllegalArgumentException(name);
