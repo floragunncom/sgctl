@@ -1,0 +1,9 @@
+---
+default:
+  auth_domains:
+  - type: "saml"
+    saml.idp.metadata_url: "https://idp.example.com/metadata.xml"
+    saml.idp.entity_id: "https://idp.example.com"
+    saml.sp.entity_id: "https://kibana.example.com"
+    label: "SAML Login"
+    id: "saml1"

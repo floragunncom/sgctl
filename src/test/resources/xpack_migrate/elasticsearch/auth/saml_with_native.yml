@@ -1,0 +1,22 @@
+# X-Pack elasticsearch.yml with both native and SAML realms
+# Expected: sg_authc.yml (native) AND sg_frontend_authc.yml (SAML)
+
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        native:
+          native1:
+            order: 0
+            enabled: true
+        saml:
+          saml1:
+            order: 1
+            enabled: true
+            idp:
+              entity_id: "https://idp.example.com"
+              metadata:
+                path: "https://idp.example.com/metadata.xml"
+            sp:
+              entity_id: "https://kibana.example.com"

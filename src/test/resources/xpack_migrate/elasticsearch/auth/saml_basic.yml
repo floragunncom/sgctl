@@ -1,0 +1,22 @@
+# X-Pack elasticsearch.yml with SAML realm
+# Expected conversion: sg_frontend_authc.yml with SAML auth domain
+
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        saml:
+          saml1:
+            order: 0
+            enabled: true
+            idp:
+              entity_id: "https://idp.example.com"
+              metadata:
+                path: "https://idp.example.com/metadata.xml"
+            sp:
+              entity_id: "https://kibana.example.com"
+              acs: "https://kibana.example.com/api/security/saml/callback"
+            attributes:
+              principal: "nameid"
+              groups: "groups"

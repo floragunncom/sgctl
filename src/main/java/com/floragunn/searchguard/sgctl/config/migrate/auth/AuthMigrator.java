@@ -8,6 +8,7 @@ import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap.*;
+import com.floragunn.searchguard.sgctl.config.searchguard.SgFrontendAuthC;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig.Realm;
 import java.util.*;
@@ -44,23 +45,38 @@ public class AuthMigrator implements SubMigrator {
             .toList();
 
     var authcDomains = new ImmutableList.Builder<SgAuthC.AuthDomain<?>>(sortedRealms.size());
+    var frontendAuthcDomains =
+        new ImmutableList.Builder<SgFrontendAuthC.AuthDomain<?>>(sortedRealms.size());
+
     for (var realm : sortedRealms) {
-      SgAuthC.AuthDomain<?> domain;
       if (realm.get() instanceof Realm.NativeRealm || realm.get() instanceof Realm.FileRealm) {
-        domain = new SgAuthC.AuthDomain.Internal();
+        authcDomains.add(new SgAuthC.AuthDomain.Internal());
       } else if (realm.get() instanceof Realm.LdapRealm ldapRealm) {
-        domain = migrateLdapRealm(Traceable.of(realm.getSource(), ldapRealm), reporter);
+        authcDomains.add(migrateLdapRealm(Traceable.of(realm.getSource(), ldapRealm), reporter));
       } else if (realm.get() instanceof Realm.ActiveDirectoryRealm adRealm) {
-        domain = migrateActiveDirectoryRealm(Traceable.of(realm.getSource(), adRealm));
+        authcDomains.add(migrateActiveDirectoryRealm(Traceable.of(realm.getSource(), adRealm)));
+      } else if (realm.get() instanceof Realm.SAMLRealm samlRealm) {
+        frontendAuthcDomains.add(
+            migrateSamlRealm(Traceable.of(realm.getSource(), samlRealm), reporter));
       } else {
         reporter.critical(realm, "Unrecognized realm type");
         return List.of();
       }
-
-      authcDomains.add(domain);
     }
 
-    return List.of(new SgAuthC(authcDomains.build()));
+    var results = new ArrayList<NamedConfig<?>>();
+
+    var builtAuthcDomains = authcDomains.build();
+    if (!builtAuthcDomains.isEmpty()) {
+      results.add(new SgAuthC(builtAuthcDomains));
+    }
+
+    var builtFrontendAuthcDomains = frontendAuthcDomains.build();
+    if (!builtFrontendAuthcDomains.isEmpty()) {
+      results.add(new SgFrontendAuthC(builtFrontendAuthcDomains));
+    }
+
+    return results;
   }
 
   private SgAuthC.AuthDomain<?> migrateLdapRealm(
@@ -122,6 +138,50 @@ public class AuthMigrator implements SubMigrator {
             new UserSearch(
                 realmUntraced.userSearchBaseDn().get(), Optional.empty(), Optional.empty()));
     return new Ldap(identityProvider, userSearch, Optional.empty());
+  }
+
+  private SgFrontendAuthC.AuthDomain<?> migrateSamlRealm(
+      Traceable<Realm.SAMLRealm> realm, MigrationReporter reporter) {
+    var saml = realm.get();
+
+    // idpMetadataPath is required for migration
+    var metadataUrl =
+        saml.idpMetadataPath()
+            .get()
+            .orElseGet(
+                () -> {
+                  reporter.problem(
+                      realm, "SAML realm missing idp.metadata.path - using empty string");
+                  return "";
+                });
+
+    // idpEntityId is required for migration
+    var idpEntityId =
+        saml.idpEntityId()
+            .get()
+            .orElseGet(
+                () -> {
+                  reporter.problem(realm, "SAML realm missing idp.entity_id - using empty string");
+                  return "";
+                });
+
+    // spEntityId is required for migration
+    var spEntityId =
+        saml.spEntityId()
+            .get()
+            .orElseGet(
+                () -> {
+                  reporter.problem(realm, "SAML realm missing sp.entity_id - using empty string");
+                  return "";
+                });
+
+    return new SgFrontendAuthC.AuthDomain.Saml(
+        Optional.empty(), // label - use default
+        Optional.of(saml.name().get()), // id - use realm name
+        false, // isDefault
+        metadataUrl,
+        idpEntityId,
+        spEntityId);
   }
 
   private Optional<SearchScope> migrateSearchScope(
