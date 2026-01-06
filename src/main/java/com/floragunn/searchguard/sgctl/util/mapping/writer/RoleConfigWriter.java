@@ -16,7 +16,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private IntermediateRepresentation ir;
     final private MigrationReport report;
     final private List<SGRole> roles;
-    private MigrateConfig.SgAuthc sgAuthc;
+    final private MigrateConfig.SgAuthc sgAuthc;
     final private ActionGroupConfigWriter agWriter;
     final private Set<String> userMappingAttributes = new HashSet<>();
 
@@ -146,6 +146,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         new MigrateConfig.NewAuthDomain(frontendType, null, null, null, map, null);
     }
 
+    //region Query Migration
     private String parseQueryMap(LinkedHashMap<?, ?> queryMap, String origin) throws InvalidTypeException, InvalidKeyException {
         for (var entry : queryMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
@@ -242,6 +243,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         }
         return sgTemplate + "}";
     }
+    //endregion
 
     private String toSGDLS(Role.Index index, Role role) {
         var query = index.getQuery();
@@ -281,7 +283,8 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 try {
                     agWriter.addActionGroup(CustomClusterActionGroup.fromESPrivilege(privilege));
                 } catch (IllegalArgumentException e) {
-                    report.addWarning(FILE_NAME, role.getName() + "->cluster", "Unexpectedly failed to create custom Action Group.");
+                    report.addWarning(FILE_NAME, role.getName() + "->cluster",
+                            "Unexpectedly failed to create custom Action Group. This must be an issue in the migration code and not your input file. Received value: " + e.getMessage());
                     continue;
                 }
                 sgPrivileges.add(privilege);
@@ -439,7 +442,5 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         }
     }
 
-    static void print(Object line) {
-        System.out.println(line);
-    }
+    static void print(Object line) { System.out.println(line); }
 }

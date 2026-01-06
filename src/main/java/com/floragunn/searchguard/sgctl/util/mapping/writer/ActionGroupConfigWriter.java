@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer;
 import java.util.*;
 
 import com.floragunn.codova.documents.Document;
+import org.jspecify.annotations.NonNull;
 
 
 public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter> {
@@ -24,12 +25,13 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
     }
 
     static class ActionGroup implements Document<ActionGroup>{
-        String name;
+        @NonNull String name;
         List<String> allowedActions;
-        String type; // must be "index", "cluster" or "kibana" 
+        @NonNull String type; // must be "index", "cluster" or "kibana"
         String description;
 
-        public ActionGroup(String name, List<String> allowedActions, String type, String description) {
+        public ActionGroup(@NonNull String name, List<String> allowedActions, @NonNull String type, String description) {
+            if (!type.matches("^(index)|(cluster)|(kibana)$")) throw new IllegalArgumentException();
             this.name = name;
             this.allowedActions = allowedActions;
             this.type = type;
@@ -355,7 +357,7 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             for (var group : CustomClusterActionGroup.values()) {
                 if (group.name.equals(name)) return group;
             }
-            throw new IllegalArgumentException();
+            throw new IllegalArgumentException(name);
         }
 
         public ActionGroup toActionGroup() {

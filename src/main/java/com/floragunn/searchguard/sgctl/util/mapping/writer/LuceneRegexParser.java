@@ -21,7 +21,6 @@ public class LuceneRegexParser {
         luceneReg = replaceEmpty(luceneReg);
         luceneReg = replaceAny(luceneReg);
         luceneReg = replaceAnd(luceneReg);
-        print(luceneReg);
         return luceneReg;
     }
 
@@ -86,6 +85,7 @@ public class LuceneRegexParser {
         return buffer.toString();
     }
 
+    //region Lucene Range to Regex
     private static String rangeToRegex(int min, int max) {
         assert(min <= max);
         final var maxLength = String.valueOf(max).length();
@@ -187,8 +187,5 @@ public class LuceneRegexParser {
     }
 
     private record Range(int min, int max) { }
-
-    private static void print(Object line) {
-        System.out.println(line);
-    }
+    //endregion
 }
