@@ -4,6 +4,7 @@ import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.util.Translator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap;
@@ -124,43 +125,11 @@ public class AuthMigrator implements SubMigrator {
     return new Ldap(identityProvider, userSearch, Optional.empty());
   }
 
-  private final Map<String, String> translationMappingsEn =
-      Map.of(
-          "NO_SEARCH_SCOPES", "No migratable search scopes exist at all for search guard.",
-          "SEPARATOR", ", ",
-          "NOTE_SCOPE_WAS_OMITTED", "The search scope was omitted from the output because of this.",
-          "ONE_SEARCH_SCOPE", "A different migratable search scope DOES exists in search guard: ",
-          "MULTIPLE_SEARCH_SCOPES",
-              "These other migratable search scopes DO exist in search guard: ");
-  private final Map<String, String> translationMappings =
-      translationMappingsEn; // TODO: Adjust on locale
-
-  private String applyErrorMessageTranslation(List<String> errorMessageTemplate) {
-    final StringBuilder inconvertibleErrorMessageBuilder = new StringBuilder();
-    for (var msgPart : errorMessageTemplate) {
-      if (msgPart.startsWith("{") && msgPart.endsWith("}")) {
-        final String translationKey = msgPart.toUpperCase().substring(1, msgPart.length() - 1);
-        final String replacement = translationMappings.get(translationKey);
-        if (replacement == null) {
-          throw new IllegalStateException(
-              "Error Message template contains unknown translation key: " + translationKey);
-        }
-        inconvertibleErrorMessageBuilder.append(replacement);
-      } else {
-        inconvertibleErrorMessageBuilder.append(msgPart);
-      }
-    }
-    return inconvertibleErrorMessageBuilder.toString();
-  }
-
   private void addBaseSearchScopeInconvertibleErrorMessageTemplate(
       Traceable<Realm.LdapRealm.Scope> scope, MigrationReporter reporter) {
     final SearchScope[] possibleScopes = SearchScope.values();
     final List<String> inconvertibleErrorMessageTemplate = new ArrayList<>();
-    if (possibleScopes.length == 0) {
-      inconvertibleErrorMessageTemplate.add("{NO_SEARCH_SCOPES}");
-      inconvertibleErrorMessageTemplate.add("{NOTE_SCOPE_WAS_OMITTED}");
-    } else if (possibleScopes.length == 1) {
+    if (possibleScopes.length == 1) {
       inconvertibleErrorMessageTemplate.add("{ONE_SEARCH_SCOPE}");
       inconvertibleErrorMessageTemplate.add(possibleScopes[0].name() + ". ");
       inconvertibleErrorMessageTemplate.add("{NOTE_SCOPE_WAS_OMITTED}");
@@ -175,7 +144,8 @@ public class AuthMigrator implements SubMigrator {
       inconvertibleErrorMessageTemplate.add(". ");
       inconvertibleErrorMessageTemplate.add("{NOTE_SCOPE_WAS_OMITTED}");
     }
-    final String errorMessage = applyErrorMessageTranslation(inconvertibleErrorMessageTemplate);
+    final String errorMessage =
+        Translator.getInstance().translate(inconvertibleErrorMessageTemplate);
     reporter.inconvertible(scope, errorMessage);
   }
 
