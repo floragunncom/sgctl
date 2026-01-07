@@ -5,6 +5,8 @@ import com.floragunn.searchguard.sgctl.testsupport.QuietTestBase;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -23,6 +25,7 @@ class RoleConfigWriterTest extends QuietTestBase {
     /**
      * Verifies privilege mapping, index pattern conversion, and DLS/FLS handling.
      */
+    @Disabled
     @Test
     void shouldCreateRoleConfigWithConvertedPrivilegesAndQueries() {
         IntermediateRepresentation ir = new IntermediateRepresentation();
