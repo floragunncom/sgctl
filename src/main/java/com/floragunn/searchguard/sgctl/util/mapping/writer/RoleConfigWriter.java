@@ -329,29 +329,28 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             case "all" ->  "SGS_CLUSTER_ALL";
             case "manage_ilm" -> "SGS_CLUSTER_MANAGE_ILM";
             case "manage_index_templates" -> "SGS_CLUSTER_MANAGE_INDEX_TEMPLATES";
-            case "manage_ingest_pipelines" -> "SGS_CLUSTER_MANAGE_PIPELINES";
-            case "manage_pipeline" -> "SGS_CLUSTER_MANAGE_PIPELINES";
+            case "manage_ingest_pipelines", "manage_pipeline" -> "SGS_CLUSTER_MANAGE_PIPELINES";
             case "monitor" -> "SGS_CLUSTER_MONITOR";
             case "read_ilm" -> "SGS_CLUSTER_READ_ILM";
             default -> null;
         };
     }
 
-  private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
-    var sgPrivileges = new ArrayList<String>();
+    private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
+        var sgPrivileges = new ArrayList<String>();
 
-     for (var privilege : privileges) {
+        for (var privilege : privileges) {
             if (privilege.matches("^((cluster)|(indices)):((admin)|(monitor))/.+$")) {
                 sgPrivileges.add(privilege);
                 continue;
             }
             if (noEquivalentIndexActionGroupKeys.contains(privilege)) {
                 try {
-                    agWriter.addActionGroup(CustomIndexActionGroup.fromESPrivilege(privilege));
+                  agWriter.addActionGroup(CustomIndexActionGroup.fromESPrivilege(privilege));
                 } catch (IllegalArgumentException e) {
-                    report.addWarning(FILE_NAME, role.getName() + "->index",
-                            "Unexpectedly failed to create custom Action Group. This must be an issue in the migration code and not your input file. Received value: " + e.getMessage());
-                    continue;
+                  report.addWarning(FILE_NAME, role.getName() + "->index",
+                          "Unexpectedly failed to create custom Action Group. This must be an issue in the migration code and not your input file. Received value: " + e.getMessage());
+                  continue;
                 }
 
                 sgPrivileges.add("SGS_" + privilege + "_CUSTOM");
@@ -362,9 +361,9 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
 
             if (agName == null) {
                 report.addManualAction(
-                        FILE_NAME,
-                        role.getName() + "->index_permissions",
-                        "The privilege: " + privilege + " is unknown and can not be automatically mapped."
+                      FILE_NAME,
+                      role.getName() + "->index_permissions",
+                      "The privilege: " + privilege + " is unknown and can not be automatically mapped."
                 );
             } else {
                 sgPrivileges.add(agName);
