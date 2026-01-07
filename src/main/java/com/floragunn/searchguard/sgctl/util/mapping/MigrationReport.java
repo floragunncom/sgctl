@@ -67,7 +67,7 @@ public class MigrationReport {
             printMigrated(fr, out);
             printWarnings(fr, out);
             printManuals(fr, out);
-        }  
+        }
         out.println("---------- End Migration Report ----------");
     }
 
@@ -94,7 +94,7 @@ public class MigrationReport {
                 }
             }
             out.println();
-        } 
+        }
     }
     void printWarnings(FileReport fr, PrintStream out){
         List<Entry> warnings = fr.get(Category.WARNING);
