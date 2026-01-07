@@ -31,8 +31,10 @@ public abstract class RealmTranslator {
      * @param key The Key which needs to be added
      * @param value Optional value that gets added if present
      */
-    protected void addOptionalConfigProperty(String key, Object value) {
+    protected void addOptionalConfigProperty(String key, Object value, Object defaultValue) {
         //We want to just add something that holds actual information
+        if (value == null)
+            value = defaultValue;
         if (value == null || (value instanceof String string && string.isEmpty()))
             return;
         config.put(key, value);
@@ -46,6 +48,10 @@ public abstract class RealmTranslator {
         MigrationReport.shared.addMigrated(fileName, key);
 
 
+    }
+
+    protected void addOptionalConfigProperty(String key, Object value) {
+        addOptionalConfigProperty(key, value, null);
     }
     public abstract MigrateConfig.NewAuthDomain translate(RealmIR originalIR);
 }
