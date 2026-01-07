@@ -1,48 +1,18 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
-import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
-import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
+import org.jspecify.annotations.NonNull;
+
 
 public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter> {
-    private List<ActionGroup> actionGroups;
-    private IntermediateRepresentation ir;
-    private MigrationReport report;
+    private final Set<ActionGroup> actionGroups = new HashSet<>();
 
-    private static final String FILE_NAME = "sg_action_groups.yml";
+    static final String FILE_NAME = "sg_action_groups.yml";
 
-
-    public ActionGroupConfigWriter(IntermediateRepresentation ir) {
-        this.actionGroups = new ArrayList<>();
-        this.ir = ir;
-        this.report = MigrationReport.shared;
-
-        // TODO: Should action groups be inititialized with all possible custom groups, or should they only be added when needed in RoleConfigWriter?
-        print(DocWriter.yaml().writeAsString(this));
-
-    }
-
-    public void addCustomActionGroups(Set<CustomClusterActionGroup> agSet ) {
-
-        for (var ag : agSet) {
-            this.actionGroups.add(ag.toActionGroup());
-        }
-
-    }
-
-    public boolean contains(String name){
-        if (actionGroups == null) return false;
-        for (var ag : actionGroups){
-            if (Objects.equals(ag.name, name)) return true;
-        }
-        return false;
+    void addActionGroup(CustomActionGroup actionGroup) {
+        this.actionGroups.add(actionGroup.toActionGroup());
     }
 
     @Override
@@ -54,17 +24,14 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
         return contents;
     }
 
-    static void print(Object line) {
-        System.out.println(line);
-    }
-
     static class ActionGroup implements Document<ActionGroup>{
-        String name;
+        @NonNull String name;
         List<String> allowedActions;
-        String type; // must be "index", "cluster" or "kibana" 
+        @NonNull String type; // must be "index", "cluster" or "kibana"
         String description;
 
-        public ActionGroup(String name, List<String> allowedActions, String type, String description) {
+        public ActionGroup(@NonNull String name, List<String> allowedActions, @NonNull String type, String description) {
+            if (!type.matches("^(index)|(cluster)|(kibana)$")) throw new IllegalArgumentException();
             this.name = name;
             this.allowedActions = allowedActions;
             this.type = type;
@@ -80,17 +47,27 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
                 contents.put("description", description);
             }
             return contents;
-        }   
-
-        // Deprecated: CustomClusterActionGroup has an own toActionGroup() method
-        static ActionGroup fromCustomClusterActionGroup(CustomClusterActionGroup cag) {
-            var desc = "todo";
-            return new ActionGroup(cag.getName(), cag.getPattern(), "cluster", desc);
         }
-
     }
 
-    enum CustomClusterActionGroup {
+    interface CustomActionGroup {
+        String getName();
+        List<String> getPattern();
+        String getType();
+        String getDescription();
+    
+        default ActionGroupConfigWriter.ActionGroup toActionGroup() {
+            return new ActionGroupConfigWriter.ActionGroup(
+                getName(),
+                getPattern(),
+                getType(),
+                getDescription()
+            );
+        }
+    }
+    
+
+    enum CustomClusterActionGroup implements CustomActionGroup{
 
         // Might be cleaner to use static final patterns like in the elasticsearch repo
         SGS_CANCEL_TASK_CUSTOM(
@@ -374,8 +351,6 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             "cluster:monitor/state"
         ));
 
-        private static final String TYPE = "cluster";
-
         private final String name;
         private final List<String> pattern;
         private final String description;
@@ -386,31 +361,176 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             this.pattern = pattern;
         } 
         
-        // Getter are not realy needed anymore
-        public String getName() {
-            return name;
-        } 
-        public List<String> getPattern() {
-            return pattern;
-        }
- 
-        public static CustomClusterActionGroup from(String name) {
-            for (CustomClusterActionGroup group : CustomClusterActionGroup.values()) {
-                if (group.name.equals(name)) {
-                    return group;
-                }
-            }
-            // TODO: should there be at least a note in the migration report? (Or is it intended behaviour that this case could happen?)
-            return SGS_MANAGE_SECURITY_CUSTOM;
+        @Override public String getName() { return name; }
+        @Override  public List<String> getPattern() { return pattern; }
+        @Override public String getDescription(){ return description; }
+        @Override public String getType() { return "cluster"; }
+
+        public static CustomClusterActionGroup fromESPrivilege(String name) throws IllegalArgumentException {
+            return from("SGS_" + name.toUpperCase() + "_CUSTOM");
         }
 
-        public ActionGroup toActionGroup() {
-            return new ActionGroup(
-                name,
-                pattern,
-                TYPE,
-                description
-            );
+        private static CustomClusterActionGroup from(String name) throws IllegalArgumentException {
+            for (var group : CustomClusterActionGroup.values()) {
+                if (group.name.equals(name)) return group;
+            }
+            throw new IllegalArgumentException(name);
+        }
+    }
+
+
+    // TODO: Combine with above class to reduce redundancy. Maybe add a third abstract class or interface?
+    enum CustomIndexActionGroup implements CustomActionGroup{
+
+        SGS_CREATE_DOC_CUSTOM(
+                "SGS_CREATE_DOC_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'create_doc'",
+                List.of("indices:data/write/index",
+                        "indices:data/write/index[*",
+                        "indices:data/write/index:op_type/create",
+                        "indices:data/write/bulk*",
+                        "indices:data/write/simulate/bulk*",
+                        "indices:data/write/otlp/*")),
+
+        SGS_CREATE_INDEX_CUSTOM(
+                "SGS_CREATE_INDEX_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'create_index'",
+                List.of("indices:admin/create", "indices:admin/auto_create", "indices:admin/data_stream/create")),
+
+        SGS_CROSS_CLUSTER_REPLICATION_CUSTOM(
+                "SGS_CROSS_CLUSTER_REPLICATION_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'cross_cluster_replication'",
+                List.of(
+                        "indices:data/read/xpack/ccr/shard_changes*",
+                        "indices:monitor/stats*",
+                        "indices:admin/seq_no/add_retention_lease*",
+                        "indices:admin/seq_no/renew_retention_lease*",
+                        "indices:admin/seq_no/remove_retention_lease*")),
+
+        SGS_CROSS_CLUSTER_REPLICATION_INTERNAL_CUSTOM(
+                "SGS_CROSS_CLUSTER_REPLICATION_INTERNAL_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'cross_cluster_replication_internal'",
+                List.of("indices:internal/admin/ccr/restore/session/clear*",
+                        "indices:internal/admin/ccr/restore/file_chunk/get*",
+                        "indices:internal/admin/ccr/restore/session/put*",
+                        "internal:transport/proxy/indices:internal/admin/ccr/restore/session/clear*",
+                        "internal:transport/proxy/indices:internal/admin/ccr/restore/file_chunk/get*")),
+
+        SGS_DELETE_INDEX_CUSTOM(
+                "SGS_DELETE_INDEX_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'delete_index'",
+                List.of(
+                        "indices:admin/delete",
+                        "indices:admin/data_stream/delete")),
+
+        SGS_MAINTENANCE_CUSTOM(
+                "SGS_MAINTENANCE_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'maintenance'",
+                List.of("indices:admin/refresh*",
+                        "indices:admin/flush*",
+                        "indices:admin/synced_flush",
+                        "indices:admin/forcemerge*")),
+
+        SGS_MANAGE_DATA_STREAM_LIFECYCLE_CUSTOM(
+                "SGS_MANAGE_DATA_STREAM_LIFECYCLE_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_data_stream_lifecycle'",
+                List.of("indices:admin/data_stream/lifecycle/*")),
+
+        SGS_MANAGE_FAILURE_STORE_CUSTOM(
+                "SGS_MANAGE_FAILURE_STORE_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_failure_store'",
+                List.of(
+                    "indices:monitor/*",
+                    "indices:admin/*",
+                    "indices:data/read/field_caps*",
+                    "indices:data/read/xpack/rollup/get/index/caps*"
+                )),
+
+        SGS_MANAGE_FOLLOW_INDEX_CUSTOM(
+                "SGS_MANAGE_FOLLOW_INDEX_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_follow_index'",
+                List.of(
+                        "indices:admin/xpack/ccr/put_follow",
+                        "indices:admin/xpack/ccr/unfollow",
+                        "indices:admin/close*",
+                        "indices:admin/data_stream/promote",
+                        "indices:admin/rollover")),
+
+        SGS_MANAGE_ILM_CUSTOM(
+                "SGS_MANAGE_ILM_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_ilm'",
+                List.of("indices:admin/ilm/*")),
+
+        SGS_MANAGE_LEADER_INDEX_CUSTOM(
+                "SGS_MANAGE_LEADER_INDEX_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'manage_leader_index'",
+                List.of("indices:admin/xpack/ccr/forget_follower*")),
+
+        SGS_READ_CROSS_CLUSTER_CUSTOM(
+                "SGS_READ_CROSS_CLUSTER_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'read_cross_cluster'",
+                List.of(
+                        "internal:transport/proxy/indices:data/read/*",
+                        "indices:admin/shards/search_shards",
+                        "indices:admin/search/search_shards",
+                        "indices:admin/resolve/cluster",
+                        "indices:data/read/esql",
+                        "indices:data/read/esql/compute")),
+
+        SGS_READ_FAILURE_STORE_CUSTOM(
+                "SGS_READ_FAILURE_STORE_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'read_failure_store'",
+                List.of("indices:data/read/*", "indices:admin/resolve/index")),
+
+        SGS_VIEW_INDEX_METADATA_CUSTOM(
+                "SGS_VIEW_INDEX_METADATA_CUSTOM",
+                "Derived from X-Pack Security builtin privilege 'view_index_metadata'",
+                List.of(
+                        "indices:admin/aliases/get",
+                        "indices:admin/get",
+                        "indices:admin/mappings/fields/get*",
+                        "indices:admin/mappings/get",
+                        "indices:admin/shards/search_shards",
+                        "indices:admin/search/search_shards",
+                        "indices:admin/validate/query*",
+                        "indices:monitor/settings/get",
+                        "indices:admin/ilm/explain",
+                        "indices:admin/data_stream/lifecycle/get",
+                        "indices:admin/data_stream/lifecycle/explain",
+                        "indices:admin/data_stream/get",
+                        "indices:admin/resolve/index",
+                        "indices:admin/resolve/cluster",
+                        "indices:data/read/field_caps*",
+                        "indices:data/read/xpack/rollup/get/index/caps*",
+                        "indices:monitor/transform/checkpoint*",
+                        "indices:monitor/get/metering/stats", // serverless only
+                        "indices:admin/get/metering/stats"// serverless only
+                ));
+
+        private final String name;
+        private final List<String> pattern;
+        private final String description;
+
+        CustomIndexActionGroup(String name, String description, List<String> pattern) {
+            this.name = name;
+            this.description = description;
+            this.pattern = pattern;
+        } 
+        
+        @Override public String getName() { return name; }
+        @Override public List<String> getPattern() { return pattern; }
+        @Override public String getDescription() { return description; }
+        @Override public String getType() { return "index"; }
+
+        public static CustomIndexActionGroup fromESPrivilege(String name) throws IllegalArgumentException {
+            return from("SGS_" + name.toUpperCase() + "_CUSTOM");
+        }
+
+        private static CustomIndexActionGroup from(String name) throws IllegalArgumentException {
+            for (var group : CustomIndexActionGroup.values()) {
+                if (group.name.equals(name)) return group;
+            }
+            throw new IllegalArgumentException(name);
         }
     }
 }
