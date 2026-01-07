@@ -1,15 +1,16 @@
 package com.floragunn.searchguard.sgctl.testsupport;
 
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.Role;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.RoleMapping;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.User;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
 import com.floragunn.searchguard.sgctl.util.mapping.validation.XPackConfigValidator;
 import com.floragunn.searchguard.sgctl.util.mapping.validation.XPackValidationResult;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -91,7 +92,7 @@ class XPackConfigValidatorTest {
      */
     @Test
     void shouldReportNullUsersAndUsersWithoutRoles() {
-        User userWithoutRoles = new User("alice");
+        User userWithoutRoles = newUser("alice");
         userWithoutRoles.setRoles(null);
 
         List<User> users = new ArrayList<>();
@@ -121,8 +122,8 @@ class XPackConfigValidatorTest {
      */
     @Test
     void shouldDetectDuplicateUsernames() {
-        User first = new User("alice");
-        User second = new User("alice");
+        User first = newUser("alice");
+        User second = newUser("alice");
 
         List<User> users = new ArrayList<>();
         users.add(first);
@@ -172,7 +173,7 @@ class XPackConfigValidatorTest {
     void shouldDetectDisabledMappingsMissingRolesAndUnknownReferences() {
         Role existingRole = new Role("admin");
 
-        User existingUser = new User("alice");
+        User existingUser = newUser("alice");
         existingUser.setRoles(Collections.singletonList("admin"));
 
         RoleMapping mapping = new RoleMapping("mappingWithIssues");
@@ -218,15 +219,25 @@ class XPackConfigValidatorTest {
         IntermediateRepresentation ir = new IntermediateRepresentation();
 
         if (roles != null) {
-            ir.getRoles().addAll(roles);
+            for (Role role : roles) {
+                ir.addRole(role);
+            }
         }
         if (users != null) {
-            ir.getUsers().addAll(users);
+            for (User user : users) {
+                ir.addUser(user);
+            }
         }
         if (mappings != null) {
-            ir.getRoleMappings().addAll(mappings);
+            for (RoleMapping mapping : mappings) {
+                ir.addRoleMapping(mapping);
+            }
         }
 
         return ir;
+    }
+
+    private static User newUser(String username) {
+        return new User(username, null, null, null, null, null, new LinkedHashMap<>());
     }
 }

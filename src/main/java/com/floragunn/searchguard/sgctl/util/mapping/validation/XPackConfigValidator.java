@@ -1,9 +1,9 @@
 package com.floragunn.searchguard.sgctl.util.mapping.validation;
 
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.Role;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.RoleMapping;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.User;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
+import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
 
 import java.util.HashMap;
 import java.util.HashSet;

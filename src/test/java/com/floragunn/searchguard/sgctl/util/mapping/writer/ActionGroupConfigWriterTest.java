@@ -1,14 +1,11 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
 import com.floragunn.searchguard.sgctl.testsupport.QuietTestBase;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import org.junit.jupiter.api.Test;
 
 import java.util.Map;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,10 +19,8 @@ class ActionGroupConfigWriterTest extends QuietTestBase {
      */
     @Test
     void shouldAddCustomActionGroups() {
-        IntermediateRepresentation ir = new IntermediateRepresentation();
-        ActionGroupConfigWriter writer = new ActionGroupConfigWriter(ir);
-
-        writer.addCustomActionGroups(Set.of(ActionGroupConfigWriter.CustomClusterActionGroup.SGS_CANCEL_TASK_CUSTOM));
+        ActionGroupConfigWriter writer = new ActionGroupConfigWriter();
+        writer.addActionGroup(ActionGroupConfigWriter.CustomClusterActionGroup.SGS_CANCEL_TASK_CUSTOM);
 
         Object basicObject = writer.toBasicObject();
         assertTrue(basicObject instanceof Map);
@@ -33,7 +28,6 @@ class ActionGroupConfigWriterTest extends QuietTestBase {
         Map<String, ActionGroupConfigWriter.ActionGroup> actionGroups =
                 (Map<String, ActionGroupConfigWriter.ActionGroup>) basicObject;
 
-        assertTrue(writer.contains("SGS_CANCEL_TASK_CUSTOM"));
         assertTrue(actionGroups.containsKey("SGS_CANCEL_TASK_CUSTOM"));
 
         ActionGroupConfigWriter.ActionGroup group = actionGroups.get("SGS_CANCEL_TASK_CUSTOM");
@@ -53,10 +47,7 @@ class ActionGroupConfigWriterTest extends QuietTestBase {
      */
     @Test
     void shouldStartWithNoActionGroups() {
-        IntermediateRepresentation ir = new IntermediateRepresentation();
-        ActionGroupConfigWriter writer = new ActionGroupConfigWriter(ir);
-
-        assertFalse(writer.contains("SGS_CANCEL_TASK_CUSTOM"));
+        ActionGroupConfigWriter writer = new ActionGroupConfigWriter();
         Object basicObject = writer.toBasicObject();
         @SuppressWarnings("unchecked")
         Map<String, ActionGroupConfigWriter.ActionGroup> actionGroups =
@@ -68,9 +59,9 @@ class ActionGroupConfigWriterTest extends QuietTestBase {
      * Verifies unknown names resolve to the default custom cluster action group.
      */
     @Test
-    void shouldResolveUnknownCustomGroupToDefault() {
+    void shouldResolveCustomGroupFromPrivilege() {
         ActionGroupConfigWriter.CustomClusterActionGroup group =
-                ActionGroupConfigWriter.CustomClusterActionGroup.from("unknown");
+                ActionGroupConfigWriter.CustomClusterActionGroup.fromESPrivilege("manage_security");
 
         assertEquals(ActionGroupConfigWriter.CustomClusterActionGroup.SGS_MANAGE_SECURITY_CUSTOM, group);
     }

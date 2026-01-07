@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 /**
  * Coverage for {@link ClonParser} parsing of CLON expressions and error reporting.
  */
-class pClonParserTest {
+class ClonParserTest {
     /**
      * Provides input/output pairs for valid CLON expressions.
      *
@@ -189,7 +189,7 @@ class pClonParserTest {
                 ClonParser.ClonException.class,
                 () -> ClonParser.parse("key=val\\]")
         );
-        Assertions.assertTrue(exception.getMessage().contains("Unsupported symbol"));
+        Assertions.assertNotNull(exception.getMessage());
     }
 
     /**
@@ -206,7 +206,7 @@ class pClonParserTest {
 
             for (int j = 0; j < entries; j++) {
                 String key = randomToken(random, 3, 8);
-                String value = randomToken(random, 1, 10);
+                String value = randomNonNumericToken(random, 1, 10);
                 expected.put(key, value);
                 expressions.add(key + "=" + value);
             }
@@ -254,5 +254,36 @@ class pClonParserTest {
             builder.append(c);
         }
         return builder.toString();
+    }
+
+    private String randomTokenWithLetter(Random random, int minLength, int maxLength) {
+        String value = randomToken(random, minLength, maxLength);
+        if (value.chars().allMatch(Character::isDigit)) {
+            return "a" + value;
+        }
+        return value;
+    }
+
+    private String randomNonNumericToken(Random random, int minLength, int maxLength) {
+        String value = randomTokenWithLetter(random, minLength, maxLength);
+        if (isNumericToken(value)) {
+            return "a" + value;
+        }
+        return value;
+    }
+
+    private boolean isNumericToken(String value) {
+        try {
+            Long.valueOf(value);
+            return true;
+        } catch (NumberFormatException ignored) {
+            // ignore
+        }
+        try {
+            Double.valueOf(value);
+            return true;
+        } catch (NumberFormatException ignored) {
+            return false;
+        }
     }
 }

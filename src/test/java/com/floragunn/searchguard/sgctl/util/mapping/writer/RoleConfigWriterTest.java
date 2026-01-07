@@ -46,10 +46,13 @@ class RoleConfigWriterTest extends QuietTestBase {
 
         ir.addRole(role);
 
-        ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter(ir);
+        ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
         RoleConfigWriter writer = new RoleConfigWriter(ir, new MigrateConfig.SgAuthc(), agWriter);
 
-        assertTrue(agWriter.contains("SGS_MANAGE_SECURITY_CUSTOM"));
+        @SuppressWarnings("unchecked")
+        Map<String, ActionGroupConfigWriter.ActionGroup> actionGroups =
+                (Map<String, ActionGroupConfigWriter.ActionGroup>) agWriter.toBasicObject();
+        assertTrue(actionGroups.containsKey("SGS_MANAGE_SECURITY_CUSTOM"));
 
         Object basicObject = writer.toBasicObject();
         assertTrue(basicObject instanceof Map);
@@ -60,7 +63,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         RoleConfigWriter.SGRole sgRole = roles.get("role1");
         assertNotNull(sgRole);
         assertEquals("Role description", sgRole.description);
-        assertEquals(List.of("SGS_CLUSTER_MONITOR", "SGS_MANAGE_SECURITY_CUSTOM"), sgRole.clusterPermissions);
+        assertEquals(List.of("SGS_CLUSTER_MONITOR", "manage_security"), sgRole.clusterPermissions);
 
         assertEquals(1, sgRole.index.size());
         RoleConfigWriter.SGRole.SGIndex sgIndex = sgRole.index.get(0);
@@ -90,7 +93,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         role.setIndices(List.of(index));
         ir.addRole(role);
 
-        ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter(ir);
+        ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
         RoleConfigWriter writer = new RoleConfigWriter(ir, new MigrateConfig.SgAuthc(), agWriter);
 
         @SuppressWarnings("unchecked")
@@ -119,7 +122,7 @@ class RoleConfigWriterTest extends QuietTestBase {
             role.setIndices(List.of(new Role.Index(List.of("/a~b/"), List.of("read"), null, null, false)));
             ir.addRole(role);
 
-            ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter(ir);
+            ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
             new RoleConfigWriter(ir, new MigrateConfig.SgAuthc(), agWriter);
 
             assertTrue(report.getEntries("sg_roles.yml", MigrationReport.Category.MANUAL)

@@ -16,7 +16,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -39,12 +38,12 @@ class SearchGuardConfigWriterTest extends QuietTestBase {
         Path usersFile = tempDir.resolve(UserConfigWriter.FILE_NAME);
         Path rolesFile = tempDir.resolve(RoleConfigWriter.FILE_NAME);
         Path mappingsFile = tempDir.resolve(RoleMappingWriter.FILE_NAME);
-        Path actionGroupsFile = tempDir.resolve("sg_action_groups.yml");
+        Path actionGroupsFile = tempDir.resolve(ActionGroupConfigWriter.FILE_NAME);
 
         assertTrue(Files.exists(usersFile));
         assertTrue(Files.exists(rolesFile));
         assertTrue(Files.exists(mappingsFile));
-        assertFalse(Files.exists(actionGroupsFile));
+        assertTrue(Files.exists(actionGroupsFile));
 
         String usersContent = normalizeLineEndings(Files.readString(usersFile, StandardCharsets.UTF_8));
         String rolesContent = normalizeLineEndings(Files.readString(rolesFile, StandardCharsets.UTF_8));
