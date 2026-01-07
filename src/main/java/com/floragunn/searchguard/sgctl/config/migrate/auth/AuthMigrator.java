@@ -124,13 +124,68 @@ public class AuthMigrator implements SubMigrator {
     return new Ldap(identityProvider, userSearch, Optional.empty());
   }
 
+  private final Map<String, String> translationMappingsEn =
+      Map.of(
+          "NO_SEARCH_SCOPES", "No migratable search scopes exist at all for search guard.",
+          "SEPARATOR", ", ",
+          "NOTE_SCOPE_WAS_OMITTED", "The search scope was omitted from the output because of this.",
+          "ONE_SEARCH_SCOPE", "A different migratable search scope DOES exists in search guard: ",
+          "MULTIPLE_SEARCH_SCOPES",
+              "These other migratable search scopes DO exist in search guard: ");
+  private final Map<String, String> translationMappings =
+      translationMappingsEn; // TODO: Adjust on locale
+
+  private String applyErrorMessageTranslation(List<String> errorMessageTemplate) {
+    final StringBuilder inconvertibleErrorMessageBuilder = new StringBuilder();
+    for (var msgPart : errorMessageTemplate) {
+      if (msgPart.startsWith("{") && msgPart.endsWith("}")) {
+        final String translationKey = msgPart.toUpperCase().substring(1, msgPart.length() - 1);
+        final String replacement = translationMappings.get(translationKey);
+        if (replacement == null) {
+          throw new IllegalStateException(
+              "Error Message template contains unknown translation key: " + translationKey);
+        }
+        inconvertibleErrorMessageBuilder.append(replacement);
+      } else {
+        inconvertibleErrorMessageBuilder.append(msgPart);
+      }
+    }
+    return inconvertibleErrorMessageBuilder.toString();
+  }
+
+  private void addBaseSearchScopeInconvertibleErrorMessageTemplate(
+      Traceable<Realm.LdapRealm.Scope> scope, MigrationReporter reporter) {
+    final SearchScope[] possibleScopes = SearchScope.values();
+    final List<String> inconvertibleErrorMessageTemplate = new ArrayList<>();
+    if (possibleScopes.length == 0) {
+      inconvertibleErrorMessageTemplate.add("{NO_SEARCH_SCOPES}");
+      inconvertibleErrorMessageTemplate.add("{NOTE_SCOPE_WAS_OMITTED}");
+    } else if (possibleScopes.length == 1) {
+      inconvertibleErrorMessageTemplate.add("{ONE_SEARCH_SCOPE}");
+      inconvertibleErrorMessageTemplate.add(possibleScopes[0].name() + ". ");
+      inconvertibleErrorMessageTemplate.add("{NOTE_SCOPE_WAS_OMITTED}");
+    } else {
+      inconvertibleErrorMessageTemplate.add("{MULTIPLE_SEARCH_SCOPES}");
+      for (var possibleScope : possibleScopes) {
+        inconvertibleErrorMessageTemplate.add(possibleScope.name());
+        inconvertibleErrorMessageTemplate.add("{SEPARATOR}");
+      }
+      inconvertibleErrorMessageTemplate.remove(
+          inconvertibleErrorMessageTemplate.size() - 1); // remove last separator
+      inconvertibleErrorMessageTemplate.add(". ");
+      inconvertibleErrorMessageTemplate.add("{NOTE_SCOPE_WAS_OMITTED}");
+    }
+    final String errorMessage = applyErrorMessageTranslation(inconvertibleErrorMessageTemplate);
+    reporter.inconvertible(scope, errorMessage);
+  }
+
   private Optional<SearchScope> migrateSearchScope(
       Traceable<Realm.LdapRealm.Scope> scope, MigrationReporter reporter) {
     return switch (scope.get()) {
       case SUB_TREE -> Optional.of(SearchScope.SUB);
       case ONE_LEVEL -> Optional.of(SearchScope.ONE);
       case BASE -> {
-        reporter.inconvertible(scope, "Cannot convert search scope as no equivalent scope exists");
+        addBaseSearchScopeInconvertibleErrorMessageTemplate(scope, reporter);
         yield Optional.empty();
       }
     };
