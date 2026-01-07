@@ -1,5 +1,3 @@
-#NOT FINAL
-# whyyyyyy https://docs.search-guard.com/latest/active-directory-ldap-advanced#tls-settings
 
 auth_domains:
   -type: basic/ldap
@@ -9,7 +7,7 @@ auth_domains:
   ldap.idp.password: "secret_password"
   ldap.group_search.base_dn: "dc=corp,dc=local"
 
-  ldap.user_search.base_dn: "dc=corp,dc=local" # not sure it exists kinda implied in doc but not stated
+  ldap.user_search.base_dn: "dc=corp,dc=local" 
 
 
 

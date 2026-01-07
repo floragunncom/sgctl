@@ -1,36 +1,23 @@
-authz:
-  saml_admins:
-    enabled: true
-    roles:
-      - admin_role_test
-    rules:
-      - field:
-          realm.name: saml1
-      - field:
-          roles: admin
+auth_domains:
+    - type: basic/saml
+      enabled: true
+      order: 0
+      http_enabled: true
+      transport_enabled: false
 
-  saml_analytics:
-    enabled: true
-    roles:
-      - dev_read_only
-    rules:
-      - field:
-          realm.name: saml1
-      - field:
-          roles: analytics
+      saml:
+        idp:
+          metadata_file: saml/idp-metadata.xml
+          entity_id: "https://idp.example.com/"
 
-  saml_users:
-    enabled: true
-    roles:
-      - read_only_role_test
-    rules:
-        - field:
-            realm.name: saml1
+        sp:
+          entity_id: "https://elasticsearch.example.com/"
+          acs: "https://elasticsearch.example.com/_searchguard/api/saml/acs"
+          logout: "https://elasticsearch.example.com/logout"
 
-  native_log_readers:
-    enabled: true
-    roles:
-      - watcher_user
-    rules:
-        - field:
-            realm.name: native1
+        user_name_attribute: "nameid"
+        roles_attribute: "roles"
+
+    - type: basic/internal_users_db
+      enabled: true
+      order: 1
