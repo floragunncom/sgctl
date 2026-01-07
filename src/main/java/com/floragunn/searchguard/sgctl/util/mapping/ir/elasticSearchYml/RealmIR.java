@@ -12,7 +12,7 @@ public class RealmIR {
     String type; // ldap, saml, oidc, ...
     String name;
     int order;
-    boolean enabled;
+    boolean enabled = true;
 
     public String getType() { return type; }
     public String getName() { return name; }
@@ -307,12 +307,14 @@ public class RealmIR {
 
         String idpMetadataPath;
         String spEntityID;
+        String idpEntityID;
         String spAcs;
         String attributesPrincipal;
 
         public String getAttributesPrincipal() { return attributesPrincipal; }
         public String getIdpMetadataPath() { return idpMetadataPath; }
         public String getSpEntityID() { return spEntityID; }
+        public String getIdpEntityID() { return idpEntityID; }
         public String getSpAcs() { return spAcs; }
 
         SamlRealmIR(String name) {
@@ -333,6 +335,7 @@ public class RealmIR {
                     case "type": this.type = (String) value; break;
                     case "idp.metadata.path": this.idpMetadataPath = (String) value; break;
                     case "sp.entity_id": this.spEntityID = (String) value; break;
+                    case "idp.entity_id": this.idpEntityID = (String) value; break;
                     case "sp.acs": this.spAcs = (String) value; break;
                     case "attributes.principal": this.attributesPrincipal = (String) value; break;
                     default: keyKnown = false; break;

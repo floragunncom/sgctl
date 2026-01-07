@@ -38,8 +38,7 @@ public class SAMLTranslator extends RealmTranslator {
         RealmIR.SamlRealmIR ir = (RealmIR.SamlRealmIR) originalIR;
 
         addOptionalConfigProperty("saml.idp.metadata_url", ir.getIdpMetadataPath());
-        //TODO: Change getIdpEntityID to current version
-        //addOptionalConfigProperty("saml.idp.entity_id", ir.getIdpEntityID());
+        addOptionalConfigProperty("saml.idp.entity_id", ir.getIdpEntityID());
 
         addOptionalConfigProperty("saml.sp.entity_id", ir.getSpEntityID());
 
