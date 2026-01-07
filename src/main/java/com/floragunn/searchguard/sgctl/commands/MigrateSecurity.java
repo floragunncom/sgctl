@@ -16,6 +16,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.concurrent.Callable;
+
+import static com.floragunn.searchguard.sgctl.util.mapping.writer.ElasticSearchConfigWriter.writeElasticSearchYml;
+
 //names of files: user.json, role.json, role_mapping.json
 @Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
 public class MigrateSecurity implements Callable<Integer> {
@@ -40,6 +43,7 @@ public class MigrateSecurity implements Callable<Integer> {
 
         IntermediateRepresentationElasticSearchYml irElasticSearchYml = new IntermediateRepresentationElasticSearchYml();
         new ElasticsearchYamlReader(elasticsearch, irElasticSearchYml);
+        writeElasticSearchYml(irElasticSearchYml,  outputDir);
         IntermediateRepresentation ir = new IntermediateRepresentation();
         SearchGuardConfigWriter sgcw = new SearchGuardConfigWriter(irElasticSearchYml, ir);
 

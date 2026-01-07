@@ -52,9 +52,6 @@ public class SGAuthcTranslator {
             //Handle disabled realms, like discussed
             String type = realm.getType().toLowerCase().trim();
 
-            //TODO: Is this a Debug-Flag?
-            //System.out.println(realm.isEnabled());
-
             if (!realm.isEnabled()) {
                 MigrationReport.shared.addIgnoredKey(RealmTranslator.SG_AUTHC_FILE_NAME, type, "authdomains");
                 return;
