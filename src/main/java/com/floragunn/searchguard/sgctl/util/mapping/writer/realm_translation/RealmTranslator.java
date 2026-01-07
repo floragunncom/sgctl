@@ -32,14 +32,15 @@ public abstract class RealmTranslator {
      * @param value Optional value that gets added if present
      */
     protected void addOptionalConfigProperty(String key, Object value) {
-        if (value == null)
+        //We want to just add something that holds actual information
+        if (value == null || (value instanceof String string && string.isEmpty()))
             return;
         config.put(key, value);
 
         String fileName;
-        if(isFrontEnd){
+        if (isFrontEnd) {
             fileName = SG_FRONTEND_AUTHC_FILE_NAME;
-        }else{
+        } else {
             fileName = SG_AUTHC_FILE_NAME;
         }
         MigrationReport.shared.addMigrated(fileName, key);
