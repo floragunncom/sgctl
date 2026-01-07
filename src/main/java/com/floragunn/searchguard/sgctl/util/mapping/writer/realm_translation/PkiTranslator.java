@@ -4,9 +4,6 @@ import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class PkiTranslator extends RealmTranslator {
 
     private static String convertXpackUsernamePatternToSearchGuard(String usernamePattern, String usernameAttribute) {

@@ -5,9 +5,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class LdapTranslator extends RealmTranslator {
 
@@ -91,10 +89,6 @@ public class LdapTranslator extends RealmTranslator {
         if (ir.getTimeoutLdapRead() != null) {
             MigrationReport.shared.addWarning(SG_AUTHC_FILE_NAME, "Timeout Tcp Read", "Timeout Tcp Read is not supported in Searchguard");
         }
-
-        // Set default connection pool sizes if not already configured
-        config.putIfAbsent("ldap.idp.connection_pool.min_size", 3);
-        config.putIfAbsent("ldap.idp.connection_pool.max_size", 10);
 
         return new MigrateConfig.NewAuthDomain(
                 toBasicType(ir.getType()),

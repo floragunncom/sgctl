@@ -54,16 +54,6 @@ public class SAMLTranslator extends RealmTranslator {
                     : spAcs;
             addOptionalConfigProperty("saml.sp.acs", convertedAcs);
         }
-        /*
-        // Roles mapping - extract from X-Pack if available
-        if (ir.getAttributesGroups() != null) {
-            String rolesMapping = convertAttributesToRolesMapping(ir.getAttributesGroups());
-            addOptionalConfigProperty("user_mapping.roles.from", rolesMapping);
-        } else {
-            MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "SAML Roles", "Configure user_mapping.roles.from or use sg_roles_mapping.yml");
-        }
-
-         */
 
         return new MigrateConfig.NewAuthDomain(
                 ir.getType(),

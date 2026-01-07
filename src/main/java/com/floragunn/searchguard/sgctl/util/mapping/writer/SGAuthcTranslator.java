@@ -45,8 +45,6 @@ public class SGAuthcTranslator {
     private void createAuthcConfig(IntermediateRepresentationElasticSearchYml ir) {
         config.authDomains = new ArrayList<>();
         frontEndConfig.authDomains = new ArrayList<>();
-        frontEndConfig.internalProxies = "";
-        frontEndConfig.remoteIpHeader = "";
 
         ir.getAuthent().getRealms().forEach((String realmName, RealmIR realm) -> {
             //Handle disabled realms, like discussed

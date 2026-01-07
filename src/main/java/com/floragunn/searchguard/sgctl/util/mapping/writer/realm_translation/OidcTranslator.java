@@ -4,9 +4,6 @@ import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class OidcTranslator extends RealmTranslator {
     public OidcTranslator() {
         isFrontEnd = true;
@@ -15,7 +12,6 @@ public class OidcTranslator extends RealmTranslator {
     public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
         RealmIR.OidcRealmIR ir = (RealmIR.OidcRealmIR) originalIR;
 
-        Map<String, Object> oidcConfig = new HashMap<>();
         //TODO review mapping: oidc.idp.openid_configuration_url, oidc.idp.tls.trusted_cas
 
         // 1. RP settings

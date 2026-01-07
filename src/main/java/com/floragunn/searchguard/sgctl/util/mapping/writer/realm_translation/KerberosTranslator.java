@@ -3,9 +3,6 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public class KerberosTranslator extends RealmTranslator {
     public KerberosTranslator() {
         isFrontEnd = true;

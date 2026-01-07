@@ -5,6 +5,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public abstract class RealmTranslator {
@@ -35,7 +36,7 @@ public abstract class RealmTranslator {
         //We want to just add something that holds actual information
         if (value == null)
             value = defaultValue;
-        if (value == null || (value instanceof String string && string.isEmpty()))
+        if (value == null || (value instanceof String string && string.isEmpty()) || (value instanceof List<?> list && list.isEmpty()))
             return;
         config.put(key, value);
 
@@ -45,6 +46,7 @@ public abstract class RealmTranslator {
         } else {
             fileName = SG_AUTHC_FILE_NAME;
         }
+        //TODO Decide if we want to keep this or just the realms
         MigrationReport.shared.addMigrated(fileName, key);
 
 
