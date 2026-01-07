@@ -3,95 +3,93 @@ package com.floragunn.searchguard.sgctl.config.xpack;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
-import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import java.util.Locale;
+import com.floragunn.searchguard.sgctl.config.trace.*;
 import java.util.Objects;
+import org.jspecify.annotations.NullMarked;
 
 /**
  * Represents X-Pack security configuration from elasticsearch.yml. Focuses on authentication
  * realms, roles, and users
  */
-public record XPackElasticsearchConfig(SecurityConfig security) {
+@NullMarked
+public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
 
   public XPackElasticsearchConfig {
     Objects.requireNonNull(security, "security must not be null");
   }
 
   /** xpack.security.* */
-  public record SecurityConfig(boolean enabled, AuthcConfig authc) {
+  public record SecurityConfig(Traceable<Boolean> enabled, OptTraceable<AuthcConfig> authc) {
 
     public SecurityConfig {
       Objects.requireNonNull(authc, "authc must not be null");
     }
 
-    public static SecurityConfig parse(DocNode doc, Parser.Context context)
-        throws ConfigValidationException {
-      var vDoc = new ValidatingDocNode(doc, new ValidationErrors(), context);
-      var enabled = vDoc.get("enabled").withDefault(true).asBoolean();
-      var authc = vDoc.get("authc").by(AuthcConfig::parse);
-
-      vDoc.throwExceptionForPresentErrors();
+    public static SecurityConfig parse(TraceableDocNode tDoc) {
+      var enabled = tDoc.get("enabled").asBoolean(true);
+      var authc = tDoc.get("authc").as(AuthcConfig::parse);
 
       return new SecurityConfig(enabled, authc);
     }
   }
 
   /** xpack.security.authc.* */
-  public record AuthcConfig(ImmutableMap<String, Realm> realms) {
+  public record AuthcConfig(
+      Traceable<ImmutableMap<String, Traceable<ImmutableMap<String, Traceable<Realm>>>>> realms) {
 
     public AuthcConfig {
       Objects.requireNonNull(realms, "realms must not be null");
     }
 
-    public static AuthcConfig parse(DocNode doc, Parser.Context context)
-        throws ConfigValidationException {
-      var vDoc = new ValidatingDocNode(doc, new ValidationErrors(), context);
-      var realms = vDoc.get("realms").by(ctx -> parseRealms(ctx, context));
-
-      vDoc.throwExceptionForPresentErrors();
-
-      return new AuthcConfig(realms);
+    private static Traceable<ImmutableMap<String, Traceable<Realm>>> parseRealmType(
+        TraceableAttribute.Required tAttr) {
+      var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart());
+      return tAttr.asMapOf(
+          
+              (TraceableDocNode realmTDoc) -> {
+                var name = Traceable.of(realmTDoc.getSource(), realmTDoc.getSource().pathPart());
+                return Realm.parse(type, name, realmTDoc);
+              });
     }
 
-    private static ImmutableMap<String, Realm> parseRealms(DocNode doc, Parser.Context context)
-        throws ConfigValidationException {
-      var builder = new ImmutableMap.Builder<String, Realm>(doc.size());
+    public static AuthcConfig parse(TraceableDocNode tDoc) {
+      var realms = tDoc.get("realms").asMapOf(AuthcConfig::parseRealmType, ImmutableMap.empty());
 
-      // structured as: xpack.security.authc.realms.<type>.<name>
-      for (var realmType : doc.keySet()) {
-        var typeNode = doc.getAsNode(realmType);
-        for (var realmName : typeNode.keySet()) {
-          var realmConfig = typeNode.getAsNode(realmName);
-          var realm = Realm.parse(realmType, realmName, realmConfig, context);
-          builder.with(realmType + "." + realmName, realm);
-        }
-      }
-
-      return builder.build();
+      return new AuthcConfig(realms);
     }
   }
 
   /** Base interface for all realm types. Supports: native, file, ldap, active_directory */
   public sealed interface Realm {
-    String type();
+    Traceable<String> type();
 
-    String name();
+    Traceable<String> name();
 
-    int order();
+    Traceable<Integer> order();
 
-    boolean enabled();
+    Traceable<Boolean> enabled();
 
-    record NativeRealm(String type, String name, int order, boolean enabled) implements Realm {
+    record NativeRealm(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled)
+        implements Realm {
       public NativeRealm {
         Objects.requireNonNull(type, "type must not be null");
         Objects.requireNonNull(name, "name must not be null");
       }
     }
 
-    record FileRealm(String type, String name, int order, boolean enabled) implements Realm {
+    record FileRealm(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled)
+        implements Realm {
       public FileRealm {
         Objects.requireNonNull(type, "type must not be null");
         Objects.requireNonNull(name, "name must not be null");
@@ -99,34 +97,34 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
     }
 
     record LdapRealm(
-        String type,
-        String name,
-        int order,
-        boolean enabled,
-        ImmutableList<String> url,
-        String bindDn,
-        String bindPassword,
-        String secureBindPassword,
-        String userDnTemplates,
-        ImmutableList<String> authorizationRealms,
-        String userGroupAttr,
-        String userFullNameAttr,
-        String userEmailAttr,
-        String userSearchBaseDn,
-        Scope userSearchScope,
-        String userSearchFilter,
-        String groupSearchBaseDn,
-        Scope groupSearchScope,
-        String groupSearchFilter,
-        boolean unmappedGroupsAsRoles,
-        String sslKey,
-        String sslSecureKeyPassphrase,
-        String sslCertificate,
-        ImmutableList<String> sslCertificateAuthorities,
-        String sslKeystorePath,
-        String sslKeystoreType,
-        String sslKeystoreSecurePassword,
-        String sslKeystoreSecureKeyPassword)
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        Traceable<ImmutableList<Traceable<String>>> url,
+        OptTraceable<String> bindDn,
+        OptTraceable<String> bindPassword,
+        OptTraceable<String> secureBindPassword,
+        OptTraceable<String> userDnTemplates,
+        Traceable<ImmutableList<Traceable<String>>> authorizationRealms,
+        Traceable<String> userGroupAttr,
+        Traceable<String> userFullNameAttr,
+        Traceable<String> userEmailAttr,
+        OptTraceable<String> userSearchBaseDn,
+        Traceable<Scope> userSearchScope,
+        Traceable<String> userSearchFilter,
+        OptTraceable<String> groupSearchBaseDn,
+        Traceable<Scope> groupSearchScope,
+        OptTraceable<String> groupSearchFilter,
+        Traceable<Boolean> unmappedGroupsAsRoles,
+        OptTraceable<String> sslKey,
+        OptTraceable<String> sslSecureKeyPassphrase,
+        OptTraceable<String> sslCertificate,
+        OptTraceable<ImmutableList<Traceable<String>>> sslCertificateAuthorities,
+        OptTraceable<String> sslKeystorePath,
+        OptTraceable<String> sslKeystoreType,
+        OptTraceable<String> sslKeystoreSecurePassword,
+        OptTraceable<String> sslKeystoreSecureKeyPassword)
         implements Realm {
       public enum Scope {
         SUB_TREE,
@@ -142,15 +140,15 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
     }
 
     record ActiveDirectoryRealm(
-        String type,
-        String name,
-        int order,
-        boolean enabled,
-        String domainName,
-        ImmutableList<String> url,
-        String bindDn,
-        String userSearchBaseDn,
-        boolean unmappedGroupsAsRoles)
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        Traceable<String> domainName,
+        OptTraceable<ImmutableList<Traceable<String>>> url,
+        OptTraceable<String> bindDn,
+        OptTraceable<String> userSearchBaseDn,
+        Traceable<Boolean> unmappedGroupsAsRoles)
         implements Realm {
       public ActiveDirectoryRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -158,8 +156,88 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
       }
     }
 
+    record SAMLRealm(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        OptTraceable<String> idpEntityId,
+        OptTraceable<String> idpMetadataPath,
+        Traceable<Boolean> idpMetadataHttpFailOnError,
+        Traceable<String> idpMetadataHttpConnectTimeout,
+        Traceable<String> idpMetadataHttpReadTimeout,
+        Traceable<String> idpMetadataHttpRefresh,
+        Traceable<String> idpMetadataHttpMinimumRefresh,
+        Traceable<Boolean> idpUseSingleLogout,
+        OptTraceable<String> spEntityId,
+        OptTraceable<String> spAcs,
+        OptTraceable<String> spLogout,
+        OptTraceable<String> attributesPrincipal,
+        OptTraceable<String> attributesGroups,
+        OptTraceable<String> attributesName,
+        OptTraceable<String> attributesMail,
+        OptTraceable<String> attributesDn,
+        /* TODO: Look into making this a regex type maybe? Idk whether yaml handles these */
+        OptTraceable<String> attributePatternsPrincipal,
+        OptTraceable<String> attributePatternsGroups,
+        OptTraceable<String> attributePatternsName,
+        OptTraceable<String> attributePatternsMail,
+        OptTraceable<String> attributePatternsDn,
+        OptTraceable<String> attributeDelimitersGroups,
+        OptTraceable<String> nameidFormat,
+        Traceable<Boolean> nameidAllowCreate,
+        OptTraceable<String> namidSpQualifier,
+        Traceable<Boolean> faceAuthn,
+        Traceable<Boolean> populateUserMetadata,
+        /* TODO: Make this compatible with list of strings */
+        OptTraceable<String> authorizationRealms,
+        Traceable<String> allowedClockSkew,
+        OptTraceable<ImmutableList<Traceable<String>>> reqAuthnContextClassRef,
+        Traceable<ImmutableList<Traceable<String>>> signingSamlMessages,
+        OptTraceable<String> signingKey,
+        OptTraceable<String> signingSecureKeyPassphrase,
+        OptTraceable<String> signingCertificate,
+        /* NOTE: Maybe unify the keystore structure? Seems to be shared with other realms */
+        OptTraceable<Keystore> signingKeystore,
+        OptTraceable<String> encryptionKey,
+        OptTraceable<String> encryptionSecureKeyPassphrase,
+        OptTraceable<String> encryptionCertificate,
+        OptTraceable<Keystore> encryptionKeystore)
+        implements Realm {
+      public record Keystore(
+          OptTraceable<String> path,
+          Traceable<KeystoreType> type,
+          OptTraceable<String> alias,
+          OptTraceable<String> securePassword,
+          OptTraceable<String> secureKeyPassword) {
+        public enum KeystoreType {
+          jks,
+          PKCS12
+        }
+
+        public static Keystore parse(TraceableDocNode tDoc) {
+          var path = tDoc.get("path").asString();
+          var type = tDoc.get("type").asEnum(KeystoreType.class, KeystoreType.jks);
+          var alias = tDoc.get("alias").asString();
+          var securePassword = tDoc.get("secure_password").asString();
+          var secureKeyPassword = tDoc.get("secure_key_password").asString();
+          return new Keystore(path, type, alias, securePassword, secureKeyPassword);
+        }
+      }
+
+      public SAMLRealm {
+        Objects.requireNonNull(type, "type must not be null");
+        Objects.requireNonNull(name, "name must not be null");
+      }
+    }
+
     /** TODO jwt, saml, oidc, kerberos, pki */
-    record GenericRealm(String type, String name, int order, boolean enabled, DocNode rawConfig)
+    record GenericRealm(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        Traceable<DocNode> rawConfig)
         implements Realm {
       public GenericRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -168,91 +246,65 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
       }
     }
 
-    static Realm parse(String type, String name, DocNode doc, Parser.Context context)
-        throws ConfigValidationException {
-      var vDoc = new ValidatingDocNode(doc, new ValidationErrors(), context);
-      var order = vDoc.get("order").required().asInt();
-      var enabled = vDoc.get("enabled").withDefault(true).asBoolean();
+    static Realm parse(Traceable<String> tType, Traceable<String> name, TraceableDocNode tDoc) {
+      var order = tDoc.get("order").required().asInt();
+      var enabled = tDoc.get("enabled").asBoolean(true);
 
+      var type = tType.get(); // Is ok, because created
       return switch (type) {
-        case "native" -> new NativeRealm(type, name, order, enabled);
-        case "file" -> new FileRealm(type, name, order, enabled);
-        case "ldap" -> parseLdapRealm(type, name, order, enabled, doc, vDoc);
-        case "active_directory" -> parseActiveDirectoryRealm(type, name, order, enabled, vDoc);
+        case "native" -> new NativeRealm(tType, name, order, enabled);
+        case "file" -> new FileRealm(tType, name, order, enabled);
+        case "ldap" -> parseLdapRealm(tType, name, order, enabled, tDoc);
+        case "active_directory" -> parseActiveDirectoryRealm(tType, name, order, enabled, tDoc);
+        case "saml" -> parseSAMLRealm(tType, name, order, enabled, tDoc);
         // Stretch goals - store as generic for future implementation
-        case "jwt", "saml", "oidc", "kerberos", "pki" ->
-            new GenericRealm(type, name, order, enabled, doc);
-        default -> new GenericRealm(type, name, order, enabled, doc);
+        case "jwt", "oidc", "kerberos", "pki" ->
+            new GenericRealm(tType, name, order, enabled, tDoc.asAttribute().asDocNode());
+        default -> new GenericRealm(tType, name, order, enabled, tDoc.asAttribute().asDocNode());
       };
     }
 
     private static LdapRealm parseLdapRealm(
-        String type, String name, int order, boolean enabled, DocNode doc, ValidatingDocNode vDoc)
-        throws ConfigValidationException {
-      var url = vDoc.get("url").asList().ofStrings();
-      var bindDn = Objects.requireNonNullElse(vDoc.get("bind_dn").asString(), "");
-      var bindPassword = Objects.requireNonNullElse(vDoc.get("bind_password").asString(), "");
-      var secureBindPassword =
-          Objects.requireNonNullElse(vDoc.get("secure_bind_password").asString(), "");
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        TraceableDocNode tDoc) {
+      var url = tDoc.get("url").asListOfStrings(ImmutableList.empty());
+      var bindDn = tDoc.get("bind_dn").asString();
+      var bindPassword = tDoc.get("bind_password").asString();
+      var secureBindPassword = tDoc.get("secure_bind_password").asString();
       // authorization realms can be a string or list; normalize to a list
-      ImmutableList<String> authorizationRealms;
-      var authorizationRealmsList = doc.getAsListOfStrings("authorization_realms");
-      if (authorizationRealmsList != null && !authorizationRealmsList.isEmpty()) {
-        var builder = new ImmutableList.Builder<String>(authorizationRealmsList.size());
-        builder.addAll(authorizationRealmsList);
-        authorizationRealms = builder.build();
-      } else {
-        var authorizationRealmsString = vDoc.get("authorization_realms").withDefault("").asString();
-        if (authorizationRealmsString.isEmpty()) {
-          authorizationRealms = new ImmutableList.Builder<String>(0).build();
-        } else {
-          var builder = new ImmutableList.Builder<String>(1);
-          builder.add(authorizationRealmsString);
-          authorizationRealms = builder.build();
-        }
-      }
-      var userDnTemplates = vDoc.get("user_dn_templates").asString();
-      var userGroupAttr =
-          Objects.requireNonNullElse(
-              vDoc.get("user_group_attribute").withDefault("memberOf").asString(), "memberOf");
-      var userFullNameAttr =
-          Objects.requireNonNullElse(vDoc.get("user_full_name_attribute").asString(), "cn");
-      var userEmailAttr =
-          Objects.requireNonNullElse(vDoc.get("user_email_attribute").asString(), "mail");
+      // TODO: authorization_realms can be a List or just a String. Only the List case is handled
+      // here.
+      var authorizationRealms =
+          tDoc.get("authorization_realms").asListOfStrings(ImmutableList.empty());
+      var userDnTemplates = tDoc.get("user_dn_templates").asString();
+      var userGroupAttr = tDoc.get("user_group_attribute").asString("memberOf");
+      var userFullNameAttr = tDoc.get("user_full_name_attribute").asString("cn");
+      var userEmailAttr = tDoc.get("user_email_attribute").asString("mail");
 
-      var userSearchNode = vDoc.get("user_search").asDocNode();
-      var userSearchScopeString =
-          Objects.requireNonNullElse(userSearchNode.getAsString("scope"), "sub_tree");
-      var userSearchScope = LdapRealm.Scope.valueOf(userSearchScopeString.toUpperCase(Locale.ROOT));
-      var userSearchBaseDn = userSearchNode.getAsString("base_dn");
-      var userSearchFilter =
-          Objects.requireNonNullElse(userSearchNode.getAsString("filter"), "(uid={0})");
+      var userSearchScope =
+          tDoc.get("user_search.scope").asEnum(LdapRealm.Scope.class, LdapRealm.Scope.SUB_TREE);
+      var userSearchBaseDn = tDoc.get("user_search.base_dn").asString();
+      var userSearchFilter = tDoc.get("user_search.filter").asString("(uid={0})");
 
-      var groupSearchNode = vDoc.get("group_search").asDocNode();
-      var groupSearchBaseDn = groupSearchNode.getAsString("base_dn");
-      var groupSearchScopeString = groupSearchNode.getAsString("scope");
+      var groupSearchBaseDn = tDoc.get("group_search.base_dn").asString();
       var groupSearchScope =
-          groupSearchScopeString != null
-              ? LdapRealm.Scope.valueOf(groupSearchScopeString.toUpperCase(Locale.ROOT))
-              : null;
-      var groupSearchFilter = groupSearchNode.getAsString("filter");
+          tDoc.get("group_search.scope").asEnum(LdapRealm.Scope.class, LdapRealm.Scope.SUB_TREE);
+      var groupSearchFilter = tDoc.get("group_search.filter").asString();
 
-      var unmappedGroupsAsRoles =
-          vDoc.get("unmapped_groups_as_roles").withDefault(false).asBoolean();
+      var unmappedGroupsAsRoles = tDoc.get("unmapped_groups_as_roles").asBoolean(false);
 
-      var sslNode = vDoc.get("ssl").asDocNode();
-      var sslKey = sslNode.getAsString("key");
-      var sslSecureKeyPassphrase = sslNode.getAsString("secure_key_passphrase");
-      var sslCertificate = sslNode.getAsString("certificate");
-      var sslCertificateAuthorities = sslNode.getAsListOfStrings("certificate_authorities");
+      var sslKey = tDoc.get("ssl.key").asString();
+      var sslSecureKeyPassphrase = tDoc.get("ssl.secure_key_passphrase").asString();
+      var sslCertificate = tDoc.get("ssl.certificate").asString();
+      var sslCertificateAuthorities = tDoc.get("ssl.certificate_authorities").asListOfStrings();
 
-      var sslKeystoreNode = sslNode.getAsNode("keystore");
-      var sslKeystorePath = sslKeystoreNode.getAsString("path");
-      var sslKeystoreType = sslKeystoreNode.getAsString("type");
-      var sslKeystoreSecurePassword = sslKeystoreNode.getAsString("secure_password");
-      var sslKeystoreSecureKeyPassword = sslKeystoreNode.getAsString("secure_key_password");
-
-      vDoc.throwExceptionForPresentErrors();
+      var sslKeystorePath = tDoc.get("ssl.keystore.path").asString();
+      var sslKeystoreType = tDoc.get("ssl.keystore.type").asString();
+      var sslKeystoreSecurePassword = tDoc.get("ssl.keystore.secure_password").asString();
+      var sslKeystoreSecureKeyPassword = tDoc.get("ssl.keystore.secure_key_password").asString();
 
       return new LdapRealm(
           type,
@@ -285,18 +337,121 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
           sslKeystoreSecureKeyPassword);
     }
 
-    private static ActiveDirectoryRealm parseActiveDirectoryRealm(
-        String type, String name, int order, boolean enabled, ValidatingDocNode vDoc)
-        throws ConfigValidationException {
-      var domainName = vDoc.get("domain_name").asString();
-      var url = vDoc.get("url").asList().ofStrings();
-      var bindDn = vDoc.get("bind_dn").asString();
-      var userSearchNode = vDoc.get("user_search").asDocNode();
-      var userSearchBaseDn = userSearchNode != null ? userSearchNode.getAsString("base_dn") : null;
-      var unmappedGroupsAsRoles =
-          vDoc.get("unmapped_groups_as_roles").withDefault(false).asBoolean();
+    private static SAMLRealm parseSAMLRealm(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        TraceableDocNode tDoc) {
+      var idpEntityId = tDoc.get("idp.entity_id").asString();
+      var idpMetadataPath = tDoc.get("idp.metadata.path").asString();
+      var idpMetadataHttpFailOnError = tDoc.get("idp.metadata.http.fail_on_error").asBoolean(false);
+      var idpMetadataHttpConnectTimeout =
+          tDoc.get("idp.metadata.http.connect_timeout").asString("5s");
+      var idpMetadataHttpReadTimeout = tDoc.get("idp.metadata.http.read_timeout").asString("10s");
+      var idpMetadataHttpRefresh = tDoc.get("idp.metadata.http.refresh").asString("1h");
+      var idpMetadataHttpMinimumRefresh =
+          tDoc.get("idp.metadata.http.minimum_refresh").asString("5m");
+      var idpUseSingleLogout = tDoc.get("idp.use_single_logout").asBoolean(true);
 
-      vDoc.throwExceptionForPresentErrors();
+      var spEntityId = tDoc.get("sp.entity_id").asString();
+      var spAcs = tDoc.get("sp.acs").asString();
+      var spLogout = tDoc.get("sp.logout").asString();
+
+      var attributesPrincipal = tDoc.get("attributes.principal").asString();
+      var attributesGroups = tDoc.get("attributes.groups").asString();
+      var attributesName = tDoc.get("attributes.name").asString();
+      var attributesMail = tDoc.get("attributes.mail").asString();
+      var attributesDn = tDoc.get("attributes.dn").asString();
+
+      var attributePatternsPrincipal = tDoc.get("attribute_patterns.principal").asString();
+      var attributePatternsGroups = tDoc.get("attribute_patterns.groups").asString();
+      var attributePatternsName = tDoc.get("attribute_patterns.name").asString();
+      var attributePatternsMail = tDoc.get("attribute_patterns.mail").asString();
+      var attributePatternsDn = tDoc.get("attribute_patterns.dn").asString();
+
+      var attributeDelimitersGroups = tDoc.get("attribute_delimiters.groups").asString();
+
+      var nameidFormat = tDoc.get("nameid_format").asString();
+      var nameidAllowCreate = tDoc.get("nameid.allow_create").asBoolean(false);
+      var nameidSpQualifier = tDoc.get("nameid.sp_qualifier").asString();
+
+      var forceAuthn = tDoc.get("force_authn").asBoolean(false);
+      var populateUserMetadata = tDoc.get("populateUserMetadata").asBoolean(true);
+      var authorizationRealms = tDoc.get("authorization_realms").asString();
+      var allowedClockSkew = tDoc.get("allowed_clock_skew").asString("3m");
+      var reqAuthnContextClassRef = tDoc.get("req_authn_context_class_ref").asListOfStrings();
+
+      var signingSamlMessages =
+          tDoc.get("signing.saml_messages")
+              .asListOfStrings(new ImmutableList.Builder<String>(1).with("*").build());
+      var signingKey = tDoc.get("signing.key").asString();
+      var signingSecureKeyPassphrase = tDoc.get("signing.secure_key_passphrase").asString();
+      var signingCertificate = tDoc.get("signing.certificate").asString();
+      var signingKeystore = tDoc.get("signing.keystore").as(SAMLRealm.Keystore::parse);
+
+      var encryptionKey = tDoc.get("encryption.key").asString();
+      var encryptionSecureKeyPassphrase = tDoc.get("encryption.secure_key_passphrase").asString();
+      var encryptionCertificate = tDoc.get("encryption.certificate").asString();
+      var encryptionKeystore = tDoc.get("encryption.keystore").as(SAMLRealm.Keystore::parse);
+
+      return new SAMLRealm(
+          type,
+          name,
+          order,
+          enabled,
+          idpEntityId,
+          idpMetadataPath,
+          idpMetadataHttpFailOnError,
+          idpMetadataHttpConnectTimeout,
+          idpMetadataHttpReadTimeout,
+          idpMetadataHttpRefresh,
+          idpMetadataHttpMinimumRefresh,
+          idpUseSingleLogout,
+          spEntityId,
+          spAcs,
+          spLogout,
+          attributesPrincipal,
+          attributesGroups,
+          attributesName,
+          attributesMail,
+          attributesDn,
+          attributePatternsPrincipal,
+          attributePatternsGroups,
+          attributePatternsName,
+          attributePatternsMail,
+          attributePatternsDn,
+          attributeDelimitersGroups,
+          nameidFormat,
+          nameidAllowCreate,
+          nameidSpQualifier,
+          forceAuthn,
+          populateUserMetadata,
+          authorizationRealms,
+          allowedClockSkew,
+          reqAuthnContextClassRef,
+          signingSamlMessages,
+          signingKey,
+          signingSecureKeyPassphrase,
+          signingCertificate,
+          signingKeystore,
+          encryptionKey,
+          encryptionSecureKeyPassphrase,
+          encryptionCertificate,
+          encryptionKeystore);
+    }
+
+    private static ActiveDirectoryRealm parseActiveDirectoryRealm(
+        Traceable<String> type,
+        Traceable<String> name,
+        Traceable<Integer> order,
+        Traceable<Boolean> enabled,
+        TraceableDocNode tDoc) {
+      var domainName = tDoc.get("domain_name").required().asString();
+      var url = tDoc.get("url").asListOfStrings();
+      var bindDn = tDoc.get("bind_dn").asString();
+      var userSearchBaseDn = tDoc.get("user_search.base_dn").asString();
+      var unmappedGroupsAsRoles = tDoc.get("unmapped_groups_as_roles").asBoolean(false);
 
       return new ActiveDirectoryRealm(
           type,
@@ -316,17 +471,15 @@ public record XPackElasticsearchConfig(SecurityConfig security) {
    * content, extracts xpack.security.* section.
    *
    * @param doc The complete elasticsearch.yml as DocNode
-   * @param context Parser context
+   * @param _context Parser context
    * @return Parsed XPackElasticsearchConfig
    * @throws ConfigValidationException If validation fails
    */
-  public static XPackElasticsearchConfig parse(DocNode doc, Parser.Context context)
+  public static XPackElasticsearchConfig parse(DocNode doc, Parser.Context _context)
       throws ConfigValidationException {
     var errors = new ValidationErrors();
-    var vDoc = new ValidatingDocNode(doc, errors, context);
-    var xpackNode = vDoc.get("xpack").required().asDocNode();
-    var security =
-        new ValidatingDocNode(xpackNode, errors, context).get("security").by(SecurityConfig::parse);
+    var tDoc = TraceableDocNode.of(doc, new Source.Config("elasticsearch.yml"), errors);
+    var security = tDoc.get("xpack.security").required().as(SecurityConfig::parse);
 
     errors.throwExceptionForPresentErrors();
 

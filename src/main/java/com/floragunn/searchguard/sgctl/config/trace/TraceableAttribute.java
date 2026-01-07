@@ -42,6 +42,10 @@ public interface TraceableAttribute {
       return as(DocNodeParser.enumeration(enumClass));
     }
 
+    default <E extends Enum<E>> Traceable<E> asEnum(Class<E> enumClass, E defaultValue) {
+      return as(DocNodeParser.enumeration(enumClass), defaultValue);
+    }
+
     default OptTraceable<DocNode> asDocNode() {
       return as(DocNodeParser.DOC_NODE);
     }

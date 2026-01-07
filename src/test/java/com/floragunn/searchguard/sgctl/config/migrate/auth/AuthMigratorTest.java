@@ -7,6 +7,7 @@ import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Parser;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator.MigrationContext;
+import com.floragunn.searchguard.sgctl.config.migrator.AssertableMigrationReporter;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.io.IOException;
@@ -61,10 +62,12 @@ class AuthMigratorTest {
   }
 
   @Test
-  void testMigrateEmptyElasticsearchConfig() throws Exception {
+  void testMigrateEmptyElasticsearchConfig() {
     var context = createContext(Optional.empty());
+    var reporter = new AssertableMigrationReporter();
 
-    var result = new AuthMigrator().migrate(context, logger);
+    var result = new AuthMigrator().migrate(context, reporter);
+    reporter.assertProblem("Skipping auth migration: no elasticsearch configuration provided");
 
     assertTrue(result.isEmpty());
   }
@@ -95,8 +98,10 @@ class AuthMigratorTest {
   private SgAuthC migrate(String path) throws Exception {
     var config = loadConfig(path);
     var context = createContext(Optional.of(config));
+    var reporter = new AssertableMigrationReporter();
 
-    var result = new AuthMigrator().migrate(context, logger);
+    var result = new AuthMigrator().migrate(context, reporter);
+    reporter.assertNoMoreProblems();
 
     assertEquals(1, result.size());
     var sgAuthC = assertInstanceOf(SgAuthC.class, result.get(0));
