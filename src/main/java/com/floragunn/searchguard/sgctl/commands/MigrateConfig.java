@@ -1787,7 +1787,7 @@ public class MigrateConfig implements Callable<Integer> {
 
     }
 
-    static class NewAuthDomain implements Document<NewAuthDomain> {
+    public static class NewAuthDomain implements Document<NewAuthDomain> {
 
         private String frontendType;
         private String backendType;
@@ -2175,7 +2175,7 @@ public class MigrateConfig implements Callable<Integer> {
         }
     }
 
-    static class SgAuthc implements Document<SgAuthc> {
+    public static class SgAuthc implements Document<SgAuthc> {
         private List<NewAuthDomain> authDomains;
         private String internalProxies = null;
         private String remoteIpHeader = null;

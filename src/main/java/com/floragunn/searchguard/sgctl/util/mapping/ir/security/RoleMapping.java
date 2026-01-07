@@ -10,14 +10,23 @@ import java.util.Map;
 
 public class RoleMapping {
     @NonNull private String mappingName;
-    private List<String> roles;
-    private List<String> users;
+    private final List<String> roles = new ArrayList<>();
+    private final List<String> rolesView = Collections.unmodifiableList(roles);
+    private boolean rolesSet;
+
+    private final List<String> users = new ArrayList<>();
+    private final List<String> usersView = Collections.unmodifiableList(users);
+    private boolean usersSet;
     private boolean enabled = true;
-    private List<String> runAs;
+    private final List<String> runAs = new ArrayList<>();
+    private final List<String> runAsView = Collections.unmodifiableList(runAs);
+    private boolean runAsSet;
 
     private Rules rules;
     private Metadata metadata;
-    private List<RoleTemplate> roleTemplates;
+    private final List<RoleTemplate> roleTemplates = new ArrayList<>();
+    private final List<RoleTemplate> roleTemplatesView = Collections.unmodifiableList(roleTemplates);
+    private boolean roleTemplatesSet;
 
     public RoleMapping(@NonNull String mappingName) {
         this.mappingName = mappingName;
@@ -25,23 +34,34 @@ public class RoleMapping {
 
     // Getter-Methods
     public @NonNull String getMappingName() { return mappingName; }
-    public List<String> getRoles() { return roles; }
-    public List<String> getUsers() { return users; }
+    public List<String> getRoles() { return rolesSet ? rolesView : null; }
+    public List<String> getUsers() { return usersSet ? usersView : null; }
     public boolean isEnabled() { return enabled; }
-    public List<String> getRunAs() { return runAs; }
+    public List<String> getRunAs() { return runAsSet ? runAsView : null; }
     public Rules getRules() { return rules; }
     public Metadata getMetadata() { return metadata; }
-    public List<RoleTemplate> getRoleTemplates() { return roleTemplates; }
+    public List<RoleTemplate> getRoleTemplates() { return roleTemplatesSet ? roleTemplatesView : null; }
 
     // Setter-Methods
     public void setMappingName(@NonNull String mappingName) { this.mappingName = mappingName; }
-    public void setRoles(List<String> roles) { this.roles = freezeList(roles); }
-    public void setUsers(List<String> users) { this.users = freezeList(users); }
+    public void setRoles(List<String> roles) { replaceStrings(roles, this.roles, () -> rolesSet = true, () -> rolesSet = false); }
+    public void setUsers(List<String> users) { replaceStrings(users, this.users, () -> usersSet = true, () -> usersSet = false); }
     public void setEnabled(boolean enabled) { this.enabled = enabled; }
-    public void setRunAs(List<String> runAS) { this.runAs = freezeList(runAS); }
+    public void setRunAs(List<String> runAS) { replaceStrings(runAS, this.runAs, () -> runAsSet = true, () -> runAsSet = false); }
     public void setRules(Rules rules) { this.rules = rules == null ? null : rules.freeze(); }
     public void setMetadata(Metadata metadata) { this.metadata = metadata == null ? null : metadata.freeze(); }
-    public void setRoleTemplates(List<RoleTemplate> roleTemplates) { this.roleTemplates = freezeRoleTemplates(roleTemplates); }
+    public void setRoleTemplates(List<RoleTemplate> roleTemplates) {
+        if (roleTemplates == null) {
+            this.roleTemplates.clear();
+            roleTemplatesSet = false;
+            return;
+        }
+        roleTemplatesSet = true;
+        this.roleTemplates.clear();
+        for (RoleTemplate template : roleTemplates) {
+            this.roleTemplates.add(template == null ? null : template.freeze());
+        }
+    }
 
 
     public static class Rules {
@@ -206,18 +226,14 @@ public class RoleMapping {
         return Collections.unmodifiableMap(new LinkedHashMap<>(map));
     }
 
-    private static List<RoleTemplate> freezeRoleTemplates(List<RoleTemplate> roleTemplates) {
-        if (roleTemplates == null) {
-            return null;
+    private static void replaceStrings(List<String> source, List<String> target, Runnable setFlag, Runnable unsetFlag) {
+        if (source == null) {
+            target.clear();
+            unsetFlag.run();
+            return;
         }
-        if (roleTemplates.isEmpty()) {
-            return List.of();
-        }
-
-        List<RoleTemplate> copy = new ArrayList<>(roleTemplates.size());
-        for (RoleTemplate template : roleTemplates) {
-            copy.add(template == null ? null : template.freeze());
-        }
-        return Collections.unmodifiableList(copy);
+        setFlag.run();
+        target.clear();
+        target.addAll(source);
     }
 }

@@ -7,7 +7,11 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link RealmIR} and its concrete subclasses.
@@ -57,6 +61,12 @@ class RealmIRTest {
         assertEquals("ou=groups,dc=example,dc=com", ldapRealm.getGroupSearchBaseDn());
     }
 
+    /**
+     * Populates a test LDAP realm with sample attributes.
+     *
+     * @param realm LDAP realm instance
+     * @return populated LDAP realm
+     */
     private static RealmIR.LdapRealmIR getLdapRealmIR(RealmIR.LdapRealmIR realm) {
 
         realm.handleAttribute("enabled", Boolean.TRUE, PREFIX, DUMMY_CONFIG);
@@ -132,6 +142,12 @@ class RealmIRTest {
         assertEquals("uid", samlRealm.getAttributesPrincipal());
     }
 
+    /**
+     * Populates a test SAML realm with sample attributes.
+     *
+     * @param realm SAML realm instance
+     * @return populated SAML realm
+     */
     private static RealmIR.SamlRealmIR getSamlRealmIR(RealmIR.SamlRealmIR realm) {
 
         realm.handleAttribute("enabled", Boolean.TRUE, PREFIX, DUMMY_CONFIG);
@@ -177,6 +193,20 @@ class RealmIRTest {
     }
 
     /**
+     * Verifies empty certificate authority lists are ignored.
+     */
+    @Test
+    void pkiRealmShouldIgnoreEmptyCertificateAuthorities() {
+        RealmIR realm = RealmIR.create("pki", "pki-empty");
+        assertInstanceOf(RealmIR.PkiRealmIR.class, realm);
+        RealmIR.PkiRealmIR pkiRealm = (RealmIR.PkiRealmIR) realm;
+
+        pkiRealm.handleAttribute("certificate_authorities", List.of(), PREFIX, DUMMY_CONFIG);
+
+        assertTrue(pkiRealm.getCertificateAuthorities().isEmpty());
+    }
+
+    /**
      * Verifies that OIDC realm attributes are mapped to the corresponding fields.
      */
     @Test
@@ -202,6 +232,12 @@ class RealmIRTest {
         assertEquals("groups", oidcRealm.getClaimGroups());
     }
 
+    /**
+     * Populates a test OIDC realm with sample attributes.
+     *
+     * @param realm OIDC realm instance
+     * @return populated OIDC realm
+     */
     private static RealmIR.OidcRealmIR getOidcRealmIR(RealmIR.OidcRealmIR realm) {
 
         realm.handleAttribute("enabled", Boolean.TRUE, PREFIX, DUMMY_CONFIG);
@@ -239,6 +275,12 @@ class RealmIRTest {
         assertEquals("HTTP/host@example.com@EXAMPLE.COM", krbRealm.getPrincipal());
     }
 
+    /**
+     * Populates a test Kerberos realm with sample attributes.
+     *
+     * @param realm Kerberos realm instance
+     * @return populated Kerberos realm
+     */
     private static RealmIR.KerberosRealmIR getKerberosRealmIR(RealmIR.KerberosRealmIR realm) {
 
         realm.handleAttribute("enabled", Boolean.TRUE, PREFIX, DUMMY_CONFIG);

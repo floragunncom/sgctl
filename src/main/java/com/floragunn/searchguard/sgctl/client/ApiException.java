@@ -31,7 +31,7 @@ public class ApiException extends Exception {
     private final StatusLine statusLine;
     private final HttpResponse httpResponse;
     private final String httpResponseBody;
-    private ValidationErrors validationErrors;
+    private transient ValidationErrors validationErrors;
 
     /**
      * Creates an exception containing the raw HTTP status and payload.
@@ -43,8 +43,9 @@ public class ApiException extends Exception {
      */
     public ApiException(String message, StatusLine statusLine, HttpResponse httpResponse,  String httpResponseBody) {
         super(message);
-        this.statusLine = statusLine;
-        this.httpResponse = httpResponse;
+        this.statusLine = statusLine == null ? null
+                : new org.apache.http.message.BasicStatusLine(statusLine.getProtocolVersion(), statusLine.getStatusCode(), statusLine.getReasonPhrase());
+        this.httpResponse = httpResponse == null ? null : new org.apache.http.message.BasicHttpResponse(this.statusLine);
         this.httpResponseBody = httpResponseBody;
     }
 

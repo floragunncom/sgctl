@@ -127,9 +127,11 @@ public class AddUserLocal implements Callable<Integer> {
         } 
     }
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private static String hash(char[] clearTextPassword) {
         final byte[] salt = new byte[16];
-        new SecureRandom().nextBytes(salt);
+        SECURE_RANDOM.nextBytes(salt);
         final String hash = OpenBSDBCrypt.generate((Objects.requireNonNull(clearTextPassword)), salt, 12);
         Arrays.fill(salt, (byte) 0);
         Arrays.fill(clearTextPassword, '\0');

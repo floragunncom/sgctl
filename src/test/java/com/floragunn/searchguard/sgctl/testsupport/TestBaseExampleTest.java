@@ -39,6 +39,17 @@ class TestBaseExampleTest extends TestBase {
         assertEquals(normalized, normalizeLineEndings(content), "Normalization should be stable");
     }
 
+    /**
+     * Verifies that readResourceAsString fails for missing resources.
+     */
+    @Test
+    void shouldRejectMissingResourceOnRead() {
+        assertThrows(IllegalArgumentException.class, () -> readResourceAsString("missing-resource.txt"));
+    }
+
+    /**
+     * Verifies line ending normalization for mixed and null inputs.
+     */
     @Test
     void shouldNormalizeVariousLineEndings() {
         String mixed = "a\r\nb\rc\n";
@@ -47,9 +58,24 @@ class TestBaseExampleTest extends TestBase {
         assertEquals("", normalizeLineEndings(null));
     }
 
+    /**
+     * Verifies that normalization is a no-op for Unix line endings.
+     */
+    @Test
+    void shouldLeaveUnixLineEndingsUntouched() {
+        String unix = "a\nb\nc\n";
+
+        assertEquals(unix, normalizeLineEndings(unix));
+    }
+
+    /**
+     * Verifies that invalid resource names are rejected.
+     */
     @Test
     void shouldRejectBlankOrMissingResources() {
+        assertThrows(IllegalArgumentException.class, () -> resolveResourcePath(null));
         assertThrows(IllegalArgumentException.class, () -> resolveResourcePath(""));
+        assertThrows(IllegalArgumentException.class, () -> resolveResourcePath("   "));
         assertThrows(IllegalArgumentException.class, () -> resolveResourcePath("does-not-exist.txt"));
     }
 }

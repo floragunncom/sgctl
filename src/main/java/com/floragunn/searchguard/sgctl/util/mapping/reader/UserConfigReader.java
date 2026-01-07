@@ -123,7 +123,7 @@ public class UserConfigReader {
                         if (ir.getRoles().contains(new Role(role))) {
                             checkedRoles.add(role);
                         } else {
-                            report.addWarning(FILE_NAME, origin + "->roles", "Role '" + role + "' does not exist in the role.json file.");
+                            report.addWarning(FILE_NAME, origin, "The role '" + role + "' does not exist in the role.json file.");
                         }
                     });
                     roles = checkedRoles;
