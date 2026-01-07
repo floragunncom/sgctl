@@ -39,6 +39,7 @@ public class RealmIR {
             case "pki": return new PkiRealmIR(name);
             case "oidc": return new OidcRealmIR(name);
             case "kerberos": return new KerberosRealmIR(name);
+            case "jwt": return new JwtRealmIR(name);
             default:
                 return new UnknownRealmIR(type, name);
         }
@@ -559,7 +560,88 @@ public class RealmIR {
         }
     }
 
-    public static class UnknownRealmIR extends RealmIR {
+    public static class JwtRealmIR extends RealmIR {
+
+        String tokenType;
+        String clientAuthenticationType;
+        String allowedIssuers;
+        List<String> allowedIssuersList;
+        List<String> allowedAudiences;
+        List<String> allowedSignatureAlgorithms;
+        String pkcJwksetPath;
+        String claimsPrincipal;
+        String claimsGroups;
+
+        public String getTokenType() { return tokenType; }
+        public String getClientAuthenticationType() { return clientAuthenticationType; }
+        public String getAllowedIssuers() { return allowedIssuers; }
+        public List<String> getAllowedIssuersList() { return allowedIssuersList; }
+        public List<String> getAllowedAudiences() { return allowedAudiences; }
+        public List<String> getAllowedSignatureAlgorithms() { return allowedSignatureAlgorithms; }
+        public String getPkcJwksetPath() { return pkcJwksetPath; }
+        public String getClaimsPrincipal() { return claimsPrincipal; }
+        public String getClaimsGroups() { return claimsGroups; }
+
+        JwtRealmIR(String name) { super("jwt", name); }
+
+        @Override
+        public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
+            boolean keyKnown = true;
+
+            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+                switch (attribute) {
+                    case "enabled": this.enabled = (Boolean) value; break;
+                    default: keyKnown = false; break;
+                }
+            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+                switch (attribute) {
+                    case "type": this.type = (String) value; break;
+                    case "token_type": this.tokenType = (String) value; break;
+                    case "client_authentication.type": this.clientAuthenticationType = (String) value; break;
+                    case "allowed_issuer": this.allowedIssuers = (String) value; break;
+                    case "pkc_jwkset_path": this.pkcJwksetPath = (String) value; break;
+                    case "claims.principal": this.claimsPrincipal = (String) value; break;
+                    case "claims.groups": this.claimsGroups = (String) value; break;
+
+                    default: keyKnown = false; break;
+                }
+            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+                switch (attribute) {
+                    case "order": this.order = (Integer) value; break;
+                    default: keyKnown = false; break;
+                }
+            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, List.class)) {
+                List<?> v = (List<?>) value;
+
+                if (v.isEmpty()) {
+                    return;
+                }
+
+                if (!(v.get(0) instanceof String)) {
+                    System.out.println("Bad list type in attribute " + attribute);
+                }
+
+                switch (attribute) {
+                    case "allowed_audiences": this.allowedAudiences = (List<String>) v; break;
+                    case "allowed_signature_algorithms": this.allowedSignatureAlgorithms = (List<String>) v; break;
+                    case "allowed_issuer": this.allowedIssuersList = (List<String>) v; break;
+
+                    default: keyKnown = false; break;
+                }
+            } else {
+                MigrationReport.shared.addManualAction(THIS_FILE, keyPrefix + attribute, "Unexpected type " + value.getClass().getSimpleName());
+            }
+
+            if (!keyKnown) {
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
+            } else {
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
+            }
+        }
+
+    }
+
+    static class UnknownRealmIR extends RealmIR {
         UnknownRealmIR(String type, String name) {
             super(type, name);
         }
