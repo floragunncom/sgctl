@@ -11,12 +11,7 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
 
     static final String FILE_NAME = "sg_action_groups.yml";
 
-    void addActionGroup(CustomClusterActionGroup actionGroup) {
-        this.actionGroups.add(actionGroup.toActionGroup());
-    }
-
-    // obviously a temporary solution
-    void addActionGroup(CustomIndexActionGroup actionGroup) {
+    void addActionGroup(CustomActionGroup actionGroup) {
         this.actionGroups.add(actionGroup.toActionGroup());
     }
 
@@ -55,7 +50,24 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
         }
     }
 
-    enum CustomClusterActionGroup {
+    interface CustomActionGroup {
+        String getName();
+        List<String> getPattern();
+        String getType();
+        String getDescription();
+    
+        default ActionGroupConfigWriter.ActionGroup toActionGroup() {
+            return new ActionGroupConfigWriter.ActionGroup(
+                getName(),
+                getPattern(),
+                getType(),
+                getDescription()
+            );
+        }
+    }
+    
+
+    enum CustomClusterActionGroup implements CustomActionGroup{
 
         // Might be cleaner to use static final patterns like in the elasticsearch repo
         SGS_CANCEL_TASK_CUSTOM(
@@ -339,8 +351,6 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             "cluster:monitor/state"
         ));
 
-        private static final String TYPE = "cluster";
-
         private final String name;
         private final List<String> pattern;
         private final String description;
@@ -351,8 +361,10 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             this.pattern = pattern;
         } 
         
-        public String getName() { return name; }
-        public List<String> getPattern() { return pattern; }
+        @Override public String getName() { return name; }
+        @Override  public List<String> getPattern() { return pattern; }
+        @Override public String getDescription(){ return description; }
+        @Override public String getType() { return "cluster"; }
 
         public static CustomClusterActionGroup fromESPrivilege(String name) throws IllegalArgumentException {
             return from("SGS_" + name.toUpperCase() + "_CUSTOM");
@@ -364,15 +376,11 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             }
             throw new IllegalArgumentException(name);
         }
-
-        public ActionGroup toActionGroup() {
-            return new ActionGroup(name, pattern, TYPE, description);
-        }
     }
 
 
     // TODO: Combine with above class to reduce redundancy. Maybe add a third abstract class or interface?
-    enum CustomIndexActionGroup {
+    enum CustomIndexActionGroup implements CustomActionGroup{
 
         SGS_CREATE_DOC_CUSTOM(
                 "SGS_CREATE_DOC_CUSTOM",
@@ -499,8 +507,6 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
                         "indices:admin/get/metering/stats"// serverless only
                 ));
 
-        private static final String TYPE = "index";
-
         private final String name;
         private final List<String> pattern;
         private final String description;
@@ -511,8 +517,10 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
             this.pattern = pattern;
         } 
         
-        public String getName() { return name; }
-        public List<String> getPattern() { return pattern; }
+        @Override public String getName() { return name; }
+        @Override public List<String> getPattern() { return pattern; }
+        @Override public String getDescription() { return description; }
+        @Override public String getType() { return "index"; }
 
         public static CustomIndexActionGroup fromESPrivilege(String name) throws IllegalArgumentException {
             return from("SGS_" + name.toUpperCase() + "_CUSTOM");
@@ -523,10 +531,6 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
                 if (group.name.equals(name)) return group;
             }
             throw new IllegalArgumentException(name);
-        }
-
-        public ActionGroup toActionGroup() {
-            return new ActionGroup(name, pattern, TYPE, description);
         }
     }
 }
