@@ -1,4 +1,3 @@
-
 admin_role_test:
   - "CN=ESAdmins,OU=Groups,DC=corp,DC=local"
 

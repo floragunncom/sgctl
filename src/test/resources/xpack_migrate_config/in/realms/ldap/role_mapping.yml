@@ -1,4 +1,3 @@
-
 admin:
   - "CN=ESAdmins,OU=Groups,DC=corp,DC=local"
   - "elastic_admin"
