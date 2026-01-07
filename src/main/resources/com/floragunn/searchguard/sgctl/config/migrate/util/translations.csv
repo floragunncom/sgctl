@@ -1,5 +1,5 @@
 key	en
 SEPARATOR	, 
 NOTE_SCOPE_WAS_OMITTED	The search scope was omitted from the output because of this.
-ONE_SEARCH_SCOPE	A different migratable search scope DOES exists in Search Guard: 
+ONE_SEARCH_SCOPE	A different migratable search scope DOES exist in Search Guard: 
 MULTIPLE_SEARCH_SCOPES	These other migratable search scopes DO exist in Search Guard: 
