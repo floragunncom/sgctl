@@ -305,7 +305,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                             "Unexpectedly failed to create custom Action Group. This must be an issue in the migration code and not your input file. Received value: " + e.getMessage());
                     continue;
                 }
-                sgPrivileges.add(privilege);
+                sgPrivileges.add("SGS_" + privilege.toUpperCase() + "_CUSTOM");
                 continue;
             }
 
@@ -353,8 +353,8 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                             "Unexpectedly failed to create custom Action Group. This must be an issue in the migration code and not your input file. Received value: " + e.getMessage());
                     continue;
                 }
-                // Shouldn't we add the custom action group here instead of privilage? If so also change in toSGClusterPrivileges above
-                sgPrivileges.add(privilege); 
+
+                sgPrivileges.add("SGS_" + privilege + "_CUSTOM");
                 continue;
             }
 

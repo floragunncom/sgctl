@@ -32,7 +32,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
                         "The user has 'enabled' set to false. This can not be done in Search Guard and the user is not migrated.");
                 continue;
             }
-            var attributes = new LinkedHashMap<String, Object>(user.getAttributes());
+            var attributes = new LinkedHashMap<>(user.getAttributes());
             if (user.getEmail() != null) {
                 attributes.put("email", user.getEmail());
             }
