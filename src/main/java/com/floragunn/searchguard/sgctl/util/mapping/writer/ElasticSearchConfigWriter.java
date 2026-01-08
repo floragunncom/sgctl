@@ -47,18 +47,18 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
         String transportKeystorePassword = Objects.toString(tls.getKeystorePassword(), DEFAULT_KEYSTORE_PASSWORD);
         String transportKeystoreKeyPassword = Objects.toString(tls.getKeystoreKeyPassword(), DEFAULT_KEYSTORE_KEYPASSWORD);
         String transportTruststorePassword = Objects.toString(tls.getTruststorePassword(), DEFAULT_TRUSTSTORE_PASSWORD);
-
+        final var prefix = "searchguard.ssl.";
         var contents = new LinkedHashMap<String, Object>();
-        contents.put("searchguard.ssl." + type + ".enabled", String.valueOf(tls.getEnabled() || DEFAULT_ENABLED));
-        contents.put("searchguard.ssl." + type + ".keystore_type", transportKeystoreType);
-        contents.put("searchguard.ssl." + type + ".keystore_filepath", transportKeystoreFilepath);
-        contents.put("searchguard.ssl." + type + ".keystore_password", transportKeystorePassword);
-        contents.put("searchguard.ssl." + type + ".keystore_keypassword", transportKeystoreKeyPassword);
-        contents.put("searchguard.ssl." + type + ".truststore_type", transportTruststoreType);
-        contents.put("searchguard.ssl." + type + ".truststore_filepath", transportTruststoreFilepath);
-        contents.put("searchguard.ssl." + type + ".truststore_password", transportTruststorePassword);
-        contents.put("searchguard.ssl." + type + ".enabled_ciphers", tls.getCiphers());
-        contents.put("searchguard.ssl." + type + ".enabled_protocols", tls.getSupportedProtocols());
+        contents.put(prefix + type + ".enabled", String.valueOf(tls.getEnabled() || DEFAULT_ENABLED));
+        contents.put(prefix + type + ".keystore_type", transportKeystoreType);
+        contents.put(prefix + type + ".keystore_filepath", transportKeystoreFilepath);
+        contents.put(prefix + type + ".keystore_password", transportKeystorePassword);
+        contents.put(prefix + type + ".keystore_keypassword", transportKeystoreKeyPassword);
+        contents.put(prefix + type + ".truststore_type", transportTruststoreType);
+        contents.put(prefix + type + ".truststore_filepath", transportTruststoreFilepath);
+        contents.put(prefix + type + ".truststore_password", transportTruststorePassword);
+        contents.put(prefix + type + ".enabled_ciphers", tls.getCiphers());
+        contents.put(prefix + type + ".enabled_protocols", tls.getSupportedProtocols());
         return contents;
     }
 }
