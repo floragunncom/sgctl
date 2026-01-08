@@ -5,13 +5,14 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class RealmIR {
     String type; // ldap, saml, oidc, ...
     String name;
     int order;
-    boolean enabled;
+    boolean enabled = true;
 
     public String getType() { return type; }
     public String getName() { return name; }
@@ -38,24 +39,86 @@ public class RealmIR {
             case "pki": return new PkiRealmIR(name);
             case "oidc": return new OidcRealmIR(name);
             case "kerberos": return new KerberosRealmIR(name);
+            case "jwt": return new JwtRealmIR(name);
             default:
-                //System.out.println("Unknown realm type: " + type);
                 return new UnknownRealmIR(type, name);
         }
     }
 
+    // have the complete ldap config as this is the most used realm
     public static class LdapRealmIR extends RealmIR {
+        // connection
         String url;
         String bindDn;
+        String bindPassword;
+        Boolean followReferrals;
+
+        // user search
         String userSearchBaseDn;
         String userSearchFilter;
-        String groupSearchBaseDn;
+        String userSearchScope;
+        String userSearchAttribute;
+        String userSearchUsernameAttribute;
 
-        public String getUrl() { return url; }
-        public String getBindDn() { return bindDn; }
-        public String getUserSearchBaseDn() { return userSearchBaseDn; }
-        public String getUserSearchFilter() { return userSearchFilter; }
-        public String getGroupSearchBaseDn() { return groupSearchBaseDn; }
+        // group search
+        String groupSearchBaseDn;
+        String groupSearchScope;
+        String groupSearchFilter;
+        String groupSearchAttribute;
+
+        // Authorization
+        String filesRolesMapping;
+        Boolean unmappedGroupsAsRoles;
+
+        // SSL
+        List<String> certificateAuthorities = new ArrayList<>();
+        String sslVerificationMode;
+        String sslTruststorePath;
+        String sslTruststorePassword;
+        String sslTruststoreType;
+        String sslKeystorePath;
+        String sslKeystorePassword;
+        String sslKeystoreType;
+
+        // Load balancing
+        String loadBalanceType;
+        String loadBalanceCacheTtl;
+
+        // Timeouts
+        String timeoutTcpConnect;
+        String timeoutLdapRead;
+        String timeoutLdapSearch;
+
+        public String getUrl(){return url;}
+        public String getBindDn(){return bindDn;}
+        public String getBindPassword(){return bindPassword;}
+        public Boolean getFollowReferrals(){return followReferrals;}
+        public String getUserSearchBaseDn(){return userSearchBaseDn;}
+        public String getUserSearchFilter(){return userSearchFilter;}
+        public String getUserSearchScope(){return userSearchScope;}
+        public String getUserSearchAttribute(){return userSearchAttribute;}
+        public String getUserSearchUsernameAttribute(){return userSearchUsernameAttribute;}
+        public String getGroupSearchBaseDn(){return groupSearchBaseDn;}
+        public String getGroupSearchScope(){return groupSearchScope;}
+        public String getGroupSearchFilter(){return groupSearchFilter;}
+        public String getGroupSearchAttribute(){return groupSearchAttribute;}
+        public String getFilesRolesMapping(){return filesRolesMapping;}
+        public Boolean getUnmappedGroupsAsRoles(){return unmappedGroupsAsRoles;}
+        public List<String> getCertificateAuthorities(){return certificateAuthorities;}
+        public String getSslVerificationMode(){return sslVerificationMode;}
+        public String getSslTruststorePath(){return sslTruststorePath;}
+        public String getSslTruststorePassword(){return sslTruststorePassword;}
+        public String getSslTruststoreType(){return sslTruststoreType;}
+        public String getSslKeystorePath(){return sslKeystorePath;}
+        public String getSslKeystorePassword(){return sslKeystorePassword;}
+        public String getSslKeystoreType(){return sslKeystoreType;}
+        public String getLoadBalanceType(){return loadBalanceType;}
+        public String getLoadBalanceCacheTtl(){return loadBalanceCacheTtl;}
+        public String getTimeoutTcpConnect(){return timeoutTcpConnect;}
+        public String getTimeoutLdapRead(){return timeoutLdapRead;}
+        public String getTimeoutLdapSearch(){return timeoutLdapSearch;}
+
+
 
         LdapRealmIR(String name) {
             super("ldap", name);
@@ -68,6 +131,8 @@ public class RealmIR {
             if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
+                    case "follow_referrals": this.followReferrals = (Boolean) value; break;
+                    case "unmapped_groups_as_roles": this.unmappedGroupsAsRoles = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
@@ -75,9 +140,40 @@ public class RealmIR {
                     case "type": this.type = (String) value; break;
                     case "url": this.url = (String) value; break;
                     case "bindDn": this.bindDn = (String) value; break;
+                    case "bind_password": this.bindPassword = (String) value; break;
+
                     case "user_search.base_dn": this.userSearchBaseDn = (String) value; break;
                     case "user_search.filter": this.userSearchFilter = (String) value; break;
+                    case "user_search.scope": this.userSearchScope = (String) value; break;
+                    case "user_search.attribute": this.userSearchAttribute = (String) value; break;
+                    case "user_search.username_attribute": this.userSearchUsernameAttribute = (String) value; break;
+
                     case "group_search.base_dn": this.groupSearchBaseDn = (String) value; break;
+                    case "group_search.filter": this.groupSearchFilter = (String) value; break;
+                    case "group_search.scope": this.groupSearchScope = (String) value; break;
+                    case "group_search.attribute": this.groupSearchAttribute = (String) value; break;
+
+                    case "files.role_mapping": this.filesRolesMapping = (String) value; break;
+
+                    case "ssl.verification_mode": this.sslVerificationMode = (String) value; break;
+                    case "ssl.truststore.path": this.sslTruststorePath = (String) value; break;
+                    case "ssl.truststore.password": this.sslTruststorePassword = (String) value; break;
+                    case "ssl.truststore.type": this.sslTruststoreType = (String) value; break;
+                    case "ssl.keystore.path": this.sslKeystorePath = (String) value; break;
+                    case "ssl.keystore.password": this.sslKeystorePassword = (String) value; break;
+                    case "ssl.keystore.type": this.sslKeystoreType = (String) value; break;
+
+                    case "load_balance.type": this.loadBalanceType = (String) value; break;
+                    case "load_balance.cache.ttl": this.loadBalanceCacheTtl = (String) value; break;
+
+                    case "timeout.tcp_connect": this.timeoutTcpConnect = (String) value; break;
+                    case "timeout.ldap_read": this.timeoutLdapRead = (String) value; break;
+                    case "timeout.ldap_search": this.timeoutLdapSearch = (String) value; break;
+
+                    case "metadata":
+                        MigrationReport.shared.addIgnoredKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
+                        break;
+
                     default: keyKnown = false; break;
                 }
             } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
@@ -85,14 +181,30 @@ public class RealmIR {
                     case "order": this.order = (Integer) value; break;
                     default: keyKnown = false; break;
                 }
+            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, List.class)) {
+                List<?> v = (List<?>) value;
+                if (v.isEmpty())
+                    return;
+                if (v.get(0) instanceof String) {
+                    switch (attribute) {
+                        case "ssl.certificate_authorities": this.certificateAuthorities = (List<String>) value; break;
+                        default: keyKnown = false; break;
+                    }
+                } else {
+                    MigrationReport.shared.addManualAction(
+                        THIS_FILE,
+                        keyPrefix + attribute,
+                        value + " is not a string but it should be"
+                    );
+                }
             } else {
                 MigrationReport.shared.addManualAction(THIS_FILE, keyPrefix + attribute, "Unexpected type " + value.getClass().getSimpleName());
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
 
@@ -139,9 +251,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -184,9 +296,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -195,12 +307,14 @@ public class RealmIR {
 
         String idpMetadataPath;
         String spEntityID;
+        String idpEntityID;
         String spAcs;
         String attributesPrincipal;
 
         public String getAttributesPrincipal() { return attributesPrincipal; }
         public String getIdpMetadataPath() { return idpMetadataPath; }
         public String getSpEntityID() { return spEntityID; }
+        public String getIdpEntityID() { return idpEntityID; }
         public String getSpAcs() { return spAcs; }
 
         SamlRealmIR(String name) {
@@ -221,6 +335,7 @@ public class RealmIR {
                     case "type": this.type = (String) value; break;
                     case "idp.metadata.path": this.idpMetadataPath = (String) value; break;
                     case "sp.entity_id": this.spEntityID = (String) value; break;
+                    case "idp.entity_id": this.idpEntityID = (String) value; break;
                     case "sp.acs": this.spAcs = (String) value; break;
                     case "attributes.principal": this.attributesPrincipal = (String) value; break;
                     default: keyKnown = false; break;
@@ -235,9 +350,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -313,9 +428,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -390,9 +505,9 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -441,11 +556,92 @@ public class RealmIR {
             }
 
             if (!keyKnown) {
-                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, configFile.getPath());
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
+    }
+
+    public static class JwtRealmIR extends RealmIR {
+
+        String tokenType;
+        String clientAuthenticationType;
+        String allowedIssuers;
+        List<String> allowedIssuersList;
+        List<String> allowedAudiences;
+        List<String> allowedSignatureAlgorithms;
+        String pkcJwksetPath;
+        String claimsPrincipal;
+        String claimsGroups;
+
+        public String getTokenType() { return tokenType; }
+        public String getClientAuthenticationType() { return clientAuthenticationType; }
+        public String getAllowedIssuers() { return allowedIssuers; }
+        public List<String> getAllowedIssuersList() { return allowedIssuersList; }
+        public List<String> getAllowedAudiences() { return allowedAudiences; }
+        public List<String> getAllowedSignatureAlgorithms() { return allowedSignatureAlgorithms; }
+        public String getPkcJwksetPath() { return pkcJwksetPath; }
+        public String getClaimsPrincipal() { return claimsPrincipal; }
+        public String getClaimsGroups() { return claimsGroups; }
+
+        JwtRealmIR(String name) { super("jwt", name); }
+
+        @Override
+        public void handleAttribute(String attribute, Object value, String keyPrefix, File configFile) {
+            boolean keyKnown = true;
+
+            if (IntermediateRepresentationElasticSearchYml.assertType(value, Boolean.class)) {
+                switch (attribute) {
+                    case "enabled": this.enabled = (Boolean) value; break;
+                    default: keyKnown = false; break;
+                }
+            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, String.class)) {
+                switch (attribute) {
+                    case "type": this.type = (String) value; break;
+                    case "token_type": this.tokenType = (String) value; break;
+                    case "client_authentication.type": this.clientAuthenticationType = (String) value; break;
+                    case "allowed_issuer": this.allowedIssuers = (String) value; break;
+                    case "pkc_jwkset_path": this.pkcJwksetPath = (String) value; break;
+                    case "claims.principal": this.claimsPrincipal = (String) value; break;
+                    case "claims.groups": this.claimsGroups = (String) value; break;
+
+                    default: keyKnown = false; break;
+                }
+            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, Integer.class)) {
+                switch (attribute) {
+                    case "order": this.order = (Integer) value; break;
+                    default: keyKnown = false; break;
+                }
+            } else if (IntermediateRepresentationElasticSearchYml.assertType(value, List.class)) {
+                List<?> v = (List<?>) value;
+
+                if (v.isEmpty()) {
+                    return;
+                }
+
+                if (!(v.get(0) instanceof String)) {
+                    System.out.println("Bad list type in attribute " + attribute);
+                }
+
+                switch (attribute) {
+                    case "allowed_audiences": this.allowedAudiences = (List<String>) v; break;
+                    case "allowed_signature_algorithms": this.allowedSignatureAlgorithms = (List<String>) v; break;
+                    case "allowed_issuer": this.allowedIssuersList = (List<String>) v; break;
+
+                    default: keyKnown = false; break;
+                }
+            } else {
+                MigrationReport.shared.addManualAction(THIS_FILE, keyPrefix + attribute, "Unexpected type " + value.getClass().getSimpleName());
+            }
+
+            if (!keyKnown) {
+                MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
+            } else {
+                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
+            }
+        }
+
     }
 
     static class UnknownRealmIR extends RealmIR {

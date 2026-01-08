@@ -437,7 +437,6 @@ public class MigrateConfig implements Callable<Integer> {
             }
 
             result.sgAuthc.authDomains = newAuthDomains;
-
             if (license != null) {
                 result.sgLicense = DocNode.of("key", license);
             }
@@ -1787,7 +1786,7 @@ public class MigrateConfig implements Callable<Integer> {
 
     }
 
-    static class NewAuthDomain implements Document<NewAuthDomain> {
+    public static class NewAuthDomain implements Document<NewAuthDomain> {
 
         private String frontendType;
         private String backendType;
@@ -2175,10 +2174,10 @@ public class MigrateConfig implements Callable<Integer> {
         }
     }
 
-    static class SgAuthc implements Document<SgAuthc> {
-        private List<NewAuthDomain> authDomains;
-        private String internalProxies = null;
-        private String remoteIpHeader = null;
+    public static class SgAuthc implements Document<SgAuthc> {
+        public List<NewAuthDomain> authDomains;
+        public String internalProxies = null;
+        public String remoteIpHeader = null;
 
         @Override
         public Object toBasicObject() {
