@@ -16,7 +16,6 @@ import java.util.*;
  * warnings and manual actions, such as the use of default passwords, to a {@link MigrationReport}.
  */
 public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWriter> {
-    // Default values for TLS configuration
     private static final boolean DEFAULT_ENABLED = true;
     private static final String DEFAULT_KEYSTORE_TYPE = "JKS";
     private static final String DEFAULT_TRUSTSTORE_TYPE = "JKS";

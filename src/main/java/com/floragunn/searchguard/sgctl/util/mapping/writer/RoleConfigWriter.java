@@ -69,7 +69,14 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             "match_all", "shape", "template", "source"
     );
 
-
+    /**
+     * Creates a writer that converts roles from the intermediate representation into
+     * Search Guard role configuration entries.
+     *
+     * @param ir       the intermediate representation containing parsed roles
+     * @param sgAuthc  the authentication configuration to which user mappings may be added
+     * @param agWriter writer used to create custom action groups when no direct equivalent exists
+     */
     public RoleConfigWriter(IntermediateRepresentation ir, MigrateConfig.SgAuthc sgAuthc, ActionGroupConfigWriter agWriter) {
         this.ir = ir;
         this.report = MigrationReport.shared;
@@ -80,6 +87,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         addToAuthc();
     }
 
+    /**
+     * Converts all roles from the intermediate representation into internal Search Guard role objects.
+     * <p>
+     * During conversion, unsupported features (such as remote indices, remote clusters, run-as,
+     * or application privileges) are detected and reported via the migration report.
+     */
     private void createSGRoles() {
         for (var role : ir.getRoles()) {
             if ((role.getRemoteClusters() != null && !role.getRemoteClusters().isEmpty()) ||
@@ -105,6 +118,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         }
     }
 
+    /**
+     * Converts index-level permissions of a role into Search Guard index permission entries.
+     *
+     * @param role the source role definition
+     * @return a list of Search Guard index configurations
+     */
     private List<SGRole.SGIndex> toSGIndices(Role role) {
         List<SGRole.SGIndex> sgIndices = new ArrayList<>();
         for (var index : role.getIndices()) {
@@ -118,6 +137,16 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return sgIndices;
     }
 
+    /**
+     * Converts index name patterns to Search Guard-compatible index patterns.
+     * <p>
+     * Lucene-style regular expressions are converted to Java regex syntax where possible.
+     * Errors during conversion are recorded as manual migration actions.
+     *
+     * @param indices the list of index name patterns
+     * @param role    the originating role (used for reporting)
+     * @return A list of converted index patterns
+     */
     private ArrayList<String> toSGIndexPattern(List<String> indices, Role role) {
         var sgIndices = new ArrayList<String>(indices.size());
         for (var index : indices) {
@@ -131,6 +160,16 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return sgIndices;
     }
 
+    /**
+     * Converts field-level security (FLS) rules to Search Guard format.
+     * <p>
+     * Handles grant and except rules and translates exclusions using the '~' prefix
+     * where supported.
+     *
+     * @param index the index definition containing field security rules
+     * @param role  the originating role (used for reporting)
+     * @return A list of FLS field patterns
+     */
     private List<String> toSGFLS(Role.Index index, Role role) {
         if (index.getFieldSecurity() == null) return Collections.emptyList();
         var grants = index.getFieldSecurity().getGrant();
@@ -152,6 +191,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return fls;
     }
 
+    /**
+     * Adds collected user attribute mappings to the authentication configuration.
+     * <p>
+     * Attributes discovered during query template migration are mapped into the
+     * Search Guard authentication domain configuration.
+     */
     private void addToAuthc() {
         final var frontendType = "basic/internal_user_db";
         var contents = new LinkedHashMap<String, String>();
@@ -164,6 +209,16 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     }
 
     //region Query Migration
+    /**
+     * Parses a query DSL map and converts it into a JSON string compatible with
+     * Search Guard document-level security (DLS).
+     *
+     * @param queryMap the parsed query map
+     * @param origin   a string describing the source location for reporting
+     * @return a JSON string representation of the query
+     * @throws InvalidTypeException if an unexpected key type is encountered
+     * @throws InvalidKeyException  if unsupported or unsafe constructs are detected
+     */
     private String parseQueryMap(LinkedHashMap<?, ?> queryMap, String origin) throws InvalidTypeException, InvalidKeyException {
         for (var entry : queryMap.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
@@ -196,6 +251,15 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return "";
     }
 
+    /**
+     * Parses a query DSL array into its JSON string representation.
+     *
+     * @param array  the query array
+     * @param origin a string describing the source location for reporting
+     * @return a JSON array string
+     * @throws InvalidTypeException if invalid element types are encountered
+     * @throws InvalidKeyException  if unsupported constructs are detected
+     */
     private String parseQueryArray(ArrayList<?> array, String origin) throws InvalidTypeException, InvalidKeyException {
         var strRep = new StringBuilder("[");
         for (var i = 0; i < array.size(); i++) {
@@ -215,6 +279,17 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return strRep + "]";
     }
 
+    /**
+     * Parses a string value inside a query DSL structure.
+     * <p>
+     * Detects and converts supported Mustache-style templates or reports incompatible
+     * template usage.
+     *
+     * @param value  the string value to parse
+     * @param origin a string describing the source location for reporting
+     * @return the converted string value
+     * @throws InvalidKeyException if unsupported template syntax is detected
+     */
     private String parseQueryString(String value, String origin) throws InvalidKeyException {
         if (value.matches(".*\\{\\{([#^]).+?}}.+?\\{\\{/.+?}}.*")) {
             report.addWarning(FILE_NAME, origin,
@@ -226,6 +301,17 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return value;
     }
 
+    /**
+     * Converts a supported Mustache-style template into a Search Guard variable reference.
+     * <p>
+     * Supported templates include user-related variables such as username, roles,
+     * and selected metadata attributes.
+     *
+     * @param template the template string
+     * @param origin   a string describing the source location for reporting
+     * @return a Search Guard-compatible template expression
+     * @throws InvalidKeyException if the template cannot be mapped safely
+     */
     private String parseTemplate(String template, String origin) throws InvalidKeyException {
         final var fallback = template;
         var sgTemplate = "${";
@@ -261,6 +347,14 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     }
     //endregion
 
+    /**
+     * Converts a document-level security (DLS) query to a Search Guard-compatible
+     * JSON query string.
+     *
+     * @param index the index definition containing the query
+     * @param role  the originating role (used for reporting)
+     * @return The converted DLS query, or {@code null} if conversion failed
+     */
     private String toSGDLS(Role.Index index, Role role) {
         var query = index.getQuery();
         if (query == null) return null;
@@ -283,6 +377,15 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return null;
     }
 
+    /**
+     * Converts cluster-level privileges into Search Guard cluster permissions.
+     * <p>
+     * Known privileges are mapped directly or via standard Search Guard action groups.
+     * Unknown or unsupported privileges are reported for manual review.
+     *
+     * @param role the source role definition
+     * @return A list of Search Guard cluster permission identifiers
+     */
     private List<String> toSGClusterPrivileges(Role role) {
         var privileges = role.getCluster();
         var sgPrivileges = new ArrayList<String>();
@@ -319,6 +422,13 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return sgPrivileges;
     }
 
+    /**
+     * Maps a known Elasticsearch cluster privilege to a standard Search Guard
+     * cluster action group.
+     *
+     * @param privilege the Elasticsearch cluster privilege
+     * @return The corresponding Search Guard action group name, or {@code null} if none exists
+     */
     private static String matchesStandardSGRole(String privilege) {
         return switch (privilege) {
             case "all" ->  "SGS_CLUSTER_ALL";
@@ -331,6 +441,15 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         };
     }
 
+    /**
+     * Converts index-level privileges into Search Guard index permissions.
+     * <p>
+     * Unsupported privileges may result in custom action groups or manual migration warnings.
+     *
+     * @param privileges the list of index privileges
+     * @param role       the originating role (used for reporting)
+     * @return a list of Search Guard index permission identifiers
+     */
     private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
         var sgPrivileges = new ArrayList<String>();
 
@@ -367,6 +486,13 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         return sgPrivileges;
     }
 
+    /**
+     * Maps an Elasticsearch index privilege for which a Search Guard equivalent exists to the corresponding Search Guard privilege
+     * index action group.
+     *
+     * @param privilege the Elasticsearch index privilege
+     * @return The corresponding Search Guard action group name, or {@code null} if none exists
+     */
     private static String matchesStandardSGIndexRole(String privilege) {
         return switch (privilege) {
             case "all" -> "SGS_INDICES_ALL";

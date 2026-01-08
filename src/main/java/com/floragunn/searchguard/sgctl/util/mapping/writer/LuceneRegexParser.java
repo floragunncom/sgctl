@@ -14,6 +14,28 @@ public class LuceneRegexParser {
     private static final Pattern complementPattern = Pattern.compile("[^\\\\]~");
     private static final Pattern anyStringPattern = Pattern.compile("[^\\\\]@");
 
+    /**
+     * Converts a Lucene-style regular expression into an equivalent Java regular expression.
+     * <p>
+     * This method only performs a conversion when the input string is explicitly marked as a
+     * Lucene regex (i.e. wrapped in forward slashes: {@code /.../}). If the input is not
+     * regex-enabled, it is returned unchanged.
+     * <p>
+     * The conversion handles Lucene-specific operators such as:
+     * <ul>
+     *   <li>Numeric ranges (e.g. {@code <1-10>})</li>
+     *   <li>Empty string operator ({@code #})</li>
+     *   <li>Wildcard / any-string operator ({@code @})</li>
+     *   <li>Logical AND operator ({@code &})</li>
+     * </ul>
+     * <p>
+     * The Lucene complement operator ({@code ~}) is not supported, as it cannot be represented
+     * exactly using Java regular expressions. Encountering it will cause an exception.
+     *
+     * @param luceneReg the Lucene-style regular expression
+     * @return a Java-compatible regular expression, or the original input if regex is not enabled
+     * @throws Exception if the expression contains unsupported Lucene operators (e.g. {@code ~})
+     */
     public static String toJavaRegex(String luceneReg) throws Exception {
         if (!regexEnabledPattern.matcher(luceneReg).find()) return luceneReg;
         if (complementPattern.matcher(luceneReg).find()) throw new Exception("Encountered a complement operator '~'. This can not be perfectly represented in Java regex.");
