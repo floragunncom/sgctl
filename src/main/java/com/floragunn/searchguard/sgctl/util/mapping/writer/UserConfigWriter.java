@@ -16,6 +16,12 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
 
     static final String FILE_NAME = "sg_internal_users.yml";
 
+    /**
+     * Creates a writer that converts users from the intermediate representation
+     * into Search Guard internal user definitions.
+     *
+     * @param ir the intermediate representation containing user definitions
+     */
     public UserConfigWriter(IntermediateRepresentation ir) {
         this.ir = ir;
         this.report = MigrationReport.shared;
@@ -23,6 +29,13 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
         createSGInternalUser();
     }
 
+    /**
+     * Converts all users from the intermediate representation into internal
+     * Search Guard user objects.
+     * <p>
+     * Disabled users are not migrated and will result in a warning.
+     * Password hashes cannot be migrated and must be set manually.
+     */
     private void createSGInternalUser() {
         for (var user : ir.getUsers()) {
             // TODO: Add handling for enabled
@@ -67,6 +80,17 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
         Map<String, Object> attributes;
         List<String> roles;
 
+        /**
+         * Creates a Search Guard internal user definition.
+         * <p>
+         * The password hash is intentionally set to a placeholder value and must
+         * be replaced manually after migration.
+         *
+         * @param name        the username
+         * @param description a textual description of the user
+         * @param attributes  user attributes such as email or full name
+         * @param roles       assigned Search Guard roles
+         */
         public SGInternalUser(String name, String description, Map<String, Object> attributes, List<String> roles) {
             this.name = name;
             this.hash = "Change it";
@@ -84,13 +108,5 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
             contents.put("description", description);
             return contents;
         }
-    }
-
-    static void print(Object line) {
-        System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
     }
 }

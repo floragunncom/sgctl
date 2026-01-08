@@ -18,7 +18,11 @@ public class SearchGuardConfigWriter {
     RoleMappingWriter mappingWriter;
     IntermediateRepresentation ir;
 
-
+    /**
+     * Creates a Search Guard configuration writer and initializes all sub-writers
+     * based on the provided intermediate representation.
+     * @param ir the intermediate representation produced by the migration process
+     */
     public SearchGuardConfigWriter(IntermediateRepresentation ir) {
         var sgTranslator = new SGAuthcTranslator(ir.getElasticSearchYml());
         sgAuthc = sgTranslator.getConfig();
@@ -31,6 +35,15 @@ public class SearchGuardConfigWriter {
         this.ir = ir;
     }
 
+    /**
+     * Writes all generated Search Guard configuration files to the given directory.
+     * <p>
+     * Each configuration section is serialized as YAML and written to its
+     * corresponding file name (e.g. roles, users, action groups, authc).
+     *
+     * @param directory the target directory for the generated configuration files
+     * @throws IOException if writing any file fails
+     */
     public void writeTo(File directory) throws IOException {
         final var writer = DocWriter.yaml();
         Files.write(new File(directory.getPath(), "sg_authc.yml"/*MigrateConfig.SgAuthc.FILE_NAME*/).toPath(), writer.writeAsString(sgAuthc).getBytes());
@@ -42,6 +55,9 @@ public class SearchGuardConfigWriter {
         Files.write(new File(directory.getPath(), RoleMappingWriter.FILE_NAME).toPath(), writer.writeAsString(mappingWriter).getBytes());
     }
 
+    /**
+     * Prints all generated Search Guard configuration files to standard output.
+     */
     public void printFiles() {
         var writer = DocWriter.yaml();
 
@@ -79,7 +95,7 @@ public class SearchGuardConfigWriter {
     }
 
     static private void printFooter() {
-        print("--------------------------------------------------------------------------------------");
+        print("\n---------------------------------------------------------------------------------\n");
     }
 
     static void print(Object line) {
