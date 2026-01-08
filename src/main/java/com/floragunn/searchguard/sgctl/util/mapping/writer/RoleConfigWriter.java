@@ -267,8 +267,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         try {
             var queryJSON = DocReader.json().read(query);
             if (queryJSON instanceof LinkedHashMap<?,?> queryMap) {
-                var parsedQuery = parseQueryMap(queryMap, role.getName() + "->indices->query");
-                return parsedQuery;
+                return parseQueryMap(queryMap, role.getName() + "->indices->query");
             }
         } catch (DocumentParseException e) {
             report.addManualAction(FILE_NAME,
