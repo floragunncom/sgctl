@@ -1,8 +1,10 @@
 package com.floragunn.searchguard.sgctl.util.mapping.reader;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
@@ -72,11 +74,32 @@ public final class ElasticsearchYamlReader {
         String sslTlsPrefix = "transport.";
         String authenticationPrefix = "xpack.security.authc.";
 
+        // list all options that are skipped
+        List<String> metadata = Arrays.asList(
+                "cluster", "node", "bootstrap", "network", "discovery", "action", "path", "http", "transport",
+                "indices", "gateway", "thread_pool", "processors", "plugins", "repositories", "monitoring", "xpack.ml",
+                "xpack.monitoring", "xoack.enrich", "xpack.watcher", "xpack.license", "xpack.ilm", "xpack.slm",
+                "xpack.data_frame", "logger", "log4j", "logging", "ingest", "script", "search", "snapshot", "xpack.snapshot",
+                "cache", "memory", "xpack.fleet", "xpack.transform", "xpack.rollup", "xpack.sql", "xpack.searchable_snapshots",
+                "xpack.voting_only", "xpack.ccr", "reindex",  "rest"
+        );
+
         String stripped;
 
         for (Map.Entry<String, Object> entry : map.entrySet()) {
             String key = entry.getKey();
             Object value = entry.getValue();
+
+            // check if metadata
+            boolean wasMetaData = false;
+            for (String meta : metadata) {
+                if (key.startsWith(meta)) {
+                    MigrationReport.shared.addIgnoredKey("elasticsearch.yml", key, key);
+                    wasMetaData = true;
+                }
+            }
+            if (wasMetaData)
+                continue;
 
             // for each option name, propagate to responsible ir class method, added prefixes and file because they are required by the report api
             // Order matters
