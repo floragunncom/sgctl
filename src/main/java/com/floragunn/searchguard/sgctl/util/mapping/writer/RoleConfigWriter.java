@@ -160,8 +160,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         }
         var map = new LinkedHashMap<String, Object>();
         map.put("user_mapping.attributes.from", contents);
-        // TODO: Add to sgAuthc
-        new MigrateConfig.NewAuthDomain(frontendType, null, null, null, map, null);
+        sgAuthc.authDomains.add(new MigrateConfig.NewAuthDomain(frontendType, null, null, null, map, null));
     }
 
     //region Query Migration
@@ -191,7 +190,6 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 }
                 return "{\"" + key + "\": " + parseQueryArray(value, origin) + "}";
             } else {
-                print(entry.getValue().getClass());
                 return "{\""+ key + "\": " + entry.getValue().toString() + "}";
             }
         }
@@ -270,8 +268,6 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             var queryJSON = DocReader.json().read(query);
             if (queryJSON instanceof LinkedHashMap<?,?> queryMap) {
                 var parsedQuery = parseQueryMap(queryMap, role.getName() + "->indices->query");
-                print(query);
-                print(parsedQuery);
                 return parsedQuery;
             }
         } catch (DocumentParseException e) {
@@ -447,6 +443,4 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             }
         }
     }
-
-    static void print(Object line) { System.out.println(line); }
 }
