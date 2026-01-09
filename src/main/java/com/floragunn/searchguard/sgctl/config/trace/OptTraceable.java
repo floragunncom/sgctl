@@ -11,6 +11,10 @@ public interface OptTraceable<T> extends Traceable<Optional<T>> {
     return get().get();
   }
 
+  default boolean isPresent() {
+    return get().isPresent();
+  }
+
   Traceable<T> orElse(T other);
 
   static <T> OptTraceable<T> of(Source source, Optional<T> value) {

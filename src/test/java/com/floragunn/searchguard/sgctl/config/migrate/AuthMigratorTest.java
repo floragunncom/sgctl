@@ -1,6 +1,4 @@
-package com.floragunn.searchguard.sgctl.config.migrate.auth;
-
-import static org.junit.jupiter.api.Assertions.*;
+package com.floragunn.searchguard.sgctl.config.migrate;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
@@ -10,12 +8,17 @@ import com.floragunn.searchguard.sgctl.config.migrate.Migrator.MigrationContext;
 import com.floragunn.searchguard.sgctl.config.migrator.AssertableMigrationReporter;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+import java.util.function.Consumer;
+
+import static com.floragunn.searchguard.sgctl.testutil.TextAssertions.assertEqualsNormalized;
+import static org.junit.jupiter.api.Assertions.*;
 
 /** Tests for {@link AuthMigrator}. */
 class AuthMigratorTest {
@@ -82,31 +85,67 @@ class AuthMigratorTest {
     assertMigrationOutput("order_test");
   }
 
+  @Test
+  void testMigrateLdapBothPasswordsSet() throws Exception {
+    assertMigrationOutput(
+        "ldap_both_passwords",
+        reporter -> {
+          reporter.assertProblemSecret(
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.bind_password",
+              "Both bind_password and secure_bind_password are set; using secure_bind_password");
+        });
+  }
+
+  @Test
+  void testMigrateLdapPoolDisabled() throws Exception {
+    assertMigrationOutput(
+        "ldap_pool_disabled",
+        reporter -> {
+          reporter.assertInconvertible(
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.user_search.pool.enabled",
+              "Connection pool cannot be disabled in Search Guard");
+        });
+  }
+
+  @Test
+  void testMigrateLdapBaseScope() throws Exception {
+    assertMigrationOutput(
+        "ldap_base_scope",
+        reporter -> {
+          reporter.assertInconvertible(
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.user_search.scope",
+              "Cannot convert search scope as no equivalent scope exists");
+        });
+  }
+
   // Helper methods
 
   private void assertMigrationOutput(String testCaseName) throws Exception {
+    assertMigrationOutput(testCaseName, reporter -> {});
+  }
+
+  private void assertMigrationOutput(
+      String testCaseName, Consumer<AssertableMigrationReporter> problemAssertions)
+      throws Exception {
     var inputPath = "/xpack_migrate/elasticsearch/auth/" + testCaseName + ".yml";
     var expectedPath = "/xpack_migrate/expected/auth/" + testCaseName + ".yml";
 
-    var sgAuthC = migrate(inputPath);
-    var actualYaml = DocWriter.yaml().writeAsString(sgAuthC.toBasicObject());
-    var expectedYaml = loadResourceAsString(expectedPath);
-
-    assertEquals(expectedYaml, actualYaml, "Migration output for " + testCaseName);
-  }
-
-  private SgAuthC migrate(String path) throws Exception {
-    var config = loadConfig(path);
+    var config = loadConfig(inputPath);
     var context = createContext(Optional.of(config));
     var reporter = new AssertableMigrationReporter();
 
     var result = new AuthMigrator().migrate(context, reporter);
+    problemAssertions.accept(reporter);
     reporter.assertNoMoreProblems();
 
     assertEquals(1, result.size());
     var sgAuthC = assertInstanceOf(SgAuthC.class, result.get(0));
-    assertEquals("sg_authc.yml", sgAuthC.getFileName());
-    return sgAuthC;
+    assertEqualsNormalized("sg_authc.yml", sgAuthC.getFileName());
+
+    var actualYaml = DocWriter.yaml().writeAsString(sgAuthC.toBasicObject());
+    var expectedYaml = loadResourceAsString(expectedPath);
+
+    assertEqualsNormalized(expectedYaml, actualYaml, "Migration output for " + testCaseName);
   }
 
   private MigrationContext createContext(Optional<XPackElasticsearchConfig> config) {

@@ -6,7 +6,9 @@ auth_domains:
   idp:
     hosts:
     - "ldap://ldap.example.com:389"
+    min_pool_size: 0
+    max_pool_size: 20
   user_search:
     base_dn: "ou=users,dc=example,dc=com"
     scope: "sub"
-    filter.raw: "(uid={0})"
+    filter.raw: "(uid=${user.name})"

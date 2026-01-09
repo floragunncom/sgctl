@@ -1,5 +1,5 @@
-# X-Pack elasticsearch.yml with LDAP realm including search scopes
-# Tests scope conversion: SUB_TREE -> sub, ONE_LEVEL -> one
+# X-Pack elasticsearch.yml with LDAP realm with connection pool disabled
+# Expected: inconvertible reported for pool.enabled setting
 
 xpack:
   security:
@@ -7,16 +7,17 @@ xpack:
     authc:
       realms:
         ldap:
-          ldap_scoped:
+          ldap1:
             order: 0
             enabled: true
             url:
               - "ldaps://ldap.example.com:636"
             bind_dn: "cn=admin,dc=example,dc=com"
+            secure_bind_password: "password"
             user_search:
               base_dn: "ou=users,dc=example,dc=com"
-              scope: sub_tree
-              filter: "(mail={{0}})"
+              pool:
+                enabled: false
             group_search:
               base_dn: "ou=groups,dc=example,dc=com"
-              scope: one_level
+
