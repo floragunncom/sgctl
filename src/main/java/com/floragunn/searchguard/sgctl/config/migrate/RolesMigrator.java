@@ -2,7 +2,6 @@ package com.floragunn.searchguard.sgctl.config.migrate;
 
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalRoles;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
@@ -11,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.slf4j.Logger;
 
 /**
  * Implements the migrate method that Turns X-Pack roles into Searchguard roles by renaming parts of
@@ -27,16 +25,14 @@ public class RolesMigrator implements SubMigrator {
    * Method that Reads out Roles and converts the X-Pack privileges into SG action groups
    *
    * @param context Contains all the parsed XPack configs
-   * @param logger Logger for logging
+   * @param reporter MigrationReporter for the migration report
    * @return List<SgInternalRole>
-   * @throws SgctlException
    */
-  public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
-      throws SgctlException {
-    logger.info("Migrating Roles");
+  public List<NamedConfig<?>> migrate(
+      Migrator.IMigrationContext context, MigrationReporter reporter) {
     Optional<Roles> xpackRoles = context.getRoles();
     if (xpackRoles.isEmpty()) {
-      logger.warn("roles.json is empty");
+      reporter.problem("roles.json is empty");
       return List.of();
     }
     var internalRolesBuilder =
@@ -57,7 +53,8 @@ public class RolesMigrator implements SubMigrator {
         if (clusterPrivileges.containsKey(cluster.get())) {
           clusterBuilder.add(clusterPrivileges.get(cluster.get()));
         } else {
-          logger.warn(
+          reporter.inconvertible(
+              cluster,
               "Could not migrate cluster privilege " + cluster + " for role " + entry.getKey());
         }
       }
@@ -74,7 +71,8 @@ public class RolesMigrator implements SubMigrator {
           if (indicesPrivileges.containsKey(privilege.get())) {
             actionsBuilder.add(indicesPrivileges.get(privilege.get()));
           } else {
-            logger.warn(
+            reporter.inconvertible(
+                privilege,
                 "Could not migrate index privilege " + privilege + " for role " + entry.getKey());
           }
         }
@@ -92,11 +90,11 @@ public class RolesMigrator implements SubMigrator {
       }
 
       var aliasBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      logger.warn("Alias permissions left empty.");
+      reporter.problem("Alias permissions left empty.");
       var dataStreamBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      logger.warn("Data stream permissions left empty.");
+      reporter.problem("Data stream permissions left empty.");
       var tenantBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      logger.warn("Tenant permissions left empty.");
+      reporter.problem("Tenant permissions left empty.");
 
       internalRolesBuilder.put(
           entry.getKey(),
