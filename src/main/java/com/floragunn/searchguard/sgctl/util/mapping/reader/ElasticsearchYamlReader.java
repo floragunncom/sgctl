@@ -94,15 +94,18 @@ public final class ElasticsearchYamlReader {
             Object value = entry.getValue();
 
             // check if metadata
+            boolean isTransportProfileFilter = key.startsWith("transport.profiles.")
+                    && key.contains(".xpack.security.filter.");
             boolean wasMetaData = false;
             for (String meta : metadata) {
-                if (key.startsWith(meta)) {
+                if (!isTransportProfileFilter && key.startsWith(meta)) {
                     MigrationReport.shared.addIgnoredKey("elasticsearch.yml", key, key);
                     wasMetaData = true;
                 }
             }
-            if (wasMetaData)
+            if (wasMetaData) {
                 continue;
+            }
 
             // for each option name, propagate to responsible ir class method, added prefixes and file because they are required by the report api
             // Order matters

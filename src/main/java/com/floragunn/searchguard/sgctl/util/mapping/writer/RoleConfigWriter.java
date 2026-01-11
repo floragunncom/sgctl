@@ -201,6 +201,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      * Search Guard authentication domain configuration.
      */
     private void addToAuthc() {
+        if (sgAuthc == null || userMappingAttributes.isEmpty()) {
+            return;
+        }
+        if (sgAuthc.authDomains == null) {
+            sgAuthc.authDomains = new ArrayList<>();
+        }
         final var frontendType = "basic/internal_user_db";
         var contents = new LinkedHashMap<String, String>();
         for (var attribute : userMappingAttributes) {
