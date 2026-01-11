@@ -6,7 +6,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -25,7 +24,6 @@ class RoleConfigWriterTest extends QuietTestBase {
     /**
      * Verifies privilege mapping, index pattern conversion, and DLS/FLS handling.
      */
-    @Disabled
     @Test
     void shouldCreateRoleConfigWithConvertedPrivilegesAndQueries() {
         IntermediateRepresentation ir = new IntermediateRepresentation();
@@ -36,7 +34,7 @@ class RoleConfigWriterTest extends QuietTestBase {
 
         Role.Index index = new Role.Index(
                 List.of("/a&b/"),
-                List.of("read", "write", "delete"),
+                List.of("read", "write", "delete", "manage_ilm"),
                 fieldSecurity,
                 "{\"match\":{\"field\":\"value\"}}",
                 false
@@ -56,6 +54,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         Map<String, ActionGroupConfigWriter.ActionGroup> actionGroups =
                 (Map<String, ActionGroupConfigWriter.ActionGroup>) agWriter.toBasicObject();
         assertTrue(actionGroups.containsKey("SGS_MANAGE_SECURITY_CUSTOM"));
+        assertTrue(actionGroups.containsKey("SGS_MANAGE_ILM_CUSTOM"));
 
         Object basicObject = writer.toBasicObject();
         assertTrue(basicObject instanceof Map);
@@ -66,12 +65,12 @@ class RoleConfigWriterTest extends QuietTestBase {
         RoleConfigWriter.SGRole sgRole = roles.get("role1");
         assertNotNull(sgRole);
         assertEquals("Role description", sgRole.description);
-        assertEquals(List.of("SGS_CLUSTER_MONITOR", "manage_security"), sgRole.clusterPermissions);
+        assertEquals(List.of("SGS_CLUSTER_MONITOR", "SGS_MANAGE_SECURITY_CUSTOM"), sgRole.clusterPermissions);
 
         assertEquals(1, sgRole.index.size());
         RoleConfigWriter.SGRole.SGIndex sgIndex = sgRole.index.get(0);
         assertEquals(List.of("/a&b/"), sgIndex.indexPatterns);
-        assertEquals(List.of("SGS_READ", "SGS_WRITE", "SGS_DELETE"), sgIndex.allowedActions);
+        assertEquals(List.of("SGS_READ", "SGS_WRITE", "SGS_DELETE", "SGS_MANAGE_ILM_CUSTOM"), sgIndex.allowedActions);
         assertEquals("{\"match\": {\"field\": \"value\"}}", sgIndex.dls);
         assertEquals(List.of("field1", "~secret"), sgIndex.fls);
     }

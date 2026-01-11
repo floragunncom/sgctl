@@ -38,7 +38,7 @@ class UserConfigReaderTest {
 
         assertTrue(report.getEntries("user.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "origin".equals(entry.getParameter())));
+                .anyMatch(entry -> "user1".equals(entry.getParameter())));
     }
 
     /**

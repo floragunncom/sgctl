@@ -206,6 +206,9 @@ class ClonParserTest {
 
             for (int j = 0; j < entries; j++) {
                 String key = randomToken(random, 3, 8);
+                while (expected.containsKey(key)) {
+                    key = randomToken(random, 3, 8);
+                }
                 String value = randomNonNumericToken(random, 1, 10);
                 expected.put(key, value);
                 expressions.add(key + "=" + value);

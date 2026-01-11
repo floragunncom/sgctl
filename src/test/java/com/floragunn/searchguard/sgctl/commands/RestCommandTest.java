@@ -11,15 +11,12 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.RegisterExtension;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.PrintStream;
 import java.nio.file.Files;
@@ -124,7 +121,6 @@ public class RestCommandTest {
 
     
     @Test
-    @Disabled
     public void testOutputFile() throws Exception {
         Path outputPath = Files.createTempDirectory("outputs");
         final String okMessage = DocNode.of("status", 200, "message", "ok").toPrettyJsonString();
@@ -138,33 +134,25 @@ public class RestCommandTest {
         Assertions.assertEquals(0, result);
 
         String fileName = Arrays.stream(Objects.requireNonNull(outputPath.toFile().list())).filter(s -> s.startsWith("response")).findFirst().get();
-        BufferedReader reader = new BufferedReader(new FileReader(new File(outputPath.toFile().getPath(), fileName)));
-        StringBuilder outputString = new StringBuilder();
-        for (String line = reader.readLine(); line != null; line = reader.readLine()) outputString.append(line).append("\n");
-        reader.close();
-        Assertions.assertEquals(okMessage, outputString.substring(0, outputString.lastIndexOf("\n")));
+        Path responseFile = new File(outputPath.toFile().getPath(), fileName).toPath();
+        String responseContent = normalizeContent(Files.readString(responseFile));
+        Assertions.assertEquals(normalizeContent(okMessage), responseContent);
 
         File outputFile = File.createTempFile("out", "");
         result = SgctlTool.exec("rest", "get", "/some/endpoint", "--output", outputFile.getPath(),
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(0, result);
 
-        reader = new BufferedReader(new FileReader(outputFile.getPath()));
-        outputString = new StringBuilder();
-        for (String line = reader.readLine(); line != null; line = reader.readLine()) outputString.append(line).append("\n");
-        reader.close();
-        Assertions.assertEquals(okMessage, outputString.substring(0, outputString.lastIndexOf("\n")));
+        responseContent = normalizeContent(Files.readString(outputFile.toPath()));
+        Assertions.assertEquals(normalizeContent(okMessage), responseContent);
 
         outputFile = File.createTempFile("out", ".txt");
         result = SgctlTool.exec("rest", "get", "/some/endpoint", "--output", outputFile.getPath(),
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(0, result);
 
-        reader = new BufferedReader(new FileReader(outputFile.getPath()));
-        outputString = new StringBuilder();
-        for (String line = reader.readLine(); line != null; line = reader.readLine()) outputString.append(line).append("\n");
-        reader.close();
-        Assertions.assertEquals(okMessage, outputString.substring(0, outputString.lastIndexOf("\n")));
+        responseContent = normalizeContent(Files.readString(outputFile.toPath()));
+        Assertions.assertEquals(normalizeContent(okMessage), responseContent);
     }
 
     @Test
@@ -347,5 +335,17 @@ public class RestCommandTest {
                 "--sgctl-config-dir", configDir, "--debug", "--skip-connection-check");
         Assertions.assertEquals(0, result);
         wm.verify(exactly(1), patchRequestedFor(urlEqualTo("/some/endpoint")));
+    }
+
+    private static String normalizeContent(String content) {
+        if (content == null) {
+            return "";
+        }
+        String normalized = content.replace("\r\n", "\n").replace("\r", "\n");
+        int end = normalized.length();
+        while (end > 0 && normalized.charAt(end - 1) == '\n') {
+            end--;
+        }
+        return normalized.substring(0, end);
     }
 }
