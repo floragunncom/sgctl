@@ -27,9 +27,7 @@ import java.util.stream.Stream;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -39,22 +37,29 @@ import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig.BackendUpdateInstructions;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig.ConfigMigrator;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig.FrontendUpdateInstructions;
+import com.floragunn.searchguard.sgctl.testsupport.ExternalTestSupport;
 import com.floragunn.searchguard.test.GenericRestClient;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
 
-@Disabled("External ES cluster tests are disabled for ES 9.x until entitlements are available")
 public class MigrateConfigTest {
 
     static LocalCluster cluster;
 
     @BeforeAll
     public static void connect() throws Exception {
-        Assumptions.assumeTrue(false, "External ES cluster tests are disabled for ES 9.x until entitlements are available");
+        ExternalTestSupport.assumeExternalTestsEnabled();
+        cluster = new LocalCluster.Builder()
+                .singleNode()
+                .sslEnabled()
+                .embedded()
+                .start();
     }
 
     @AfterAll
     public static void destroy() throws Exception {
-        cluster.close();
+        if (cluster != null) {
+            cluster.close();
+        }
     }
 
     static Stream<Arguments> listConfigDirs() throws URISyntaxException {
@@ -71,7 +76,6 @@ public class MigrateConfigTest {
 
     @ParameterizedTest
     @MethodSource("listConfigDirs")
-    @Disabled("Disabled because of not compiling in JDK 17 CI")
     public void smokeTest(File configDir) throws Exception {
         File sgConfig = new File(configDir, "sg_config.yml");
         File kibanaYml = new File(configDir, "kibana.yml");

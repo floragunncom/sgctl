@@ -35,11 +35,9 @@ import java.util.Objects;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import com.floragunn.codova.documents.DocNode;
@@ -49,6 +47,7 @@ import com.floragunn.codova.documents.Format;
 import com.floragunn.fluent.collections.ImmutableSet;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteResult;
+import com.floragunn.searchguard.sgctl.testsupport.ExternalTestSupport;
 import com.floragunn.searchguard.test.GenericRestClient;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
@@ -56,7 +55,6 @@ import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
 import com.google.common.base.Charsets;
 import com.google.common.collect.ImmutableMap;
 
-@Disabled("External ES cluster tests are disabled for ES 9.x until entitlements are available")
 public class SgctlTest {
 
     private final PrintStream standardOut = System.out;
@@ -86,7 +84,12 @@ public class SgctlTest {
 
     @BeforeAll
     public static void connect() throws Exception {
-        Assumptions.assumeTrue(false, "External ES cluster tests are disabled for ES 9.x until entitlements are available");
+        ExternalTestSupport.assumeExternalTestsEnabled();
+        cluster = new LocalCluster.Builder()
+                .singleNode()
+                .sslEnabled()
+                .embedded()
+                .start();
 
         InetSocketAddress httpAddress = cluster.getHttpAddress();
         TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
@@ -103,7 +106,9 @@ public class SgctlTest {
 
     @AfterAll
     public static void destroy() throws Exception {
-        cluster.close();
+        if (cluster != null) {
+            cluster.close();
+        }
     }
 
     @Test
