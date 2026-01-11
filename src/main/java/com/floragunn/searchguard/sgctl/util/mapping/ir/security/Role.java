@@ -7,6 +7,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * Intermediate representation of an X-Pack role definition.
+ */
 public class Role {
     @NonNull private String name;
     private final List<Application> applications = new ArrayList<>();

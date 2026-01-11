@@ -8,6 +8,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 
+/**
+ * Writes Search Guard configuration files from the intermediate representation.
+ */
 public class SearchGuardConfigWriter {
     MigrateConfig.SgAuthc sg_authc;
     UserConfigWriter userConfig;

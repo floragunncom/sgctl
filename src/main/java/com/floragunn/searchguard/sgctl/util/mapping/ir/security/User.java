@@ -8,6 +8,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.LinkedHashMap;
 
+/**
+ * Intermediate representation of an X-Pack user.
+ */
 public class User {
     @NonNull private String username;
     private final List<String> roles = new ArrayList<>();

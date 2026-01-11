@@ -10,6 +10,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/**
+ * Holds the in-memory representation of users, roles, role mappings, and elasticsearch.yml settings during migration.
+ */
 public class IntermediateRepresentation {
     private final List<User> users = new ArrayList<>();
     private final List<User> usersView = Collections.unmodifiableList(users);

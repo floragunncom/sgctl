@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Objects;
 
 
+/**
+ * Collects migration results and renders a readable report grouped by category.
+ */
 public class MigrationReport {
     public static MigrationReport shared = new MigrationReport();
     private MigrationReport() {}

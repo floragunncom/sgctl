@@ -2,6 +2,9 @@ package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
 import java.util.logging.Logger;
 
+/**
+ * Intermediate representation for elasticsearch.yml security settings.
+ */
 public class IntermediateRepresentationElasticSearchYml {
 
     private static final Logger LOG = Logger.getLogger(IntermediateRepresentationElasticSearchYml.class.getName());

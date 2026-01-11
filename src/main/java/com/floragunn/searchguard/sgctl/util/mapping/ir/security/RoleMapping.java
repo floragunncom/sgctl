@@ -8,6 +8,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Intermediate representation of an X-Pack role mapping.
+ */
 public class RoleMapping {
     @NonNull private String mappingName;
     private final List<String> roles = new ArrayList<>();

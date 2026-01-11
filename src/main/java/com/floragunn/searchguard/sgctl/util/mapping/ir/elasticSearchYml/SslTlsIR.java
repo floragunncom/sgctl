@@ -11,6 +11,9 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Intermediate representation for TLS settings and transport profile IP filters.
+ */
 public class SslTlsIR {
 
     private static final String FILE_NAME = "elasticsearch.yml";

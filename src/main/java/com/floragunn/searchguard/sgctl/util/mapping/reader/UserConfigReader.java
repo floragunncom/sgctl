@@ -15,6 +15,9 @@ import java.util.List;
 
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
+/**
+ * Reads X-Pack users from user.json into the intermediate representation.
+ */
 public class UserConfigReader {
     private final File userFile;
     private final IntermediateRepresentation ir;

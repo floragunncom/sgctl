@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
 
+/**
+ * Converts a subset of Lucene regex syntax into Java regex patterns.
+ */
 public class LuceneRegexParser {
     private static final Pattern regexEnabledPattern = Pattern.compile("^/.+/$");
     private static final Pattern rangePattern = Pattern.compile("[^\\\\]<\\d+?-\\d+?>");

@@ -15,6 +15,9 @@ import java.util.Map;
 
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
+/**
+ * Reads X-Pack role mappings from role_mapping.json into the intermediate representation.
+ */
 public class RoleMappingConfigReader {
     private final File roleMappingFile;
     private final IntermediateRepresentation ir;
