@@ -15,12 +15,29 @@ public interface MigrationReporter {
   void critical(Traceable<?> subject, String message);
 
   /**
+   * Reports a critical problem with a {@link Traceable}. Critical problems will cause migration to
+   * fail, and no config files will be written. The value will be censored in the report.
+   *
+   * @param subject The {@link Traceable} that is the subject of this problem.
+   * @param message An explanation of the problem.
+   */
+  void criticalSecret(Traceable<?> subject, String message);
+
+  /**
    * Reports a genic problem with a {@link Traceable}.
    *
    * @param subject The {@link Traceable} that is the subject of this problem.
    * @param message An explanation of the problem.
    */
   void problem(Traceable<?> subject, String message);
+
+  /**
+   * Reports a genic problem with a {@link Traceable}. The value will be censored in the report.
+   *
+   * @param subject The {@link Traceable} that is the subject of this problem.
+   * @param message An explanation of the problem.
+   */
+  void problemSecret(Traceable<?> subject, String message);
 
   /**
    * Reports a {@link Traceable} as inconvertible, meaning that an equivalent concept does not exist
@@ -30,6 +47,15 @@ public interface MigrationReporter {
    * @param message Additional information, e.g. the action that was taken to resolve this problem
    */
   void inconvertible(Traceable<?> subject, String message);
+
+  /**
+   * Reports a {@link Traceable} as inconvertible, meaning that an equivalent concept does not exist
+   * in the target domain and as such cannot be converted. The value will be censored in the report.
+   *
+   * @param subject The {@link Traceable} that is inconvertible.
+   * @param message Additional information, e.g. the action that was taken to resolve this problem
+   */
+  void inconvertibleSecret(Traceable<?> subject, String message);
 
   /**
    * Adds a critical message to the report. The migration cannot complete successfully if any
