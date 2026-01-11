@@ -94,37 +94,35 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
         return result;
     }
 
-    private void collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName,  List<String> usernames) {
+    private void collectUsernames(RoleMapping.Rules rules, String mappingName, String roleName, String originPath ,List<String> usernames) {
+        if (rules == null) {
+            return;
+        }
+
         var field = rules.getField();
         if (field != null && field.containsKey("username")) {
-            usernames.addAll(extractStringValues(field.get("username"), mappingName + "->rules.field.username"));
+            usernames.addAll(extractStringValues(field.get("username"), mappingName + "->" + originPath + ".field.username"));
         }
 
         var anyRules = rules.getAny();
         if (anyRules != null) {
             for (int i = 0; i < anyRules.size(); i++) {
-                var anyRule = anyRules.get(i);
-                var anyField = anyRule.getField();
-
-                if (anyField != null && anyField.containsKey("username")) {
-                    usernames.addAll(extractStringValues(anyField.get("username"), mappingName + "->rules.any[" + i + "].field.username"));
-                }
+               collectUsernames(anyRules.get(i), mappingName, roleName, originPath + ".any[" + i + "]", usernames);
             }
         }
 
         if (rules.getAll() != null) {
-            report.addManualAction(FILE_NAME, roleName + "->rules.all", "XPack rule uses all which cannot be migrated automatically.");
+            report.addManualAction(FILE_NAME, roleName + "->" + originPath + ".all", "XPack rule uses all which cannot be migrated automatically.");
         }
 
         if (rules.getExcept() != null) {
-            report.addManualAction(FILE_NAME, roleName + "->rules.except", "XPack rule uses except which cannot be migrated automatically.");
+            report.addManualAction(FILE_NAME, roleName + "->" + originPath + ".except", "XPack rule uses except which cannot be migrated automatically.");
         }
     }
 
     private void collectBackendRoles(RoleMapping.Rules rules, String mappingName, String roleName,  List<String> backendRoles) {
         var field = rules.getField();
         if (field != null) {
-            // TODO: Add array handling
             if (field.containsKey("groups")) {
                 backendRoles.addAll(extractStringValues(field.get("groups"), mappingName + "->rules.field.groups"));
             }
@@ -170,7 +168,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             report.addManualAction(FILE_NAME, roleName + "->rules", "Search Guard users for role '" + roleName + "' must be configured manually.");
             return result;
         }
-        collectUsernames(rules, rm.getMappingName(), roleName, result);
+        collectUsernames(rules, rm.getMappingName(), roleName, "rules", result);
         return result;
     }
 
