@@ -25,7 +25,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private Set<String> userMappingAttributes = new HashSet<>();
 
     static final String FILE_NAME = "sg_roles.yml";
-    static final Set<String> noEquivalentClusterActionGroupKeys = Set.of(
+    private static final Set<String> noEquivalentClusterActionGroupKeys = Set.of(
             "cancel_task", "create_snapshot", "cross_cluster_replication", "cross_cluster_search", "grant_api_key", "manage", "manage_api_key",
             "manage_autoscaling", "manage_ccr", "manage_data_frame_transforms", "manage_data_stream_global_retention", "manage_enrich", "manage_inference",
             "manage_logstash_pipelines", "manage_ml", "manage_oidc", "manage_own_api_key", "manage_rollup", "manage_saml", "manage_search_application",
@@ -33,23 +33,13 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             "manage_watcher", "monitor_data_stream_global_retention", "monitor_enrich", "monitor_esql", "monitor_inference", "monitor_ml", "monitor_rollup",
             "monitor_snapshot", "monitor_stats", "monitor_text_structure", "monitor_transform", "monitor_watcher", "read_ccr", "read_pipeline", "read_slm",
             "read_security", "transport_client"
-            );
-            static final Set<String> noEquivalentIndexActionGroupKeys = Set.of(
-                "create_doc",
-                "create_index",
-                "cross_cluster_replication",
-                "cross_cluster_replication_internal",
-                "delete_index",
-                "maintenance",
-                "manage_data_stream_lifecycle",
-                "manage_failure_store",
-                "manage_follow_index",
-                "manage_ilm",
-                "manage_leader_index",
-                "read_cross_cluster",
-                "read_failure_store",
-                "view_index_metadata"
-        );
+    );
+
+    private static final Set<String> noEquivalentIndexActionGroupKeys = Set.of(
+            "create_doc", "create_index", "cross_cluster_replication", "cross_cluster_replication_internal", "delete_index", "maintenance",
+            "manage_data_stream_lifecycle", "manage_failure_store", "manage_follow_index", "manage_ilm", "manage_leader_index", "read_cross_cluster",
+            "read_failure_store", "view_index_metadata"
+    );
 
     private static final Set<String> validQueryKeys = Set.of(
             // Full-text queries https://www.elastic.co/docs/reference/query-languages/query-dsl/full-text-queries

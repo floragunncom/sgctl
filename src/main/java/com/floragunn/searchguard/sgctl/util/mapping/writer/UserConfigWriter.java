@@ -13,9 +13,9 @@ import java.util.Map;
  * Writes Search Guard user definitions derived from the intermediate representation.
  */
 public class UserConfigWriter implements Document<UserConfigWriter> {
-    private IntermediateRepresentation ir;
-    private MigrationReport report;
-    private List<SGInternalUser> users;
+    final private IntermediateRepresentation ir;
+    final private MigrationReport report;
+    final private List<SGInternalUser> users;
 
     static final String FILE_NAME = "sg_internal_users.yml";
 
