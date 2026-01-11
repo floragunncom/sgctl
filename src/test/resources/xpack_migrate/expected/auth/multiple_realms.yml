@@ -12,3 +12,4 @@ auth_domains:
     filter.raw: "(uid={0})"
   group_search:
     base_dn: "ou=groups,dc=example,dc=com"
+    scope: "sub"

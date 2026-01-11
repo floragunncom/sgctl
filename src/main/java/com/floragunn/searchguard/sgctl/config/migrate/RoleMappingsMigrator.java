@@ -141,7 +141,7 @@ public class RoleMappingsMigrator implements SubMigrator {
         logger.warn("[{}] Unknown field in rule: {}", mappingName, data.toJsonString());
       }
     } else if (rule instanceof RoleMappings.RoleMapping.Rule.Except exceptRule) {
-      logger.error(
+      logger.warn(
           "[{}] Rule contains 'EXCEPT' (Negation). Skipped for security reasons.", mappingName);
     }
 

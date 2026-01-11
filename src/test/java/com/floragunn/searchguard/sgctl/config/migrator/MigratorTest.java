@@ -3,18 +3,18 @@ package com.floragunn.searchguard.sgctl.config.migrator;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.floragunn.searchguard.sgctl.SgctlException;
-import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
-import com.floragunn.searchguard.sgctl.config.migrate.MigratorRegistry;
-import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.*;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
+import com.floragunn.searchguard.sgctl.config.xpack.Users;
+import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
-import com.floragunn.searchguard.sgctl.config.xpack.Users;
-import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -118,12 +118,68 @@ class MigratorTest {
     }
   }
 
+  static class ReportingTestMigrator implements SubMigrator {
+
+    Traceable<?> dummyTraceable1 = OptTraceable.empty(Source.NONE);
+    Traceable<?> dummyTraceable2 = OptTraceable.empty(Source.NONE);
+
+    @Override
+    public List<NamedConfig<?>> migrate(
+        Migrator.IMigrationContext context, MigrationReporter reporter) {
+      reporter.critical(dummyTraceable1, "critical 1");
+      reporter.problem(dummyTraceable1, "1");
+      reporter.problem(dummyTraceable2, "2");
+      reporter.inconvertible(dummyTraceable1, "1.1");
+      reporter.inconvertible(dummyTraceable1, "1.2");
+      reporter.problem("generic 1");
+      reporter.problem("generic 2");
+      reporter.critical("critical generic");
+      return List.of();
+    }
+  }
+
+  @Test
+  public void testMigrationReporting() throws SgctlException {
+    var test = new ReportingTestMigrator();
+    var registry = MigratorRegistry.getInstance();
+    registry.registerSubMigrator(test);
+    registry.finalizeSubMigrators();
+
+    var reporter = new AssertableMigrationReporter();
+    new Migrator(reporter).migrate(new NullMigrationContext());
+
+    reporter.assertCritical(test.dummyTraceable1, "critical 1");
+    assertThrows(AssertionError.class, () -> reporter.assertCritical(test.dummyTraceable1));
+    reporter.assertNoCritical(test.dummyTraceable1);
+
+    reporter.assertProblem(test.dummyTraceable1);
+    reporter.assertProblem(test.dummyTraceable2, "2");
+    assertThrows(AssertionError.class, () -> reporter.assertProblem(test.dummyTraceable1));
+    assertThrows(AssertionError.class, () -> reporter.assertProblem(test.dummyTraceable2));
+    reporter.assertNoProblem(test.dummyTraceable1);
+    reporter.assertNoProblem(test.dummyTraceable2);
+
+    reporter.assertInconvertible(test.dummyTraceable1, "1.1");
+    assertThrows(AssertionError.class, () -> reporter.assertNoInconvertible(test.dummyTraceable1));
+    reporter.assertInconvertible(test.dummyTraceable1, "1.2");
+    assertThrows(AssertionError.class, () -> reporter.assertInconvertible(test.dummyTraceable1));
+    reporter.assertNoInconvertible(test.dummyTraceable1);
+
+    reporter.assertCritical("critical generic");
+
+    reporter.assertProblem("generic 1");
+    reporter.assertProblem("generic 2");
+
+    reporter.assertNoMoreProblems();
+  }
+
   @Test
   public void testMigrationSimple() throws SgctlException {
+    var registry = MigratorRegistry.getInstance();
     // Register all sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
+    registry.registerSubMigrator(new TestMigratorUsers());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
@@ -131,7 +187,7 @@ class MigratorTest {
     NullMigrationContext context = new NullMigrationContext();
     final List<NamedConfig<?>> migrationResult;
     try {
-      migrationResult = migrator.migrate(context);
+      migrationResult = ((MigrationResult.Success) migrator.migrate(context)).configs();
     } catch (IllegalStateException e) {
       System.err.println("MigratorA migrate failed. Did you forget to finalize?");
       throw e;
@@ -188,11 +244,12 @@ class MigratorTest {
 
   @Test
   public void testMigrationFailureSameFileTwiceAndSameSubMigratorTwice() throws SgctlException {
+    var registry = MigratorRegistry.getInstance();
     // Register sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
+    registry.registerSubMigrator(new TestMigratorUsers());
+    registry.registerSubMigrator(new TestMigratorUsers());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
@@ -204,11 +261,12 @@ class MigratorTest {
   @Test
   public void testMigrationFailureSameFileTwiceMultipleDifferentSubMigrators()
       throws SgctlException {
+    var registry = MigratorRegistry.getInstance();
     // Register sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorUsers());
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorCombined());
+    registry.registerSubMigrator(new TestMigratorUsers());
+    registry.registerSubMigrator(new TestMigratorCombined());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
@@ -219,10 +277,11 @@ class MigratorTest {
 
   @Test
   public void testMigrationComplex() throws SgctlException {
+    var registry = MigratorRegistry.getInstance();
     // Register sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new TestMigratorCombined());
+    registry.registerSubMigrator(new TestMigratorCombined());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
@@ -230,7 +289,7 @@ class MigratorTest {
     NullMigrationContext context = new NullMigrationContext();
     final List<NamedConfig<?>> migrationResult;
     try {
-      migrationResult = migrator.migrate(context);
+      migrationResult = ((MigrationResult.Success) migrator.migrate(context)).configs();
     } catch (IllegalStateException e) {
       System.err.println("TestMigratorCombined migrate failed. Did you forget to finalize?");
       throw e;
@@ -276,10 +335,11 @@ class MigratorTest {
 
   @Test
   public void testFailingMigration() {
+    var registry = MigratorRegistry.getInstance();
     // Register sub-migrators
-    MigratorRegistry.registerSubMigratorStatic(new FailingTestMigrator());
+    registry.registerSubMigrator(new FailingTestMigrator());
     // Finalize to prevent error
-    MigratorRegistry.finalizeMigratorsStatic();
+    registry.finalizeSubMigrators();
 
     final Migrator migrator = new Migrator();
 
