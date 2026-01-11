@@ -4,7 +4,7 @@ import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
-import com.floragunn.searchguard.sgctl.config.migrate.util.Translator;
+import com.floragunn.searchguard.sgctl.config.migrate.util.MessageBuilder;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap;
@@ -125,27 +125,19 @@ public class AuthMigrator implements SubMigrator {
     return new Ldap(identityProvider, userSearch, Optional.empty());
   }
 
-  private void addBaseSearchScopeInconvertibleErrorMessageTemplate(
+  private void addBaseSearchScopeInconvertibleErrorMessage(
       Traceable<Realm.LdapRealm.Scope> scope, MigrationReporter reporter) {
     final SearchScope[] possibleScopes = SearchScope.values();
-    final List<String> inconvertibleErrorMessageTemplate = new ArrayList<>();
-    if (possibleScopes.length == 1) {
-      inconvertibleErrorMessageTemplate.add("{ONE_SEARCH_SCOPE}");
-      inconvertibleErrorMessageTemplate.add(possibleScopes[0].name() + ". ");
-      inconvertibleErrorMessageTemplate.add("{NOTE_SCOPE_WAS_OMITTED}");
-    } else {
-      inconvertibleErrorMessageTemplate.add("{MULTIPLE_SEARCH_SCOPES}");
-      for (var possibleScope : possibleScopes) {
-        inconvertibleErrorMessageTemplate.add(possibleScope.name());
-        inconvertibleErrorMessageTemplate.add("{SEPARATOR}");
-      }
-      inconvertibleErrorMessageTemplate.remove(
-          inconvertibleErrorMessageTemplate.size() - 1); // remove last separator
-      inconvertibleErrorMessageTemplate.add(". ");
-      inconvertibleErrorMessageTemplate.add("{NOTE_SCOPE_WAS_OMITTED}");
-    }
-    final String errorMessage =
-        Translator.getInstance().translate(inconvertibleErrorMessageTemplate);
+    final MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.appendKeyValueSeparated(
+        "A different migratable search scope DOES exist in Search Guard",
+        "These other migratable search scopes DO exist in Search Guard",
+        possibleScopes,
+        Enum::name);
+    messageBuilder.nextSentence();
+    messageBuilder.append("The search scope was omitted from the output because of this");
+    messageBuilder.nextSentence();
+    final String errorMessage = messageBuilder.finalizeMessage();
     reporter.inconvertible(scope, errorMessage);
   }
 
@@ -155,7 +147,7 @@ public class AuthMigrator implements SubMigrator {
       case SUB_TREE -> Optional.of(SearchScope.SUB);
       case ONE_LEVEL -> Optional.of(SearchScope.ONE);
       case BASE -> {
-        addBaseSearchScopeInconvertibleErrorMessageTemplate(scope, reporter);
+        addBaseSearchScopeInconvertibleErrorMessage(scope, reporter);
         yield Optional.empty();
       }
     };

@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.function.Consumer;
-import org.apache.commons.lang3.tuple.Pair;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,16 +47,11 @@ class AuthMigratorTest {
   void testMigrateLdapInconvertibleScopes() throws Exception {
     assertMigrationOutput(
         "ldap_inconvertible_scope",
-        pair -> {
-          final AssertableMigrationReporter reporter = pair.getLeft();
-          final XPackElasticsearchConfig config = pair.getRight();
-
-          final var realms = config.security().get().authc().getValue().realms().get();
-          final var ldap_scoped =
-              (XPackElasticsearchConfig.Realm.LdapRealm)
-                  realms.get("ldap").get().get("ldap_scoped").get();
-          final var group_search_scope = ldap_scoped.groupSearchScope();
-          reporter.assertInconvertible(group_search_scope);
+        reporter -> {
+          System.out.println(reporter.generateReport());
+          reporter.assertInconvertible(
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap_scoped.group_search.scope",
+              "These other migratable search scopes DO exist in Search Guard: SUB, ONE. The search scope was omitted from the output because of this.");
         });
   }
 
@@ -108,9 +102,7 @@ class AuthMigratorTest {
   }
 
   private void assertMigrationOutput(
-      String testCaseName,
-      Consumer<Pair<AssertableMigrationReporter, XPackElasticsearchConfig>> reportChecker)
-      throws Exception {
+      String testCaseName, Consumer<AssertableMigrationReporter> reportChecker) throws Exception {
     var inputPath = "/xpack_migrate/elasticsearch/auth/" + testCaseName + ".yml";
     var expectedPath = "/xpack_migrate/expected/auth/" + testCaseName + ".yml";
 
@@ -121,16 +113,14 @@ class AuthMigratorTest {
     assertEquals(expectedYaml, actualYaml, "Migration output for " + testCaseName);
   }
 
-  private SgAuthC migrate(
-      String path,
-      Consumer<Pair<AssertableMigrationReporter, XPackElasticsearchConfig>> reportChecker)
+  private SgAuthC migrate(String path, Consumer<AssertableMigrationReporter> reportChecker)
       throws Exception {
     var config = loadConfig(path);
     var context = createContext(Optional.of(config));
     var reporter = new AssertableMigrationReporter();
 
     var result = new AuthMigrator().migrate(context, reporter);
-    reportChecker.accept(Pair.of(reporter, config));
+    reportChecker.accept(reporter);
     reporter.assertNoMoreProblems();
 
     assertEquals(1, result.size());
