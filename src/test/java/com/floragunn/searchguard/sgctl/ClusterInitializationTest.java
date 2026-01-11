@@ -21,7 +21,6 @@ import static java.util.Collections.singletonList;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
-import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -33,7 +32,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
 import com.google.common.base.Charsets;
@@ -74,16 +72,9 @@ public class ClusterInitializationTest {
                 .embedded()
                 .start();
 
-        InetSocketAddress httpAddress = cluster.getHttpAddress();
-        TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
-        String adminCert = adminCertificate.getCertificateFile().getPath();
-        String adminKey = adminCertificate.getPrivateKeyFile().getPath();
-        String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         configDir = Files.createTempDirectory("sgctl-test-config").toString();
 
-        int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert,
-                "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir,
-                "--skip-connection-check");
+        int rc = SgctlTool.exec(ExternalTestSupport.buildConnectArgs(cluster, configDir, true));
 
         Assertions.assertEquals(0, rc);
     }

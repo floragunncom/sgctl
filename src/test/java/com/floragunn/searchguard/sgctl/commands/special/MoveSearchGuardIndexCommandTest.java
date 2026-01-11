@@ -17,9 +17,12 @@
 
 package com.floragunn.searchguard.sgctl.commands.special;
 
-import java.net.InetSocketAddress;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 
+import org.apache.commons.io.output.TeeOutputStream;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
@@ -27,7 +30,6 @@ import org.junit.jupiter.api.Test;
 
 import com.floragunn.searchguard.sgctl.SgctlTool;
 import com.floragunn.searchguard.sgctl.testsupport.ExternalTestSupport;
-import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.cluster.LocalCluster;
 
 public class MoveSearchGuardIndexCommandTest {
@@ -44,16 +46,9 @@ public class MoveSearchGuardIndexCommandTest {
                 .embedded()
                 .start();
 
-        InetSocketAddress httpAddress = cluster.getHttpAddress();
-        TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
-        String adminCert = adminCertificate.getCertificateFile().getPath();
-        String adminKey = adminCertificate.getPrivateKeyFile().getPath();
-        String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         configDir = Files.createTempDirectory("sgctl-test-config").toString();
 
-        int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()),
-                "--cert", adminCert, "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert,
-                "--debug", "--sgctl-config-dir", configDir);
+        int rc = SgctlTool.exec(ExternalTestSupport.buildConnectArgs(cluster, configDir, false));
 
         Assertions.assertEquals(0, rc);
     }
@@ -67,7 +62,22 @@ public class MoveSearchGuardIndexCommandTest {
 
     @Test
     public void shouldMoveSearchGuardIndex() throws Exception {
-        int rc = SgctlTool.exec("move-sg-index", "--debug", "--sgctl-config-dir", configDir);
-        Assertions.assertEquals(0, rc);
+        PrintStream standardOut = System.out;
+        PrintStream standardErr = System.err;
+        ByteArrayOutputStream outputStreamCaptor = new ByteArrayOutputStream();
+        ByteArrayOutputStream errStreamCaptor = new ByteArrayOutputStream();
+
+        try {
+            System.setOut(new PrintStream(new TeeOutputStream(outputStreamCaptor, standardOut)));
+            System.setErr(new PrintStream(new TeeOutputStream(errStreamCaptor, standardErr)));
+
+            int rc = SgctlTool.exec("special", "move-sg-index", "--debug", "--sgctl-config-dir", configDir);
+            String output = outputStreamCaptor.toString(StandardCharsets.UTF_8)
+                    + errStreamCaptor.toString(StandardCharsets.UTF_8);
+            Assertions.assertEquals(0, rc, output);
+        } finally {
+            System.setOut(standardOut);
+            System.setErr(standardErr);
+        }
     }
 }

@@ -25,6 +25,7 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -91,15 +92,9 @@ public class SgctlTest {
                 .embedded()
                 .start();
 
-        InetSocketAddress httpAddress = cluster.getHttpAddress();
-        TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
-        String adminCert = adminCertificate.getCertificateFile().getPath();
-        String adminKey = adminCertificate.getPrivateKeyFile().getPath();
-        String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         configDir = Files.createTempDirectory("sgctl-test-config").toString();
 
-        int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert,
-                "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir);
+        int rc = SgctlTool.exec(ExternalTestSupport.buildConnectArgs(cluster, configDir, false));
 
         Assertions.assertEquals(0, rc);
     }
@@ -120,8 +115,28 @@ public class SgctlTest {
         String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         Path configDir = Files.createTempDirectory("sgctl-test-config");
 
-        int rc = SgctlTool.exec("connect", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert, "--key",
-                adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir.toString());
+        String keyPass = adminCertificate.getPrivateKeyPassword();
+        List<String> args = new ArrayList<>();
+        args.add("connect");
+        args.add(httpAddress.getHostString());
+        args.add("-p");
+        args.add(String.valueOf(httpAddress.getPort()));
+        args.add("--cert");
+        args.add(adminCert);
+        args.add("--key");
+        args.add(adminKey);
+        if (keyPass != null && !keyPass.isEmpty()) {
+            args.add("--key-pass");
+            args.add(keyPass);
+        }
+        args.add("--ca-cert");
+        args.add(rootCaCert);
+        args.add("--insecure");
+        args.add("--debug");
+        args.add("--sgctl-config-dir");
+        args.add(configDir.toString());
+
+        int rc = SgctlTool.exec(args.toArray(new String[0]));
 
         Assertions.assertEquals(0, rc);
 
