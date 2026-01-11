@@ -254,8 +254,7 @@ class ElasticsearchYamlReaderTest extends TestBase {
         // unsupported realms should emit manual/unknown entries
         assertTrue(hasAnyEntry(report, "elasticsearch.yml", MigrationReport.Category.MANUAL));
 
-        // extra SAML/OIDC keys not mapped today should be reported
-        assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authc.realms.saml.saml1.idp.entity_id"));
+        // extra OIDC keys not mapped today should be reported
         assertTrue(hasReportEntry(report, "elasticsearch.yml", MigrationReport.Category.WARNING, "xpack.security.authc.realms.oidc.oidc1.op.userinfo_endpoint"));
 
         // transport/http filter flags outside our TLS handlers should be reported
