@@ -15,6 +15,9 @@ class MigrationReporterImpl implements MigrationReporter {
   private final Map<Traceable<?>, List<String>> problem = new LinkedHashMap<>();
   private final Map<Traceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
   private final Map<Traceable<?>, List<String>> critical = new LinkedHashMap<>();
+  private final Map<Traceable<?>, List<String>> problemSecret = new LinkedHashMap<>();
+  private final Map<Traceable<?>, List<String>> inconvertibleSecret = new LinkedHashMap<>();
+  private final Map<Traceable<?>, List<String>> criticalSecret = new LinkedHashMap<>();
   private final List<String> problemMessages = new ArrayList<>();
   private final List<String> criticalMessages = new ArrayList<>();
 
@@ -29,13 +32,28 @@ class MigrationReporterImpl implements MigrationReporter {
   }
 
   @Override
+  public void criticalSecret(Traceable<?> subject, String message) {
+    add(criticalSecret, subject, message);
+  }
+
+  @Override
   public void problem(Traceable<?> subject, String message) {
     add(problem, subject, message);
   }
 
   @Override
+  public void problemSecret(Traceable<?> subject, String message) {
+    add(problemSecret, subject, message);
+  }
+
+  @Override
   public void inconvertible(Traceable<?> subject, String message) {
     add(inconvertible, subject, message);
+  }
+
+  @Override
+  public void inconvertibleSecret(Traceable<?> subject, String message) {
+    add(inconvertibleSecret, subject, message);
   }
 
   @Override
@@ -50,7 +68,7 @@ class MigrationReporterImpl implements MigrationReporter {
 
   @Override
   public boolean hasCriticalProblems() {
-    return !criticalMessages.isEmpty() || !critical.isEmpty();
+    return !criticalMessages.isEmpty() || !critical.isEmpty() || !criticalSecret.isEmpty();
   }
 
   private void add(
@@ -65,15 +83,16 @@ class MigrationReporterImpl implements MigrationReporter {
     sb.append(migrationTitle);
     sb.append("\n");
 
-    reportTraceables(sb, critical, "setting(s) caused critical problem(s)");
+    reportTraceables(sb, critical, criticalSecret, "setting(s) caused critical problem(s)");
     reportList(sb, criticalMessages, "other critical problem(s)");
 
     reportTraceables(
         sb,
         inconvertible,
+        inconvertibleSecret,
         "setting(s) cannot be converted because no equivalent concept exists in "
             + targetDomainName);
-    reportTraceables(sb, problem, "setting(s) caused other problem(s)");
+    reportTraceables(sb, problem, problemSecret, "setting(s) caused other problem(s)");
     reportList(sb, problemMessages, "other problem(s)");
 
     return sb.toString();
@@ -82,12 +101,13 @@ class MigrationReporterImpl implements MigrationReporter {
   private void reportTraceables(
       StringBuilder sb,
       Map<? extends Traceable<?>, ? extends List<String>> traceables,
+      Map<? extends Traceable<?>, ? extends List<String>> secretTraceables,
       String desc) {
-    if (traceables.isEmpty()) return;
+    if (traceables.isEmpty() && secretTraceables.isEmpty()) return;
 
     sb.append("\n");
 
-    sb.append(traceables.size());
+    sb.append(traceables.size() + secretTraceables.size());
     sb.append(" ");
     sb.append(desc);
     sb.append(":\n");
@@ -100,6 +120,22 @@ class MigrationReporterImpl implements MigrationReporter {
       sb.append(entry.getKey().getSource().fullPathString());
       sb.append(": ");
       sb.append(traceable.get());
+      sb.append("\n");
+
+      for (var message : messages) {
+        sb.append("  * ");
+        sb.append(message);
+        sb.append("\n");
+      }
+    }
+
+    for (var entry : secretTraceables.entrySet()) {
+      var messages = entry.getValue();
+
+      sb.append("* ");
+      sb.append(entry.getKey().getSource().fullPathString());
+      sb.append(": ");
+      sb.append("***");
       sb.append("\n");
 
       for (var message : messages) {

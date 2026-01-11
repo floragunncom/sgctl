@@ -1,11 +1,11 @@
 package com.floragunn.searchguard.sgctl.config.migrator;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import org.junit.jupiter.api.Test;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class MigrationReporterTest {
 
@@ -137,5 +137,125 @@ public class MigrationReporterTest {
     var reporter1 = MigrationReporter.searchGuard();
     reporter1.critical("There was a critical problem");
     assertTrue(reporter1.hasCriticalProblems());
+  }
+
+  @Test
+  public void testCriticalSecretRemembered() {
+    var reporter = MigrationReporter.searchGuard();
+    reporter.problem("Non-critical problem");
+    assertFalse(reporter.hasCriticalProblems());
+
+    var cfgSrc = new Source.Config("test.yml");
+    var secret = Traceable.of(new Source.Attribute(cfgSrc, "password"), "supersecret");
+    reporter.criticalSecret(secret, "Password is too weak");
+    assertTrue(reporter.hasCriticalProblems());
+  }
+
+  @Test
+  public void testSecretValuesCensored() {
+    var reporter = MigrationReporter.searchGuard();
+    var cfgSrc = new Source.Config("test.yml");
+    var secret = Traceable.of(new Source.Attribute(cfgSrc, "password"), "supersecret");
+    reporter.criticalSecret(secret, "Password is too weak");
+    reporter.problemSecret(
+        Traceable.of(new Source.Attribute(cfgSrc, "api_key"), "secret-api-key-123"),
+        "API key format is deprecated");
+    reporter.inconvertibleSecret(
+        Traceable.of(new Source.Attribute(cfgSrc, "token"), "jwt-token-value"),
+        "Token format not supported");
+
+    var expected =
+        """
+        # sgctl migrate-security report
+
+        1 setting(s) caused critical problem(s):
+        * test.yml: password: ***
+          * Password is too weak
+
+        1 setting(s) cannot be converted because no equivalent concept exists in Search Guard:
+        * test.yml: token: ***
+          * Token format not supported
+
+        1 setting(s) caused other problem(s):
+        * test.yml: api_key: ***
+          * API key format is deprecated
+        """;
+
+    assertEquals(expected, reporter.generateReport());
+  }
+
+  @Test
+  public void testSecretAndNonSecretMerged() {
+    var reporter = MigrationReporter.searchGuard();
+    var cfgSrc = new Source.Config("test.yml");
+    var normalValue = Traceable.of(new Source.Attribute(cfgSrc, "username"), "admin");
+    var secretValue = Traceable.of(new Source.Attribute(cfgSrc, "password"), "supersecret");
+
+    reporter.critical(normalValue, "Username is reserved");
+    reporter.criticalSecret(secretValue, "Password is too weak");
+
+    var expected =
+        """
+        # sgctl migrate-security report
+
+        2 setting(s) caused critical problem(s):
+        * test.yml: username: admin
+          * Username is reserved
+        * test.yml: password: ***
+          * Password is too weak
+        """;
+
+    assertEquals(expected, reporter.generateReport());
+    assertTrue(reporter.hasCriticalProblems());
+  }
+
+  @Test
+  public void testMixedSecretsAndNonSecretsAllCategories() {
+    var reporter = MigrationReporter.searchGuard();
+    var cfgSrc = new Source.Config("test.yml");
+
+    // Critical: one normal, one secret
+    reporter.critical(
+        Traceable.of(new Source.Attribute(cfgSrc, "setting1"), "value1"), "Normal critical");
+    reporter.criticalSecret(
+        Traceable.of(new Source.Attribute(cfgSrc, "secret1"), "secret-value1"), "Secret critical");
+
+    // Inconvertible: one normal, one secret
+    reporter.inconvertible(
+        Traceable.of(new Source.Attribute(cfgSrc, "setting2"), "value2"), "Normal inconvertible");
+    reporter.inconvertibleSecret(
+        Traceable.of(new Source.Attribute(cfgSrc, "secret2"), "secret-value2"),
+        "Secret inconvertible");
+
+    // Problem: one normal, one secret
+    reporter.problem(
+        Traceable.of(new Source.Attribute(cfgSrc, "setting3"), "value3"), "Normal problem");
+    reporter.problemSecret(
+        Traceable.of(new Source.Attribute(cfgSrc, "secret3"), "secret-value3"), "Secret problem");
+
+    var expected =
+        """
+        # sgctl migrate-security report
+
+        2 setting(s) caused critical problem(s):
+        * test.yml: setting1: value1
+          * Normal critical
+        * test.yml: secret1: ***
+          * Secret critical
+
+        2 setting(s) cannot be converted because no equivalent concept exists in Search Guard:
+        * test.yml: setting2: value2
+          * Normal inconvertible
+        * test.yml: secret2: ***
+          * Secret inconvertible
+
+        2 setting(s) caused other problem(s):
+        * test.yml: setting3: value3
+          * Normal problem
+        * test.yml: secret3: ***
+          * Secret problem
+        """;
+
+    assertEquals(expected, reporter.generateReport());
   }
 }
