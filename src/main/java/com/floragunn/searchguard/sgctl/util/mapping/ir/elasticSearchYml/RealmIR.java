@@ -8,6 +8,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/**
+ * Intermediate representation of an authentication realm from elasticsearch.yml.
+ */
 public class RealmIR {
     String type; // ldap, saml, oidc, ...
     String name;

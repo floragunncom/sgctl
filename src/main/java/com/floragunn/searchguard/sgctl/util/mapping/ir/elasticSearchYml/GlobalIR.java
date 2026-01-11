@@ -4,6 +4,9 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 
+/**
+ * Intermediate representation for global xpack.security settings from elasticsearch.yml.
+ */
 public class GlobalIR {
 
     private static final String FILE_NAME = "elasticsearch.yml";

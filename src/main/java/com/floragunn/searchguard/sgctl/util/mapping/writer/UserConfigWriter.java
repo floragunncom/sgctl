@@ -9,6 +9,9 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Writes Search Guard user definitions derived from the intermediate representation.
+ */
 public class UserConfigWriter implements Document<UserConfigWriter> {
     private IntermediateRepresentation ir;
     private MigrationReport report;

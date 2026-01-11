@@ -6,7 +6,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -122,8 +121,8 @@ class XPackConfigReaderTest extends TestBase {
         // Current implementation only sets a non-null Rules instance without details.
         assertNotNull(mapping.getRules());
 
-        // Current implementation does not fill metadata or roleTemplates.
-        assertNull(mapping.getMetadata());
+        // Metadata is retained for review; roleTemplates remain unset.
+        assertNotNull(mapping.getMetadata());
         assertNull(mapping.getRoleTemplates());
     }
 
@@ -184,7 +183,7 @@ class XPackConfigReaderTest extends TestBase {
 
         assertTrue(report.getEntries("user.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "origin".equals(entry.getParameter())));
+                .anyMatch(entry -> "user1".equals(entry.getParameter())));
     }
 
     /**
@@ -554,7 +553,6 @@ class XPackConfigReaderTest extends TestBase {
      *
      * @param tempDir temporary directory provided by JUnit
      */
-    @Disabled("TODO: enable and adjust once metadata in role mappings is implemented in XPackConfigReader")
     @Test
     void shouldParseMetadataInRoleMapping(@TempDir Path tempDir) throws IOException {
         Path mappingsFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/role-mappings-valid.json");
@@ -570,6 +568,7 @@ class XPackConfigReaderTest extends TestBase {
 
         RoleMapping mapping = findRoleMapping(ir, "mapping1");
         assertNotNull(mapping.getMetadata());
+        assertEquals("simple mapping for sgctl tests", mapping.getMetadata().getEntries().get("note"));
     }
 
     /**

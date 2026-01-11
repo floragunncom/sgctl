@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 
+/**
+ * Writes Search Guard role mappings derived from the intermediate representation.
+ */
 public class RoleMappingWriter implements Document<RoleMappingWriter>{
     private final IntermediateRepresentation ir;
     private final MigrationReport report;
@@ -44,7 +47,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
                 var users = getSGUsers(rm, roleName);
                 var backendRoles = getSGBackendRoles(rm, roleName);
 
-                // hosts und ips nicht in XPack vorhanden (aktuell leere Listen)
+                // Hosts and IPs are not available in X-Pack (currently empty lists).
                 var hosts = new ArrayList<String>();
                 var ips = new ArrayList<String>();
 

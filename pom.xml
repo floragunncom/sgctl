@@ -20,8 +20,8 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>9.1.0</elasticsearch.version>
-		<sg.test-version>main-SNAPSHOT</sg.test-version>
+		<elasticsearch.version>8.19.9</elasticsearch.version>
+		<sg.test-version>4.0.1-es-8.19.9</sg.test-version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
@@ -29,7 +29,7 @@
 		<license.excludedScopes>test,provided</license.excludedScopes>
         <log4j2.version>2.25.2</log4j2.version>
 		<sg.plugin.skip>false</sg.plugin.skip>
-		<sg.plugin.version>4.0.1-es-9.1.0</sg.plugin.version>
+		<sg.plugin.version>4.0.1-es-8.19.9</sg.plugin.version>
 		<sg.plugin.file>${project.build.directory}/sg-plugin.zip</sg.plugin.file>
 		<sg.plugin.file.basename>sg-plugin.zip</sg.plugin.file.basename>
 		<sg.plugin.url>https://maven.search-guard.com/search-guard-flx-release/com/floragunn/search-guard-flx-elasticsearch-plugin/${sg.plugin.version}/search-guard-flx-elasticsearch-plugin-${sg.plugin.version}.zip</sg.plugin.url>

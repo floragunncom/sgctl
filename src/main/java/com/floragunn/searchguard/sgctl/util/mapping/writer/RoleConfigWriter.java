@@ -13,6 +13,9 @@ import org.jspecify.annotations.NonNull;
 import java.security.InvalidKeyException;
 import java.util.*;
 
+/**
+ * Writes Search Guard role definitions derived from the intermediate representation.
+ */
 public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private IntermediateRepresentation ir;
     final private MigrationReport report;
@@ -467,7 +470,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                   continue;
                 }
 
-                sgPrivileges.add("SGS_" + privilege + "_CUSTOM");
+                sgPrivileges.add("SGS_" + privilege.toUpperCase() + "_CUSTOM");
                 continue;
             }
 

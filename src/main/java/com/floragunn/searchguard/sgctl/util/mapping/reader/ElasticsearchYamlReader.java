@@ -10,6 +10,9 @@ import com.floragunn.codova.documents.DocReader;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 
+/**
+ * Reads elasticsearch.yml and populates the elasticsearch.yml intermediate representation.
+ */
 public final class ElasticsearchYamlReader {
 
     private final File configFile;

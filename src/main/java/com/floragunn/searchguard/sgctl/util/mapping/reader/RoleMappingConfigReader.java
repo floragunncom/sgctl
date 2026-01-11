@@ -15,6 +15,9 @@ import java.util.Map;
 
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
+/**
+ * Reads X-Pack role mappings from role_mapping.json into the intermediate representation.
+ */
 public class RoleMappingConfigReader {
     private final File roleMappingFile;
     private final IntermediateRepresentation ir;
@@ -47,7 +50,6 @@ public class RoleMappingConfigReader {
     }
 
     private void readRoleMappings(LinkedHashMap<?, ?> mapReader) {
-        report.addWarning(FILE_NAME, "metadata", "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard");
         for (var entry : mapReader.entrySet()) {
             var rawKey = entry.getKey();
 
@@ -124,6 +126,21 @@ public class RoleMappingConfigReader {
                     break;
 
                 case "metadata":
+                    if (value instanceof LinkedHashMap<?, ?> metadataMap) {
+                        if (metadataMap.keySet().stream().allMatch(String.class::isInstance)) {
+                            @SuppressWarnings("unchecked")
+                            var safe = (Map<String, Object>) metadataMap;
+                            var metadata = new RoleMapping.Metadata();
+                            metadata.setEntries(safe);
+                            roleMapping.setMetadata(metadata);
+                            report.addWarning(FILE_NAME, path,
+                                    "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard.");
+                        } else {
+                            report.addInvalidType(FILE_NAME, path, Map.class, value);
+                        }
+                    } else if (value != null) {
+                        report.addInvalidType(FILE_NAME, path, Map.class, value);
+                    }
                     break;
 
                 default:

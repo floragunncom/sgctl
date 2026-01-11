@@ -16,6 +16,9 @@ import java.util.List;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.readList;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
+/**
+ * Reads X-Pack roles from role.json into the intermediate representation.
+ */
 public class RoleConfigReader {
     private final File roleFile;
     private final IntermediateRepresentation ir;
@@ -58,7 +61,7 @@ public class RoleConfigReader {
             if (value instanceof LinkedHashMap<?, ?> role) {
                 readRole(role, key);
             } else {
-                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, value);
+                report.addInvalidType(FILE_NAME, key, LinkedHashMap.class, value);
             }
         }
     }

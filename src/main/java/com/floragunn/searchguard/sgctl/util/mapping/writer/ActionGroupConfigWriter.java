@@ -6,6 +6,9 @@ import com.floragunn.codova.documents.Document;
 import org.jspecify.annotations.NonNull;
 
 
+/**
+ * Builds Search Guard action group definitions derived from X-Pack privileges.
+ */
 public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter> {
     private final Set<ActionGroup> actionGroups = new HashSet<>();
 
