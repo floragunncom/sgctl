@@ -353,7 +353,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                   continue;
                 }
 
-                sgPrivileges.add("SGS_" + privilege + "_CUSTOM");
+                sgPrivileges.add("SGS_" + privilege.toUpperCase() + "_CUSTOM");
                 continue;
             }
 

@@ -54,7 +54,7 @@ public class UserConfigReader {
             if (value instanceof LinkedHashMap<?, ?> user) {
                 readUser(user, key);
             } else {
-                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, value);
+                report.addInvalidType(FILE_NAME, key, LinkedHashMap.class, value);
             }
         }
     }

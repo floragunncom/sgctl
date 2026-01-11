@@ -58,7 +58,7 @@ public class RoleConfigReader {
             if (value instanceof LinkedHashMap<?, ?> role) {
                 readRole(role, key);
             } else {
-                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, value);
+                report.addInvalidType(FILE_NAME, key, LinkedHashMap.class, value);
             }
         }
     }
