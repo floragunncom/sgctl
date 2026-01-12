@@ -42,6 +42,7 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
         contents.putAll(tlsHTTPMap);
         contents.putAll(defaultsMap);
         contents.putAll(defaultSearchGuardConfig());
+        contents.put("xpack.security.enabled", false);
         return contents;
     }
 
