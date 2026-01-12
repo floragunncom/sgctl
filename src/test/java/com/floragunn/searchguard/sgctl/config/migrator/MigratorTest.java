@@ -120,8 +120,8 @@ class MigratorTest {
 
   static class ReportingTestMigrator implements SubMigrator {
 
-    Traceable<?> dummyTraceable1 = OptTraceable.empty(Source.NONE);
-    Traceable<?> dummyTraceable2 = OptTraceable.empty(Source.NONE);
+    Traceable<?> dummyTraceable1 = OptTraceable.empty(new Source.Config("dummyTraceable1"));
+    Traceable<?> dummyTraceable2 = OptTraceable.empty(new Source.Config("dummyTraceable2"));
 
     @Override
     public List<NamedConfig<?>> migrate(

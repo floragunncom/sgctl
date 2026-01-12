@@ -337,6 +337,19 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   /**
+   * Asserts that a problem with the given message was reported for a traceable at the given path.
+   * Then removes the message from the list of tracked problems.
+   *
+   * @param path The config path to search for (e.g. "elasticsearch.yml:
+   *     xpack.security.authc.realms.ldap.ldap1.some_setting").
+   * @param message The message to check.
+   */
+  public void assertProblem(String path, String message) {
+    if (!removeMessageFromTraceableByPath(problem, path, message))
+      throw new AssertionError("Expected problem message '" + message + "' for path: " + path);
+  }
+
+  /**
    * Asserts that a secret problem with the given message was reported for a traceable at the given
    * path. Then removes the message from the list of tracked secret problems.
    *
@@ -348,6 +361,31 @@ public class AssertableMigrationReporter implements MigrationReporter {
     if (!removeMessageFromTraceableByPath(problemSecret, path, message))
       throw new AssertionError(
           "Expected secret problem message '" + message + "' for path: " + path);
+  }
+
+  /**
+   * Asserts that a critical problem with the given message was reported for a traceable at the
+   * given path. Then removes the message from the list of tracked critical problems.
+   *
+   * @param path The config path to search for.
+   * @param message The message to check.
+   */
+  public void assertCritical(String path, String message) {
+    if (!removeMessageFromTraceableByPath(critical, path, message))
+      throw new AssertionError("Expected critical message '" + message + "' for path: " + path);
+  }
+
+  /**
+   * Asserts that a critical secret problem with the given message was reported for a traceable at
+   * the given path. Then removes the message from the list of tracked critical secret problems.
+   *
+   * @param path The config path to search for.
+   * @param message The message to check.
+   */
+  public void assertCriticalSecret(String path, String message) {
+    if (!removeMessageFromTraceableByPath(criticalSecret, path, message))
+      throw new AssertionError(
+          "Expected critical secret message '" + message + "' for path: " + path);
   }
 
   /**
