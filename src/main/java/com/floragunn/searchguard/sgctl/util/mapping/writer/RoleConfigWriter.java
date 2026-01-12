@@ -89,9 +89,9 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     private void createSGRoles() {
         for (var role : ir.getRoles()) {
             roleEntry = new MigrationReport.RoleEntry(role.getName());
-            report.addRoleEntry(roleEntry);
             if ((role.getRemoteClusters() != null && !role.getRemoteClusters().isEmpty()) || (role.getRemoteIndices() != null && !role.getRemoteIndices().isEmpty())) {
                 roleEntry.hasRemoteClusterOrIndex();
+                report.addRoleEntry(roleEntry);
                 continue;
             }
             if (role.getRunAs() != null && !role.getRunAs().isEmpty()) roleEntry.hasRunAs();
@@ -102,6 +102,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             var index = toSGIndices(role);
             var sgRole = new SGRole(name, description, clusterPermissions, index);
             roles.add(sgRole);
+            report.addRoleEntry(roleEntry);
         }
     }
 

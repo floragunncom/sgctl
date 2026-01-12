@@ -38,7 +38,7 @@ class RoleConfigReaderTest {
 
         assertTrue(report.getEntries("role.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "origin".equals(entry.getParameter())));
+                .anyMatch(entry -> "origin".equals(entry.parameter())));
     }
 
     /**
@@ -62,7 +62,7 @@ class RoleConfigReaderTest {
 
         assertTrue(report.getEntries("role.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "role1".equals(entry.getParameter())));
+                .anyMatch(entry -> "role1".equals(entry.parameter())));
     }
 
     /**
@@ -86,6 +86,6 @@ class RoleConfigReaderTest {
 
         assertTrue(report.getEntries("role.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "unknown".equals(entry.getParameter())));
+                .anyMatch(entry -> "unknown".equals(entry.parameter())));
     }
 }

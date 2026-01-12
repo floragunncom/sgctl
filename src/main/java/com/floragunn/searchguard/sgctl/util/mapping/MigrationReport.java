@@ -14,12 +14,17 @@ public class MigrationReport {
     public static MigrationReport shared = new MigrationReport();
     private MigrationReport() {}
     private final LinkedHashMap<String, FileReport> files = new LinkedHashMap<>();
-    private final List<RoleEntry> roleEntries = new LinkedList<>();
+    private final RoleEntries roleEntries = new RoleEntries(new LinkedList<>(), new LinkedList<>());
+
     public enum Category {MIGRATED, WARNING, MANUAL}
 
     /* ----- public API ----- */
     public void addRoleEntry(RoleEntry entry) {
-        roleEntries.add(entry);
+        if (entry.noIssues()) {
+            roleEntries.successful.add(entry);
+        } else {
+            roleEntries.withIssues.add(entry);
+        }
     }
 
     public void addUnknownKey(String file, String key, String path){
@@ -74,9 +79,12 @@ public class MigrationReport {
             printManuals(fr, out);
         }
         out.println("File: " + RoleConfigWriter.FILE_NAME + "\n");
-        for (var entry : roleEntries) {
-            entry.printEntry(out);
+        if (!roleEntries.successful.isEmpty()) {
+            out.println("\t\u001B[1mSuccessfully migrated the following roles with no issues (" + roleEntries.successful.size() + "):\u001B[0m");
+            for (var entry : roleEntries.successful) out.println("\t\t- " + entry.getName());
+            out.println();
         }
+        for (var entry : roleEntries.withIssues) entry.printEntry(out);
         out.println("---------- End Migration Report ----------");
     }
 
@@ -105,6 +113,7 @@ public class MigrationReport {
             out.println();
         }
     }
+
     void printWarnings(FileReport fr, PrintStream out){
         List<Entry> warnings = fr.get(Category.WARNING);
         if(!warnings.isEmpty()){
@@ -122,6 +131,7 @@ public class MigrationReport {
             }
         }
     }
+
     void printPresets(List<Entry> entries, PrintStream out){
         for (ReportPreset rp : ReportPreset.values()) {
             List<Entry> presetWarnings = new ArrayList<>();
@@ -162,46 +172,25 @@ public class MigrationReport {
         }
     }
 
-    public static class Entry{
-        private final String parameter;
-        private final String message;
-        private final String newParameter;
-        private final ReportPreset preset;
-        public Entry(String parameter, String message, String newParameter, ReportPreset preset){
-            this.parameter = parameter;
-            this.message = message;
-            this.newParameter = newParameter;
-            this.preset = preset;
-        }
-        public String getParameter() { return parameter; }
-        public String getMessage() { return message; }
-        public String getNewParameter() { return newParameter; }
-        public ReportPreset getPreset() { return preset; }
-
+    public record Entry(String parameter, String message, String newParameter, ReportPreset preset) {
         @Override
         public boolean equals(Object obj) {
             if (this == obj) return true;
-            if (!(obj instanceof Entry)) return false;
-            Entry other = (Entry) obj;
+            if (!(obj instanceof Entry other)) return false;
             return Objects.equals(parameter, other.parameter)
-                && Objects.equals(message, other.message)
-                && Objects.equals(newParameter, other.newParameter)
-                && preset == other.preset;
+                    && Objects.equals(message, other.message)
+                    && Objects.equals(newParameter, other.newParameter)
+                    && preset == other.preset;
         }
-    
-        @Override
-        public int hashCode() {
-            return Objects.hash(parameter, message, newParameter, preset);
-        }
-    
-        @Override
+
+        @Override @NonNull
         public String toString() {
             return "Entry{" +
-                "parameter='" + parameter + '\'' +
-                ", message='" + message + '\'' +
-                ", newParameter='" + newParameter + '\'' +
-                ", preset=" + preset +
-                '}';
+                    "parameter='" + parameter + '\'' +
+                    ", message='" + message + '\'' +
+                    ", newParameter='" + newParameter + '\'' +
+                    ", preset=" + preset +
+                    '}';
         }
     }
 
@@ -268,17 +257,22 @@ public class MigrationReport {
         public void hasApplications() {this.hasApplications = true; }
         public void addManualAction(String parameter, String message) { issues.get(Category.MANUAL).add(new Issue(parameter, message)); }
         public void addWarning(String parameter, String message) { issues.get(Category.WARNING).add(new Issue(parameter, message)); }
+        public @NonNull String getName() { return this.name; }
+        public boolean noIssues() {
+            return issues.get(Category.WARNING).isEmpty() && issues.get(Category.MANUAL).isEmpty() && !hasApplications && !hasRunAs && !hasRemoteClusterOrIndex;
+        }
 
         public void printEntry(PrintStream out) {
-            out.println("\t" + name + ":");
-            var warnings = issues.get(Category.WARNING);
-            var manualActions = issues.get(Category.MANUAL);
-            if (warnings.isEmpty() && manualActions.isEmpty() && !hasApplications && !hasRemoteClusterOrIndex && !hasRunAs) {
-                out.println("\t\tSuccessfully migrated the role with no issues.\n");
+            if (hasRemoteClusterOrIndex) {
+                out.println("\t\u001B[1;31m" + name
+                        + ":\u001B[0m\n\t\t\u001B[31mRemote indices and clusters are not supported in Search Guard. The role can not be migrated.\u001B[0m\n");
                 return;
             }
-            if (hasRemoteClusterOrIndex) {
-                out.println("\t\tRemote indices and clusters are not supported in Search Guard. The role can not be migrated.\n");
+            out.println("\t\u001B[1m" + name + ":\u001B[0m");
+            var warnings = issues.get(Category.WARNING);
+            var manualActions = issues.get(Category.MANUAL);
+            if (warnings.isEmpty() && manualActions.isEmpty() && !hasApplications && !hasRunAs) {
+                out.println("\t\tSuccessfully migrated the role with no issues.\n");
                 return;
             }
             var issueCount = warnings.size() + manualActions.size() + (hasRunAs ? 1 : 0) + (hasApplications ? 1 : 0);
@@ -288,16 +282,16 @@ public class MigrationReport {
             if (!warnings.isEmpty()) {
                 out.println("\t\tWarnings(" + warnings.size() + "):");
                 for (var warning : warnings) {
-                    out.println("\t\t" + warning.parameter);
-                    out.println("\t\t\t" + warning.message);
+                    out.println("\t\t- " + warning.parameter);
+                    out.println("\t\t\t-> " + warning.message);
                 }
                 out.println();
             }
             if (!manualActions.isEmpty()) {
                 out.println("\t\tManual Actions (" + manualActions.size() + "):");
                 for (var manualAction : manualActions) {
-                    out.println("\t\t" + manualAction.parameter);
-                    out.println("\t\t\t" + manualAction.message);
+                    out.println("\t\t- " + manualAction.parameter);
+                    out.println("\t\t\t-> " + manualAction.message);
                 }
                 out.println();
             }
@@ -305,4 +299,6 @@ public class MigrationReport {
     }
 
     public record Issue(String parameter, String message) { }
+
+    public record RoleEntries(List<RoleEntry> successful, List<RoleEntry> withIssues) { }
 }

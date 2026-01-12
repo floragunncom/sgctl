@@ -129,7 +129,7 @@ class RoleConfigWriterTest extends QuietTestBase {
 
             assertTrue(report.getEntries("sg_roles.yml", MigrationReport.Category.MANUAL)
                     .stream()
-                    .anyMatch(entry -> "role-invalid->/a~b/".equals(entry.getParameter())));
+                    .anyMatch(entry -> "role-invalid->/a~b/".equals(entry.parameter())));
         } finally {
             report.clear();
         }
