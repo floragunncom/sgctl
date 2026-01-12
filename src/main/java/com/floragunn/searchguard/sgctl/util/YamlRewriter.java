@@ -39,6 +39,9 @@ import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.google.common.base.Charsets;
 
+/**
+ * Rewrites YAML content by inserting or removing attributes while preserving the original prolog.
+ */
 public class YamlRewriter {
     private static final Logger log = Logger.getLogger(YamlRewriter.class.getName());
 

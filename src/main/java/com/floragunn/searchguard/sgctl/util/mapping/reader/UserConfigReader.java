@@ -15,18 +15,25 @@ import java.util.List;
 
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
+/**
+ * Reads X-Pack users from user.json into the intermediate representation.
+ */
 public class UserConfigReader {
-    File userFile;
-    IntermediateRepresentation ir;
-    MigrationReport report;
+    private final File userFile;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
 
     static final String FILE_NAME = "user.json";
 
-    public UserConfigReader(File userFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
+    public UserConfigReader(File userFile, IntermediateRepresentation ir) {
         this.userFile = userFile;
         this.ir = ir;
         this.report = MigrationReport.shared;
-        readUserFile();
+        try {
+            readUserFile();
+        } catch (DocumentParseException | IOException e) {
+            report.addWarning(FILE_NAME, "origin", e.getMessage());
+        }
     }
 
     private void readUserFile() throws DocumentParseException, IOException {
@@ -50,7 +57,7 @@ public class UserConfigReader {
             if (value instanceof LinkedHashMap<?, ?> user) {
                 readUser(user, key);
             } else {
-                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, value);
+                report.addInvalidType(FILE_NAME, key, LinkedHashMap.class, value);
             }
         }
     }
@@ -119,7 +126,7 @@ public class UserConfigReader {
                         if (ir.getRoles().contains(new Role(role))) {
                             checkedRoles.add(role);
                         } else {
-                            report.addWarning(FILE_NAME, origin + "->roles", "Role '" + role + "' does not exist in the role.json file.");
+                            report.addWarning(FILE_NAME, origin, "The role '" + role + "' does not exist in the role.json file.");
                         }
                     });
                     roles = checkedRoles;
@@ -146,15 +153,13 @@ public class UserConfigReader {
 
         if (enabled == null) {
             report.addMissingParameter(FILE_NAME, "enabled", name);
-            return;
         }
         if (roles == null) {
             report.addMissingParameter(FILE_NAME, "roles", name);
-            return;
         }
         if (attributes == null) {
             report.addMissingParameter(FILE_NAME, "attributes", name);
-            return;
+            attributes = new LinkedHashMap<>();
         }
 
         var user = new User(name, roles, fullName, email, enabled, profileUID, attributes);

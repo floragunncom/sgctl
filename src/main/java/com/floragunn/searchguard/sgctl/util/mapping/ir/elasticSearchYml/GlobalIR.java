@@ -4,18 +4,22 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 
+/**
+ * Intermediate representation for global xpack.security settings from elasticsearch.yml.
+ */
 public class GlobalIR {
 
-    boolean xpackSecEnabled;
+    private static final String FILE_NAME = "elasticsearch.yml";
+
+    private boolean xpackSecEnabled;
 
     public boolean getXpackSecEnabled() { return xpackSecEnabled; }
 
-    String THIS_FILE = "elasticsearch.yml";
     public void handleGlobalOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
         boolean keyKnown = true;
 
         // Booleans
-        if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, Boolean.class)) {
+        if (IntermediateRepresentationElasticSearchYml.isType(optionValue, Boolean.class)) {
             boolean value = (Boolean) optionValue;
             switch (optionName) {
                 case "enabled":
@@ -27,9 +31,9 @@ public class GlobalIR {
         }
 
         if (keyKnown) {
-            MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
+            MigrationReport.shared.addMigrated(FILE_NAME, keyPrefix + optionName);
         } else {
-            MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, keyPrefix + optionName);
+            MigrationReport.shared.addUnknownKey(FILE_NAME, keyPrefix + optionName, configFile.getPath());
         }
     }
 }

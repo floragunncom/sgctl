@@ -5,7 +5,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.RoleMapping;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.User;
-import org.junit.jupiter.api.Disabled;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -28,13 +28,20 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class XPackConfigReaderTest extends TestBase {
 
     /**
-     * Verifies that a completely null configuration returns an empty intermediate representation.
+     * Verifies that an empty configuration returns an empty intermediate representation.
+     *
+     * @param tempDir temporary directory provided by JUnit
      */
     @Test
-    void shouldCreateEmptyIntermediateRepresentationWhenAllFilesAreNull() {
-        XPackConfigReader reader = new XPackConfigReader(null, null, null, null);
+    void shouldCreateEmptyIntermediateRepresentationWhenAllFilesAreNull(@TempDir Path tempDir) throws IOException {
+        XPackConfigReader reader = new XPackConfigReader(
+                writeEmptyElasticsearchFile(tempDir),
+                null,
+                null,
+                null
+        );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertNotNull(ir);
         assertTrue(ir.getUsers().isEmpty());
@@ -109,15 +116,74 @@ class XPackConfigReaderTest extends TestBase {
         RoleMapping mapping = findRoleMapping(ir, "mapping1");
         assertTrue(mapping.isEnabled());
         assertEquals(List.of("admin"), mapping.getRoles());
-        assertEquals(List.of("test-user"), mapping.getUsers());
-        assertEquals(List.of("other-user"), mapping.getRunAS());
+        assertEquals(List.of("other-user"), mapping.getRunAs());
 
         // Current implementation only sets a non-null Rules instance without details.
         assertNotNull(mapping.getRules());
 
-        // Current implementation does not fill metadata or roleTemplates.
-        assertNull(mapping.getMetadata());
+        // Metadata is retained for review; roleTemplates remain unset.
+        assertNotNull(mapping.getMetadata());
         assertNull(mapping.getRoleTemplates());
+    }
+
+    /**
+     * Verifies non-object JSON roots are reported as invalid types.
+     *
+     * @param tempDir temporary directory provided by JUnit
+     */
+    @Test
+    void shouldReportInvalidUserJsonRootType(@TempDir Path tempDir) throws IOException {
+        MigrationReport report = newEmptyReport();
+        Path usersFile = tempDir.resolve("users-invalid.json");
+        Files.writeString(usersFile, "\"invalid\"");
+
+        MigrationReport previous = MigrationReport.shared;
+        try {
+            MigrationReport.shared = report;
+            XPackConfigReader reader = new XPackConfigReader(
+                    writeEmptyElasticsearchFile(tempDir),
+                    usersFile.toFile(),
+                    null,
+                    null
+            );
+            generateIr(reader);
+        } finally {
+            MigrationReport.shared = previous;
+        }
+
+        assertTrue(report.getEntries("user.json", MigrationReport.Category.WARNING)
+                .stream()
+                .anyMatch(entry -> "origin".equals(entry.getParameter())));
+    }
+
+    /**
+     * Verifies invalid user entry types are reported.
+     *
+     * @param tempDir temporary directory provided by JUnit
+     */
+    @Test
+    void shouldReportInvalidUserEntryType(@TempDir Path tempDir) throws IOException {
+        MigrationReport report = newEmptyReport();
+        Path usersFile = tempDir.resolve("users-invalid-type.json");
+        Files.writeString(usersFile, "{\"user1\":\"oops\"}");
+
+        MigrationReport previous = MigrationReport.shared;
+        try {
+            MigrationReport.shared = report;
+            XPackConfigReader reader = new XPackConfigReader(
+                    writeEmptyElasticsearchFile(tempDir),
+                    usersFile.toFile(),
+                    null,
+                    null
+            );
+            generateIr(reader);
+        } finally {
+            MigrationReport.shared = previous;
+        }
+
+        assertTrue(report.getEntries("user.json", MigrationReport.Category.WARNING)
+                .stream()
+                .anyMatch(entry -> "user1".equals(entry.getParameter())));
     }
 
     /**
@@ -132,15 +198,56 @@ class XPackConfigReaderTest extends TestBase {
         Path mappingsFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/role-mappings-valid.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 usersFile.toFile(),
                 rolesFile.toFile(),
                 mappingsFile.toFile()
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
         assertNotNull(ir);
         return ir;
+    }
+
+    /**
+     * Generates an intermediate representation and wraps checked exceptions.
+     *
+     * @param reader reader instance
+     * @return generated intermediate representation
+     */
+    private IntermediateRepresentation generateIr(XPackConfigReader reader) {
+        try {
+            return reader.generateIR();
+        } catch (Exception exception) {
+            throw new IllegalStateException("Failed to generate intermediate representation", exception);
+        }
+    }
+
+    /**
+     * Writes an empty elasticsearch.yml file for reader initialization.
+     *
+     * @param tempDir temporary directory
+     * @return file handle to the created config
+     */
+    private File writeEmptyElasticsearchFile(Path tempDir) throws IOException {
+        Path elasticsearchFile = tempDir.resolve("elasticsearch.yml");
+        Files.writeString(elasticsearchFile, "");
+        return elasticsearchFile.toFile();
+    }
+
+    /**
+     * Creates a new migration report instance without using the shared singleton.
+     *
+     * @return empty migration report
+     */
+    private MigrationReport newEmptyReport() {
+        try {
+            var ctor = MigrationReport.class.getDeclaredConstructor();
+            ctor.setAccessible(true);
+            return ctor.newInstance();
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to create isolated MigrationReport", e);
+        }
     }
 
     /**
@@ -154,13 +261,13 @@ class XPackConfigReaderTest extends TestBase {
         Path usersFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/users-mismatch-username.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 usersFile.toFile(),
                 rolesFile.toFile(),
                 null
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertEquals(1, ir.getRoles().size());
         assertTrue(ir.getUsers().isEmpty());
@@ -177,13 +284,13 @@ class XPackConfigReaderTest extends TestBase {
         Path usersFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/users-unknown-role.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 usersFile.toFile(),
                 rolesFile.toFile(),
                 null
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertEquals(1, ir.getUsers().size());
         User user = findUser(ir, "test-user");
@@ -201,13 +308,13 @@ class XPackConfigReaderTest extends TestBase {
         Path usersFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/users-invalid-roles-type.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 usersFile.toFile(),
                 rolesFile.toFile(),
                 null
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertEquals(1, ir.getUsers().size());
         User user = findUser(ir, "test-user");
@@ -224,13 +331,13 @@ class XPackConfigReaderTest extends TestBase {
         Path usersFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/users-root-array.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 usersFile.toFile(),
                 null,
                 null
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertTrue(ir.getUsers().isEmpty());
     }
@@ -245,13 +352,13 @@ class XPackConfigReaderTest extends TestBase {
         Path usersFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/invalid-json.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 usersFile.toFile(),
                 null,
                 null
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertTrue(ir.getUsers().isEmpty());
     }
@@ -266,13 +373,13 @@ class XPackConfigReaderTest extends TestBase {
         Path rolesFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/invalid-json.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 null,
                 rolesFile.toFile(),
                 null
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertTrue(ir.getRoles().isEmpty());
     }
@@ -287,13 +394,13 @@ class XPackConfigReaderTest extends TestBase {
         Path mappingsFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/invalid-json.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 null,
                 null,
                 mappingsFile.toFile()
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertTrue(ir.getRoleMappings().isEmpty());
     }
@@ -308,13 +415,13 @@ class XPackConfigReaderTest extends TestBase {
         Path rolesFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/roles-invalid-indices.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 null,
                 rolesFile.toFile(),
                 null
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertEquals(1, ir.getRoles().size());
         Role role = findRole(ir, "role1");
@@ -333,13 +440,13 @@ class XPackConfigReaderTest extends TestBase {
         Path mappingsFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/role-mappings-invalid-types.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 usersFile.toFile(),
                 rolesFile.toFile(),
                 mappingsFile.toFile()
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertFalse(ir.getRoleMappings().isEmpty());
         // for invalid entries we only check that no exception is thrown and IR is still usable
@@ -355,13 +462,13 @@ class XPackConfigReaderTest extends TestBase {
         Path mappingsFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/role-mappings-valid.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 null,
                 null,
                 mappingsFile.toFile()
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         RoleMapping mapping = findRoleMapping(ir, "mapping1");
         assertNotNull(mapping.getRules());
@@ -378,13 +485,13 @@ class XPackConfigReaderTest extends TestBase {
         Path mappingsFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/role-mappings-invalid-types.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 null,
                 null,
                 mappingsFile.toFile()
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         RoleMapping mapping = findRoleMapping(ir, "mappingWithInvalidRulesType");
         assertNull(mapping.getRules());
@@ -401,13 +508,13 @@ class XPackConfigReaderTest extends TestBase {
         Path mappingsFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/role-mappings-with-role-templates.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 null,
                 null,
                 mappingsFile.toFile()
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         RoleMapping mapping = findRoleMapping(ir, "mappingWithTemplates");
         assertNotNull(mapping.getRoleTemplates());
@@ -421,19 +528,19 @@ class XPackConfigReaderTest extends TestBase {
      * @param tempDir temporary directory provided by JUnit
      */
     @Test
-    void shouldHandleMissingFilesGracefully(@TempDir Path tempDir) {
+    void shouldHandleMissingFilesGracefully(@TempDir Path tempDir) throws IOException {
         File missingUsers = tempDir.resolve("missing-users.json").toFile();
         File missingRoles = tempDir.resolve("missing-roles.json").toFile();
         File missingMappings = tempDir.resolve("missing-mappings.json").toFile();
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 missingUsers,
                 missingRoles,
                 missingMappings
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         assertNotNull(ir);
         assertTrue(ir.getUsers().isEmpty());
@@ -446,22 +553,22 @@ class XPackConfigReaderTest extends TestBase {
      *
      * @param tempDir temporary directory provided by JUnit
      */
-    @Disabled("TODO: enable and adjust once metadata in role mappings is implemented in XPackConfigReader")
     @Test
     void shouldParseMetadataInRoleMapping(@TempDir Path tempDir) throws IOException {
         Path mappingsFile = writeJsonResourceToTempFile(tempDir, "testbase/xpack/role-mappings-valid.json");
 
         XPackConfigReader reader = new XPackConfigReader(
-                null,
+                writeEmptyElasticsearchFile(tempDir),
                 null,
                 null,
                 mappingsFile.toFile()
         );
 
-        IntermediateRepresentation ir = reader.generateIR();
+        IntermediateRepresentation ir = generateIr(reader);
 
         RoleMapping mapping = findRoleMapping(ir, "mapping1");
         assertNotNull(mapping.getMetadata());
+        assertEquals("simple mapping for sgctl tests", mapping.getMetadata().getEntries().get("note"));
     }
 
     /**

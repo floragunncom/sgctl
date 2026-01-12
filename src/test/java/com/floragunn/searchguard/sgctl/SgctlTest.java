@@ -25,6 +25,7 @@ import java.io.PrintStream;
 import java.net.InetSocketAddress;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -47,6 +48,7 @@ import com.floragunn.codova.documents.Format;
 import com.floragunn.fluent.collections.ImmutableSet;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter;
 import com.floragunn.searchguard.sgctl.util.YamlRewriter.RewriteResult;
+import com.floragunn.searchguard.sgctl.testsupport.ExternalTestSupport;
 import com.floragunn.searchguard.test.GenericRestClient;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificate;
 import com.floragunn.searchguard.test.helper.certificate.TestCertificates;
@@ -83,24 +85,25 @@ public class SgctlTest {
 
     @BeforeAll
     public static void connect() throws Exception {
-        cluster = new LocalCluster.Builder().singleNode().sslEnabled(TEST_CERTIFICATES).start();
+        ExternalTestSupport.assumeExternalTestsEnabled();
+        cluster = new LocalCluster.Builder()
+                .singleNode()
+                .sslEnabled()
+                .embedded()
+                .start();
 
-        InetSocketAddress httpAddress = cluster.getHttpAddress();
-        TestCertificate adminCertificate = cluster.getTestCertificates().getAdminCertificate();
-        String adminCert = adminCertificate.getCertificateFile().getPath();
-        String adminKey = adminCertificate.getPrivateKeyFile().getPath();
-        String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         configDir = Files.createTempDirectory("sgctl-test-config").toString();
 
-        int rc = SgctlTool.exec("connect", "-h", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert,
-                "--key", adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir);
+        int rc = SgctlTool.exec(ExternalTestSupport.buildConnectArgs(cluster, configDir, false));
 
         Assertions.assertEquals(0, rc);
     }
 
     @AfterAll
     public static void destroy() throws Exception {
-        cluster.close();
+        if (cluster != null) {
+            cluster.close();
+        }
     }
 
     @Test
@@ -112,8 +115,28 @@ public class SgctlTest {
         String rootCaCert = cluster.getTestCertificates().getCaCertFile().getPath();
         Path configDir = Files.createTempDirectory("sgctl-test-config");
 
-        int rc = SgctlTool.exec("connect", httpAddress.getHostString(), "-p", String.valueOf(httpAddress.getPort()), "--cert", adminCert, "--key",
-                adminKey, "--key-pass", "secret", "--ca-cert", rootCaCert, "--debug", "--sgctl-config-dir", configDir.toString());
+        String keyPass = adminCertificate.getPrivateKeyPassword();
+        List<String> args = new ArrayList<>();
+        args.add("connect");
+        args.add(httpAddress.getHostString());
+        args.add("-p");
+        args.add(String.valueOf(httpAddress.getPort()));
+        args.add("--cert");
+        args.add(adminCert);
+        args.add("--key");
+        args.add(adminKey);
+        if (keyPass != null && !keyPass.isEmpty()) {
+            args.add("--key-pass");
+            args.add(keyPass);
+        }
+        args.add("--ca-cert");
+        args.add(rootCaCert);
+        args.add("--insecure");
+        args.add("--debug");
+        args.add("--sgctl-config-dir");
+        args.add(configDir.toString());
+
+        int rc = SgctlTool.exec(args.toArray(new String[0]));
 
         Assertions.assertEquals(0, rc);
 

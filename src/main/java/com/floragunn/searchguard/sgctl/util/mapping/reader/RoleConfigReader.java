@@ -16,18 +16,25 @@ import java.util.List;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.readList;
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
+/**
+ * Reads X-Pack roles from role.json into the intermediate representation.
+ */
 public class RoleConfigReader {
-    File roleFile;
-    IntermediateRepresentation ir;
-    MigrationReport report;
+    private final File roleFile;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
 
     static final String FILE_NAME = "role.json";
 
-    public RoleConfigReader(File roleFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
+    public RoleConfigReader(File roleFile, IntermediateRepresentation ir) {
         this.roleFile = roleFile;
         this.ir = ir;
         this.report = MigrationReport.shared;
-        readRoleFile();
+        try {
+            readRoleFile();
+        } catch (DocumentParseException | IOException e) {
+            report.addWarning(FILE_NAME, "origin", e.getMessage());
+        }
     }
 
     private void readRoleFile() throws DocumentParseException, IOException {
@@ -42,7 +49,8 @@ public class RoleConfigReader {
     }
 
     private void readRoles(LinkedHashMap<?, ?> mapReader) {
-        report.addWarning(FILE_NAME, "metadata", "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard");
+        report.addWarning(FILE_NAME, "metadata", "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard.");
+        report.addWarning(FILE_NAME, "transient-metadata", "The key 'transient-metadata' is ignored for migration because it is transient.");
         for (var entry : mapReader.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
                 report.addInvalidType(FILE_NAME, "origin", String.class, entry.getKey());
@@ -53,7 +61,7 @@ public class RoleConfigReader {
             if (value instanceof LinkedHashMap<?, ?> role) {
                 readRole(role, key);
             } else {
-                report.addInvalidType(FILE_NAME, "origin", LinkedHashMap.class, value);
+                report.addInvalidType(FILE_NAME, key, LinkedHashMap.class, value);
             }
         }
     }
@@ -70,7 +78,7 @@ public class RoleConfigReader {
             switch (key) {
                 case "applications":
                     if (value instanceof ArrayList<?> applicationList) {
-                        role.setApplications(readList(applicationList, map->readApplication(map, roleName+"->applications"), FILE_NAME, origin));
+                        role.setApplications(readList(applicationList, map->readApplication(map, origin), FILE_NAME, origin));
                     } else {
                         report.addInvalidType(FILE_NAME, origin, ArrayList.class, value);
                     }
@@ -80,29 +88,26 @@ public class RoleConfigReader {
                     break;
                 case "remote_cluster":
                     if (value instanceof ArrayList<?> remoteClusterList) {
-                        role.setRemoteClusters(readList(remoteClusterList, map->readRemoteCluster(map, roleName+"->remoteClusters"), FILE_NAME, origin));
+                        role.setRemoteClusters(readList(remoteClusterList, map->readRemoteCluster(map, origin), FILE_NAME, origin));
                     } else {
                         report.addInvalidType(FILE_NAME, origin, ArrayList.class, value);
                     }
                     break;
                 case "indices":
                     if (value instanceof ArrayList<?> indices) {
-                        role.setIndices(readList(indices, map -> readIndex(map, false, roleName + "->indices", Role.Index.class), FILE_NAME, origin));
+                        role.setIndices(readList(indices, map -> readIndex(map, false, origin, Role.Index.class), FILE_NAME, origin));
                     } else {
                         report.addInvalidType(FILE_NAME, origin, ArrayList.class, value);
                     }
                     break;
                 case "remote_indices":
                     if (value instanceof ArrayList<?> indices) {
-                        role.setRemoteIndices(readList(indices, map -> readRemoteIndex(map, roleName + "->remote_indices"), FILE_NAME, origin));
+                        role.setRemoteIndices(readList(indices, map -> readRemoteIndex(map, origin), FILE_NAME, origin));
                     } else {
                         report.addInvalidType(FILE_NAME, origin, ArrayList.class, value);
                     }
                     break;
-                case "metadata":
-                    break;
-                case "transient_metadata":
-                    // TODO: Add support for transient metadata interpretation
+                case "metadata", "transient_metadata":
                     break;
                 case "run_as":
                     role.setRunAs(toStringList(value, FILE_NAME, roleName, "runAs"));
@@ -115,7 +120,7 @@ public class RoleConfigReader {
                     }
                     break;
                 case "global":
-                    report.addManualAction(FILE_NAME, origin, "Parameters for the key 'global' are not documented well enough for automatic migration.");
+                    report.addManualAction(FILE_NAME, origin, "There is no equivalent to the key 'global' in Search Guard.");
                     break;
                 default:
                     report.addUnknownKey(FILE_NAME, key, origin);

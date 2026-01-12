@@ -7,7 +7,11 @@ import org.junit.jupiter.api.Test;
 import java.io.File;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertInstanceOf;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Unit tests for {@link AuthenticationIR}.
@@ -58,6 +62,23 @@ class AuthenticationIRTest {
         assertEquals("ou=groups,dc=example,dc=com", ldapRealm.getGroupSearchBaseDn());
     }
 
+    /**
+     * Verifies the realms map is immutable to callers.
+     */
+    @Test
+    void realmsMapShouldBeImmutable() {
+        AuthenticationIR ir = new AuthenticationIR();
+        Map<String, RealmIR> realms = ir.getRealms();
+
+        assertNotNull(realms);
+        assertThrows(UnsupportedOperationException.class, () -> realms.put("x", RealmIR.create("file", "x")));
+    }
+
+    /**
+     * Builds an LDAP realm map from test configuration entries.
+     *
+     * @return realm map populated with LDAP attributes
+     */
     private static Map<String, RealmIR> getStringRealmIRMap() {
         AuthenticationIR ir = new AuthenticationIR();
 

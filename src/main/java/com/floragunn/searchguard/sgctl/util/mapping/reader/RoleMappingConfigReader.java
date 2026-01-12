@@ -15,18 +15,25 @@ import java.util.Map;
 
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
+/**
+ * Reads X-Pack role mappings from role_mapping.json into the intermediate representation.
+ */
 public class RoleMappingConfigReader {
-    File roleMappingFile;
-    IntermediateRepresentation ir;
-    MigrationReport report;
+    private final File roleMappingFile;
+    private final IntermediateRepresentation ir;
+    private final MigrationReport report;
 
     static final String FILE_NAME = "role_mapping.json";
 
-    public RoleMappingConfigReader(File roleMappingFile, IntermediateRepresentation ir) throws DocumentParseException, IOException {
+    public RoleMappingConfigReader(File roleMappingFile, IntermediateRepresentation ir) {
         this.roleMappingFile = roleMappingFile;
         this.ir = ir;
         this.report = MigrationReport.shared;
-        readRoleMappingFile();
+        try {
+            readRoleMappingFile();
+        } catch (DocumentParseException | IOException e) {
+            report.addWarning(FILE_NAME, "origin", e.getMessage());
+        }
     }
 
     private void readRoleMappingFile() throws DocumentParseException, IOException {
@@ -43,7 +50,6 @@ public class RoleMappingConfigReader {
     }
 
     private void readRoleMappings(LinkedHashMap<?, ?> mapReader) {
-        report.addWarning(FILE_NAME, "metadata", "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard");
         for (var entry : mapReader.entrySet()) {
             var rawKey = entry.getKey();
 
@@ -90,6 +96,13 @@ public class RoleMappingConfigReader {
                     }
                     break;
 
+                case "users":
+                    var users = toStringList(value, FILE_NAME, mappingName, key);
+                    if (users != null) {
+                        roleMapping.setUsers(users);
+                    }
+                    break;
+
                 case "role_templates":
                     if (value instanceof ArrayList<?> templateList) {
                         roleMapping.setRoleTemplates(readRoleTemplates(templateList, mappingName));
@@ -113,6 +126,21 @@ public class RoleMappingConfigReader {
                     break;
 
                 case "metadata":
+                    if (value instanceof LinkedHashMap<?, ?> metadataMap) {
+                        if (metadataMap.keySet().stream().allMatch(String.class::isInstance)) {
+                            @SuppressWarnings("unchecked")
+                            var safe = (Map<String, Object>) metadataMap;
+                            var metadata = new RoleMapping.Metadata();
+                            metadata.setEntries(safe);
+                            roleMapping.setMetadata(metadata);
+                            report.addWarning(FILE_NAME, path,
+                                    "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard.");
+                        } else {
+                            report.addInvalidType(FILE_NAME, path, Map.class, value);
+                        }
+                    } else if (value != null) {
+                        report.addInvalidType(FILE_NAME, path, Map.class, value);
+                    }
                     break;
 
                 default:

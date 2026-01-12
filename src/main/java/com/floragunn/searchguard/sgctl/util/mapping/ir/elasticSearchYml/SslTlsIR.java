@@ -1,28 +1,43 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
-import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.*;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * Intermediate representation for TLS settings and transport profile IP filters.
+ */
 public class SslTlsIR {
 
-    Tls transport;
-    Tls http;
+    private static final String FILE_NAME = "elasticsearch.yml";
+    private static final Pattern PROFILE_IPS_PATTERN = Pattern.compile("^profiles\\.([^.]+)\\.xpack\\.security\\.filter\\.(allow|deny)$");
 
-    Map<String, List<String>> profileAllowedIPs = new HashMap<>(); // transport only: List of IP addresses (value) to allow for this profile (key)
-    Map<String, List<String>> profileDeniedIPs = new HashMap<>(); // transport only: List of IP addresses (value) to deny for this profile (key)
+    private final MigrationReport report = MigrationReport.shared;
 
+    private final Tls transport;
+    private final Tls http;
+
+    // transport only: List of IP addresses (value) to allow/deny for this profile (key)
+    private final Map<String, List<String>> profileAllowedIPs = new HashMap<>();
+    private final Map<String, List<String>> profileDeniedIPs = new HashMap<>();
+    private final Map<String, List<String>> profileAllowedIPsView = Collections.unmodifiableMap(profileAllowedIPs);
+    private final Map<String, List<String>> profileDeniedIPsView = Collections.unmodifiableMap(profileDeniedIPs);
+
+    /** @return TLS settings for the transport layer. */
     public Tls getTransport() { return transport; }
+    /** @return TLS settings for the HTTP layer. */
     public Tls getHttp() { return http; }
-    public Map<String, List<String>> getProfileAllowedIPs() { return profileAllowedIPs; }
-    public Map<String, List<String>> getProfileDeniedIPs() { return profileDeniedIPs; }
+    /** @return per-profile allow lists for transport IP filtering. */
+    public Map<String, List<String>> getProfileAllowedIPs() { return profileAllowedIPsView; }
+    /** @return per-profile deny lists for transport IP filtering. */
+    public Map<String, List<String>> getProfileDeniedIPs() { return profileDeniedIPsView; }
 
     public SslTlsIR() {
         transport = new Tls();
@@ -30,45 +45,57 @@ public class SslTlsIR {
     }
 
     public void handleOptions(String optionName, Object optionValue, String keyPrefix, File configFile) {
-        boolean error = false;
-
-        if (IntermediateRepresentationElasticSearchYml.assertType(optionValue, List.class)) {
-            List<?> value = (List<?>) optionValue;
-
-            if (value.isEmpty()) {
-                return;
-            }
-
-            // Regex for profileAllowedIPs/profileDeniedIPs with optionName profiles.$PROFILE.xpack.security.filter. allow or deny
-            Pattern profileIPsPattern = Pattern.compile("^profiles\\.([^.]+)\\.xpack\\.security\\.filter\\.(allow|deny)$");
-            Matcher mProfileIPs = profileIPsPattern.matcher(optionName);
-
-            if (!(value.get(0) instanceof String)) {
-                error = true;
-            } else if(mProfileIPs.find()) {
-                String profile = mProfileIPs.group(1);
-                String action  = mProfileIPs.group(2);
-
-                if ("allow".equals(action)) {
-                    profileAllowedIPs
-                        .computeIfAbsent(profile, k -> new ArrayList<>())
-                        .addAll((List<String>) value);
-
-                } else if ("deny".equals(action)) {
-                    profileDeniedIPs
-                        .computeIfAbsent(profile, k -> new ArrayList<>())
-                        .addAll((List<String>) value);
-                }
-            } else {
-                switch (optionName) {
-                    default:
-                        error = true;
-                }
-            }
+        if (!(optionValue instanceof List<?> rawList)) {
+            report.addInvalidType(FILE_NAME, keyPrefix + optionName, List.class, optionValue);
+            return;
         }
 
-        if (error) {
-            System.out.println("Invalid option of type " + optionValue.getClass() + ": " + optionName + " = " + optionValue);
+        if (rawList.isEmpty()) {
+            return;
         }
+
+        var profileMatch = PROFILE_IPS_PATTERN.matcher(optionName);
+        var values = asStringList(rawList, keyPrefix + optionName);
+        if (values == null) {
+            return;
+        }
+
+        if (profileMatch.matches()) {
+            String profile = profileMatch.group(1);
+            String action  = profileMatch.group(2);
+
+            Map<String, List<String>> target = "allow".equals(action) ? profileAllowedIPs : profileDeniedIPs;
+            target.merge(profile, freezeList(values), (oldList, newList) -> {
+                if (oldList.isEmpty()) {
+                    return newList;
+                }
+                ArrayList<String> merged = new ArrayList<>(oldList);
+                merged.addAll(newList);
+                return Collections.unmodifiableList(merged);
+            });
+            report.addMigrated(FILE_NAME, keyPrefix + optionName);
+            return;
+        }
+
+        report.addUnknownKey(FILE_NAME, keyPrefix + optionName, configFile.getPath());
+    }
+
+    private List<String> asStringList(List<?> rawList, String path) {
+        var result = new ArrayList<String>(rawList.size());
+        for (Object element : rawList) {
+            if (!(element instanceof String s)) {
+                report.addInvalidType(FILE_NAME, path, String.class, element);
+                return null;
+            }
+            result.add(s);
+        }
+        return result;
+    }
+
+    private List<String> freezeList(List<String> list) {
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
+        return Collections.unmodifiableList(new ArrayList<>(list));
     }
 }

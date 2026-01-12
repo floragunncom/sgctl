@@ -24,6 +24,7 @@ import com.floragunn.searchguard.sgctl.client.ApiException;
 import com.floragunn.searchguard.sgctl.client.BasicResponse;
 import com.floragunn.searchguard.sgctl.client.FailedConnectionException;
 import com.floragunn.searchguard.sgctl.client.InvalidResponseException;
+import com.floragunn.searchguard.sgctl.client.PreconditionFailedException;
 import com.floragunn.searchguard.sgctl.client.SearchGuardRestClient;
 import com.floragunn.searchguard.sgctl.client.ServiceUnavailableException;
 import com.floragunn.searchguard.sgctl.client.UnauthorizedException;
@@ -45,6 +46,13 @@ public class MoveSearchGuardIndexCommand extends ConnectingCommand implements Ca
             System.out.println(response.getMessage());
 
             return 0;
+        } catch (PreconditionFailedException e) {
+            if (isAlreadyMigrated(e.getMessage())) {
+                System.out.println(e.getMessage());
+                return 0;
+            }
+            System.err.println(e.getMessage());
+            return 1;
         } catch (SgctlException e) {
             System.err.println(e.getMessage());
             return 1;
@@ -64,6 +72,10 @@ public class MoveSearchGuardIndexCommand extends ConnectingCommand implements Ca
             System.err.println(e.getMessage());
             return 1;
         }
+    }
+
+    private boolean isAlreadyMigrated(String message) {
+        return message != null && message.toLowerCase().contains("already uses the new-style index");
     }
 
 }
