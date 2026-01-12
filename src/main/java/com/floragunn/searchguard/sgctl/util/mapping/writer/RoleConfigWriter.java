@@ -94,8 +94,10 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 report.addRoleEntry(roleEntry);
                 continue;
             }
-            if (role.getRunAs() != null && !role.getRunAs().isEmpty()) roleEntry.hasRunAs();
-            if (role.getApplications() != null && !role.getApplications().isEmpty()) roleEntry.hasApplications();
+            if (role.getRunAs() != null && !role.getRunAs().isEmpty()) roleEntry.addWarning("run as",
+                    "There is no equivalent to 'run as' in Search Guard. Run as is therefor ignored.");
+            if (role.getApplications() != null && !role.getApplications().isEmpty()) roleEntry.addWarning("application",
+                    "There is no equivalent to 'application' in Search Guard. All its entries are therefor ignored.");
             var name = role.getName();
             var description = role.getDescription();
             var clusterPermissions = toSGClusterPrivileges(role);

@@ -12,9 +12,12 @@ import java.util.*;
  */
 public class MigrationReport {
     public static MigrationReport shared = new MigrationReport();
+    private static final String MANUAL_ACTION_TITLE = "\t\u001B[1;33mMANUAL ACTION REQUIRED (%d)\u001B[0m\n\tParameters that could not be automatically migrated and require manual review or adjustment\n";
+    private static final String WARNING_TITLE = "\t\u001B[1;33mWARNINGS (%d)\u001B[0m\n\tPotentially problematic or ambiguous settings. Review them to ensure the migrated configuration behaves as expected\n";
+    private static final String MIGRATED_TITLE = "\t\u001B[1;32mSUCCESSFULLY MIGRATED (%d)\u001B[0m\n\tParameters that have been successfully migrated\n";
     private MigrationReport() {}
     private final LinkedHashMap<String, FileReport> files = new LinkedHashMap<>();
-    private final RoleEntries roleEntries = new RoleEntries(new LinkedList<>(), new LinkedList<>());
+    private final RoleEntries roleEntries = new RoleEntries(new LinkedList<>(), new LinkedList<>(), new LinkedList<>());
 
     public enum Category {MIGRATED, WARNING, MANUAL}
 
@@ -22,8 +25,10 @@ public class MigrationReport {
     public void addRoleEntry(RoleEntry entry) {
         if (entry.noIssues()) {
             roleEntries.successful.add(entry);
-        } else {
+        } else if (entry.successful()) {
             roleEntries.withIssues.add(entry);
+        } else {
+            roleEntries.unsuccessful.add(entry);
         }
     }
 
@@ -69,23 +74,32 @@ public class MigrationReport {
     }
 
     public void printReport(PrintStream out){
-        out.println("---------- Migration Report ----------");
+        out.println("\u001B[1m----------------------------- Migration Report -----------------------------\u001B[0m");
         for (Map.Entry<String, FileReport> fe : files.entrySet()) {
-            out.println("File: " + fe.getKey() + "\n");
+            out.println("\u001B[1mFile - " + fe.getKey() + ":\u001B[0m\n");
             FileReport fr = fe.getValue();
 
             printMigrated(fr, out);
             printWarnings(fr, out);
             printManuals(fr, out);
         }
-        out.println("File: " + RoleConfigWriter.FILE_NAME + "\n");
+        out.println("\u001B[1mFile - " + RoleConfigWriter.FILE_NAME + ":\u001B[0m\n");
         if (!roleEntries.successful.isEmpty()) {
-            out.println("\t\u001B[1mSuccessfully migrated the following roles with no issues (" + roleEntries.successful.size() + "):\u001B[0m");
+            out.println("\t\u001B[1;32mSUCCESSFULLY MIGRATED (" + roleEntries.successful.size() + "):\u001B[0m");
             for (var entry : roleEntries.successful) out.println("\t\t- " + entry.getName());
             out.println();
         }
-        for (var entry : roleEntries.withIssues) entry.printEntry(out);
-        out.println("---------- End Migration Report ----------");
+        if (!roleEntries.withIssues.isEmpty()) {
+            out.println("\t\u001B[1;33mMIGRATED WITH ISSUES (" + roleEntries.withIssues.size() + "):\u001B[0m");
+            for (var entry : roleEntries.withIssues) entry.printEntry(out);
+            out.println();
+        }
+        if (!roleEntries.unsuccessful.isEmpty()) {
+            out.println("\t\u001B[1;31mNOT MIGRATED (" + roleEntries.unsuccessful.size() + "):\u001B[0m");
+            for (var entry : roleEntries.unsuccessful) entry.printEntry(out);
+            out.println();
+        }
+        out.println("\u001B[1m----------------------------- End Migration Report -----------------------------\u001B[0m");
     }
 
     /* ---------- internals ---------- */
@@ -102,12 +116,12 @@ public class MigrationReport {
     void printMigrated(FileReport fr, PrintStream out){
         List<Entry> migrated = fr.get(Category.MIGRATED);
         if(!migrated.isEmpty()){
-            out.printf("  MIGRATED (%d)%n  Parameters that have been successfully migrated%n%n", migrated.size());
-            for(Entry e : migrated){
+            out.printf(MIGRATED_TITLE, migrated.size());
+            for(Entry e : migrated) {
                 if(e.newParameter != null){
-                    out.printf("    - %s -> %s%n", e.parameter, e.newParameter);
+                    out.printf("\t\t- %s -> %s\n", e.parameter, e.newParameter);
                 } else {
-                    out.printf("    - %s%n", e.parameter);
+                    out.printf("\t\t- %s\n", e.parameter);
                 }
             }
             out.println();
@@ -117,7 +131,7 @@ public class MigrationReport {
     void printWarnings(FileReport fr, PrintStream out){
         List<Entry> warnings = fr.get(Category.WARNING);
         if(!warnings.isEmpty()){
-            out.printf("  %s (%d)%n  Potentially problematic or ambiguous settings. Review them to ensure the migrated configuration behaves as expected%n%n", Category.WARNING.name(), warnings.size());
+            out.printf(WARNING_TITLE, warnings.size());
             printPresets(warnings, out);
             List<Entry> freeWarnings = new ArrayList<>();
             for (Entry e : warnings) {
@@ -150,7 +164,7 @@ public class MigrationReport {
     void printManuals(FileReport fr, PrintStream out){
         List<Entry> manuals = fr.get(Category.MANUAL);
         if(!manuals.isEmpty()){
-            out.printf("  %s (%d)%n  Parameters that could not be automatically migrated and require manual review or adjustment%n%n", Category.MANUAL.name(), manuals.size());
+            out.printf(MANUAL_ACTION_TITLE, manuals.size());
             for(Entry e : manuals){
                 out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
             }
@@ -242,8 +256,6 @@ public class MigrationReport {
         @NonNull private final String name;
         private final Map<Category, List<Issue>> issues;
         private boolean hasRemoteClusterOrIndex = false;
-        private boolean hasRunAs = false;
-        private boolean hasApplications = false;
 
         public RoleEntry(@NonNull String name) {
             this.name = name;
@@ -253,45 +265,37 @@ public class MigrationReport {
         }
 
         public void hasRemoteClusterOrIndex() { this.hasRemoteClusterOrIndex = true; }
-        public void hasRunAs() { this.hasRunAs = true; }
-        public void hasApplications() {this.hasApplications = true; }
         public void addManualAction(String parameter, String message) { issues.get(Category.MANUAL).add(new Issue(parameter, message)); }
         public void addWarning(String parameter, String message) { issues.get(Category.WARNING).add(new Issue(parameter, message)); }
         public @NonNull String getName() { return this.name; }
         public boolean noIssues() {
-            return issues.get(Category.WARNING).isEmpty() && issues.get(Category.MANUAL).isEmpty() && !hasApplications && !hasRunAs && !hasRemoteClusterOrIndex;
+            return issues.get(Category.WARNING).isEmpty() && issues.get(Category.MANUAL).isEmpty() && !hasRemoteClusterOrIndex;
         }
+        public boolean successful() { return !hasRemoteClusterOrIndex; }
 
         public void printEntry(PrintStream out) {
+            out.printf("\t\t\u001B[1m%s:\u001B[0m\n", name);
             if (hasRemoteClusterOrIndex) {
-                out.println("\t\u001B[1;31m" + name
-                        + ":\u001B[0m\n\t\t\u001B[31mRemote indices and clusters are not supported in Search Guard. The role can not be migrated.\u001B[0m\n");
+                out.println("\t\t\tRemote indices and clusters are not supported in Search Guard. The role can not be migrated.\n");
                 return;
             }
-            out.println("\t\u001B[1m" + name + ":\u001B[0m");
             var warnings = issues.get(Category.WARNING);
             var manualActions = issues.get(Category.MANUAL);
-            if (warnings.isEmpty() && manualActions.isEmpty() && !hasApplications && !hasRunAs) {
-                out.println("\t\tSuccessfully migrated the role with no issues.\n");
-                return;
-            }
-            var issueCount = warnings.size() + manualActions.size() + (hasRunAs ? 1 : 0) + (hasApplications ? 1 : 0);
-            out.println("\t\tSuccessfully Migrated with " + issueCount + (issueCount == 1 ? " issue." : " issues.") + "\n");
-            if (hasRunAs) out.println("\t\tThere is no equivalent to 'run as' in Search Guard. Run as is therefor ignored.\n");
-            if (hasApplications) out.println("\t\tThere is no equivalent to 'application' in Search Guard. All its entries are therefor ignored.\n");
+            var issueCount = warnings.size() + manualActions.size();
+            out.println("\t\t\tSuccessfully migrated with " + issueCount + (issueCount == 1 ? " issue." : " issues.") + "\n");
             if (!warnings.isEmpty()) {
-                out.println("\t\tWarnings(" + warnings.size() + "):");
+                out.printf("\t\t\t\u001B[1;33mWARNINGS (%d)\u001B[0m\n", warnings.size());
                 for (var warning : warnings) {
-                    out.println("\t\t- " + warning.parameter);
-                    out.println("\t\t\t-> " + warning.message);
+                    out.println("\t\t\t- " + warning.parameter);
+                    out.println("\t\t\t\t-> " + warning.message);
                 }
                 out.println();
             }
             if (!manualActions.isEmpty()) {
-                out.println("\t\tManual Actions (" + manualActions.size() + "):");
+                out.printf("\t\t\t\u001B[1;33mMANUAL ACTION REQUIRED (%d)\u001B[0m\n", manualActions.size());
                 for (var manualAction : manualActions) {
-                    out.println("\t\t- " + manualAction.parameter);
-                    out.println("\t\t\t-> " + manualAction.message);
+                    out.println("\t\t\t- " + manualAction.parameter);
+                    out.println("\t\t\t\t-> " + manualAction.message);
                 }
                 out.println();
             }
@@ -300,5 +304,5 @@ public class MigrationReport {
 
     public record Issue(String parameter, String message) { }
 
-    public record RoleEntries(List<RoleEntry> successful, List<RoleEntry> withIssues) { }
+    public record RoleEntries(List<RoleEntry> successful, List<RoleEntry> withIssues, List<RoleEntry> unsuccessful) { }
 }
