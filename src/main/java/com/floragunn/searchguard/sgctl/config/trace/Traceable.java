@@ -4,12 +4,13 @@ import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import java.util.List;
+import java.util.function.Function;
 
-public interface Traceable<T> {
+public interface Traceable<T> extends BaseTraceable<T> {
 
-  Source getSource();
+  <R> Traceable<R> map(Function<? super T, ? extends R> mapper);
 
-  T get();
+  <R> Traceable<R> flatMap(Function<? super T, ? extends Traceable<R>> mapper);
 
   static <T> Traceable<T> of(Source source, T value) {
     return new TraceableImpl<>(source, value);

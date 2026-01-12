@@ -2,6 +2,7 @@ package com.floragunn.searchguard.sgctl.config.trace;
 
 import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
 
 class OptTraceableImpl<T> implements OptTraceable<T> {
 
@@ -11,6 +12,23 @@ class OptTraceableImpl<T> implements OptTraceable<T> {
   public OptTraceableImpl(Source source, Optional<T> value) {
     this.source = source;
     this.value = value;
+  }
+
+  @Override
+  public <U> OptTraceableImpl<U> map(Function<? super T, ? extends U> mapper) {
+    return new OptTraceableImpl<>(source, value.map(mapper));
+  }
+
+  @Override
+  public <U> OptTraceable<U> flatMap(
+      Function<? super T, ? extends OptTraceable<? extends U>> mapper) {
+    if (value.isEmpty()) {
+      return new OptTraceableImpl<>(source, Optional.empty());
+    } else {
+      @SuppressWarnings("unchecked")
+      var r = (OptTraceable<U>) mapper.apply(value.get());
+      return Objects.requireNonNull(r);
+    }
   }
 
   @Override

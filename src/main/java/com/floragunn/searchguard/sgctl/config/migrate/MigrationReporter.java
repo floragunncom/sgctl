@@ -1,61 +1,62 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
-import com.floragunn.searchguard.sgctl.config.trace.Traceable;
+import com.floragunn.searchguard.sgctl.config.trace.BaseTraceable;
 
 /** For generating the migration report. */
 public interface MigrationReporter {
 
   /**
-   * Reports a critical problem with a {@link Traceable}. Critical problems will cause migration to
-   * fail, and no config files will be written.
+   * Reports a critical problem with a {@link BaseTraceable}. Critical problems will cause migration
+   * to fail, and no config files will be written.
    *
-   * @param subject The {@link Traceable} that is the subject of this problem.
+   * @param subject The {@link BaseTraceable} that is the subject of this problem.
    * @param message An explanation of the problem.
    */
-  void critical(Traceable<?> subject, String message);
+  void critical(BaseTraceable<?> subject, String message);
 
   /**
-   * Reports a critical problem with a {@link Traceable}. Critical problems will cause migration to
-   * fail, and no config files will be written. The value will be censored in the report.
+   * Reports a critical problem with a {@link BaseTraceable}. Critical problems will cause migration
+   * to fail, and no config files will be written. The value will be censored in the report.
    *
-   * @param subject The {@link Traceable} that is the subject of this problem.
+   * @param subject The {@link BaseTraceable} that is the subject of this problem.
    * @param message An explanation of the problem.
    */
-  void criticalSecret(Traceable<?> subject, String message);
+  void criticalSecret(BaseTraceable<?> subject, String message);
 
   /**
-   * Reports a genic problem with a {@link Traceable}.
+   * Reports a genic problem with a {@link BaseTraceable}.
    *
-   * @param subject The {@link Traceable} that is the subject of this problem.
+   * @param subject The {@link BaseTraceable} that is the subject of this problem.
    * @param message An explanation of the problem.
    */
-  void problem(Traceable<?> subject, String message);
+  void problem(BaseTraceable<?> subject, String message);
 
   /**
-   * Reports a genic problem with a {@link Traceable}. The value will be censored in the report.
+   * Reports a genic problem with a {@link BaseTraceable}. The value will be censored in the report.
    *
-   * @param subject The {@link Traceable} that is the subject of this problem.
+   * @param subject The {@link BaseTraceable} that is the subject of this problem.
    * @param message An explanation of the problem.
    */
-  void problemSecret(Traceable<?> subject, String message);
+  void problemSecret(BaseTraceable<?> subject, String message);
 
   /**
-   * Reports a {@link Traceable} as inconvertible, meaning that an equivalent concept does not exist
-   * in the target domain and as such cannot be converted.
+   * Reports a {@link BaseTraceable} as inconvertible, meaning that an equivalent concept does not
+   * exist in the target domain and as such cannot be converted.
    *
-   * @param subject The {@link Traceable} that is inconvertible.
+   * @param subject The {@link BaseTraceable} that is inconvertible.
    * @param message Additional information, e.g. the action that was taken to resolve this problem
    */
-  void inconvertible(Traceable<?> subject, String message);
+  void inconvertible(BaseTraceable<?> subject, String message);
 
   /**
-   * Reports a {@link Traceable} as inconvertible, meaning that an equivalent concept does not exist
-   * in the target domain and as such cannot be converted. The value will be censored in the report.
+   * Reports a {@link BaseTraceable} as inconvertible, meaning that an equivalent concept does not
+   * exist in the target domain and as such cannot be converted. The value will be censored in the
+   * report.
    *
-   * @param subject The {@link Traceable} that is inconvertible.
+   * @param subject The {@link BaseTraceable} that is inconvertible.
    * @param message Additional information, e.g. the action that was taken to resolve this problem
    */
-  void inconvertibleSecret(Traceable<?> subject, String message);
+  void inconvertibleSecret(BaseTraceable<?> subject, String message);
 
   /**
    * Adds a critical message to the report. The migration cannot complete successfully if any

@@ -1,6 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
-import com.floragunn.searchguard.sgctl.config.trace.Traceable;
+import com.floragunn.searchguard.sgctl.config.trace.BaseTraceable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,12 +12,12 @@ class MigrationReporterImpl implements MigrationReporter {
   private final String migrationTitle;
   private final String targetDomainName;
 
-  private final Map<Traceable<?>, List<String>> problem = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> critical = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> problemSecret = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> inconvertibleSecret = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> criticalSecret = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> problem = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> critical = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> problemSecret = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> inconvertibleSecret = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> criticalSecret = new LinkedHashMap<>();
   private final List<String> problemMessages = new ArrayList<>();
   private final List<String> criticalMessages = new ArrayList<>();
 
@@ -27,32 +27,32 @@ class MigrationReporterImpl implements MigrationReporter {
   }
 
   @Override
-  public void critical(Traceable<?> subject, String message) {
+  public void critical(BaseTraceable<?> subject, String message) {
     add(critical, subject, message);
   }
 
   @Override
-  public void criticalSecret(Traceable<?> subject, String message) {
+  public void criticalSecret(BaseTraceable<?> subject, String message) {
     add(criticalSecret, subject, message);
   }
 
   @Override
-  public void problem(Traceable<?> subject, String message) {
+  public void problem(BaseTraceable<?> subject, String message) {
     add(problem, subject, message);
   }
 
   @Override
-  public void problemSecret(Traceable<?> subject, String message) {
+  public void problemSecret(BaseTraceable<?> subject, String message) {
     add(problemSecret, subject, message);
   }
 
   @Override
-  public void inconvertible(Traceable<?> subject, String message) {
+  public void inconvertible(BaseTraceable<?> subject, String message) {
     add(inconvertible, subject, message);
   }
 
   @Override
-  public void inconvertibleSecret(Traceable<?> subject, String message) {
+  public void inconvertibleSecret(BaseTraceable<?> subject, String message) {
     add(inconvertibleSecret, subject, message);
   }
 
@@ -72,7 +72,7 @@ class MigrationReporterImpl implements MigrationReporter {
   }
 
   private void add(
-      Map<? super Traceable<?>, List<String>> map, Traceable<?> subject, String message) {
+      Map<? super BaseTraceable<?>, List<String>> map, BaseTraceable<?> subject, String message) {
     map.computeIfAbsent(subject, v -> new ArrayList<>()).add(message);
   }
 
@@ -100,8 +100,8 @@ class MigrationReporterImpl implements MigrationReporter {
 
   private void reportTraceables(
       StringBuilder sb,
-      Map<? extends Traceable<?>, ? extends List<String>> traceables,
-      Map<? extends Traceable<?>, ? extends List<String>> secretTraceables,
+      Map<? extends BaseTraceable<?>, ? extends List<String>> traceables,
+      Map<? extends BaseTraceable<?>, ? extends List<String>> secretTraceables,
       String desc) {
     if (traceables.isEmpty() && secretTraceables.isEmpty()) return;
 
