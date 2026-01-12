@@ -1,0 +1,14 @@
+---
+  test_role2:
+    run_as: [ 'test_role2' ]
+    cluster: [ 'all', 'createsnapshot', 'manageindextemplates', 'manageingestpipelines', 'monitor' ]
+    indices:
+      - names: [ 'events-*' ]
+        privileges: [ 'all', 'createindex', 'create', 'delete', 'index', 'manage', 'monitor', 'read', 'write', 'typocorection'  ]
+        field_security:
+          grant: ['category', '@timestamp', 'message' ]
+        query: '{"match": {"category": "click"}}'
+    applications:
+      application: "kibana"
+      privileges: ["read"]
+      resources: ["*"]

@@ -1,5 +1,8 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
+import static com.floragunn.searchguard.sgctl.testutil.TextAssertions.assertEqualsNormalized;
+import static org.junit.jupiter.api.Assertions.*;
+
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
@@ -8,17 +11,13 @@ import com.floragunn.searchguard.sgctl.config.migrate.Migrator.MigrationContext;
 import com.floragunn.searchguard.sgctl.config.migrator.AssertableMigrationReporter;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.function.Consumer;
-
-import static com.floragunn.searchguard.sgctl.testutil.TextAssertions.assertEqualsNormalized;
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /** Tests for {@link AuthMigrator}. */
 class AuthMigratorTest {
@@ -43,6 +42,18 @@ class AuthMigratorTest {
   @Test
   void testMigrateLdapWithScopes() throws Exception {
     assertMigrationOutput("ldap_with_scopes");
+  }
+
+  @Test
+  void testMigrateLdapInconvertibleScopes() throws Exception {
+    assertMigrationOutput(
+        "ldap_inconvertible_scope",
+        reporter -> {
+          System.out.println(reporter.generateReport());
+          reporter.assertInconvertible(
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap_scoped.group_search.scope",
+              "These other migratable search scopes DO exist in Search Guard: SUB, ONE. The search scope was omitted from the output because of this.");
+        });
   }
 
   @Test
