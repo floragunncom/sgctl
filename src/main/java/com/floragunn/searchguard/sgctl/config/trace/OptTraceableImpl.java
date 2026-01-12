@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
+import java.util.Objects;
 import java.util.Optional;
 
 class OptTraceableImpl<T> implements OptTraceable<T> {
@@ -25,5 +26,22 @@ class OptTraceableImpl<T> implements OptTraceable<T> {
   @Override
   public Source getSource() {
     return source;
+  }
+
+  @Override
+  public boolean equals(Object obj) {
+    return obj instanceof OptTraceableImpl<?> other
+        && source.equals(other.source)
+        && Objects.equals(value, other.value);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(source, value);
+  }
+
+  @Override
+  public String toString() {
+    return value.map(String::valueOf).orElse("");
   }
 }
