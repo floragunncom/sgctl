@@ -7,7 +7,7 @@ import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.*;
-import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.*;
 import java.io.IOException;

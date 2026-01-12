@@ -1,5 +1,6 @@
-package com.floragunn.searchguard.sgctl.config.migrate.auth;
+package com.floragunn.searchguard.sgctl.config.migrate;
 
+import static com.floragunn.searchguard.sgctl.testutil.TextAssertions.assertEqualsNormalized;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.floragunn.codova.documents.DocNode;
@@ -47,11 +48,11 @@ class AuthMigratorTest {
   @Test
   void testMigrateLdapInconvertibleScopes() throws Exception {
     assertMigrationOutput(
-        "ldap_inconvertible_scope",
+        "ldap_base_scope",
         reporter -> {
           System.out.println(reporter.generateReport());
           reporter.assertInconvertible(
-              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap_scoped.group_search.scope",
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.user_search.scope",
               "These other migratable search scopes DO exist in Search Guard: SUB, ONE. The search scope was omitted from the output because of this.");
         });
   }
@@ -97,6 +98,28 @@ class AuthMigratorTest {
   }
 
   @Test
+  void testMigrateLdapBothPasswordsSet() throws Exception {
+    assertMigrationOutput(
+        "ldap_both_passwords",
+        reporter -> {
+          reporter.assertProblemSecret(
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.bind_password",
+              "Both bind_password and secure_bind_password are set; using secure_bind_password");
+        });
+  }
+
+  @Test
+  void testMigrateLdapPoolDisabled() throws Exception {
+    assertMigrationOutput(
+        "ldap_pool_disabled",
+        reporter -> {
+          reporter.assertInconvertible(
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.user_search.pool.enabled",
+              "Connection pool cannot be disabled in Search Guard");
+        });
+  }
+
+  @Test
   void testMigrateSamlBasic() throws Exception {
     assertFrontendMigrationOutput("saml_basic");
   }
@@ -124,7 +147,7 @@ class AuthMigratorTest {
     var expectedAuthcYaml =
         loadResourceAsString("/xpack_migrate/expected/auth/saml_with_native_authc.yml");
     var actualAuthcYaml = DocWriter.yaml().writeAsString(sgAuthC.toBasicObject());
-    assertEquals(expectedAuthcYaml, actualAuthcYaml, "SgAuthC migration output");
+    assertEqualsNormalized(expectedAuthcYaml, actualAuthcYaml, "SgAuthC migration output");
 
     // Find and verify SgFrontendAuthC
     var sgFrontendAuthC =
@@ -137,25 +160,38 @@ class AuthMigratorTest {
     var expectedFrontendYaml =
         loadResourceAsString("/xpack_migrate/expected/auth/saml_with_native_frontend.yml");
     var actualFrontendYaml = DocWriter.yaml().writeAsString(sgFrontendAuthC.toBasicObject());
-    assertEquals(expectedFrontendYaml, actualFrontendYaml, "SgFrontendAuthC migration output");
+    assertEqualsNormalized(
+        expectedFrontendYaml, actualFrontendYaml, "SgFrontendAuthC migration output");
   }
 
   // Helper methods
 
   private void assertMigrationOutput(String testCaseName) throws Exception {
-    assertMigrationOutput(testCaseName, _t -> {});
+    assertMigrationOutput(testCaseName, reporter -> {});
   }
 
   private void assertMigrationOutput(
-      String testCaseName, Consumer<AssertableMigrationReporter> reportChecker) throws Exception {
+      String testCaseName, Consumer<AssertableMigrationReporter> problemAssertions)
+      throws Exception {
     var inputPath = "/xpack_migrate/elasticsearch/auth/" + testCaseName + ".yml";
     var expectedPath = "/xpack_migrate/expected/auth/" + testCaseName + ".yml";
 
-    var sgAuthC = migrate(inputPath, reportChecker);
+    var config = loadConfig(inputPath);
+    var context = createContext(Optional.of(config));
+    var reporter = new AssertableMigrationReporter();
+
+    var result = new AuthMigrator().migrate(context, reporter);
+    problemAssertions.accept(reporter);
+    reporter.assertNoMoreProblems();
+
+    assertEquals(1, result.size());
+    var sgAuthC = assertInstanceOf(SgAuthC.class, result.get(0));
+    assertEqualsNormalized("sg_authc.yml", sgAuthC.getFileName());
+
     var actualYaml = DocWriter.yaml().writeAsString(sgAuthC.toBasicObject());
     var expectedYaml = loadResourceAsString(expectedPath);
 
-    assertEquals(expectedYaml, actualYaml, "Migration output for " + testCaseName);
+    assertEqualsNormalized(expectedYaml, actualYaml, "Migration output for " + testCaseName);
   }
 
   private void assertFrontendMigrationOutput(String testCaseName) throws Exception {
@@ -166,23 +202,8 @@ class AuthMigratorTest {
     var actualYaml = DocWriter.yaml().writeAsString(sgFrontendAuthC.toBasicObject());
     var expectedYaml = loadResourceAsString(expectedPath);
 
-    assertEquals(expectedYaml, actualYaml, "Frontend migration output for " + testCaseName);
-  }
-
-  private SgAuthC migrate(String path, Consumer<AssertableMigrationReporter> reportChecker)
-      throws Exception {
-    var config = loadConfig(path);
-    var context = createContext(Optional.of(config));
-    var reporter = new AssertableMigrationReporter();
-
-    var result = new AuthMigrator().migrate(context, reporter);
-    reportChecker.accept(reporter);
-    reporter.assertNoMoreProblems();
-
-    assertEquals(1, result.size());
-    var sgAuthC = assertInstanceOf(SgAuthC.class, result.get(0));
-    assertEquals("sg_authc.yml", sgAuthC.getFileName());
-    return sgAuthC;
+    assertEqualsNormalized(
+        expectedYaml, actualYaml, "Frontend migration output for " + testCaseName);
   }
 
   private SgFrontendAuthC migrateFrontend(String path) throws Exception {
