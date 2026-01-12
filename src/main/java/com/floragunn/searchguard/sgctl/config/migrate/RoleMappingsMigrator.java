@@ -1,167 +1,146 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
-import com.floragunn.codova.documents.DocNode;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalRolesMapping;
+import com.floragunn.searchguard.sgctl.config.searchguard.SgRolesMapping;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
-import java.util.*;
-import org.slf4j.Logger;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
 
 public class RoleMappingsMigrator implements SubMigrator {
 
-  // Collect unique users and roles
-  private static class SgMappingBuilder {
-    Set<String> users = new HashSet<>();
-    Set<String> backendRoles = new HashSet<>();
-    Set<String> hosts = new HashSet<>();
-    Set<String> ips = new HashSet<>();
-  }
-
   @Override
-  public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger) {
-    if (context.getRoleMappings().isEmpty()) {
-      logger.info("No X-Pack role mappings found. Skipping migration.");
+  public List<NamedConfig<?>> migrate(
+      Migrator.IMigrationContext context, MigrationReporter reporter) {
+    var roleMappings = context.getRoleMappings();
+    if (roleMappings.isEmpty()) {
+      reporter.problem("Skipping role-mappings migration: no role mappings json provided");
       return List.of();
     }
 
-    RoleMappings source = context.getRoleMappings().get();
-
-    SgInternalRolesMapping result = convert(source, logger);
-
-    return List.of(result);
-  }
-
-  private SgInternalRolesMapping convert(RoleMappings xpackRoleMappings, Logger logger) {
-    Map<String, SgMappingBuilder> builderMap = new HashMap<>();
-
-    for (Map.Entry<String, RoleMappings.RoleMapping> entry :
-        xpackRoleMappings.mappings().entrySet()) {
-      String mappingName = entry.getKey();
-      RoleMappings.RoleMapping mapping = entry.getValue();
-
-      if (mapping instanceof RoleMappings.RoleMapping.Templates) {
-        logger.warn(
-            "[{}] Skipping 'Role Templates'. Dynamic logic cannot be migrated to static YAML.",
-            mappingName);
-        continue;
-      }
-
-      if (mapping instanceof RoleMappings.RoleMapping.Roles rolesMapping) {
-        if (!rolesMapping.enabled()) {
-          continue;
-        }
-
-        // Recursively extract a flat list from the rules tree
-        ExtractionResult extracted = extractIdentities(rolesMapping.rules(), mappingName, logger);
-
-        if (extracted.isEmpty()) {
-          logger.info("[{}] No migratable users/roles/hosts/ips found.", mappingName);
-          continue;
-        }
-
-        for (String roleName : rolesMapping.roles()) {
-          builderMap.computeIfAbsent(roleName, k -> new SgMappingBuilder());
-          SgMappingBuilder builder = builderMap.get(roleName);
-
-          builder.users.addAll(extracted.users);
-          builder.backendRoles.addAll(extracted.backendRoles);
-          builder.hosts.addAll(extracted.hosts);
-          builder.ips.addAll(extracted.ips);
-        }
+    var sgRoleMappings = new LinkedHashMap<String, SgRolesMapping.Identities>();
+    for (var xPackMapping : roleMappings.get().mappings().get().values()) {
+      for (var mappingEntry : migrateRoleMapping(xPackMapping, reporter).entrySet()) {
+        var sgRoleName = mappingEntry.getKey();
+        var identities = mappingEntry.getValue();
+        sgRoleMappings.compute(
+            sgRoleName,
+            (x, otherIdentities) -> {
+              if (otherIdentities == null) {
+                return identities;
+              } else {
+                return merge(otherIdentities, identities);
+              }
+            });
       }
     }
 
-    // Convert mutable builder to immutable SearchGuard object
-    ImmutableMap.Builder<String, SgInternalRolesMapping.RoleMapping> finalMap =
-        new ImmutableMap.Builder<>();
-
-    for (Map.Entry<String, SgMappingBuilder> entry : builderMap.entrySet()) {
-      SgMappingBuilder b = entry.getValue();
-
-      SgInternalRolesMapping.RoleMapping sgMapping =
-          new SgInternalRolesMapping.RoleMapping(
-              ImmutableList.of(b.users),
-              ImmutableList.of(b.backendRoles),
-              ImmutableList.of(b.hosts),
-              ImmutableList.of(b.ips));
-
-      finalMap.put(entry.getKey(), sgMapping);
-    }
-
-    return new SgInternalRolesMapping(finalMap.build());
+    return List.of(new SgRolesMapping(ImmutableMap.of(sgRoleMappings)));
   }
 
-  // Internal Logic
+  private ImmutableMap<String, SgRolesMapping.Identities> migrateRoleMapping(
+      Traceable<RoleMappings.RoleMapping> mapping, MigrationReporter reporter) {
 
-  private record ExtractionResult(
-      List<String> users, List<String> backendRoles, List<String> hosts, List<String> ips) {
-    boolean isEmpty() {
-      return users.isEmpty() && backendRoles.isEmpty() && hosts.isEmpty() && ips.isEmpty();
+    if (!(mapping.get() instanceof RoleMappings.RoleMapping.Roles rolesMapping)) {
+      reporter.inconvertible(mapping, "Template-based role mappings cannot be converted");
+      return ImmutableMap.empty();
     }
+
+    // disabled role mapping are just removed
+    if (!rolesMapping.enabled().get()) return ImmutableMap.empty();
+
+    var identities = extractIdentities(rolesMapping.rules(), reporter);
+    if (identities.users().isEmpty()
+        && identities.backendRoles().isEmpty()
+        && identities.hosts().isEmpty()
+        && identities.ips().isEmpty()) {
+      reporter.problem(rolesMapping.rules(), "No migratable users/roles/hosts/ips found");
+      return ImmutableMap.empty();
+    }
+
+    var builder = new ImmutableMap.Builder<String, SgRolesMapping.Identities>();
+    for (var sgRoleName : rolesMapping.roles().get()) {
+      builder.put(sgRoleName.get(), identities);
+    }
+    return builder.build();
   }
 
-  private ExtractionResult extractIdentities(
-      RoleMappings.RoleMapping.Rule rule, String mappingName, Logger logger) {
-    List<String> users = new ArrayList<>();
-    List<String> backendRoles = new ArrayList<>();
-    List<String> hosts = new ArrayList<>();
-    List<String> ips = new ArrayList<>();
+  private SgRolesMapping.Identities extractIdentities(
+      Traceable<RoleMappings.RoleMapping.Rule> rule, MigrationReporter reporter) {
+    var users = new ImmutableList.Builder<String>();
+    var backendRoles = new ImmutableList.Builder<String>();
+    var hosts = new ImmutableList.Builder<String>();
+    var ips = new ImmutableList.Builder<String>();
 
-    if (rule instanceof RoleMappings.RoleMapping.Rule.Any anyRule) {
-      for (RoleMappings.RoleMapping.Rule subRule : anyRule.rules()) {
-        ExtractionResult subResult = extractIdentities(subRule, mappingName, logger);
-        users.addAll(subResult.users);
-        backendRoles.addAll(subResult.backendRoles);
-        hosts.addAll(subResult.hosts);
-        ips.addAll(subResult.ips);
+    if (rule.get() instanceof RoleMappings.RoleMapping.Rule.Any anyRule) {
+      for (var subRule : anyRule.rules().get()) {
+        var subResult = extractIdentities(subRule, reporter);
+        users.addAll(subResult.users());
+        backendRoles.addAll(subResult.backendRoles());
+        hosts.addAll(subResult.hosts());
+        ips.addAll(subResult.ips());
       }
-
-    } else if (rule instanceof RoleMappings.RoleMapping.Rule.All allRule) {
-      logger.warn(
-          "[{}] Rule contains 'ALL' (AND logic). Skipped for security reasons.", mappingName);
-    } else if (rule instanceof RoleMappings.RoleMapping.Rule.Field fieldRule) {
-      DocNode data = fieldRule.data();
+    } else if (rule.get() instanceof RoleMappings.RoleMapping.Rule.All) {
+      reporter.critical(rule, "'ALL' (AND logic) rule has no equivalent.");
+    } else if (rule.get() instanceof RoleMappings.RoleMapping.Rule.Field fieldRule) {
+      var data = fieldRule.match();
 
       // Extract data from Field Rules
-      if (data.hasNonNull("username")) {
-        parseStringOrList(data.get("username"), users);
-      } else if (data.hasNonNull("dn")) {
-        parseStringOrList(data.get("dn"), users);
-      } else if (data.hasNonNull("groups")) {
-        parseStringOrList(data.get("groups"), backendRoles);
-      } else if (data.hasNonNull("host")) {
-        parseStringOrList(data.get("host"), hosts);
-      } else if (data.hasNonNull("remote_ip")) {
-        parseStringOrList(data.get("remote_ip"), ips);
-      } else if (data.hasNonNull("realm.name")) {
-        logger.warn("[{}] Ignoring 'realm.name' rule.", mappingName);
+      if (data.get().containsKey("username")) {
+        parseStringOrList(data.get().get("username"), users);
+      } else if (data.get().containsKey("dn")) {
+        parseStringOrList(data.get().get("dn"), users);
+      } else if (data.get().containsKey("groups")) {
+        parseStringOrList(data.get().get("groups"), backendRoles);
+      } else if (data.get().containsKey("host")) {
+        parseStringOrList(data.get().get("host"), hosts);
+      } else if (data.get().containsKey("remote_ip")) {
+        parseStringOrList(data.get().get("remote_ip"), ips);
       } else {
-        logger.warn("[{}] Unknown field in rule: {}", mappingName, data.toJsonString());
+        reporter.problem(data, "Ignoring unknown field rule.");
       }
-    } else if (rule instanceof RoleMappings.RoleMapping.Rule.Except exceptRule) {
-      logger.warn(
-          "[{}] Rule contains 'EXCEPT' (Negation). Skipped for security reasons.", mappingName);
+    } else if (rule.get() instanceof RoleMappings.RoleMapping.Rule.Except) {
+      reporter.critical(rule, "'EXCEPT' (Negation) rule has no equivalent.");
     }
 
-    return new ExtractionResult(users, backendRoles, hosts, ips);
+    return new SgRolesMapping.Identities(
+        users.build(), backendRoles.build(), hosts.build(), ips.build());
   }
 
   // Needed, because field can be a String or List
-  private void parseStringOrList(Object node, List<String> target) {
-    if (node == null) {
-      return;
-    }
+  private void parseStringOrList(
+      Traceable<Object> basicObject, ImmutableList.Builder<String> target) {
+    if (basicObject.get() == null) return;
 
-    if (node instanceof Collection<?>) {
-      for (Object item : (Collection<?>) node) {
-        if (item != null) {
-          target.add(String.valueOf(item));
-        }
+    if (basicObject.get() instanceof Collection<?> collection) {
+      for (Object item : collection) {
+        if (item != null) target.add(String.valueOf(item));
       }
     } else {
-      target.add(String.valueOf(node));
+      target.add(String.valueOf(basicObject.get()));
     }
+  }
+
+  private SgRolesMapping.Identities merge(
+      SgRolesMapping.Identities a, SgRolesMapping.Identities b) {
+    var users = new ImmutableList.Builder<String>();
+    var backendRoles = new ImmutableList.Builder<String>();
+    var hosts = new ImmutableList.Builder<String>();
+    var ips = new ImmutableList.Builder<String>();
+
+    users.addAll(a.users());
+    users.addAll(b.users());
+    backendRoles.addAll(a.backendRoles());
+    backendRoles.addAll(b.backendRoles());
+    hosts.addAll(a.hosts());
+    hosts.addAll(b.hosts());
+    ips.addAll(a.ips());
+    ips.addAll(b.ips());
+
+    return new SgRolesMapping.Identities(
+        users.build(), backendRoles.build(), hosts.build(), ips.build());
   }
 }
