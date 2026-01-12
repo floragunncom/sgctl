@@ -43,7 +43,7 @@ class RolesTest {
     var role = result.roles().get("complex_role");
 
     // General asserts
-    assertEquals("user1", role.getValue().runAs().get().get(0).get());
+    assertEquals("user1", role.getValue().runAs().getValue().get(0).get());
     assertEquals("monitor", role.getValue().cluster().get().get(0).get());
     assertTrue(role.getValue().global().get().isPresent());
     assertEquals("test2", role.getValue().global().getValue().getAsString("test1"));
@@ -64,18 +64,21 @@ class RolesTest {
     // Remote indices
     assertEquals(
         "test-cluster1",
-        role.getValue().remoteIndices().get().get(0).get().clusters().get().get(0).get());
+        role.getValue().remoteIndices().getValue().get(0).get().clusters().get().get(0).get());
     assertEquals(
-        "boss2", role.getValue().remoteIndices().get().get(0).get().names().get().get(0).get());
+        "boss2",
+        role.getValue().remoteIndices().getValue().get(0).get().names().get().get(0).get());
     assertEquals(
-        "read", role.getValue().remoteIndices().get().get(0).get().privileges().get().get(0).get());
+        "read",
+        role.getValue().remoteIndices().getValue().get(0).get().privileges().get().get(0).get());
 
     // Remote cluster
     assertEquals(
         "test-cluster2",
-        role.getValue().remoteCluster().get().get(0).get().clusters().get().get(0).get());
+        role.getValue().remoteCluster().getValue().get(0).get().clusters().get().get(0).get());
     assertEquals(
-        "all", role.getValue().remoteCluster().get().get(0).get().privileges().get().get(0).get());
+        "all",
+        role.getValue().remoteCluster().getValue().get(0).get().privileges().get().get(0).get());
 
     // Rest
     assertTrue(role.getValue().description().get().isPresent());
@@ -96,7 +99,7 @@ class RolesTest {
     assertTrue(role.getValue().indices().get().isEmpty());
     assertTrue(role.getValue().applications().get().isEmpty());
     assertTrue(role.getValue().runAs().get().isEmpty());
-    assertTrue(role.getValue().description().getValue().isEmpty());
+    assertTrue(role.getValue().description().get().isEmpty());
   }
 
   // Tests if an empty document will throw an exception
