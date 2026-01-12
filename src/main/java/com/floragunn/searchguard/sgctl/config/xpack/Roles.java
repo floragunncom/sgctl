@@ -1,16 +1,32 @@
 package com.floragunn.searchguard.sgctl.config.xpack;
 
 import com.floragunn.codova.documents.DocNode;
+import com.floragunn.codova.documents.Parser;
+import com.floragunn.codova.validation.ConfigValidationException;
+import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 
-public record Roles(Traceable<ImmutableMap<String, Traceable<Role>>> roles) {
-
+public record Roles(ImmutableMap<String, OptTraceable<Role>> roles) {
+  /*
   public static Roles parse(TraceableDocNode tDoc) {
     return new Roles(tDoc.asAttribute().asMapOf(Role::parse));
+  }
+  */
+
+  public static Roles parse(DocNode doc, Parser.Context context) throws ConfigValidationException {
+    var errors = new ValidationErrors();
+    var tDoc = TraceableDocNode.of(doc, new Source.Config(""), errors);
+    var rolesBuilder = new ImmutableMap.Builder<String, OptTraceable<Role>>(doc.size());
+    for (String name : doc.keySet()) {
+      rolesBuilder.with(name, tDoc.get(name).as(Role::parse));
+    }
+    errors.throwExceptionForPresentErrors();
+    return new Roles(rolesBuilder.build());
   }
 
   public record Role(

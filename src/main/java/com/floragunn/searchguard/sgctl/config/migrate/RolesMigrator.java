@@ -4,6 +4,7 @@ import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalRoles;
+import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import java.util.HashMap;
@@ -36,19 +37,18 @@ public class RolesMigrator implements SubMigrator {
       return List.of();
     }
     var internalRolesBuilder =
-        new ImmutableMap.Builder<String, SgInternalRoles.Role>(
-            xpackRoles.get().roles().get().size());
+        new ImmutableMap.Builder<String, SgInternalRoles.Role>(xpackRoles.get().roles().size());
 
     // cluster -> translate straight, list of permissions
     // index -> index group
     //          allowed action
 
-    for (Map.Entry<String, Traceable<Roles.Role>> entry :
-        xpackRoles.get().roles().get().entrySet()) {
-      var clusterBuilder =
-          new ImmutableList.Builder<String>(entry.getValue().get().cluster().get().size());
+    for (Map.Entry<String, OptTraceable<Roles.Role>> entry : xpackRoles.get().roles().entrySet()) {
 
-      for (Traceable<String> cluster : entry.getValue().get().cluster().get()) {
+      var clusterBuilder =
+          new ImmutableList.Builder<String>(entry.getValue().getValue().cluster().get().size());
+
+      for (Traceable<String> cluster : entry.getValue().getValue().cluster().get()) {
 
         if (clusterPrivileges.containsKey(cluster.get())) {
           clusterBuilder.add(clusterPrivileges.get(cluster.get()));
@@ -61,9 +61,9 @@ public class RolesMigrator implements SubMigrator {
 
       var indicesBuilder =
           new ImmutableList.Builder<SgInternalRoles.Role.Permission>(
-              entry.getValue().get().indices().get().size());
+              entry.getValue().getValue().indices().get().size());
 
-      for (Traceable<Roles.Index> index : entry.getValue().get().indices().get()) {
+      for (Traceable<Roles.Index> index : entry.getValue().getValue().indices().get()) {
         var actionsBuilder =
             new ImmutableList.Builder<String>(index.get().privileges().get().size());
 

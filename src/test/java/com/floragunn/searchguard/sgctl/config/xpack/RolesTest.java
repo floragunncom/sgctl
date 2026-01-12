@@ -43,33 +43,43 @@ class RolesTest {
     var role = result.roles().get("complex_role");
 
     // General asserts
-    assertEquals("user1", role.runAs().get(0));
-    assertEquals("monitor", role.cluster().get(0));
-    assertTrue(role.global().isPresent());
-    assertEquals("test2", role.global().get().getAsString("test1"));
+    assertEquals("user1", role.getValue().runAs().get().get(0).get());
+    assertEquals("monitor", role.getValue().cluster().get().get(0).get());
+    assertTrue(role.getValue().global().get().isPresent());
+    assertEquals("test2", role.getValue().global().getValue().getAsString("test1"));
 
     // Indices
-    assertEquals("admin", role.indices().get(0).names().get(0));
-    assertEquals("read", role.indices().get(0).privileges().get(0));
-    assertTrue(role.indices().get(0).allowRestrictedIndices());
+    assertEquals("admin", role.getValue().indices().get().get(0).get().names().get().get(0).get());
+    assertEquals(
+        "read", role.getValue().indices().get().get(0).get().privileges().get().get(0).get());
+    assertTrue(role.getValue().indices().get().get(0).get().allowRestrictedIndices().get());
 
     // Applications
-    assertEquals("kibana", role.applications().get(0).application());
-    assertEquals("read", role.applications().get(0).privileges().get(0));
-    assertEquals("*", role.applications().get(0).resources().get(0));
+    assertEquals("kibana", role.getValue().applications().get().get(0).get().application().get());
+    assertEquals(
+        "read", role.getValue().applications().get().get(0).get().privileges().get().get(0).get());
+    assertEquals(
+        "*", role.getValue().applications().get().get(0).get().resources().get().get(0).get());
 
     // Remote indices
-    assertEquals("test-cluster1", role.remoteIndices().get(0).clusters().get(0));
-    assertEquals("boss2", role.remoteIndices().get(0).names().get(0));
-    assertEquals("read", role.remoteIndices().get(0).privileges().get(0));
+    assertEquals(
+        "test-cluster1",
+        role.getValue().remoteIndices().get().get(0).get().clusters().get().get(0).get());
+    assertEquals(
+        "boss2", role.getValue().remoteIndices().get().get(0).get().names().get().get(0).get());
+    assertEquals(
+        "read", role.getValue().remoteIndices().get().get(0).get().privileges().get().get(0).get());
 
     // Remote cluster
-    assertEquals("test-cluster2", role.remoteCluster().get(0).clusters().get(0));
-    assertEquals("all", role.remoteCluster().get(0).privileges().get(0));
+    assertEquals(
+        "test-cluster2",
+        role.getValue().remoteCluster().get().get(0).get().clusters().get().get(0).get());
+    assertEquals(
+        "all", role.getValue().remoteCluster().get().get(0).get().privileges().get().get(0).get());
 
     // Rest
-    assertTrue(role.description().isPresent());
-    assertEquals("Beautiful description", role.description().get());
+    assertTrue(role.getValue().description().get().isPresent());
+    assertEquals("Beautiful description", role.getValue().description().getValue());
   }
 
   // Tests parsing a role, missing all optional fields
@@ -82,11 +92,11 @@ class RolesTest {
 
     var role = result.roles().get("minimal_role");
 
-    assertEquals("all", role.cluster().get(0));
-    assertTrue(role.indices().isEmpty());
-    assertTrue(role.applications().isEmpty());
-    assertTrue(role.runAs().isEmpty());
-    assertTrue(role.description().isEmpty());
+    assertEquals("all", role.getValue().cluster().get().get(0).get());
+    assertTrue(role.getValue().indices().get().isEmpty());
+    assertTrue(role.getValue().applications().get().isEmpty());
+    assertTrue(role.getValue().runAs().get().isEmpty());
+    assertTrue(role.getValue().description().getValue().isEmpty());
   }
 
   // Tests if an empty document will throw an exception
