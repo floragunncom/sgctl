@@ -47,11 +47,11 @@ class AuthMigratorTest {
   @Test
   void testMigrateLdapInconvertibleScopes() throws Exception {
     assertMigrationOutput(
-        "ldap_inconvertible_scope",
+        "ldap_base_scope",
         reporter -> {
           System.out.println(reporter.generateReport());
           reporter.assertInconvertible(
-              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap_scoped.group_search.scope",
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.user_search.scope",
               "These other migratable search scopes DO exist in Search Guard: SUB, ONE. The search scope was omitted from the output because of this.");
         });
   }
@@ -115,17 +115,6 @@ class AuthMigratorTest {
           reporter.assertInconvertible(
               "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.user_search.pool.enabled",
               "Connection pool cannot be disabled in Search Guard");
-        });
-  }
-
-  @Test
-  void testMigrateLdapBaseScope() throws Exception {
-    assertMigrationOutput(
-        "ldap_base_scope",
-        reporter -> {
-          reporter.assertInconvertible(
-              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.user_search.scope",
-              "Cannot convert search scope as no equivalent scope exists");
         });
   }
 

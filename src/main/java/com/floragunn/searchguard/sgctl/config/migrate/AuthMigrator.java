@@ -196,7 +196,15 @@ public class AuthMigrator implements SubMigrator {
       case SUB_TREE -> Optional.of(SearchScope.SUB);
       case ONE_LEVEL -> Optional.of(SearchScope.ONE);
       case BASE -> {
-        reporter.inconvertible(scope, "Cannot convert search scope as no equivalent scope exists");
+        var availableSearchScopesMsg =
+            Arrays.stream(SearchScope.values())
+                .map(SearchScope::name)
+                .collect(Collectors.joining(", "));
+        reporter.inconvertible(
+            scope,
+            "These other migratable search scopes DO exist in Search Guard: "
+                + availableSearchScopesMsg
+                + ". The search scope was omitted from the output because of this.");
         yield Optional.empty();
       }
     };
