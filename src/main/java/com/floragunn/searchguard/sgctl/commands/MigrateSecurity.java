@@ -99,14 +99,11 @@ public class MigrateSecurity implements Callable<Integer> {
             for (File file : files) {
                 String name = file.getName();
 
-                if ("elasticsearch.yml".equals(name)) {
-                    elasticsearch = file;
-                } else if ("user.json".equals(name)) {
-                    user = file;
-                } else if ("role.json".equals(name)) {
-                    role = file;
-                } else if ("role_mapping.json".equals(name)) {
-                    roleMapping = file;
+                switch (name) {
+                    case "elasticsearch.yml" -> elasticsearch = file;
+                    case "user.json" -> user = file;
+                    case "role.json" -> role = file;
+                    case "role_mapping.json" -> roleMapping = file;
                 }
             }
         }

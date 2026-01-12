@@ -32,7 +32,8 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
 
     @Override
     public Object toBasicObject() {
-        var contents = new LinkedHashMap<>(tlsMapWriter("transport", ir.getSslTls().getTransport()));
+        var contents = new LinkedHashMap<>(ir.getParsedElasticsearchYAML());
+        contents.putAll(tlsMapWriter("transport", ir.getSslTls().getTransport()));
         contents.putAll(tlsMapWriter("http", ir.getSslTls().getHttp()));
         return contents;
     }
