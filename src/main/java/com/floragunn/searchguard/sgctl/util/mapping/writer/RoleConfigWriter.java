@@ -8,7 +8,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomClusterActionGroup;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomIndexActionGroup;
 import com.sun.jdi.InvalidTypeException;
-import org.jspecify.annotations.NonNull;
 
 import java.security.InvalidKeyException;
 import java.util.*;
@@ -23,8 +22,9 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private MigrateConfig.SgAuthc sgAuthc;
     final private ActionGroupConfigWriter agWriter;
     final private Set<String> userMappingAttributes = new HashSet<>();
+    private MigrationReport.RoleEntry roleEntry;
 
-    static final String FILE_NAME = "sg_roles.yml";
+    public static final String FILE_NAME = "sg_roles.yml";
     private static final Set<String> noEquivalentClusterActionGroupKeys = Set.of(
             "cancel_task", "create_snapshot", "cross_cluster_replication", "cross_cluster_search", "grant_api_key", "manage", "manage_api_key",
             "manage_autoscaling", "manage_ccr", "manage_data_frame_transforms", "manage_data_stream_global_retention", "manage_enrich", "manage_inference",
@@ -88,20 +88,14 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      */
     private void createSGRoles() {
         for (var role : ir.getRoles()) {
-            if ((role.getRemoteClusters() != null && !role.getRemoteClusters().isEmpty()) ||
-                    (role.getRemoteIndices() != null && !role.getRemoteIndices().isEmpty())) {
-                report.addWarning(FILE_NAME, role.getName(),
-                        "Remote indices and clusters are not supported in Search Guard. The role can not be migrated.");
+            roleEntry = new MigrationReport.RoleEntry(role.getName());
+            report.addRoleEntry(roleEntry);
+            if ((role.getRemoteClusters() != null && !role.getRemoteClusters().isEmpty()) || (role.getRemoteIndices() != null && !role.getRemoteIndices().isEmpty())) {
+                roleEntry.hasRemoteClusterOrIndex();
                 continue;
             }
-            if (role.getRunAs() != null && !role.getRunAs().isEmpty()) {
-                report.addWarning(FILE_NAME, role.getName(),
-                        "There is no equivalent to 'run as' in Search Guard. Run as is therefor ignored.");
-            }
-            if (role.getApplications() != null && !role.getApplications().isEmpty()) {
-                report.addWarning(FILE_NAME, role.getName(),
-                        "There is no equivalent to 'application' in Search Guard. All its entries are therefor ignored.");
-            }
+            if (role.getRunAs() != null && !role.getRunAs().isEmpty()) roleEntry.hasRunAs();
+            if (role.getApplications() != null && !role.getApplications().isEmpty()) roleEntry.hasApplications();
             var name = role.getName();
             var description = role.getDescription();
             var clusterPermissions = toSGClusterPrivileges(role);
@@ -146,8 +140,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             try {
                 sgIndices.add(LuceneRegexParser.toJavaRegex(index));
             } catch (Exception e) {
-                report.addManualAction(FILE_NAME, role.getName() + "->" + index,
-                        "An error occurred while trying to convert a Lucene regex to a Java regex: " + e.getMessage());
+                roleEntry.addManualAction(index, "An error occurred while trying to convert a Lucene regex to a Java regex: " + e.getMessage());
             }
         }
         return sgIndices;
@@ -171,8 +164,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             var field = iterator.next();
             if (field.isEmpty()) continue;
             if (field.charAt(0) == '~') {
-                report.addManualAction(FILE_NAME,
-                        role.getName() + "->index->field_security->" + field,
+                roleEntry.addManualAction("index->field_security->" + field,
                         "There is a '~' at the start of a field security key. In SG this is used to mark an exclusion.");
                 iterator.remove();
             }
@@ -226,7 +218,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             var removeKey = (key.equals("template") || key.equals("source"));
             if (entry.getValue() instanceof LinkedHashMap<?, ?> valueMap) {
                 if (!validQueryKeys.contains(key)) {
-                    report.addWarning(FILE_NAME, origin,
+                    roleEntry.addWarning(origin,
                             "Unknown key: '" + key + "' found while parsing DSL query. Review this value.");
                 }
                 if (removeKey) {
@@ -291,7 +283,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      */
     private String parseQueryString(String value, String origin) throws InvalidKeyException {
         if (value.matches(".*\\{\\{([#^]).+?}}.+?\\{\\{/.+?}}.*")) {
-            report.addWarning(FILE_NAME, origin,
+            roleEntry.addWarning(origin,
                     "Suspected incompatible Mustache template syntax. The part: '" + value + "' probably needs to be adjusted or removed.");
             throw new InvalidKeyException();
         } else if (value.strip().matches("^\\{\\{.+}}")) {
@@ -333,12 +325,12 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 sgTemplate += "attrs." + template;
                 userMappingAttributes.add(template);
             } else {
-                report.addWarning(FILE_NAME, origin,
+                roleEntry.addWarning(origin,
                         "Encountered an unsupported value for _user in the variable substitution. Review the part: '" + fallback + "'.");
                 throw new InvalidKeyException();
             }
         } else {
-            report.addWarning(FILE_NAME, origin,
+            roleEntry.addWarning(origin,
                     "Encountered an unsupported value in a variable substitution field. Review the part: '" + fallback + "'.");
             throw new InvalidKeyException();
         }
@@ -360,15 +352,13 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         try {
             var queryJSON = DocReader.json().read(query);
             if (queryJSON instanceof LinkedHashMap<?,?> queryMap) {
-                return parseQueryMap(queryMap, role.getName() + "->indices->query");
+                return parseQueryMap(queryMap, "indices->query");
             }
         } catch (DocumentParseException e) {
-            report.addManualAction(FILE_NAME,
-                    role.getName() + "->indices->query",
+            roleEntry.addManualAction("indices->query",
                     "The error '" + e.getMessage() + "' occurred while trying to parse the string: '" + query + "' to a JSON object.");
         } catch (InvalidTypeException e) {
-            report.addWarning(FILE_NAME,
-                    role.getName() + "->indices->query",
+            roleEntry.addWarning("indices->query",
                     e.getMessage() + "Please review the query '" + query + "'.");
         } catch (InvalidKeyException e) {
             return null;
@@ -398,7 +388,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 try {
                     agWriter.addActionGroup(CustomClusterActionGroup.fromESPrivilege(privilege));
                 } catch (IllegalArgumentException e) {
-                    report.addWarning(FILE_NAME, role.getName() + "->cluster",
+                    roleEntry.addWarning("cluster",
                             "Unexpectedly failed to create custom Action Group. This must be an issue in the migration code and not your input file. Received value: " + e.getMessage());
                     continue;
                 }
@@ -409,9 +399,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             var agName = matchesStandardSGRole(privilege);
 
             if (agName == null) {
-                report.addManualAction(
-                        FILE_NAME,
-                        role.getName() + "->cluster_permissions",
+                roleEntry.addManualAction("cluster_permissions",
                         "The privilege: " + privilege + " is unknown and can not be automatically mapped."
                 );
             } else {
@@ -461,7 +449,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 try {
                   agWriter.addActionGroup(CustomIndexActionGroup.fromESPrivilege(privilege));
                 } catch (IllegalArgumentException e) {
-                  report.addWarning(FILE_NAME, role.getName() + "->index",
+                    roleEntry.addWarning("index",
                           "Unexpectedly failed to create custom Action Group. This must be an issue in the migration code and not your input file. Received value: " + e.getMessage());
                   continue;
                 }
@@ -473,9 +461,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             var agName = matchesStandardSGIndexRole(privilege);
 
             if (agName == null) {
-                report.addManualAction(
-                      FILE_NAME,
-                      role.getName() + "->index_permissions",
+                roleEntry.addManualAction("index_permissions",
                       "The privilege: " + privilege + " is unknown and can not be automatically mapped."
                 );
             } else {

@@ -1,13 +1,10 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
 
+import com.floragunn.searchguard.sgctl.util.mapping.writer.RoleConfigWriter;
+import org.jspecify.annotations.NonNull;
+
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 /**
@@ -17,9 +14,14 @@ public class MigrationReport {
     public static MigrationReport shared = new MigrationReport();
     private MigrationReport() {}
     private final LinkedHashMap<String, FileReport> files = new LinkedHashMap<>();
+    private final List<RoleEntry> roleEntries = new LinkedList<>();
     public enum Category {MIGRATED, WARNING, MANUAL}
 
     /* ----- public API ----- */
+    public void addRoleEntry(RoleEntry entry) {
+        roleEntries.add(entry);
+    }
+
     public void addUnknownKey(String file, String key, String path){
         addPreset(ReportPreset.UNKNOWN_KEY, Category.WARNING, file, key, key, path);
     }
@@ -70,6 +72,10 @@ public class MigrationReport {
             printMigrated(fr, out);
             printWarnings(fr, out);
             printManuals(fr, out);
+        }
+        out.println("File: " + RoleConfigWriter.FILE_NAME + "\n");
+        for (var entry : roleEntries) {
+            entry.printEntry(out);
         }
         out.println("---------- End Migration Report ----------");
     }
@@ -242,4 +248,61 @@ public class MigrationReport {
         var fr = files.get(file);
         return fr == null ? 0 : fr.get(c).size();
     }
+
+    public static class RoleEntry {
+        @NonNull private final String name;
+        private final Map<Category, List<Issue>> issues;
+        private boolean hasRemoteClusterOrIndex = false;
+        private boolean hasRunAs = false;
+        private boolean hasApplications = false;
+
+        public RoleEntry(@NonNull String name) {
+            this.name = name;
+            this.issues = new LinkedHashMap<>();
+            issues.put(Category.MANUAL, new LinkedList<>());
+            issues.put(Category.WARNING, new LinkedList<>());
+        }
+
+        public void hasRemoteClusterOrIndex() { this.hasRemoteClusterOrIndex = true; }
+        public void hasRunAs() { this.hasRunAs = true; }
+        public void hasApplications() {this.hasApplications = true; }
+        public void addManualAction(String parameter, String message) { issues.get(Category.MANUAL).add(new Issue(parameter, message)); }
+        public void addWarning(String parameter, String message) { issues.get(Category.WARNING).add(new Issue(parameter, message)); }
+
+        public void printEntry(PrintStream out) {
+            out.println("\t" + name + ":");
+            var warnings = issues.get(Category.WARNING);
+            var manualActions = issues.get(Category.MANUAL);
+            if (warnings.isEmpty() && manualActions.isEmpty() && !hasApplications && !hasRemoteClusterOrIndex && !hasRunAs) {
+                out.println("\t\tSuccessfully migrated the role with no issues.\n");
+                return;
+            }
+            if (hasRemoteClusterOrIndex) {
+                out.println("\t\tRemote indices and clusters are not supported in Search Guard. The role can not be migrated.\n");
+                return;
+            }
+            var issueCount = warnings.size() + manualActions.size() + (hasRunAs ? 1 : 0) + (hasApplications ? 1 : 0);
+            out.println("\t\tSuccessfully Migrated with " + issueCount + (issueCount == 1 ? " issue." : " issues.") + "\n");
+            if (hasRunAs) out.println("\t\tThere is no equivalent to 'run as' in Search Guard. Run as is therefor ignored.\n");
+            if (hasApplications) out.println("\t\tThere is no equivalent to 'application' in Search Guard. All its entries are therefor ignored.\n");
+            if (!warnings.isEmpty()) {
+                out.println("\t\tWarnings(" + warnings.size() + "):");
+                for (var warning : warnings) {
+                    out.println("\t\t" + warning.parameter);
+                    out.println("\t\t\t" + warning.message);
+                }
+                out.println();
+            }
+            if (!manualActions.isEmpty()) {
+                out.println("\t\tManual Actions (" + manualActions.size() + "):");
+                for (var manualAction : manualActions) {
+                    out.println("\t\t" + manualAction.parameter);
+                    out.println("\t\t\t" + manualAction.message);
+                }
+                out.println();
+            }
+        }
+    }
+
+    public record Issue(String parameter, String message) { }
 }
