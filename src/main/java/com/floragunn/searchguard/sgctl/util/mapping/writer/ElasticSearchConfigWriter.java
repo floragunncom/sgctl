@@ -29,6 +29,32 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private final Map<String, Object> defaultsMap;
     final static String FILE_NAME = "elasticsearch.yml";
 
+    private static final Map<String, String> OLD_PARAMETER_NAMES = Map.ofEntries(
+            Map.entry("searchguard.ssl.transport.enabled", "xpack.security.transport.ssl.enabled"),
+            Map.entry("searchguard.ssl.transport.keystore_type", "xpack.security.transport.ssl.keystore.type"),
+            Map.entry("searchguard.ssl.transport.keystore_filepath", "xpack.security.transport.ssl.keystore.path"),
+            Map.entry("searchguard.ssl.transport.keystore_password", "xpack.security.transport.ssl.keystore.password"),
+            Map.entry("searchguard.ssl.transport.keystore_keypassword", "xpack.security.transport.ssl.keystore.key_password"),
+            Map.entry("searchguard.ssl.transport.truststore_type", "xpack.security.transport.ssl.truststore.type"),
+            Map.entry("searchguard.ssl.transport.truststore_filepath", "xpack.security.transport.ssl.truststore.path"),
+            Map.entry("searchguard.ssl.transport.truststore_password", "xpack.security.transport.ssl.truststore.password"),
+
+            Map.entry("searchguard.ssl.http.enabled", "xpack.security.http.ssl.enabled"),
+            Map.entry("searchguard.ssl.http.keystore_type", "xpack.security.http.ssl.keystore.type"),
+            Map.entry("searchguard.ssl.http.keystore_filepath", "xpack.security.http.ssl.keystore.path"),
+            Map.entry("searchguard.ssl.http.keystore_password", "xpack.security.http.ssl.keystore.password"),
+            Map.entry("searchguard.ssl.http.keystore_keypassword", "xpack.security.http.ssl.keystore.key_password"),
+            Map.entry("searchguard.ssl.http.truststore_type", "xpack.security.http.ssl.truststore.type"),
+            Map.entry("searchguard.ssl.http.truststore_filepath", "xpack.security.http.ssl.truststore.path"),
+            Map.entry("searchguard.ssl.http.truststore_password", "xpack.security.http.ssl.truststore.password"),
+
+            Map.entry("searchguard.ssl.transport.enabled_ciphers", "xpack.security.transport.ssl.enabled_ciphers"),
+            Map.entry("searchguard.ssl.transport.enabled_protocols", "xpack.security.transport.ssl.enabled_protocols"),
+
+            Map.entry("searchguard.ssl.http.enabled_ciphers", "xpack.security.http.ssl.enabled_ciphers"),
+            Map.entry("searchguard.ssl.http.enabled_protocols", "xpack.security.http.ssl.enabled_protocols")
+    );
+
     public ElasticSearchConfigWriter(IntermediateRepresentationElasticSearchYml ir) {
         this.ir = ir;
         tlsTransportMap = tlsMapWriter("transport", ir.getSslTls().getTransport());
@@ -48,27 +74,33 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     }
 
     private Map<String, Object> tlsMapWriter(String type, Tls tls) {
-        String transportKeystoreType = Objects.toString(tls.getKeystoreType(), DEFAULT_KEYSTORE_TYPE);
-        String transportKeystoreFilepath = Objects.toString(tls.getKeystorePath(), null);
-        String transportTruststoreType = Objects.toString(tls.getTruststoreType(), DEFAULT_TRUSTSTORE_TYPE);
-        String transportTruststoreFilepath = Objects.toString(tls.getTruststorePath(), null);
-
-        String transportKeystorePassword = Objects.toString(tls.getKeystorePassword(), DEFAULT_KEYSTORE_PASSWORD);
-        String transportKeystoreKeyPassword = Objects.toString(tls.getKeystoreKeyPassword(), DEFAULT_KEYSTORE_KEYPASSWORD);
-        String transportTruststorePassword = Objects.toString(tls.getTruststorePassword(), DEFAULT_TRUSTSTORE_PASSWORD);
-        final var prefix = "searchguard.ssl.";
+        final String prefix = "searchguard.ssl.";
         var contents = new LinkedHashMap<String, Object>();
-        contents.put(prefix + type + ".enabled", String.valueOf(tls.getEnabled() || DEFAULT_ENABLED));
-        contents.put(prefix + type + ".keystore_type", transportKeystoreType);
-        contents.put(prefix + type + ".keystore_filepath", transportKeystoreFilepath);
-        contents.put(prefix + type + ".keystore_password", transportKeystorePassword);
-        contents.put(prefix + type + ".keystore_keypassword", transportKeystoreKeyPassword);
-        contents.put(prefix + type + ".truststore_type", transportTruststoreType);
-        contents.put(prefix + type + ".truststore_filepath", transportTruststoreFilepath);
-        contents.put(prefix + type + ".truststore_password", transportTruststorePassword);
-        contents.put(prefix + type + ".enabled_ciphers", tls.getCiphers());
-        contents.put(prefix + type + ".enabled_protocols", tls.getSupportedProtocols());
+
+        contents.put(prefix + type + ".enabled", logDefaultIfUsed(prefix + type + ".enabled", tls.getEnabled(), DEFAULT_ENABLED));
+        contents.put(prefix + type + ".keystore_type", logDefaultIfUsed(prefix + type + ".keystore_type", tls.getKeystoreType(), DEFAULT_KEYSTORE_TYPE));
+        contents.put(prefix + type + ".keystore_filepath", logDefaultIfUsed(prefix + type + ".keystore_filepath", tls.getKeystorePath(), null));
+        contents.put(prefix + type + ".keystore_password", logDefaultIfUsed(prefix + type + ".keystore_password", tls.getKeystorePassword(), DEFAULT_KEYSTORE_PASSWORD));
+        contents.put(prefix + type + ".keystore_keypassword", logDefaultIfUsed(prefix + type + ".keystore_keypassword", tls.getKeystoreKeyPassword(), DEFAULT_KEYSTORE_KEYPASSWORD));
+        contents.put(prefix + type + ".truststore_type", logDefaultIfUsed(prefix + type + ".truststore_type", tls.getTruststoreType(), DEFAULT_TRUSTSTORE_TYPE));
+        contents.put(prefix + type + ".truststore_filepath", logDefaultIfUsed(prefix + type + ".truststore_filepath", tls.getTruststorePath(), null));
+        contents.put(prefix + type + ".truststore_password", logDefaultIfUsed(prefix + type + ".truststore_password", tls.getTruststorePassword(), DEFAULT_TRUSTSTORE_PASSWORD));
+
+        contents.put(prefix + type + ".enabled_ciphers", logDefaultIfUsed(prefix + type + ".enabled_ciphers", tls.getCiphers(), null));
+        contents.put(prefix + type + ".enabled_protocols", logDefaultIfUsed(prefix + type + ".enabled_protocols", tls.getSupportedProtocols(), null));
+
         return contents;
+    }
+
+    private <T> T logDefaultIfUsed(String fullFieldName, T value, T defaultValue) {
+        if (value == null) {
+            System.out.println(fullFieldName);
+            MigrationReport.shared.addWarning("elasticsearch.yml/new", fullFieldName, " nicht gesetzt. Default wird verwendet: " + defaultValue);
+            return defaultValue;
+        } else {
+            MigrationReport.shared.addMigrated("elasticsearch.yml/new", OLD_PARAMETER_NAMES.get(fullFieldName), fullFieldName);
+            return value;
+        }
     }
 
     //TODO: Wait for change of Migrationreport for chageit, not explicit defaults are ignored, warnings and security risks are ignored
