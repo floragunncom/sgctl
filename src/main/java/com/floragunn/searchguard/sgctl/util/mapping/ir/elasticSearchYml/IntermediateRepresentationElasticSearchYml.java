@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml;
 
+import java.util.Map;
 import java.util.logging.Logger;
 
 /**
@@ -12,6 +13,7 @@ public class IntermediateRepresentationElasticSearchYml {
     private final GlobalIR global;
     private final SslTlsIR sslTls;
     private final AuthenticationIR authent;
+    private Map<String, Object> parsedElasticsearchYAML = null;
 
     public GlobalIR getGlobal() { return global; }
     public SslTlsIR getSslTls() { return sslTls; }
@@ -22,6 +24,10 @@ public class IntermediateRepresentationElasticSearchYml {
         sslTls = new SslTlsIR();
         authent = new AuthenticationIR();
     }
+
+    public void setParsedElasticsearchYAML(Map<String, Object> parsedElasticsearchYAML) { this.parsedElasticsearchYAML = parsedElasticsearchYAML; }
+
+    public Map<String, Object> getParsedElasticsearchYAML() { return parsedElasticsearchYAML; }
 
     /**
      * Helper to express intent when validating parsed config types.
