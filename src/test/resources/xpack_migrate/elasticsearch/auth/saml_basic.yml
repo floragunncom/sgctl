@@ -16,7 +16,7 @@ xpack:
                 path: "https://idp.example.com/metadata.xml"
             sp:
               entity_id: "https://kibana.example.com"
-              acs: "https://kibana.example.com/api/security/saml/callback"
+              acs: "https://kibana.example.com:5601/api/security/saml/callback"
             attributes:
               principal: "nameid"
               groups: "groups"

@@ -175,13 +175,51 @@ public class AuthMigrator implements SubMigrator {
                   return "";
                 });
 
+    // Extract subject_key from attributes.principal (X-Pack) -> user_mapping.user_name.from (SG)
+    var subjectKey = saml.attributesPrincipal().get();
+
+    // Extract roles_key from attributes.groups (X-Pack) ->
+    // user_mapping.roles.from_comma_separated_string (SG)
+    var rolesKey = saml.attributesGroups().get();
+
+    // Derive kibana_url from sp.acs (the ACS endpoint contains the Kibana URL)
+    // X-Pack sp.acs is typically like "https://kibana.example.com/api/security/saml/callback"
+    // We extract the base URL for Search Guard's kibana_url
+    var kibanaUrl = saml.spAcs().get().map(AuthMigrator::extractKibanaUrlFromAcs);
+
+    // Note: Search Guard requires an 'exchange_key' for JWT token signing.
+    // This must be configured manually in sg_frontend_authc.yml as it is a new secret
+    // not present in X-Pack configuration. Users should generate a secure random string (32+
+    // chars).
+
     return new SgFrontendAuthC.AuthDomain.Saml(
         Optional.empty(), // label - use default
         Optional.of(saml.name().get()), // id - use realm name
         false, // isDefault
         metadataUrl,
         idpEntityId,
-        spEntityId);
+        spEntityId,
+        subjectKey,
+        rolesKey,
+        kibanaUrl);
+  }
+
+  /**
+   * Extracts the Kibana base URL from an ACS endpoint URL.
+   *
+   * <p>X-Pack sp.acs is typically like "https://kibana.example.com:5601/api/security/saml/callback"
+   * This extracts "https://kibana.example.com:5601/" for Search Guard's kibana_url.
+   */
+  private static String extractKibanaUrlFromAcs(String acsUrl) {
+    try {
+      var uri = java.net.URI.create(acsUrl);
+      var port = uri.getPort();
+      var portPart = (port > 0 && port != 80 && port != 443) ? ":" + port : "";
+      return uri.getScheme() + "://" + uri.getHost() + portPart + "/";
+    } catch (Exception e) {
+      // If parsing fails, return the original URL as-is
+      return acsUrl;
+    }
   }
 
   private Optional<SearchScope> migrateSearchScope(
