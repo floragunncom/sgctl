@@ -24,17 +24,23 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private static final String DEFAULT_KEYSTORE_PASSWORD = "changeit";
     private static final String PLACEHOLDER = "changeit";
     private final IntermediateRepresentationElasticSearchYml ir;
-
+    private final Map<String, Object> tlsTransportMap;
+    private final Map<String, Object> tlsHTTPMap;
+    private final Map<String, Object> defaultsMap;
     final static String FILE_NAME = "elasticsearch.yml";
 
     public ElasticSearchConfigWriter(IntermediateRepresentationElasticSearchYml ir) {
         this.ir = ir;
+        tlsTransportMap = tlsMapWriter("transport", ir.getSslTls().getTransport());
+        tlsHTTPMap = tlsMapWriter("http", ir.getSslTls().getHttp());
+        defaultsMap = defaultSearchGuardConfig();
     }
 
     @Override
     public Object toBasicObject() {
-        var contents = new LinkedHashMap<>(tlsMapWriter("transport", ir.getSslTls().getTransport()));
-        contents.putAll(tlsMapWriter("http", ir.getSslTls().getHttp()));
+        var contents = new LinkedHashMap<>(tlsTransportMap);
+        contents.putAll(tlsHTTPMap);
+        contents.putAll(defaultsMap);
         return contents;
     }
 
