@@ -4,6 +4,7 @@ import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.SubMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.util.MessageBuilder;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap;
@@ -222,13 +223,29 @@ public class AuthMigrator implements SubMigrator {
     }
   }
 
+  private void addBaseSearchScopeInconvertibleErrorMessage(
+      Traceable<Realm.LdapRealm.Scope> scope, MigrationReporter reporter) {
+    final SearchScope[] possibleScopes = SearchScope.values();
+    final MessageBuilder messageBuilder = new MessageBuilder();
+    messageBuilder.appendKeyValueSeparated(
+        "A different migratable search scope DOES exist in Search Guard",
+        "These other migratable search scopes DO exist in Search Guard",
+        possibleScopes,
+        Enum::name);
+    messageBuilder.nextSentence();
+    messageBuilder.append("The search scope was omitted from the output because of this");
+    messageBuilder.nextSentence();
+    final String errorMessage = messageBuilder.finalizeMessage();
+    reporter.inconvertible(scope, errorMessage);
+  }
+
   private Optional<SearchScope> migrateSearchScope(
       Traceable<Realm.LdapRealm.Scope> scope, MigrationReporter reporter) {
     return switch (scope.get()) {
       case SUB_TREE -> Optional.of(SearchScope.SUB);
       case ONE_LEVEL -> Optional.of(SearchScope.ONE);
       case BASE -> {
-        reporter.inconvertible(scope, "Cannot convert search scope as no equivalent scope exists");
+        addBaseSearchScopeInconvertibleErrorMessage(scope, reporter);
         yield Optional.empty();
       }
     };

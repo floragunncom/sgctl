@@ -14,6 +14,7 @@ import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
+import java.util.function.Consumer;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -41,6 +42,18 @@ class AuthMigratorTest {
   @Test
   void testMigrateLdapWithScopes() throws Exception {
     assertMigrationOutput("ldap_with_scopes");
+  }
+
+  @Test
+  void testMigrateLdapInconvertibleScopes() throws Exception {
+    assertMigrationOutput(
+        "ldap_inconvertible_scope",
+        reporter -> {
+          System.out.println(reporter.generateReport());
+          reporter.assertInconvertible(
+              "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap_scoped.group_search.scope",
+              "These other migratable search scopes DO exist in Search Guard: SUB, ONE. The search scope was omitted from the output because of this.");
+        });
   }
 
   @Test
@@ -130,10 +143,15 @@ class AuthMigratorTest {
   // Helper methods
 
   private void assertMigrationOutput(String testCaseName) throws Exception {
+    assertMigrationOutput(testCaseName, _t -> {});
+  }
+
+  private void assertMigrationOutput(
+      String testCaseName, Consumer<AssertableMigrationReporter> reportChecker) throws Exception {
     var inputPath = "/xpack_migrate/elasticsearch/auth/" + testCaseName + ".yml";
     var expectedPath = "/xpack_migrate/expected/auth/" + testCaseName + ".yml";
 
-    var sgAuthC = migrate(inputPath);
+    var sgAuthC = migrate(inputPath, reportChecker);
     var actualYaml = DocWriter.yaml().writeAsString(sgAuthC.toBasicObject());
     var expectedYaml = loadResourceAsString(expectedPath);
 
@@ -151,12 +169,14 @@ class AuthMigratorTest {
     assertEquals(expectedYaml, actualYaml, "Frontend migration output for " + testCaseName);
   }
 
-  private SgAuthC migrate(String path) throws Exception {
+  private SgAuthC migrate(String path, Consumer<AssertableMigrationReporter> reportChecker)
+      throws Exception {
     var config = loadConfig(path);
     var context = createContext(Optional.of(config));
     var reporter = new AssertableMigrationReporter();
 
     var result = new AuthMigrator().migrate(context, reporter);
+    reportChecker.accept(reporter);
     reporter.assertNoMoreProblems();
 
     assertEquals(1, result.size());

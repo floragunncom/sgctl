@@ -1,0 +1,22 @@
+# X-Pack elasticsearch.yml with inconvertible BASE LDAP search scope realm
+# Tests scope conversion: SUB_TREE -> sub, BASE -> inconvertible
+
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        ldap:
+          ldap_scoped:
+            order: 0
+            enabled: true
+            url:
+              - "ldaps://ldap.example.com:636"
+            bind_dn: "cn=admin,dc=example,dc=com"
+            user_search:
+              base_dn: "ou=users,dc=example,dc=com"
+              scope: sub_tree
+              filter: "(mail={0})"
+            group_search:
+              base_dn: "ou=groups,dc=example,dc=com"
+              scope: base
