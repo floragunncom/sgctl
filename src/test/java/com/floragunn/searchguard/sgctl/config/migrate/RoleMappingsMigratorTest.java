@@ -1,64 +1,37 @@
 package com.floragunn.searchguard.sgctl.config.migrate;
 
+import static com.floragunn.searchguard.sgctl.testutil.TextAssertions.assertEqualsNormalized;
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
 
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.Format;
-import com.floragunn.codova.validation.ConfigValidationException;
+import com.floragunn.codova.documents.DocReader;
+import com.floragunn.codova.documents.DocWriter;
+import com.floragunn.codova.documents.Parser;
+import com.floragunn.searchguard.sgctl.config.migrator.AssertableMigrationReporter;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalRolesMapping;
+import com.floragunn.searchguard.sgctl.config.searchguard.SgRolesMapping;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
 
 public class RoleMappingsMigratorTest {
 
-  private RoleMappingsMigrator migrator;
-  private Migrator.IMigrationContext context;
-  private Logger logger;
-
-  @BeforeEach
-  public void setUp() {
-    migrator = new RoleMappingsMigrator();
-    // Fake MigrationContext to control test input
-    context = mock(Migrator.IMigrationContext.class);
-    // Fake Logger to verify warning messages without real logging
-    logger = mock(Logger.class);
-  }
-
   @Test
-  public void testFullMigration() throws IOException {
-
-    String resourcePath = "/xpack_migrate/role_mapping/xpack_role_mappings.json";
-
-    // Load and parse test data
-    try (InputStream is = getClass().getResourceAsStream(resourcePath)) {
-      assertNotNull(is, "Couldn't find test file! Path: " + resourcePath);
-
-      DocNode docNode = DocNode.parse(Format.JSON).from(is);
-      RoleMappings xpackMappings = RoleMappings.parse(docNode, null);
-
-      // Provide test data to the mocked context
-      when(context.getRoleMappings()).thenReturn(Optional.of(xpackMappings));
-
-    } catch (ConfigValidationException e) {
-      throw new RuntimeException(e);
-    }
+  public void testFullMigration() throws Exception {
+    var roleMappings = loadRoleMappings("/xpack_migrate/role_mapping/xpack_role_mappings.json");
+    var context = createContext(Optional.of(roleMappings));
+    var migrator = new RoleMappingsMigrator();
+    var reporter = new AssertableMigrationReporter();
 
     // Run migration
-    List<NamedConfig<?>> resultList = migrator.migrate(context, logger);
+    List<NamedConfig<?>> resultList = migrator.migrate(context, reporter);
 
     assertFalse(resultList.isEmpty(), "The result list cannot be empty.");
 
     // Get migration result and cast it
-    SgInternalRolesMapping result = (SgInternalRolesMapping) resultList.get(0);
+    SgRolesMapping result = (SgRolesMapping) resultList.get(0);
 
     // Convert result into map for easier assertions
     Map<String, Object> outputMap = (Map<String, Object>) result.toBasicObject();
@@ -99,10 +72,39 @@ public class RoleMappingsMigratorTest {
       assertTrue(isListEmpty(m.get("users")), "Users list should be empty for ALL-Rules.");
     }
 
-    // Verify that warning messages are logged correctly
-    verify(logger, atLeastOnce()).warn(contains("ALL"), any(Object.class));
-    verify(logger, atLeastOnce()).warn(contains("EXCEPT"), any(Object.class));
-    verify(logger, atLeastOnce()).warn(contains("realm.name"), any(Object.class));
+    // core problems
+    reporter.assertCritical(
+        "role_mappings.json: security_fail_all.rules", "'ALL' (AND logic) rule has no equivalent.");
+    reporter.assertCritical(
+        "role_mappings.json: security_fail_except.rules",
+        "'EXCEPT' (Negation) rule has no equivalent.");
+    reporter.assertProblem(
+        "role_mappings.json: info_realm_ignored.rules.any.1.field", "Ignoring unknown field rule.");
+
+    // problems because it cannot parse all / except
+    reporter.assertProblem(
+        "role_mappings.json: security_fail_all.rules", "No migratable users/roles/hosts/ips found");
+    reporter.assertProblem(
+        "role_mappings.json: security_fail_except.rules",
+        "No migratable users/roles/hosts/ips found");
+
+    reporter.assertNoMoreProblems();
+  }
+
+  @Test
+  public void testRoleMappingsAreMerged() throws Exception {
+    var roleMappings = loadRoleMappings("/xpack_migrate/role_mapping/mergeable_role_mappings.json");
+    var expected =
+        loadResourceAsString("/xpack_migrate/role_mapping/migrated/mergeable_role_mappings.yml");
+
+    var context = createContext(Optional.of(roleMappings));
+    var migrator = new RoleMappingsMigrator();
+    var reporter = new AssertableMigrationReporter();
+
+    var migrated = migrator.migrate(context, reporter).get(0);
+
+    assertEqualsNormalized(expected, DocWriter.yaml().writeAsString(migrated));
+    reporter.assertNoMoreProblems();
   }
 
   // Helper functions
@@ -118,5 +120,22 @@ public class RoleMappingsMigratorTest {
     if (val == null) return true;
     if (val instanceof List) return ((List<?>) val).isEmpty();
     return true;
+  }
+
+  private RoleMappings loadRoleMappings(String path) throws Exception {
+    var node = DocNode.wrap(DocReader.yaml().read(loadResourceAsString(path)));
+    return RoleMappings.parse(node, Parser.Context.get());
+  }
+
+  private String loadResourceAsString(String path) throws Exception {
+    try (var in = getClass().getResourceAsStream(path)) {
+      assertNotNull(in, "Resource not found: " + path);
+      return new String(in.readAllBytes());
+    }
+  }
+
+  private Migrator.MigrationContext createContext(Optional<RoleMappings> roleMappings) {
+    return new Migrator.MigrationContext(
+        roleMappings, Optional.empty(), Optional.empty(), Optional.empty(), Optional.empty());
   }
 }
