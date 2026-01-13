@@ -89,22 +89,19 @@ public class RolesMigrator implements SubMigrator {
         indicesBuilder.add(permission);
       }
 
-      var aliasBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      reporter.problem("Alias permissions left empty.");
-      var dataStreamBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      reporter.problem("Data stream permissions left empty.");
-      var tenantBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      reporter.problem("Tenant permissions left empty.");
-
       internalRolesBuilder.put(
           entry.getKey(),
           new SgInternalRoles.Role(
               clusterBuilder.build(),
               indicesBuilder.build(),
-              aliasBuilder.build(),
-              dataStreamBuilder.build(),
-              tenantBuilder.build()));
+              ImmutableList.empty(),
+              ImmutableList.empty(),
+              ImmutableList.empty()));
     }
+
+    reporter.problem("Alias permissions left empty.");
+    reporter.problem("Data stream permissions left empty.");
+    reporter.problem("Tenant permissions left empty.");
 
     return List.of(new SgInternalRoles(internalRolesBuilder.build()));
   }
