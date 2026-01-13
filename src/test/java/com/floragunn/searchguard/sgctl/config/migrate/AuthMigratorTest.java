@@ -10,6 +10,7 @@ import com.floragunn.codova.documents.Parser;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator.MigrationContext;
 import com.floragunn.searchguard.sgctl.config.migrator.AssertableMigrationReporter;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
+import com.floragunn.searchguard.sgctl.config.searchguard.SgFrontendAuthC;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -118,6 +119,51 @@ class AuthMigratorTest {
         });
   }
 
+  @Test
+  void testMigrateSamlBasic() throws Exception {
+    assertFrontendMigrationOutput("saml_basic");
+  }
+
+  @Test
+  void testMigrateSamlWithNative() throws Exception {
+    var inputPath = "/xpack_migrate/elasticsearch/auth/saml_with_native.yml";
+    var config = loadConfig(inputPath);
+    var context = createContext(Optional.of(config));
+    var reporter = new AssertableMigrationReporter();
+
+    var result = new AuthMigrator().migrate(context, reporter);
+    reporter.assertNoMoreProblems();
+
+    assertEquals(2, result.size(), "Should return both sg_authc.yml and sg_frontend_authc.yml");
+
+    // Find and verify SgAuthC
+    var sgAuthC =
+        result.stream()
+            .filter(c -> c instanceof SgAuthC)
+            .map(c -> (SgAuthC) c)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Expected SgAuthC in result"));
+    assertEquals("sg_authc.yml", sgAuthC.getFileName());
+    var expectedAuthcYaml =
+        loadResourceAsString("/xpack_migrate/expected/auth/saml_with_native_authc.yml");
+    var actualAuthcYaml = DocWriter.yaml().writeAsString(sgAuthC.toBasicObject());
+    assertEqualsNormalized(expectedAuthcYaml, actualAuthcYaml, "SgAuthC migration output");
+
+    // Find and verify SgFrontendAuthC
+    var sgFrontendAuthC =
+        result.stream()
+            .filter(c -> c instanceof SgFrontendAuthC)
+            .map(c -> (SgFrontendAuthC) c)
+            .findFirst()
+            .orElseThrow(() -> new AssertionError("Expected SgFrontendAuthC in result"));
+    assertEquals("sg_frontend_authc.yml", sgFrontendAuthC.getFileName());
+    var expectedFrontendYaml =
+        loadResourceAsString("/xpack_migrate/expected/auth/saml_with_native_frontend.yml");
+    var actualFrontendYaml = DocWriter.yaml().writeAsString(sgFrontendAuthC.toBasicObject());
+    assertEqualsNormalized(
+        expectedFrontendYaml, actualFrontendYaml, "SgFrontendAuthC migration output");
+  }
+
   // Helper methods
 
   private void assertMigrationOutput(String testCaseName) throws Exception {
@@ -146,6 +192,32 @@ class AuthMigratorTest {
     var expectedYaml = loadResourceAsString(expectedPath);
 
     assertEqualsNormalized(expectedYaml, actualYaml, "Migration output for " + testCaseName);
+  }
+
+  private void assertFrontendMigrationOutput(String testCaseName) throws Exception {
+    var inputPath = "/xpack_migrate/elasticsearch/auth/" + testCaseName + ".yml";
+    var expectedPath = "/xpack_migrate/expected/auth/" + testCaseName + ".yml";
+
+    var sgFrontendAuthC = migrateFrontend(inputPath);
+    var actualYaml = DocWriter.yaml().writeAsString(sgFrontendAuthC.toBasicObject());
+    var expectedYaml = loadResourceAsString(expectedPath);
+
+    assertEqualsNormalized(
+        expectedYaml, actualYaml, "Frontend migration output for " + testCaseName);
+  }
+
+  private SgFrontendAuthC migrateFrontend(String path) throws Exception {
+    var config = loadConfig(path);
+    var context = createContext(Optional.of(config));
+    var reporter = new AssertableMigrationReporter();
+
+    var result = new AuthMigrator().migrate(context, reporter);
+    reporter.assertNoMoreProblems();
+
+    assertEquals(1, result.size());
+    var sgFrontendAuthC = assertInstanceOf(SgFrontendAuthC.class, result.get(0));
+    assertEquals("sg_frontend_authc.yml", sgFrontendAuthC.getFileName());
+    return sgFrontendAuthC;
   }
 
   private MigrationContext createContext(Optional<XPackElasticsearchConfig> config) {
