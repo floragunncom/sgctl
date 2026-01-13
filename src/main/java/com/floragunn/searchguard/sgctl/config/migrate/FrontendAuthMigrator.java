@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.NullMarked;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Migrator for X-Pack frontend authentication configuration to Search Guard frontend authc.
@@ -18,15 +19,27 @@ import org.slf4j.Logger;
 @NullMarked
 public class FrontendAuthMigrator implements SubMigrator {
 
+    private static final Logger logger = LoggerFactory.getLogger(FrontendAuthMigrator.class);
+
     @Override
-    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
-            throws SgctlException {
+    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, MigrationReporter reporter) {
+        return migrateInternal(context, reporter);
+    }
+
+    @Override
+    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger unused) throws SgctlException {
+        throw new MigrationNotImplementedException();
+    }
+
+    private List<NamedConfig<?>> migrateInternal(
+            Migrator.IMigrationContext context, MigrationReporter reporter) {
         var kibanaOpt = context.getKibana();
         var elasticsearchOpt = context.getElasticsearch();
 
 
         if (kibanaOpt.isEmpty() && elasticsearchOpt.isEmpty()) {
             logger.debug("Skipping frontend auth migration: no Kibana or Elasticsearch configuration provided");
+            reporter.problem("Skipping frontend auth migration: no Kibana or Elasticsearch configuration provided");
             return List.of();
         }
 
@@ -34,18 +47,16 @@ public class FrontendAuthMigrator implements SubMigrator {
 
 
         if (kibanaOpt.isPresent()) {
-            Object kibanaObj = kibanaOpt.get();
-            if (kibanaObj instanceof Kibana kibana) {
-                var securityOpt = kibana.security().get();
+            var kibana = kibanaOpt.get();
+            var securityOpt = kibana.security().get();
 
-                if (securityOpt.isPresent()) {
-                    var security = securityOpt.get();
-                    var authcOpt = security.authC().get();
+            if (securityOpt.isPresent()) {
+                var security = securityOpt.get();
+                var authcOpt = security.authC().get();
 
-                    if (authcOpt.isPresent()) {
-                        var authc = authcOpt.get();
-                        migrateKibanaProviders(authc, authDomainsBuilder, elasticsearchOpt, logger);
-                    }
+                if (authcOpt.isPresent()) {
+                    var authc = authcOpt.get();
+                    migrateKibanaProviders(authc, authDomainsBuilder, elasticsearchOpt);
                 }
             }
         }
@@ -59,7 +70,7 @@ public class FrontendAuthMigrator implements SubMigrator {
             var securityTrace = elasticsearch.security();
             var securityOpt = securityTrace.get();
             if (securityOpt != null && securityOpt.authc().get().isPresent()) {
-                migrateXPackRealms(securityOpt.authc().get().get(), authDomainsBuilder, logger);
+                migrateXPackRealms(securityOpt.authc().get().get(), authDomainsBuilder, reporter);
             }
         }
 
@@ -76,41 +87,48 @@ public class FrontendAuthMigrator implements SubMigrator {
     private void migrateXPackRealms(
             XPackElasticsearchConfig.AuthcConfig authc,
             ImmutableList.Builder<SgFrontendAuthC.AuthDomain<?>> authDomainsBuilder,
-            Logger logger) {
+            MigrationReporter reporter) {
 
         var realmsMap = authc.realms().get();
-        boolean isFirst = true;
 
+        var sortedRealms = realmsMap.values().stream()
+                .flatMap(
+                        realmType -> realmType.get().values().stream()
+                                .map(realm -> java.util.Map.entry(realm.get().order(), realm)))
+                .sorted(java.util.Comparator.comparingInt(entry -> entry.getKey().get()))
+                .map(java.util.Map.Entry::getValue)
+                .toList();
 
-        for (var realmTypeEntry : realmsMap.entrySet()) {
-            var realmType = realmTypeEntry.getValue().get();
+        boolean hasDefault = false;
 
-            for (var realmEntry : realmType.entrySet()) {
-                var realm = realmEntry.getValue().get();
+        for (var realmTrace : sortedRealms) {
+            var realm = realmTrace.get();
 
-                if (!realm.enabled().get()) {
-                    logger.debug("Skipping disabled realm: {}", realm.name().get());
-                    continue;
-                }
+            if (!realm.enabled().get()) {
+                logger.debug("Skipping disabled realm: {}", realm.name().get());
+                continue;
+            }
 
-                boolean isDefault = isFirst;
-                isFirst = false;
+            boolean isDefault = !hasDefault;
+            if (isDefault) {
+                hasDefault = true;
+            }
 
-                if (realm instanceof XPackElasticsearchConfig.Realm.LdapRealm ldapRealm) {
+            if (realm instanceof XPackElasticsearchConfig.Realm.LdapRealm ldapRealm) {
 
-                    logger.debug("Skipping LDAP realm {}: no frontend auth equivalent", realm.name().get());
-                } else if (realm instanceof XPackElasticsearchConfig.Realm.ActiveDirectoryRealm adRealm) {
+                logger.debug("Skipping LDAP realm {}: no frontend auth equivalent", realm.name().get());
+            } else if (realm instanceof XPackElasticsearchConfig.Realm.ActiveDirectoryRealm adRealm) {
 
-                    logger.debug("Skipping ActiveDirectory realm {}: no frontend auth equivalent", realm.name().get());
-                } else if (realm instanceof XPackElasticsearchConfig.Realm.SAMLRealm samlRealm) {
-                    migrateSAMLRealmToFrontend(samlRealm, isDefault, authDomainsBuilder, logger);
-                } else if (realm instanceof XPackElasticsearchConfig.Realm.NativeRealm
-                        || realm instanceof XPackElasticsearchConfig.Realm.FileRealm) {
-                    authDomainsBuilder.add(new SgFrontendAuthC.AuthDomain.Basic());
-                    logger.debug("Migrated {} realm to Basic auth domain", realm.type().get());
-                } else {
-                    logger.warn("Skipping unsupported realm type: {}", realm.type().get());
-                }
+                logger.debug("Skipping ActiveDirectory realm {}: no frontend auth equivalent", realm.name().get());
+            } else if (realm instanceof XPackElasticsearchConfig.Realm.SAMLRealm samlRealm) {
+                migrateSAMLRealmToFrontend(samlRealm, isDefault, authDomainsBuilder, reporter);
+            } else if (realm instanceof XPackElasticsearchConfig.Realm.NativeRealm
+                    || realm instanceof XPackElasticsearchConfig.Realm.FileRealm) {
+                authDomainsBuilder.add(new SgFrontendAuthC.AuthDomain.Basic());
+                logger.debug("Migrated {} realm to Basic auth domain", realm.type().get());
+            } else {
+                logger.warn("Skipping unsupported realm type: {}", realm.type().get());
+                reporter.problem("Skipping unsupported realm type: " + realm.type().get());
             }
         }
     }
@@ -119,7 +137,7 @@ public class FrontendAuthMigrator implements SubMigrator {
             XPackElasticsearchConfig.Realm.SAMLRealm realm,
             boolean isDefault,
             ImmutableList.Builder<SgFrontendAuthC.AuthDomain<?>> authDomainsBuilder,
-            Logger logger) {
+            MigrationReporter reporter) {
 
         var label = Optional.of(realm.name().get());
         var id = Optional.of(realm.name().get());
@@ -132,6 +150,8 @@ public class FrontendAuthMigrator implements SubMigrator {
         if (idpEntityId.isEmpty() || spEntityId.isEmpty() || idpMetadataPath.isEmpty()) {
             logger.warn("Cannot migrate SAML realm {}: missing required fields (idp_entity_id, sp_entity_id, or idp.metadata.path)",
                     realm.name().get());
+            reporter.problem("Cannot migrate SAML realm %s: missing required fields (idp_entity_id, sp_entity_id, or idp.metadata.path)"
+                    .formatted(realm.name().get()));
             return;
         }
 
@@ -150,8 +170,7 @@ public class FrontendAuthMigrator implements SubMigrator {
     private void migrateKibanaProviders(
             Kibana.AuthCConfig authc,
             ImmutableList.Builder<SgFrontendAuthC.AuthDomain<?>> authDomainsBuilder,
-            Optional<XPackElasticsearchConfig> elasticsearchOpt,
-            Logger logger) {
+            Optional<XPackElasticsearchConfig> elasticsearchOpt) {
 
         var providerTypes = authc.providerTypes().get();
         var selectorEnabled = authc.selectorEnabled().get();
@@ -189,12 +208,12 @@ public class FrontendAuthMigrator implements SubMigrator {
                     }
                     case "saml" -> {
                         if (provider instanceof Kibana.AuthCConfig.Provider.SamlProvider samlProvider) {
-                            migrateSamlProvider(samlProvider, isDefault, authDomainsBuilder, elasticsearchOpt, logger);
+                            migrateSamlProvider(samlProvider, isDefault, authDomainsBuilder, elasticsearchOpt);
                         }
                     }
                     case "oidc" -> {
                         if (provider instanceof Kibana.AuthCConfig.Provider.OidcProvider oidcProvider) {
-                            migrateOidcProvider(oidcProvider, isDefault, authDomainsBuilder, elasticsearchOpt, logger);
+                            migrateOidcProvider(oidcProvider, isDefault, authDomainsBuilder, elasticsearchOpt);
                         }
                     }
                     default -> {
@@ -209,8 +228,7 @@ public class FrontendAuthMigrator implements SubMigrator {
             Kibana.AuthCConfig.Provider.SamlProvider samlProvider,
             boolean isDefault,
             ImmutableList.Builder<SgFrontendAuthC.AuthDomain<?>> authDomainsBuilder,
-            Optional<XPackElasticsearchConfig> elasticsearchOpt,
-            Logger logger) {
+            Optional<XPackElasticsearchConfig> elasticsearchOpt) {
 
         var realmName = samlProvider.realm().get();
         var common = samlProvider.common();
@@ -284,8 +302,7 @@ public class FrontendAuthMigrator implements SubMigrator {
             Kibana.AuthCConfig.Provider.OidcProvider oidcProvider,
             boolean isDefault,
             ImmutableList.Builder<SgFrontendAuthC.AuthDomain<?>> authDomainsBuilder,
-            Optional<XPackElasticsearchConfig> elasticsearchOpt,
-            Logger logger) {
+            Optional<XPackElasticsearchConfig> elasticsearchOpt) {
 
         var realmName = oidcProvider.realm().get();
         var common = oidcProvider.common();
