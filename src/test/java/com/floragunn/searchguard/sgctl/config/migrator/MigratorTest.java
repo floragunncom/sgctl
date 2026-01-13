@@ -9,6 +9,7 @@ import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
+import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
@@ -42,7 +43,7 @@ class MigratorTest {
     }
 
     @Override
-    public Optional<?> getKibana() {
+    public Optional<Kibana> getKibana() {
       return Optional.empty();
     }
   }
