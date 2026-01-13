@@ -123,7 +123,7 @@ public class FrontendAuthMigratorTest {
     @Test
     void testKibanaSamlProviderResolvesRealmFromElasticsearch() throws Exception {
         var kibana = loadKibanaConfig("/xpack_migrate/kibana/basic.yml");
-        var elasticsearch = loadElasticsearchConfig("/xpack_migrate/elasticsearch/auth/saml_realms_order.yml");
+        var elasticsearch = loadElasticsearchConfig("/xpack_migrate/elasticsearch/auth/saml_oidc_realms.yml");
         var context = createContext(Optional.of(elasticsearch), Optional.of(kibana));
 
         var result = new FrontendAuthMigrator().migrate(context, MigrationReporter.searchGuard());
@@ -139,7 +139,17 @@ public class FrontendAuthMigratorTest {
         assertFalse(samlDomains.isEmpty(), "SAML provider should produce a SAML auth domain");
         var saml = samlDomains.get(0);
         assertEquals("saml1", saml.id().orElseThrow());
-        assertEquals("https://idp.primary.example.com", saml.idpEntityId());
+        assertEquals("https://idp.saml1.example.com", saml.idpEntityId());
+
+        var oidcDomains = sgFrontendAuthC.authDomains().stream()
+                .filter(domain -> domain instanceof SgFrontendAuthC.AuthDomain.Oidc)
+                .map(domain -> (SgFrontendAuthC.AuthDomain.Oidc) domain)
+                .toList();
+        assertFalse(oidcDomains.isEmpty(), "OIDC provider should produce an OIDC auth domain");
+        var oidc = oidcDomains.get(0);
+        assertEquals("client-123", oidc.clientId());
+        assertEquals("secret-xyz", oidc.clientSecret());
+        assertEquals("https://issuer.example.com", oidc.openidConfigurationUrl());
     }
 
     // Helper methods
