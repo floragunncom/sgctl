@@ -71,6 +71,13 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
 
     Traceable<Boolean> enabled();
 
+    public enum LoadBalanceType {
+      FAILOVER,
+      DNS_FAILOVER,
+      ROUND_ROBIN,
+      DNS_ROUND_ROBIN
+    }
+
     public enum SearchScope {
       SUB_TREE,
       ONE_LEVEL,
@@ -107,6 +114,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Integer> order,
         Traceable<Boolean> enabled,
         Traceable<ImmutableList<Traceable<String>>> url,
+        Traceable<LoadBalanceType> loadBalanceType,
+        Traceable<String> loadBalanceCacheTtl,
         OptTraceable<String> bindDn,
         Traceable<String> bindPassword,
         Traceable<String> secureBindPassword,
@@ -149,6 +158,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> enabled,
         Traceable<String> domainName,
         OptTraceable<ImmutableList<Traceable<String>>> url,
+        Traceable<LoadBalanceType> loadBalanceType,
+        Traceable<String> loadBalanceCacheTtl,
         OptTraceable<String> bindDn,
         Traceable<String> bindPassword,
         Traceable<String> secureBindPassword,
@@ -283,6 +294,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> enabled,
         TraceableDocNode tDoc) {
       var url = tDoc.get("url").asListOfStrings(ImmutableList.empty());
+      var loadBalanceType =
+          tDoc.get("load_balance.type").asEnum(LoadBalanceType.class, LoadBalanceType.FAILOVER);
+      var loadBalanceCacheTtl = tDoc.get("load_balance.cache_ttl").asString("1h");
       var bindDn = tDoc.get("bind_dn").asString();
       var bindPassword = tDoc.get("bind_password").asString().orElse("");
       var secureBindPassword = tDoc.get("secure_bind_password").asString().orElse("");
@@ -329,6 +343,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           order,
           enabled,
           url,
+          loadBalanceType,
+          loadBalanceCacheTtl,
           bindDn,
           bindPassword,
           secureBindPassword,
@@ -469,6 +485,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         TraceableDocNode tDoc) {
       var domainName = tDoc.get("domain_name").required().asString();
       var url = tDoc.get("url").asListOfStrings();
+      var loadBalanceType =
+          tDoc.get("load_balance.type").asEnum(LoadBalanceType.class, LoadBalanceType.FAILOVER);
+      var loadBalanceCacheTtl = tDoc.get("load_balance.cache_ttl").asString("1h");
       var bindDn = tDoc.get("bind_dn").asString();
       var bindPassword = tDoc.get("bind_password").asString("");
       var secureBindPassword = tDoc.get("secure_bind_password").asString("");
@@ -493,6 +512,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           enabled,
           domainName,
           url,
+          loadBalanceType,
+          loadBalanceCacheTtl,
           bindDn,
           bindPassword,
           secureBindPassword,

@@ -5,6 +5,7 @@ auth_domains:
     hosts:
     - "ldaps://ldap.example.com:636"
     bind_dn: "cn=admin,dc=example,dc=com"
+    connection_strategy: "failover"
     min_pool_size: 0
     max_pool_size: 20
   user_search:
