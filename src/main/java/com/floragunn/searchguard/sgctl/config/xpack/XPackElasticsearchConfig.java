@@ -48,11 +48,10 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         TraceableAttribute.Required tAttr) {
       var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart());
       return tAttr.asMapOf(
-          
-              (TraceableDocNode realmTDoc) -> {
-                var name = Traceable.of(realmTDoc.getSource(), realmTDoc.getSource().pathPart());
-                return Realm.parse(type, name, realmTDoc);
-              });
+          (TraceableDocNode realmTDoc) -> {
+            var name = Traceable.of(realmTDoc.getSource(), realmTDoc.getSource().pathPart());
+            return Realm.parse(type, name, realmTDoc);
+          });
     }
 
     public static AuthcConfig parse(TraceableDocNode tDoc) {
@@ -71,6 +70,13 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
     Traceable<Integer> order();
 
     Traceable<Boolean> enabled();
+
+    public enum LoadBalanceType {
+      FAILOVER,
+      DNS_FAILOVER,
+      ROUND_ROBIN,
+      DNS_ROUND_ROBIN
+    }
 
     record NativeRealm(
         Traceable<String> type,
@@ -102,6 +108,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Integer> order,
         Traceable<Boolean> enabled,
         Traceable<ImmutableList<Traceable<String>>> url,
+        Traceable<LoadBalanceType> loadBalanceType,
+        Traceable<String> loadBalanceCacheTtl,
         OptTraceable<String> bindDn,
         OptTraceable<String> bindPassword,
         OptTraceable<String> secureBindPassword,
@@ -146,6 +154,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> enabled,
         Traceable<String> domainName,
         OptTraceable<ImmutableList<Traceable<String>>> url,
+        Traceable<LoadBalanceType> loadBalanceType,
+        Traceable<String> loadBalanceCacheTtl,
         OptTraceable<String> bindDn,
         OptTraceable<String> userSearchBaseDn,
         Traceable<Boolean> unmappedGroupsAsRoles)
@@ -271,6 +281,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> enabled,
         TraceableDocNode tDoc) {
       var url = tDoc.get("url").asListOfStrings(ImmutableList.empty());
+      var loadBalanceType =
+          tDoc.get("load_balance.type").asEnum(LoadBalanceType.class, LoadBalanceType.FAILOVER);
+      var loadBalanceCacheTtl = tDoc.get("load_balance.cache_ttl").asString("1h");
       var bindDn = tDoc.get("bind_dn").asString();
       var bindPassword = tDoc.get("bind_password").asString();
       var secureBindPassword = tDoc.get("secure_bind_password").asString();
@@ -312,6 +325,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           order,
           enabled,
           url,
+          loadBalanceType,
+          loadBalanceCacheTtl,
           bindDn,
           bindPassword,
           secureBindPassword,
@@ -449,6 +464,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         TraceableDocNode tDoc) {
       var domainName = tDoc.get("domain_name").required().asString();
       var url = tDoc.get("url").asListOfStrings();
+      var loadBalanceType =
+          tDoc.get("load_balance.type").asEnum(LoadBalanceType.class, LoadBalanceType.FAILOVER);
+      var loadBalanceCacheTtl = tDoc.get("load_balance.cache_ttl").asString("1h");
       var bindDn = tDoc.get("bind_dn").asString();
       var userSearchBaseDn = tDoc.get("user_search.base_dn").asString();
       var unmappedGroupsAsRoles = tDoc.get("unmapped_groups_as_roles").asBoolean(false);
@@ -460,6 +478,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           enabled,
           domainName,
           url,
+          loadBalanceType,
+          loadBalanceCacheTtl,
           bindDn,
           userSearchBaseDn,
           unmappedGroupsAsRoles);
