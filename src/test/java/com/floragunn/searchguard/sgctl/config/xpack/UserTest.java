@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocumentParseException;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
 
@@ -14,8 +15,7 @@ public class UserTest {
 
   @Test
   public void parseExampleTest() throws IOException, ConfigValidationException {
-    DocNode node = read("/xpack_migrate/users/example.json");
-    Users parsedUsers = Users.parse(node, Parser.Context.get());
+    var parsedUsers = parseUsers("/xpack_migrate/users/example.json");
 
     assertNotNull(parsedUsers);
     assertNotNull(parsedUsers.users());
@@ -44,16 +44,15 @@ public class UserTest {
   }
 
   @Test
-  public void parseMissingMetadata() throws IOException, ConfigValidationException {
-    DocNode node = read("/xpack_migrate/users/missing_metadata.json");
+  public void parseMissingMetadata() {
+    var path = "/xpack_migrate/users/missing_metadata.json";
 
-    assertThrows(ConfigValidationException.class, () -> Users.parse(node, Parser.Context.get()));
+    assertThrows(ConfigValidationException.class, () -> parseUsers(path));
   }
 
   @Test
   public void multipleUsers() throws IOException, ConfigValidationException {
-    DocNode node = read("/xpack_migrate/users/multipleUsers.json");
-    Users parsedUsers = Users.parse(node, Parser.Context.get());
+    var parsedUsers = parseUsers("/xpack_migrate/users/multipleUsers.json");
 
     assertNotNull(parsedUsers);
     assertNotNull(parsedUsers.users());
@@ -93,22 +92,26 @@ public class UserTest {
 
   @Test
   public void parseEmptyHits() throws IOException, ConfigValidationException {
-    DocNode node = read("/xpack_migrate/users/emptyHits.json");
-    Users parsedUsers = Users.parse(node, Parser.Context.get());
+    var parsedUsers = parseUsers("/xpack_migrate/users/emptyHits.json");
     assertNotNull(parsedUsers);
     assertNotNull(parsedUsers.users());
     assertTrue(parsedUsers.users().get().isEmpty());
   }
 
   @Test
-  public void parseMissingMultiple() throws IOException, ConfigValidationException {
-    DocNode node = read("/xpack_migrate/users/missingMultiple.json");
+  public void parseMissingMultiple() {
+    var path = "/xpack_migrate/users/missingMultiple.json";
 
     ConfigValidationException exception =
-        assertThrows(
-            ConfigValidationException.class, () -> Users.parse(node, Parser.Context.get()));
+        assertThrows(ConfigValidationException.class, () -> parseUsers(path));
 
     assertNotNull(exception);
+  }
+
+  private Users parseUsers(String path) throws IOException, ConfigValidationException {
+    var node = read(path);
+    var src = new Source.Config("users.json");
+    return TraceableDocNode.parse(node, src, Users::parse);
   }
 
   private DocNode read(String path) throws IOException, DocumentParseException {

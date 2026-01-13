@@ -1,13 +1,10 @@
 package com.floragunn.searchguard.sgctl.config.xpack;
 
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.Parser;
-import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.errors.MissingAttribute;
 import com.floragunn.codova.validation.errors.ValidationError;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings.RoleMapping.Templates.Template;
@@ -281,19 +278,10 @@ public record RoleMappings(Traceable<ImmutableMap<String, Traceable<RoleMapping>
   /**
    * Parses role mappings from the given document.
    *
-   * @param doc The document
-   * @param context The parser context
+   * @param tDoc The document
    * @return The parsed role mappings
-   * @throws ConfigValidationException If validation fails
    */
-  public static RoleMappings parse(DocNode doc, Parser.Context context)
-      throws ConfigValidationException {
-    var tDoc = TraceableDocNode.of(doc, new Source.Config("role_mappings.json"));
-
-    var roleMappings = tDoc.asAttribute().asMapOf(RoleMapping::parse);
-
-    tDoc.throwExceptionForPresentErrors();
-
-    return new RoleMappings(roleMappings);
+  public static RoleMappings parse(TraceableDocNode tDoc) {
+    return new RoleMappings(tDoc.asAttribute().asMapOf(RoleMapping::parse));
   }
 }

@@ -1,11 +1,10 @@
 package com.floragunn.searchguard.sgctl.config.xpack;
 
-import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.Parser;
-import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import com.floragunn.searchguard.sgctl.config.trace.*;
+import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import java.util.Objects;
 
 public record Users(Traceable<ImmutableMap<String, Traceable<User>>> users) {
@@ -14,14 +13,8 @@ public record Users(Traceable<ImmutableMap<String, Traceable<User>>> users) {
     Objects.requireNonNull(users, "users must not be null");
   }
 
-  public static Users parse(DocNode config, Parser.Context parserContext)
-      throws ConfigValidationException {
-    var tDoc = TraceableDocNode.of(config, new Source.Config("users.json"));
-
-    var users = tDoc.asAttribute().asMapOf(User::parse);
-
-    tDoc.throwExceptionForPresentErrors();
-    return new Users(users);
+  public static Users parse(TraceableDocNode tDoc) {
+    return new Users(tDoc.asAttribute().asMapOf(User::parse));
   }
 
   public record User(

@@ -3,13 +3,14 @@ package com.floragunn.searchguard.sgctl.commands;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.*;
-import com.floragunn.searchguard.sgctl.config.migrate.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNodeParser;
 import com.floragunn.searchguard.sgctl.config.xpack.*;
 import com.floragunn.searchguard.sgctl.util.StringUtils;
 import java.io.IOException;
@@ -63,9 +64,8 @@ public class XPackMigrate implements Callable<Integer> {
       defaultValue = "false")
   boolean overwrite;
 
-  private static final Map<String, Parser<Object, Parser.Context>> configParsers =
+  private static final Map<String, TraceableDocNodeParser<Object>> configParsers =
       Map.of(
-          // TODO: Add parsing functions here <filename>,Record::parse
           "role_mapping.json", RoleMappings::parse,
           "roles.json", Roles::parse,
           "users.json", Users::parse,
@@ -144,7 +144,8 @@ public class XPackMigrate implements Callable<Integer> {
         }
 
         // Parse config
-        final var parsed = parserFunction.parse(config, Parser.Context.get());
+        var parsed =
+            TraceableDocNode.parse(config, new Source.Config(configFileName), parserFunction);
         configs.put(configFileName, parsed);
       } catch (ConfigValidationException e) {
         // accumulate all errors and report them together below

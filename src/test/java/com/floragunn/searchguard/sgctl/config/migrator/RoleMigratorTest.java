@@ -10,6 +10,8 @@ import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.RolesMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalRoles;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,7 +51,8 @@ public class RoleMigratorTest {
       assertNotNull(is, "couldn't find test file Path:" + resourcePath);
       DocNode docNode = DocNode.parse(Format.YAML).from(is);
 
-      Roles xPackRoles = Roles.parse(docNode, null);
+      var src = new Source.Config("roles.yml");
+      Roles xPackRoles = TraceableDocNode.parse(docNode, src, Roles::parse);
 
       when(context.getRoles()).thenReturn(Optional.of(xPackRoles));
     } catch (ConfigValidationException e) {

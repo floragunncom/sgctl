@@ -5,11 +5,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocumentParseException;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings.RoleMapping.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings.RoleMapping.Rule.Any;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings.RoleMapping.Rule.Field;
@@ -22,7 +22,7 @@ public class RoleMappingTest {
   @Test
   public void testParseSimple() throws IOException, ConfigValidationException {
     var node = read("/xpack_migrate/role_mapping/simple.json");
-    var mappings = RoleMappings.parse(node, Parser.Context.get());
+    var mappings = parseRoleMappings(node);
 
     var fileSource = new Source.Config("role_mappings.json");
     var adminsSource = new Source.Attribute(fileSource, "admins");
@@ -55,7 +55,7 @@ public class RoleMappingTest {
   @Test
   public void testParseWithLogic() throws IOException, ConfigValidationException {
     var node = read("/xpack_migrate/role_mapping/with_logic.json");
-    var mappings = RoleMappings.parse(node, Parser.Context.get());
+    var mappings = parseRoleMappings(node);
 
     var fileSource = new Source.Config("role_mappings.json");
     var basicUsersSource = new Source.Attribute(fileSource, "basic_users");
@@ -105,15 +105,13 @@ public class RoleMappingTest {
   @Test
   public void testInvalidTooManyRules() throws IOException, DocumentParseException {
     var node = read("/xpack_migrate/role_mapping/invalid_too_many_rules.json");
-    assertThrows(
-        ConfigValidationException.class, () -> RoleMappings.parse(node, Parser.Context.get()));
+    assertThrows(ConfigValidationException.class, () -> parseRoleMappings(node));
   }
 
   @Test
   public void testInvalidNoRules() throws IOException, DocumentParseException {
     var node = read("/xpack_migrate/role_mapping/invalid_no_rules.json");
-    assertThrows(
-        ConfigValidationException.class, () -> RoleMappings.parse(node, Parser.Context.get()));
+    assertThrows(ConfigValidationException.class, () -> parseRoleMappings(node));
   }
 
   private DocNode read(String path) throws IOException, DocumentParseException {
@@ -121,5 +119,10 @@ public class RoleMappingTest {
       assertNotNull(in);
       return DocNode.wrap(DocReader.json().read(in));
     }
+  }
+
+  private RoleMappings parseRoleMappings(DocNode node) throws ConfigValidationException {
+    var src = new Source.Config("role_mappings.json");
+    return TraceableDocNode.parse(node, src, RoleMappings::parse);
   }
 }

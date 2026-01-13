@@ -1,9 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.xpack;
 
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.Parser;
-import com.floragunn.codova.validation.ConfigValidationException;
-import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.trace.*;
@@ -533,19 +530,11 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
    * Parses X-Pack elasticsearch.yml security configuration. Expects the full elasticsearch.yml
    * content, extracts xpack.security.* section.
    *
-   * @param doc The complete elasticsearch.yml as DocNode
-   * @param _context Parser context
+   * @param tDoc The complete elasticsearch.yml as TraceableDocNode
    * @return Parsed XPackElasticsearchConfig
-   * @throws ConfigValidationException If validation fails
    */
-  public static XPackElasticsearchConfig parse(DocNode doc, Parser.Context _context)
-      throws ConfigValidationException {
-    var errors = new ValidationErrors();
-    var tDoc = TraceableDocNode.of(doc, new Source.Config("elasticsearch.yml"), errors);
-    var security = tDoc.get("xpack.security").required().as(SecurityConfig::parse);
-
-    errors.throwExceptionForPresentErrors();
-
-    return new XPackElasticsearchConfig(security);
+  public static XPackElasticsearchConfig parse(TraceableDocNode tDoc) {
+    return new XPackElasticsearchConfig(
+        tDoc.get("xpack.security").required().as(SecurityConfig::parse));
   }
 }

@@ -5,11 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.migrate.UserMigrator;
 import com.floragunn.searchguard.sgctl.config.migrator.AssertableMigrationReporter;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalUsers;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
@@ -117,7 +118,8 @@ public class UserMigratorTest {
 
   private Users loadUsers(String path) throws Exception {
     var node = DocNode.wrap(DocReader.json().read(loadResourceAsString(path)));
-    return Users.parse(node, Parser.Context.get());
+    var src = new Source.Config("users.json");
+    return TraceableDocNode.parse(node, src, Users::parse);
   }
 
   private String loadResourceAsString(String path) throws Exception {

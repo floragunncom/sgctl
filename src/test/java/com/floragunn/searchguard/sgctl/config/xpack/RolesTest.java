@@ -6,6 +6,8 @@ import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.codova.documents.Format;
 import com.floragunn.codova.validation.ConfigValidationException;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import java.io.IOException;
 import java.io.InputStream;
 import org.junit.jupiter.api.BeforeAll;
@@ -28,6 +30,11 @@ class RolesTest {
     }
   }
 
+  private static Roles parseRoles(DocNode docNode) throws ConfigValidationException {
+    var src = new Source.Config("roles.json");
+    return TraceableDocNode.parse(docNode, src, Roles::parse);
+  }
+
   // Tests parsing a fully populated role
   @Test
   void testRoleParsing() throws Exception {
@@ -35,7 +42,7 @@ class RolesTest {
     DocNode docNode = testCases.getAsNode("complex_role_case");
     assertNotNull(docNode, "complex_role_case not found!");
 
-    Roles result = Roles.parse(docNode, null);
+    Roles result = parseRoles(docNode);
 
     assertNotNull(result);
     assertTrue(result.roles().containsKey("complex_role"));
@@ -91,7 +98,7 @@ class RolesTest {
 
     DocNode docNode = testCases.getAsNode("minimal_role_case");
     assertNotNull(docNode, "minimal_role_case not found!");
-    Roles result = Roles.parse(docNode, null);
+    Roles result = parseRoles(docNode);
 
     var role = result.roles().get("minimal_role");
 
@@ -107,7 +114,7 @@ class RolesTest {
   void testEmptyDocumentParsing() throws Exception {
     DocNode docNode = testCases.getAsNode("empty_case");
     assertNotNull(docNode, "empty_case not found!");
-    Roles result = Roles.parse(docNode, null);
+    Roles result = parseRoles(docNode);
 
     assertNotNull(result);
     assertTrue(result.roles().isEmpty());
@@ -119,7 +126,7 @@ class RolesTest {
 
     assertNotNull(docNode, "missing_required_fields_case not found!");
 
-    assertThrows(ConfigValidationException.class, () -> Roles.parse(docNode, null));
+    assertThrows(ConfigValidationException.class, () -> parseRoles(docNode));
   }
 
   // Tests if a missing empty nested required field throws an exception
@@ -129,6 +136,6 @@ class RolesTest {
     DocNode docNode = testCases.getAsNode("missing_nested_required_field_case");
     assertNotNull(docNode, "missing_nested_required_field_case not found!");
 
-    assertThrows(ConfigValidationException.class, () -> Roles.parse(docNode, null));
+    assertThrows(ConfigValidationException.class, () -> parseRoles(docNode));
   }
 }

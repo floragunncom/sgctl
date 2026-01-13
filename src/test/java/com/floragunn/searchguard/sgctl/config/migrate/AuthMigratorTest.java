@@ -6,11 +6,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator.MigrationContext;
 import com.floragunn.searchguard.sgctl.config.migrator.AssertableMigrationReporter;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgFrontendAuthC;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -220,7 +221,8 @@ class AuthMigratorTest {
     try (var in = getClass().getResourceAsStream(path)) {
       assertNotNull(in, "Resource not found: " + path);
       var node = DocNode.wrap(DocReader.yaml().read(in));
-      return XPackElasticsearchConfig.parse(node, Parser.Context.get());
+      var src = new Source.Config("elasticsearch.yml");
+      return TraceableDocNode.parse(node, src, XPackElasticsearchConfig::parse);
     }
   }
 

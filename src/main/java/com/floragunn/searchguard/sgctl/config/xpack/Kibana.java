@@ -1,13 +1,10 @@
 package com.floragunn.searchguard.sgctl.config.xpack;
 
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.Parser;
-import com.floragunn.codova.validation.ConfigValidationException;
-import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.trace.*;
-import java.util.*;
+import java.util.Objects;
 import org.jspecify.annotations.NullMarked;
 
 @NullMarked
@@ -294,13 +291,7 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
     }
   }
 
-  public static Kibana parse(DocNode doc, Parser.Context _context)
-      throws ConfigValidationException {
-    var errors = new ValidationErrors();
-    var tDoc = TraceableDocNode.of(doc, new Source.Config("kibana.yml"), errors);
-    var security = tDoc.get("xpack.security").as(Kibana.SecurityConfig::parse);
-    errors.throwExceptionForPresentErrors();
-
-    return new Kibana(security);
+  public static Kibana parse(TraceableDocNode tDoc) {
+    return new Kibana(tDoc.get("xpack.security").as(Kibana.SecurityConfig::parse));
   }
 }

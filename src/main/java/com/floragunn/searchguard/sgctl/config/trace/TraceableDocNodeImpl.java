@@ -3,6 +3,7 @@ package com.floragunn.searchguard.sgctl.config.trace;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
+import com.floragunn.fluent.collections.ImmutableSet;
 
 class TraceableDocNodeImpl implements TraceableDocNode {
 
@@ -51,6 +52,11 @@ class TraceableDocNodeImpl implements TraceableDocNode {
   @Override
   public int getAttributeCount() {
     return docNode.size();
+  }
+
+  @Override
+  public ImmutableSet<String> getAttributeNames() {
+    return ImmutableSet.of(docNode.keySet());
   }
 
   @Override

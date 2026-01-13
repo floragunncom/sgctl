@@ -3,10 +3,7 @@ package com.floragunn.searchguard.sgctl.config.migrate;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
-import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
-import com.floragunn.searchguard.sgctl.config.xpack.Roles;
-import com.floragunn.searchguard.sgctl.config.xpack.Users;
-import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
+import com.floragunn.searchguard.sgctl.config.xpack.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -51,8 +48,7 @@ public class Migrator {
 
     for (final SubMigrator subMigrator : subMigrators) {
       logger.debug("Running migration with {}", subMigrator.getClass().getSimpleName());
-      final List<NamedConfig<?>> migratedSubConfigs =
-          legacySubMigrate(subMigrator, context, logger, reporter);
+      final List<NamedConfig<?>> migratedSubConfigs = subMigrator.migrate(context, reporter);
       logger.debug("SubMigrator returned {} config files", migratedSubConfigs.size());
 
       for (NamedConfig<?> migratedSubConfig : migratedSubConfigs) {
@@ -81,16 +77,6 @@ public class Migrator {
     }
   }
 
-  private List<NamedConfig<?>> legacySubMigrate(
-      SubMigrator sm, IMigrationContext ctx, Logger logger, MigrationReporter reporter)
-      throws SgctlException {
-    try {
-      return sm.migrate(ctx, logger);
-    } catch (MigrationNotImplementedException e) {
-      return sm.migrate(ctx, reporter);
-    }
-  }
-
   /**
    * All parsed XPack Configs
    *
@@ -102,7 +88,7 @@ public class Migrator {
       @NotNull Optional<Roles> roles,
       @NotNull Optional<Users> users,
       @NotNull Optional<XPackElasticsearchConfig> elasticSearch,
-      @NotNull Optional<?> kibana)
+      @NotNull Optional<Kibana> kibana)
       implements IMigrationContext {
 
     @Override
@@ -126,7 +112,7 @@ public class Migrator {
     }
 
     @Override
-    public Optional<?> getKibana() {
+    public Optional<Kibana> getKibana() {
       return kibana;
     }
   }
@@ -141,6 +127,6 @@ public class Migrator {
 
     Optional<XPackElasticsearchConfig> getElasticsearch();
 
-    Optional<?> getKibana(); // TODO: Add real type or remove if unneeded
+    Optional<Kibana> getKibana();
   }
 }

@@ -6,10 +6,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.searchguard.sgctl.config.migrator.AssertableMigrationReporter;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgRolesMapping;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import java.util.List;
 import java.util.Map;
@@ -124,7 +125,8 @@ public class RoleMappingsMigratorTest {
 
   private RoleMappings loadRoleMappings(String path) throws Exception {
     var node = DocNode.wrap(DocReader.yaml().read(loadResourceAsString(path)));
-    return RoleMappings.parse(node, Parser.Context.get());
+    var src = new Source.Config("role_mappings.json");
+    return TraceableDocNode.parse(node, src, RoleMappings::parse);
   }
 
   private String loadResourceAsString(String path) throws Exception {

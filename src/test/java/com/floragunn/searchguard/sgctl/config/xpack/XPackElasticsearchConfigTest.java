@@ -5,8 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocumentParseException;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig.Realm;
 import java.io.IOException;
 import org.junit.jupiter.api.Test;
@@ -17,7 +18,7 @@ public class XPackElasticsearchConfigTest {
   @Test
   public void testParseBasicRealms() throws IOException, ConfigValidationException {
     var node = read("/xpack_migrate/elasticsearch/basic_realms.yml");
-    var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+    var config = parseConfig(node);
 
     assertNotNull(config);
     var security = config.security().get();
@@ -94,7 +95,7 @@ public class XPackElasticsearchConfigTest {
                   realms: {}
             """;
     var node = DocNode.wrap(DocReader.yaml().read(yaml));
-    var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+    var config = parseConfig(node);
 
     assertNotNull(config);
     assertTrue(config.security().get().enabled().get());
@@ -116,7 +117,7 @@ public class XPackElasticsearchConfigTest {
                         enabled: false
             """;
     var node = DocNode.wrap(DocReader.yaml().read(yaml));
-    var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+    var config = parseConfig(node);
 
     assertNotNull(config);
     assertFalse(config.security().get().enabled().get());
@@ -156,7 +157,7 @@ public class XPackElasticsearchConfigTest {
                         authorization_realms: "native1"
             """;
     var node = DocNode.wrap(DocReader.yaml().read(yaml));
-    var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+    var config = parseConfig(node);
     var ldap =
         (Realm.LdapRealm)
             config
@@ -178,7 +179,7 @@ public class XPackElasticsearchConfigTest {
   @Test
   public void testLdapAuthorizationRealmsList() throws IOException, ConfigValidationException {
     var node = read("/xpack_migrate/elasticsearch/ldap_authorization_realms_list.yml");
-    var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+    var config = parseConfig(node);
     var ldap =
         (Realm.LdapRealm)
             config
@@ -219,7 +220,7 @@ public class XPackElasticsearchConfigTest {
             """;
 
     var node = DocNode.wrap(DocReader.yaml().read(yaml));
-    var config = XPackElasticsearchConfig.parse(node, Parser.Context.get());
+    var config = parseConfig(node);
 
     var ldap =
         config
@@ -241,6 +242,11 @@ public class XPackElasticsearchConfigTest {
     assertTrue(ldapRealm.groupSearchBaseDn().get().isEmpty());
     assertEquals(Realm.SearchScope.SUB_TREE, ldapRealm.groupSearchScope().get()); // Default
     assertTrue(ldapRealm.groupSearchFilter().get().isEmpty());
+  }
+
+  private XPackElasticsearchConfig parseConfig(DocNode node) throws ConfigValidationException {
+    var src = new Source.Config("elasticsearch.yml");
+    return TraceableDocNode.parse(node, src, XPackElasticsearchConfig::parse);
   }
 
   private DocNode read(String path) throws IOException, DocumentParseException {
