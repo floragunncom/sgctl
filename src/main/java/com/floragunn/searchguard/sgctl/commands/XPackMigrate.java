@@ -8,7 +8,7 @@ import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.*;
-import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
+import com.floragunn.searchguard.sgctl.config.migrate.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.*;
 import com.floragunn.searchguard.sgctl.util.StringUtils;

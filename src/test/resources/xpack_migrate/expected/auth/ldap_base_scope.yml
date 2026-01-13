@@ -10,7 +10,6 @@ auth_domains:
     max_pool_size: 20
   user_search:
     base_dn: "ou=users,dc=example,dc=com"
-    scope: "sub"
     filter.raw: "(uid=${user.name})"
   group_search:
     base_dn: "ou=groups,dc=example,dc=com"

@@ -92,6 +92,8 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
         public Object toBasicObject() {
           var builder = new OrderedImmutableMap.Builder<String, Object>();
           builder.put("hosts", hosts);
+          bindDn.ifPresent(bd -> builder.put("bind_dn", bd));
+          password.ifPresent(pw -> builder.put("password", pw));
           connectionStrategy.ifPresent(
               cs -> builder.put("connection_strategy", cs.name().toLowerCase()));
           minPoolSize.ifPresent(mps -> builder.put("min_pool_size", mps));
