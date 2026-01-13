@@ -11,6 +11,7 @@ import com.floragunn.codova.validation.ValidatingDocNode;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
+import java.util.List;
 import java.util.Optional;
 import org.jspecify.annotations.NullMarked;
 import org.junit.jupiter.api.Test;
@@ -170,6 +171,35 @@ public class TraceableTest {
     var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
     vDoc.get("root").required().asTraceableDocNode();
     assertThrows(ConfigValidationException.class, vDoc::throwExceptionForPresentErrors);
+  }
+
+  @Test
+  public void testTraceableDocNodeMergeDotSeparatedWithNormalYamlComplex()
+      throws ConfigValidationException {
+    var yaml =
+        """
+                root.outer.inner.enabled: true
+                root.outer:
+                  inner:
+                    value: 3
+                  inner2.enabled: false
+                  inner2:
+                    value: 3
+                root:
+                  outer:
+                    list: []
+                """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var tDoc = TraceableDocNode.of(node, Source.NONE);
+    var outer = tDoc.get("root.outer").required().as(Outer::parse);
+
+    tDoc.throwExceptionForPresentErrors();
+
+    assertTrue(outer.get().inner().get().enabled().get());
+    assertEquals(3, outer.get().inner().get().value().getValue());
+    assertFalse(outer.get().inner2().getValue().enabled().get());
+    assertEquals(3, outer.get().inner2().getValue().value().getValue());
+    assertEquals(List.of(), outer.get().list().get());
   }
 
   @Test
