@@ -69,7 +69,7 @@ public class AuthMigrator implements SubMigrator {
     var identityProvider =
         new IdentityProvider(
             hosts,
-            Optional.empty(),
+            Optional.of(migrateLoadBalanceType(realm.get().loadBalanceType(), reporter)),
             realm.get().bindDn().get(),
             takeBindOrSecureBindPassword(
                 realm.get().bindPassword(), realm.get().secureBindPassword(), reporter),
@@ -126,7 +126,7 @@ public class AuthMigrator implements SubMigrator {
     var identityProvider =
         new IdentityProvider(
             hosts,
-            Optional.empty(),
+            Optional.of(migrateLoadBalanceType(realm.get().loadBalanceType(), reporter)),
             realm.get().bindDn().get(),
             takeBindOrSecureBindPassword(
                 realm.get().bindPassword(), realm.get().secureBindPassword(), reporter),
@@ -206,6 +206,22 @@ public class AuthMigrator implements SubMigrator {
                 + availableSearchScopesMsg
                 + ". The search scope was omitted from the output because of this.");
         yield Optional.empty();
+      }
+    };
+  }
+
+  private IdentityProvider.ConnectionStrategy migrateLoadBalanceType(
+      Traceable<Realm.LoadBalanceType> type, MigrationReporter reporter) {
+    return switch (type.get()) {
+      case FAILOVER -> IdentityProvider.ConnectionStrategy.FAILOVER;
+      case ROUND_ROBIN -> IdentityProvider.ConnectionStrategy.ROUNDROBIN;
+      case DNS_FAILOVER -> {
+        reporter.problem(type, "dns_failover mode does not exist, using failover instead");
+        yield IdentityProvider.ConnectionStrategy.FAILOVER;
+      }
+      case DNS_ROUND_ROBIN -> {
+        reporter.problem(type, "dns_round_robin mode does not exist, using roundrobin instead");
+        yield IdentityProvider.ConnectionStrategy.ROUNDROBIN;
       }
     };
   }
