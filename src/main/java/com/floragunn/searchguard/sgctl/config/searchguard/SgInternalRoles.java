@@ -31,7 +31,7 @@ public record SgInternalRoles(ImmutableMap<String, Role> roles)
 
     public record Permission(ImmutableList<String> patterns, ImmutableList<String> allowedActions) {
       public Map<String, Object> toMap(String prefix) {
-        return ImmutableMap.of(prefix + "_patterns", patterns,  "allowed_actions", allowedActions);
+        return ImmutableMap.of(prefix + "_patterns", patterns, "allowed_actions", allowedActions);
       }
     }
 

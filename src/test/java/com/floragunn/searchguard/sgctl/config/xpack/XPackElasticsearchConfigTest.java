@@ -58,7 +58,7 @@ public class XPackElasticsearchConfigTest {
     assertEquals(1, ldapRealm.url().get().size());
     assertEquals("ldaps://ldap.example.com:636", ldapRealm.url().get().get(0).get());
     assertEquals("cn=admin,dc=example,dc=com", ldapRealm.bindDn().get().orElseThrow());
-    assertEquals("ldapsecret", ldapRealm.bindPassword().get().orElseThrow());
+    assertEquals("ldapsecret", ldapRealm.bindPassword().get());
     assertEquals("ou=users,dc=example,dc=com", ldapRealm.userSearchBaseDn().get().orElseThrow());
     assertEquals("(uid={0})", ldapRealm.userSearchFilter().get());
     assertEquals("ou=groups,dc=example,dc=com", ldapRealm.groupSearchBaseDn().get().orElseThrow());
@@ -237,9 +237,9 @@ public class XPackElasticsearchConfigTest {
     assertNotNull(ldap);
     assertInstanceOf(Realm.LdapRealm.class, ldap);
     var ldapRealm = (Realm.LdapRealm) ldap;
-    assertEquals("secret", ldapRealm.bindPassword().get().orElseThrow());
+    assertEquals("secret", ldapRealm.bindPassword().get());
     assertTrue(ldapRealm.groupSearchBaseDn().get().isEmpty());
-    assertEquals(Realm.LdapRealm.Scope.SUB_TREE, ldapRealm.groupSearchScope().get()); // Default
+    assertEquals(Realm.SearchScope.SUB_TREE, ldapRealm.groupSearchScope().get()); // Default
     assertTrue(ldapRealm.groupSearchFilter().get().isEmpty());
   }
 

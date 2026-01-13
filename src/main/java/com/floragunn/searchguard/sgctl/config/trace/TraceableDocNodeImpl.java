@@ -44,6 +44,16 @@ class TraceableDocNodeImpl implements TraceableDocNode {
   }
 
   @Override
+  public ValidationErrors getErrors() {
+    return errors;
+  }
+
+  @Override
+  public int getAttributeCount() {
+    return docNode.size();
+  }
+
+  @Override
   public boolean hasNonNull(String attribute) {
     return docNode.hasNonNull(attribute);
   }
