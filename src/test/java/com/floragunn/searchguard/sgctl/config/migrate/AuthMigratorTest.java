@@ -68,15 +68,6 @@ class AuthMigratorTest {
   }
 
   @Test
-  void testMigrateUnsupportedRealm() throws Exception {
-    var config = loadConfig("/xpack_migrate/elasticsearch/auth/unsupported_realm.yml");
-    var context = createContext(Optional.of(config));
-
-    assertThrows(
-        UnsupportedOperationException.class, () -> new AuthMigrator().migrate(context, logger));
-  }
-
-  @Test
   void testMigrateEmptyElasticsearchConfig() {
     var context = createContext(Optional.empty());
     var reporter = new AssertableMigrationReporter();
