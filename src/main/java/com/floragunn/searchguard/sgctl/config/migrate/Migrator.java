@@ -6,6 +6,7 @@ import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
+import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.util.HashMap;
 import java.util.List;
@@ -102,7 +103,7 @@ public class Migrator {
       @NotNull Optional<Roles> roles,
       @NotNull Optional<Users> users,
       @NotNull Optional<XPackElasticsearchConfig> elasticSearch,
-      @NotNull Optional<?> kibana)
+      @NotNull Optional<Kibana> kibana)
       implements IMigrationContext {
 
     @Override
@@ -126,7 +127,7 @@ public class Migrator {
     }
 
     @Override
-    public Optional<?> getKibana() {
+    public Optional<Kibana> getKibana() {
       return kibana;
     }
   }
@@ -141,6 +142,6 @@ public class Migrator {
 
     Optional<XPackElasticsearchConfig> getElasticsearch();
 
-    Optional<?> getKibana(); // TODO: Add real type or remove if unneeded
+    Optional<Kibana> getKibana();
   }
 }
