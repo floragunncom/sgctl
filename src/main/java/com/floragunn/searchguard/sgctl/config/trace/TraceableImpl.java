@@ -1,6 +1,7 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
 import java.util.Objects;
+import java.util.function.Function;
 
 class TraceableImpl<T> implements Traceable<T> {
 
@@ -15,6 +16,16 @@ class TraceableImpl<T> implements Traceable<T> {
   @Override
   public T get() {
     return value;
+  }
+
+  @Override
+  public <R> Traceable<R> map(Function<? super T, ? extends R> mapper) {
+    return new TraceableImpl<>(source, mapper.apply(value));
+  }
+
+  @Override
+  public <R> Traceable<R> flatMap(Function<? super T, ? extends Traceable<R>> mapper) {
+    return mapper.apply(value);
   }
 
   @Override
