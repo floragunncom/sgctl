@@ -101,7 +101,7 @@ public class XPackMigrate implements Callable<Integer> {
         Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
         Optional.ofNullable((Users) xPackConfigs.get("users.json")),
         Optional.ofNullable((XPackElasticsearchConfig) xPackConfigs.get("elasticsearch.yml")),
-        Optional.empty() // TODO: Get real config
+        Optional.ofNullable((Kibana) xPackConfigs.get("kibana.yml"))
         );
   }
 
@@ -111,6 +111,7 @@ public class XPackMigrate implements Callable<Integer> {
     registry.registerSubMigrator(new AuthMigrator());
     registry.registerSubMigrator(new UserMigrator());
     registry.registerSubMigrator(new RoleMappingsMigrator());
+    registry.registerSubMigrator(new FrontendAuthMigrator());
     registry.finalizeSubMigrators(); // Never forget
   }
 
