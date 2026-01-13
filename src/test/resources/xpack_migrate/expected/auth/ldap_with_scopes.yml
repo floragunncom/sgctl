@@ -4,10 +4,13 @@ auth_domains:
   idp:
     hosts:
     - "ldaps://ldap.example.com:636"
+    bind_dn: "cn=admin,dc=example,dc=com"
+    min_pool_size: 0
+    max_pool_size: 20
   user_search:
     base_dn: "ou=users,dc=example,dc=com"
     scope: "sub"
-    filter.raw: "(mail={0})"
+    filter.raw: "(mail=${user.name})"
   group_search:
     base_dn: "ou=groups,dc=example,dc=com"
     scope: "one"

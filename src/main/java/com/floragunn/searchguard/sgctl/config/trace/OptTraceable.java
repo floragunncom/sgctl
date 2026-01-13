@@ -12,6 +12,10 @@ public interface OptTraceable<T> extends BaseTraceable<Optional<T>> {
     return get().get();
   }
 
+  default boolean isPresent() {
+    return get().isPresent();
+  }
+
   <U> OptTraceable<U> map(Function<? super T, ? extends U> mapper);
 
   <U> OptTraceable<U> flatMap(Function<? super T, ? extends OptTraceable<? extends U>> mapper);
