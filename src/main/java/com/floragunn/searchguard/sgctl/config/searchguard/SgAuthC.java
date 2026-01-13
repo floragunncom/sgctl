@@ -58,9 +58,14 @@ public record SgAuthC(ImmutableList<AuthDomain<?>> authDomains) implements Named
       public Object toBasicObject() {
         var builder = new OrderedImmutableMap.Builder<String, Object>();
         builder.put("type", "basic/ldap");
-        builder.put("idp", identityProvider);
-        userSearch.ifPresent(us -> builder.put("user_search", us));
-        groupSearch.ifPresent(gs -> builder.put("group_search", gs));
+
+        // LDAP config must be nested under "ldap" key
+        var ldapBuilder = new OrderedImmutableMap.Builder<String, Object>();
+        ldapBuilder.put("idp", identityProvider);
+        userSearch.ifPresent(us -> ldapBuilder.put("user_search", us));
+        groupSearch.ifPresent(gs -> ldapBuilder.put("group_search", gs));
+        builder.put("ldap", ldapBuilder.build());
+
         return builder.build();
       }
 
