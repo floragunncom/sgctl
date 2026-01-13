@@ -32,7 +32,7 @@ public class XPackMigrate implements Callable<Integer> {
   public static final String HELP_MESSAGE =
       """
       This migration tool expects the following files in the input directory (--input-dir):
-      - role_mapping.json, from the .security index via GET /_security/role_mapping
+      - role_mappings.json, from the .security index via GET /_security/role_mapping
       - roles.json, from the .security index via GET /_security/role
       - users.json, from the .security index via GET /_security/user
       - elasticsearch.yml, from the Elasticsearch config directory
@@ -66,7 +66,7 @@ public class XPackMigrate implements Callable<Integer> {
 
   private static final Map<String, TraceableDocNodeParser<Object>> configParsers =
       Map.of(
-          "role_mapping.json", RoleMappings::parse,
+          "role_mappings.json", RoleMappings::parse,
           "roles.json", Roles::parse,
           "users.json", Users::parse,
           "elasticsearch.yml", XPackElasticsearchConfig::parse,
@@ -104,8 +104,7 @@ public class XPackMigrate implements Callable<Integer> {
         Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
         Optional.ofNullable((Users) xPackConfigs.get("users.json")),
         Optional.ofNullable((XPackElasticsearchConfig) xPackConfigs.get("elasticsearch.yml")),
-        Optional.empty() // TODO: Get real config
-        );
+        Optional.ofNullable((Kibana) xPackConfigs.get("kibana.yml")));
   }
 
   private void registerSubMigrators() {
