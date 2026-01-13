@@ -15,6 +15,7 @@ public class MigrationReport {
     private static final String MANUAL_ACTION_TITLE = "\t\u001B[1;33mMANUAL ACTION REQUIRED (%d)\u001B[0m\n\tParameters that could not be automatically migrated and require manual review or adjustment\n";
     private static final String WARNING_TITLE = "\t\u001B[1;33mWARNINGS (%d)\u001B[0m\n\tPotentially problematic or ambiguous settings. Review them to ensure the migrated configuration behaves as expected\n";
     private static final String MIGRATED_TITLE = "\t\u001B[1;32mSUCCESSFULLY MIGRATED (%d)\u001B[0m\n\tParameters that have been successfully migrated\n";
+    private static final String DISPLAY_TEMPLATE = "\t\t- %s\n\t\t\t-> %s\n";
     private MigrationReport() {}
     private final LinkedHashMap<String, FileReport> files = new LinkedHashMap<>();
     private final RoleEntries roleEntries = new RoleEntries(new LinkedList<>(), new LinkedList<>(), new LinkedList<>());
@@ -103,8 +104,6 @@ public class MigrationReport {
     }
 
     /* ---------- internals ---------- */
-    private static final String DISPLAY_TEMPLATE = "    - %s%n      -> %s%n";
-    
     private FileReport file(String file){
         return files.computeIfAbsent(file, k -> new FileReport());
     }
@@ -256,6 +255,8 @@ public class MigrationReport {
         @NonNull private final String name;
         private final Map<Category, List<Issue>> issues;
         private boolean hasRemoteClusterOrIndex = false;
+        private static final String ISSUE_DISPLAY_TEMPLATE = "\t\t\t- %s\n\t\t\t\t-> %s\n";
+        private static final String TITLE_DISPLAY_TEMPLATE = "\t\t\t\u001B[1;33m%s (%d)\u001B[0m\n";
 
         public RoleEntry(@NonNull String name) {
             this.name = name;
@@ -274,28 +275,25 @@ public class MigrationReport {
         public boolean successful() { return !hasRemoteClusterOrIndex; }
 
         public void printEntry(PrintStream out) {
-            out.printf("\t\t\u001B[1m%s:\u001B[0m\n", name);
             if (hasRemoteClusterOrIndex) {
-                out.println("\t\t\tRemote indices and clusters are not supported in Search Guard. The role can not be migrated.\n");
+                out.printf("\t\t\u001B[1m%s:\u001B[0m\n\t\t\tRemote indices and clusters are not supported in Search Guard. The role can not be migrated.\n\n", name);
                 return;
             }
             var warnings = issues.get(Category.WARNING);
             var manualActions = issues.get(Category.MANUAL);
             var issueCount = warnings.size() + manualActions.size();
-            out.println("\t\t\tSuccessfully migrated with " + issueCount + (issueCount == 1 ? " issue." : " issues.") + "\n");
+            out.printf("\t\t\u001B[1m%s (%d):\u001B[0m\n", name, issueCount);
             if (!warnings.isEmpty()) {
-                out.printf("\t\t\t\u001B[1;33mWARNINGS (%d)\u001B[0m\n", warnings.size());
+                out.printf(TITLE_DISPLAY_TEMPLATE, "WARNINGS", warnings.size());
                 for (var warning : warnings) {
-                    out.println("\t\t\t- " + warning.parameter);
-                    out.println("\t\t\t\t-> " + warning.message);
+                    out.printf(ISSUE_DISPLAY_TEMPLATE, warning.parameter, warning.message);
                 }
                 out.println();
             }
             if (!manualActions.isEmpty()) {
-                out.printf("\t\t\t\u001B[1;33mMANUAL ACTION REQUIRED (%d)\u001B[0m\n", manualActions.size());
+                out.printf(TITLE_DISPLAY_TEMPLATE, "MANUAL ACTION REQUIRED", manualActions.size());
                 for (var manualAction : manualActions) {
-                    out.println("\t\t\t- " + manualAction.parameter);
-                    out.println("\t\t\t\t-> " + manualAction.message);
+                    out.printf(ISSUE_DISPLAY_TEMPLATE, manualAction.parameter, manualAction.message);
                 }
                 out.println();
             }
