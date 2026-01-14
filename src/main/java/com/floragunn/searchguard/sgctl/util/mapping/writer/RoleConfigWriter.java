@@ -7,6 +7,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentatio
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomClusterActionGroup;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomIndexActionGroup;
+import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.RealmTranslator;
 import com.sun.jdi.InvalidTypeException;
 
 import java.security.InvalidKeyException;
@@ -19,7 +20,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private IntermediateRepresentation ir;
     final private MigrationReport report;
     final private List<SGRole> roles;
-    final private MigrateConfig.SgAuthc sgAuthc;
+    final private SGAuthcTranslator.SgAuthc sgAuthc;
     final private ActionGroupConfigWriter agWriter;
     final private Set<String> userMappingAttributes = new HashSet<>();
     private MigrationReport.RoleEntry roleEntry;
@@ -70,7 +71,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      * @param sgAuthc  the authentication configuration to which user mappings may be added
      * @param agWriter writer used to create custom action groups when no direct equivalent exists
      */
-    public RoleConfigWriter(IntermediateRepresentation ir, MigrateConfig.SgAuthc sgAuthc, ActionGroupConfigWriter agWriter) {
+    public RoleConfigWriter(IntermediateRepresentation ir, SGAuthcTranslator.SgAuthc sgAuthc, ActionGroupConfigWriter agWriter) {
         this.ir = ir;
         this.report = MigrationReport.shared;
         this.roles = new ArrayList<>();
@@ -189,9 +190,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         if (sgAuthc == null || userMappingAttributes.isEmpty()) {
             return;
         }
-        if (sgAuthc.authDomains == null) {
-            sgAuthc.authDomains = new ArrayList<>();
-        }
+
         final var frontendType = "basic/internal_user_db";
         var contents = new LinkedHashMap<String, String>();
         for (var attribute : userMappingAttributes) {
@@ -199,7 +198,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
         }
         var map = new LinkedHashMap<String, Object>();
         map.put("user_mapping.attributes.from", contents);
-        sgAuthc.authDomains.add(new MigrateConfig.NewAuthDomain(frontendType, null, null, null, map, null));
+        sgAuthc.authDomains().add(new RealmTranslator.NewAuthDomain(frontendType, map));
     }
 
     //region Query Migration

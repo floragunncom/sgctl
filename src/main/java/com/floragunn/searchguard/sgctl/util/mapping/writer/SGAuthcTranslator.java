@@ -1,29 +1,31 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
+import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.*;
+import com.google.common.collect.ImmutableMap;
 
 import java.util.*;
 
 public class SGAuthcTranslator {
     private final Map<String, RealmTranslator> realmMapping = new HashMap<>();
-    private final MigrateConfig.SgAuthc config;
-    private final MigrateConfig.SgAuthc frontEndConfig;
+    private final SgAuthc config;
+    private final SgAuthc frontEndConfig;
 
-    public MigrateConfig.SgAuthc getConfig() {
+    public SgAuthc getConfig() {
         return config;
     }
 
-    public MigrateConfig.SgAuthc getFrontEndConfig() {
+    public SgAuthc getFrontEndConfig() {
         return frontEndConfig;
     }
 
     public SGAuthcTranslator(IntermediateRepresentationElasticSearchYml ir) {
-        config = new MigrateConfig.SgAuthc();
-        frontEndConfig = new MigrateConfig.SgAuthc();
+        config = new SgAuthc(new ArrayList<>(), null, null);
+        frontEndConfig = new SgAuthc(new ArrayList<>(), null, null);
 
         realmMapping.put("ldap", new LdapTranslator());
         realmMapping.put("file", new FileTranslator());
@@ -43,8 +45,6 @@ public class SGAuthcTranslator {
      * @param ir The intermediate representation.
      */
     private void createAuthcConfig(IntermediateRepresentationElasticSearchYml ir) {
-        config.authDomains = new ArrayList<>();
-        frontEndConfig.authDomains = new ArrayList<>();
 
         ir.getAuthent().getRealms().forEach((String realmName, RealmIR realm) -> {
             //Handle disabled realms, like discussed
@@ -59,7 +59,7 @@ public class SGAuthcTranslator {
                 RealmTranslator.realmNotImplementedReport(realmName, realm);
                 return;
             }
-            MigrateConfig.NewAuthDomain newDomain = translator.translate(realm);
+            RealmTranslator.NewAuthDomain newDomain = translator.translate(realm);
 
             if (newDomain != null) {
                 if (translator.getIsFrontEnd()) {
@@ -71,5 +71,33 @@ public class SGAuthcTranslator {
                 }
             }
         });
+    }
+
+    public record SgAuthc(List<RealmTranslator.NewAuthDomain> authDomains, String internalProxies, String remoteIpHeader) implements Document<SgAuthc> {
+
+        @Override
+        public Object toBasicObject() {
+            Map<String, Object> result = new LinkedHashMap<>();
+
+            result.put("auth_domains", authDomains);
+
+            if (internalProxies != null || remoteIpHeader != null) {
+
+                Map<String, Object> network = new LinkedHashMap<>();
+
+                if (internalProxies != null) {
+                    network.put("trusted_proxies_regex", internalProxies);
+                }
+
+                if (remoteIpHeader != null) {
+                    network.put("http", ImmutableMap.of("remote_ip_header", remoteIpHeader));
+                }
+
+                result.put("network", network);
+            }
+
+            return result;
+        }
+
     }
 }

@@ -34,7 +34,7 @@ public class SAMLTranslator extends RealmTranslator {
     }
 
     @Override
-    public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
+    public NewAuthDomain translate(RealmIR originalIR) {
         RealmIR.SamlRealmIR ir = (RealmIR.SamlRealmIR) originalIR;
 
         addOptionalConfigProperty("saml.idp.metadata_url", ir.getIdpMetadataPath());
@@ -55,13 +55,9 @@ public class SAMLTranslator extends RealmTranslator {
             addOptionalConfigProperty("saml.sp.acs", convertedAcs);
         }
 
-        return new MigrateConfig.NewAuthDomain(
+        return new NewAuthDomain(
                 ir.getType(),
-                null,
-                null,
-                null,
-                config,
-                null
+                config
         );
     }
 }

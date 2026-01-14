@@ -36,14 +36,11 @@ public class MigrateSecurity implements Callable<Integer> {
         var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
         var ir = reader.generateIR();
         var writer = new SearchGuardConfigWriter(ir);
-        if (outputDir != null) {
-            try {
-                writer.writeTo(outputDir);
-            } catch (IIOException e) {
-                System.err.println("An error occurred while trying to write a file to: " + outputDir.getAbsolutePath() + "\nError: " + e.getMessage());
-            }
+        try {
+            writer.outputContent(outputDir);
+        } catch (IIOException e) {
+            System.err.println("An error occurred while trying to write a file to: " + outputDir.getAbsolutePath() + "\nError: " + e.getMessage());
         }
-        writer.printFiles();
         MigrationReport.shared.printReport();
         return 0;
     }

@@ -1,12 +1,10 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation;
 
-import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
+import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public abstract class RealmTranslator {
     public static final String SG_AUTHC_FILE_NAME = "sg_authc.yml";
@@ -55,5 +53,30 @@ public abstract class RealmTranslator {
     protected void addOptionalConfigProperty(String key, Object value) {
         addOptionalConfigProperty(key, value, null);
     }
-    public abstract MigrateConfig.NewAuthDomain translate(RealmIR originalIR);
+    public abstract NewAuthDomain translate(RealmIR originalIR);
+
+    public record NewAuthDomain(String frontendType, String backendType, Map<String, Object> frontendConfig,
+                         Map<String, Object> backendConfig) implements Document<NewAuthDomain> {
+
+        public NewAuthDomain(String frontendType, Map<String, Object> frontendConfig) {
+                this(frontendType, null, frontendConfig, null);
+            }
+
+            @Override
+            public Object toBasicObject() {
+                LinkedHashMap<String, Object> result = new LinkedHashMap<>();
+
+                result.put("type", backendType != null ? (frontendType + "/" + backendType) : frontendType);
+
+                if (frontendConfig != null && !frontendConfig.isEmpty()) {
+                    result.put(frontendType, frontendConfig);
+                }
+
+                if (backendConfig != null && !backendConfig.isEmpty()) {
+                    result.put(backendType, backendConfig);
+                }
+
+                return result;
+            }
+        }
 }

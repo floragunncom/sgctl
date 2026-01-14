@@ -39,19 +39,15 @@ public class PkiTranslator extends RealmTranslator {
     }
 
     @Override
-    public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
+    public NewAuthDomain translate(RealmIR originalIR) {
         RealmIR.PkiRealmIR ir = (RealmIR.PkiRealmIR) originalIR;
         //TODO This has a few things that need to be added to the TLS Config in Elasticsearch.yml
 
         addOptionalConfigProperty("user_mapping.user_name.from", convertXpackUsernamePatternToSearchGuard(ir.getUsernamePattern(), ir.getUsernameAttribute()));
 
-        return new MigrateConfig.NewAuthDomain(
+        return new NewAuthDomain(
                 "clientcert",
-                null,
-                null,
-                null,
-                config,
-                null
+                config
         );
     }
 }

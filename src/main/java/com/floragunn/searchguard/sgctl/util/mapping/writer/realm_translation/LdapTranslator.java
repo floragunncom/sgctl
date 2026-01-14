@@ -37,7 +37,7 @@ public class LdapTranslator extends RealmTranslator {
     }
 
     @Override
-    public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
+    public NewAuthDomain translate(RealmIR originalIR) {
         RealmIR.LdapRealmIR ir = (RealmIR.LdapRealmIR) originalIR;
         String url = ir.getUrl();
         if (url != null) {
@@ -90,13 +90,9 @@ public class LdapTranslator extends RealmTranslator {
             MigrationReport.shared.addWarning(SG_AUTHC_FILE_NAME, "Timeout Tcp Read", "Timeout Tcp Read is not supported in Searchguard");
         }
 
-        return new MigrateConfig.NewAuthDomain(
+        return new NewAuthDomain(
                 toBasicType(ir.getType()),
-                null,
-                null,
-                null,
-                config,
-                null
+                config
         );
     }
 }

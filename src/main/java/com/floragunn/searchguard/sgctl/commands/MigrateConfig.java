@@ -1786,7 +1786,7 @@ public class MigrateConfig implements Callable<Integer> {
 
     }
 
-    public static class NewAuthDomain implements Document<NewAuthDomain> {
+    static class NewAuthDomain implements Document<NewAuthDomain> {
 
         private String frontendType;
         private String backendType;
@@ -2174,10 +2174,10 @@ public class MigrateConfig implements Callable<Integer> {
         }
     }
 
-    public static class SgAuthc implements Document<SgAuthc> {
-        public List<NewAuthDomain> authDomains;
-        public String internalProxies = null;
-        public String remoteIpHeader = null;
+    static class SgAuthc implements Document<SgAuthc> {
+        List<NewAuthDomain> authDomains;
+        String internalProxies = null;
+        String remoteIpHeader = null;
 
         @Override
         public Object toBasicObject() {
