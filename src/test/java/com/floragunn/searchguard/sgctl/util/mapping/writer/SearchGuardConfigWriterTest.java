@@ -33,7 +33,7 @@ class SearchGuardConfigWriterTest extends QuietTestBase {
         IntermediateRepresentation ir = buildIntermediateRepresentation();
         SearchGuardConfigWriter writer = new SearchGuardConfigWriter(ir);
 
-        writer.writeTo(tempDir.toFile());
+        writer.outputContent(tempDir.toFile());
 
         Path usersFile = tempDir.resolve(UserConfigWriter.FILE_NAME);
         Path rolesFile = tempDir.resolve(RoleConfigWriter.FILE_NAME);
