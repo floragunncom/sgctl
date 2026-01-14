@@ -114,8 +114,6 @@ class RoleConfigWriterTest extends QuietTestBase {
      * Verifies invalid Lucene regex in index patterns are reported as manual actions.
      */
     @Test
-    @Disabled
-    // FIXME: Test is broken because of changes to the MigrationReport
     void shouldReportInvalidLuceneRegexInIndexPattern() {
         MigrationReport report = MigrationReport.shared;
         report.clear();
@@ -130,9 +128,7 @@ class RoleConfigWriterTest extends QuietTestBase {
             ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
             new RoleConfigWriter(ir, new MigrateConfig.SgAuthc(), agWriter);
 
-            assertTrue(report.getEntries("sg_roles.yml", MigrationReport.Category.MANUAL)
-                    .stream()
-                    .anyMatch(entry -> "role-invalid->/a~b/".equals(entry.parameter())));
+            assertTrue(report.getRoleEntries().withIssues().stream().anyMatch(roleEntry -> roleEntry.getIssues().get(MigrationReport.Category.MANUAL).stream().anyMatch(entry -> entry.parameter().equals("/a~b/"))));
         } finally {
             report.clear();
         }

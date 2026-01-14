@@ -168,8 +168,6 @@ class MigrationReportTest {
      * Verifies report output includes headers and sections for populated entries.
      */
     @Test
-    @Disabled
-    //FIXME: Changes to MigrationReport broke this test
     void printReportIncludesHeaderAndSections() {
         report.addMigrated("file1", "old", "new");
         report.addWarning("file1", "w1", "Check");
@@ -180,8 +178,8 @@ class MigrationReportTest {
         String output = output();
         assertTrue(output.contains("---------- Migration Report ----------"));
         assertTrue(output.contains("MIGRATED (1)"));
-        assertTrue(output.contains("WARNING (1)"));
-        assertTrue(output.contains("MANUAL (1)"));
+        assertTrue(output.contains("WARNINGS (1)"));
+        assertTrue(output.contains("MANUAL ACTION REQUIRED (1)"));
         assertTrue(output.contains("old -> new"));
         assertTrue(output.contains("Check"));
         assertTrue(output.contains("Do manually"));

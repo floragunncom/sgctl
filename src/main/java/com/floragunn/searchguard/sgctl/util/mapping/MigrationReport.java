@@ -290,6 +290,7 @@ public class MigrationReport {
             return issues.get(Category.WARNING).isEmpty() && issues.get(Category.MANUAL).isEmpty() && !hasRemoteClusterOrIndex;
         }
         public boolean successful() { return !hasRemoteClusterOrIndex; }
+        public Map<Category, List<Issue>> getIssues() { return issues; }
 
         public void printEntry(PrintStream out) {
             if (hasRemoteClusterOrIndex) {
@@ -316,6 +317,8 @@ public class MigrationReport {
             }
         }
     }
+
+    public RoleEntries getRoleEntries() { return roleEntries; }
 
     private static String applyFormating(String format, Object... args) {
         return Ansi.AUTO.string(String.format(format, args));
