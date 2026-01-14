@@ -53,6 +53,20 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
                 var sgMapping = new SGRoleMapping(roleName, users, backendRoles, hosts, ips);
                 rolesMappings.add(sgMapping);
+
+                report.addMigrated(FILE_NAME, mappingName + "->" + roleName);
+
+                if (!users.isEmpty()) {
+                    report.addMigrated(FILE_NAME, mappingName + "->" + roleName + "->users");
+                }
+
+                if (!backendRoles.isEmpty()) {
+                    report.addMigrated(FILE_NAME, mappingName + "->" + roleName + "->backend_roles");
+                }
+
+                if (users.isEmpty() && backendRoles.isEmpty()) {
+                    report.addInfo(FILE_NAME, mappingName + "->" + roleName + " produced an empty SG mapping (no users/backend_roles derived).");
+                }
             }
         }
     }
