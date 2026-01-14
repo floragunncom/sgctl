@@ -80,91 +80,9 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
     return builder.build();
   }
 
-  /**
-   * Expands one level of flattened dotted keys.<K>
-   *
-   * <p>Turns flattened:
-   *
-   * <pre>
-   * foo.foo.enabled: true
-   * foo.bar.enabled: false
-   * foo:
-   *  baz.enable: true
-   * bar: "test"
-   * </pre>
-   *
-   * Into:
-   *
-   * <pre>
-   * foo:
-   *  foo.enabled: true
-   *  bar.enabled: false
-   *  baz.enable: true
-   * bar: "test"
-   * </pre>
-   *
-   * @param node the node to be expanded
-   * @return An expanded input map, with one layer of flattening removed
-   */
-  private static ImmutableMap<String, DocNode> expandOnce(DocNode node) {
-    Map<String, Object> top = node.toNormalizedMap();
-
-    // Collect top-level plain vs dotted entries
-    Map<String, Object> plainValues = new HashMap<>();
-    Map<String, Map<String, Object>> buckets = new HashMap<>();
-    for (Map.Entry<String, Object> e : top.entrySet()) {
-      String key = e.getKey();
-      Object value = e.getValue();
-
-      int idx = key.indexOf('.');
-      if (idx >= 0) {
-        String head = key.substring(0, idx);
-        String tail = key.substring(idx + 1);
-
-        Map<String, Object> child = buckets.computeIfAbsent(head, k -> new HashMap<>());
-        assert !child.containsKey(tail); // sanity check
-        child.put(tail, value);
-      } else {
-        plainValues.put(key, value);
-      }
-    }
-
-    Set<String> keys = new java.util.HashSet<>();
-    keys.addAll(plainValues.keySet());
-    keys.addAll(buckets.keySet());
-
-    var builder = new ImmutableMap.Builder<String, DocNode>(keys.size());
-    for (String k : keys) {
-      Object plain = plainValues.get(k);
-      Map<String, Object> bucket = buckets.get(k);
-
-      if (plain == null && bucket != null) {
-        // only dotted -> new node from bucket
-        builder.put(k, DocNode.wrap(bucket));
-      } else if (plain != null && bucket == null) {
-        // only plain -> wrap plain
-        builder.put(k, DocNode.wrap(plain));
-      } else {
-        // both -> merge only if plain is map-like
-        if (plain instanceof Map) {
-          @SuppressWarnings("unchecked")
-          var tmp = (Map<String, Object>) plain;
-          var plainAsMap = new HashMap<>(tmp);
-          plainAsMap.putAll(bucket);
-          builder.put(k, DocNode.wrap(plainAsMap));
-        } else {
-          builder.put(k, DocNode.wrap(plain));
-        }
-      }
-    }
-
-    return builder.build();
-  }
-
   protected <T> ImmutableMap<String, Traceable<T>> parseMap(DocNodeParser<T> parser) {
-    var expandedNode = DocNode.wrap(expandOnce(node));
     var builder = new ImmutableMap.Builder<String, Traceable<T>>();
-    for (var entry : expandedNode.toMapOfNodes().entrySet()) {
+    for (var entry : node.toMapOfNodes().entrySet()) {
       var key = entry.getKey();
       var element = entry.getValue();
       var elementSource = new Source.Attribute(source, key);
@@ -180,9 +98,8 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
   }
 
   protected <T> ImmutableMap<String, Traceable<T>> parseMap(TraceableDocNodeParser<T> parser) {
-    var expandedNode = DocNode.wrap(expandOnce(node));
     var builder = new ImmutableMap.Builder<String, Traceable<T>>();
-    for (var entry : expandedNode.toMapOfNodes().entrySet()) {
+    for (var entry : node.toMapOfNodes().entrySet()) {
       var key = entry.getKey();
       var element = entry.getValue();
       var elementSource = new Source.Attribute(source, key);
@@ -195,9 +112,8 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
   }
 
   protected <T> ImmutableMap<String, Traceable<T>> parseMap(TraceableAttributeParser<T> parser) {
-    var expandedNode = DocNode.wrap(expandOnce(node));
     var builder = new ImmutableMap.Builder<String, Traceable<T>>();
-    for (var entry : expandedNode.toMapOfNodes().entrySet()) {
+    for (var entry : node.toMapOfNodes().entrySet()) {
       var key = entry.getKey();
       var element = entry.getValue();
       var elementSource = new Source.Attribute(source, key);
