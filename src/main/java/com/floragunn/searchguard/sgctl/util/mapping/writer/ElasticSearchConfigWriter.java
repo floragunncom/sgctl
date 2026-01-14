@@ -23,11 +23,12 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private static final String DEFAULT_TRUSTSTORE_PASSWORD = "changeit";
     private static final String DEFAULT_KEYSTORE_PASSWORD = "changeit";
     private static final String PLACEHOLDER = "changeit";
+    private static final List EMPTY_LIST= new ArrayList<>();
     private final IntermediateRepresentationElasticSearchYml ir;
     private final Map<String, Object> tlsTransportMap;
     private final Map<String, Object> tlsHTTPMap;
     private final Map<String, Object> defaultsMap;
-    final static String FILE_NAME = "elasticsearch.yml";
+    final static String FILE_NAME = "generated elasticsearch.yml";
 
     private static final Map<String, String> OLD_PARAMETER_NAMES = Map.ofEntries(
             Map.entry("searchguard.ssl.transport.enabled", "xpack.security.transport.ssl.enabled"),
@@ -76,7 +77,6 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private Map<String, Object> tlsMapWriter(String type, Tls tls) {
         final String prefix = "searchguard.ssl.";
         var contents = new LinkedHashMap<String, Object>();
-
         contents.put(prefix + type + ".enabled", logDefaultIfUsed(prefix + type + ".enabled", tls.getEnabled(), DEFAULT_ENABLED));
         contents.put(prefix + type + ".keystore_type", logDefaultIfUsed(prefix + type + ".keystore_type", tls.getKeystoreType(), DEFAULT_KEYSTORE_TYPE));
         contents.put(prefix + type + ".keystore_filepath", logDefaultIfUsed(prefix + type + ".keystore_filepath", tls.getKeystorePath(), null));
@@ -95,15 +95,15 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private <T> T logDefaultIfUsed(String fullFieldName, T value, T defaultValue) {
         if (value == null) {
             System.out.println(fullFieldName);
-            MigrationReport.shared.addWarning("elasticsearch.yml/new", fullFieldName, " nicht gesetzt. Default wird verwendet: " + defaultValue);
+            MigrationReport.shared.addWarning(FILE_NAME, fullFieldName, " is not found. Default is used: " + defaultValue);
             return defaultValue;
         } else {
-            MigrationReport.shared.addMigrated("elasticsearch.yml/new", OLD_PARAMETER_NAMES.get(fullFieldName), fullFieldName);
+            MigrationReport.shared.addMigrated(FILE_NAME, OLD_PARAMETER_NAMES.get(fullFieldName), fullFieldName);
             return value;
         }
     }
 
-    //TODO: Wait for change of Migrationreport for chageit, not explicit defaults are ignored, warnings and security risks are ignored
+    //TODO: Wait for change of Migrationreport for changeit, not explicit defaults are ignored
     private static Map<String,Object> defaultSearchGuardConfig() {
         var contents = new LinkedHashMap<String,Object>();
         contents.put("searchguard.ssl.http.crl.validate", false);
@@ -114,20 +114,17 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
         contents.put("searchguard.ssl.http.crl.disable_crldp", false);
         contents.put("searchguard.ssl.http.crl.validation_date", -1);
 
-        //TODO: Licence needed for it to be true
         contents.put("searchguard.enterprise_modules_enabled", true);
 
         contents.put("searchguard.nodes_dn", PLACEHOLDER);
         contents.put("searchguard.authcz.admin_dn", PLACEHOLDER);
 
-        //TODO: Check if empty list or string
-        contents.put("searchguard.restapi.roles_enabled", PLACEHOLDER);
+        contents.put("searchguard.restapi.roles_enabled", EMPTY_LIST);
 
         contents.put("searchguard.audit.enable_rest", true);
         contents.put("searchguard.audit.enable_transport", false);
         contents.put("searchguard.audit.resolve_bulk_requests", false);
 
-        //TODO: make constants
         contents.put("searchguard.audit.threadpool.size", 10);
         contents.put("searchguard.audit.threadpool.max_queue_len", 100000);
 
