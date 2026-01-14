@@ -6,6 +6,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 
+import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.RealmTranslator;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -48,7 +49,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         ir.addRole(role);
 
         ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-        RoleConfigWriter writer = new RoleConfigWriter(ir, new MigrateConfig.SgAuthc(), agWriter);
+        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcTranslator.SgAuthc(new ArrayList<>(), null, null), agWriter);
 
         @SuppressWarnings("unchecked")
         Map<String, ActionGroupConfigWriter.ActionGroup> actionGroups =
@@ -96,7 +97,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         ir.addRole(role);
 
         ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-        RoleConfigWriter writer = new RoleConfigWriter(ir, new MigrateConfig.SgAuthc(), agWriter);
+        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcTranslator.SgAuthc(new ArrayList<>(), null, null), agWriter);
 
         @SuppressWarnings("unchecked")
         Map<String, RoleConfigWriter.SGRole> roles =
@@ -125,7 +126,7 @@ class RoleConfigWriterTest extends QuietTestBase {
             ir.addRole(role);
 
             ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-            new RoleConfigWriter(ir, new MigrateConfig.SgAuthc(), agWriter);
+            new RoleConfigWriter(ir, new SGAuthcTranslator.SgAuthc(new ArrayList<>(), null, null), agWriter);
 
             assertTrue(report.getEntries("sg_roles.yml", MigrationReport.Category.MANUAL)
                     .stream()

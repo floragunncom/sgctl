@@ -7,7 +7,7 @@ import java.util.*;
 
 public class JwtTranslator extends RealmTranslator{
     @Override
-    public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
+    public NewAuthDomain translate(RealmIR originalIR) {
         //TODO: Not yet final
         RealmIR.JwtRealmIR ir = (RealmIR.JwtRealmIR) originalIR;
         //Todo: Use getter and remove addManualAction
@@ -28,13 +28,9 @@ public class JwtTranslator extends RealmTranslator{
         String groupsClaim = ir.getClaimsGroups() != null ? ir.getClaimsGroups() : "roles";
         addOptionalConfigProperty("user_mapping.roles.from", groupsClaim);
 
-        return new MigrateConfig.NewAuthDomain(
+        return new NewAuthDomain(
                 "jwt",
-                null,
-                null,
-                null,
-                config,
-                null
+                config
         );
     }
 

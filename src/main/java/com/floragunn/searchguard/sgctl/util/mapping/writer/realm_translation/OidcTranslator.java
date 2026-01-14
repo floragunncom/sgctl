@@ -9,7 +9,7 @@ public class OidcTranslator extends RealmTranslator {
         isFrontEnd = true;
     }
     @Override
-    public MigrateConfig.NewAuthDomain translate(RealmIR originalIR) {
+    public NewAuthDomain translate(RealmIR originalIR) {
         RealmIR.OidcRealmIR ir = (RealmIR.OidcRealmIR) originalIR;
 
         //TODO review mapping: oidc.idp.openid_configuration_url, oidc.idp.tls.trusted_cas
@@ -28,13 +28,9 @@ public class OidcTranslator extends RealmTranslator {
         MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "oidc.client_secret", needsToBeAddedManually);
 
 
-        return new MigrateConfig.NewAuthDomain(
+        return new NewAuthDomain(
                 ir.getType(),
-                null,
-                null,
-                null,
-                config,
-                null
+                config
         );
     }
 }
