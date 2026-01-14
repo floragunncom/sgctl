@@ -1,13 +1,11 @@
 package com.floragunn.searchguard.sgctl.util.mapping;
 
+import com.floragunn.searchguard.sgctl.util.mapping.writer.RoleConfigWriter;
+import org.jspecify.annotations.NonNull;
+import picocli.CommandLine.Help.Ansi;
+
 import java.io.PrintStream;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.EnumMap;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 
 /**
@@ -15,11 +13,28 @@ import java.util.Objects;
  */
 public class MigrationReport {
     public static MigrationReport shared = new MigrationReport();
+    private static final String MANUAL_ACTION_TITLE = "  @|bold,yellow MANUAL ACTION REQUIRED (%d)|@\n  Parameters that could not be automatically migrated and require manual review or adjustment.\n";
+    private static final String WARNING_TITLE = "  @|bold,yellow WARNINGS (%d)|@\n  Potentially problematic or ambiguous settings. Review them to ensure the migrated configuration behaves as expected.\n";
+    private static final String MIGRATED_TITLE = "  @|bold,green SUCCESSFULLY MIGRATED (%d)|@\n  Parameters that have been successfully migrated.\n";
+    private static final String INFO_TITLE = "  @|bold,blue INFO (%d)|@\n  General information and notes on behaviour.\n";
+    private static final String DISPLAY_TEMPLATE = "    - %s\n      -> %s\n";
     private MigrationReport() {}
     private final LinkedHashMap<String, FileReport> files = new LinkedHashMap<>();
-    public enum Category {MIGRATED, WARNING, MANUAL}
+    private final RoleEntries roleEntries = new RoleEntries(new LinkedList<>(), new LinkedList<>(), new LinkedList<>());
+
+    public enum Category {MIGRATED, WARNING, MANUAL, INFO}
 
     /* ----- public API ----- */
+    public void addRoleEntry(RoleEntry entry) {
+        if (entry.noIssues()) {
+            roleEntries.successful.add(entry);
+        } else if (entry.successful()) {
+            roleEntries.withIssues.add(entry);
+        } else {
+            roleEntries.unsuccessful.add(entry);
+        }
+    }
+
     public void addUnknownKey(String file, String key, String path){
         addPreset(ReportPreset.UNKNOWN_KEY, Category.WARNING, file, key, key, path);
     }
@@ -39,6 +54,10 @@ public class MigrationReport {
 
     public void addIgnoredKey(String file, String key, String path){
         addPreset(ReportPreset.IGNORED_KEY, Category.WARNING, file, key, key, path);
+    }
+
+    public void addInfo(String file, String info) {
+        addPreset(ReportPreset.INFO, Category.INFO, file, info, info, info);
     }
 
     public void addMigrated(String file, String oldParameter, String newParameter){
@@ -62,21 +81,35 @@ public class MigrationReport {
     }
 
     public void printReport(PrintStream out){
-        out.println("---------- Migration Report ----------");
+        out.println(applyFormating("@|bold ----------------------------- Migration Report -----------------------------|@"));
         for (Map.Entry<String, FileReport> fe : files.entrySet()) {
-            out.println("File: " + fe.getKey() + "\n");
+            out.println(applyFormating("@|bold File - " + fe.getKey() + ":|@\n"));
             FileReport fr = fe.getValue();
-
+            printInfo(fr, out);
             printMigrated(fr, out);
             printWarnings(fr, out);
             printManuals(fr, out);
         }
-        out.println("---------- End Migration Report ----------");
+        out.println(applyFormating("@|bold File - " + RoleConfigWriter.FILE_NAME + ":|@\n"));
+        if (!roleEntries.successful.isEmpty()) {
+            out.println(applyFormating("  @|bold,green SUCCESSFULLY MIGRATED (" + roleEntries.successful.size() + "):|@"));
+            for (var entry : roleEntries.successful) out.println("    - " + entry.getName());
+            out.println();
+        }
+        if (!roleEntries.withIssues.isEmpty()) {
+            out.println(applyFormating("  @|bold,yellow MIGRATED WITH ISSUES (" + roleEntries.withIssues.size() + "):|@"));
+            for (var entry : roleEntries.withIssues) entry.printEntry(out);
+            out.println();
+        }
+        if (!roleEntries.unsuccessful.isEmpty()) {
+            out.println(applyFormating("  @|bold,red NOT MIGRATED (" + roleEntries.unsuccessful.size() + "):|@"));
+            for (var entry : roleEntries.unsuccessful) entry.printEntry(out);
+            out.println();
+        }
+        out.println(applyFormating("@|bold ----------------------------- End Migration Report -----------------------------|@"));
     }
 
     /* ---------- internals ---------- */
-    private static final String DISPLAY_TEMPLATE = "    - %s%n      -> %s%n";
-    
     private FileReport file(String file){
         return files.computeIfAbsent(file, k -> new FileReport());
     }
@@ -85,24 +118,35 @@ public class MigrationReport {
         String msg = rp.format(args);
         file(file).add(category, new Entry(parameter, msg, null, rp));
     }
+
+    private void printInfo(FileReport fr, PrintStream out) {
+        List<Entry> migrated = fr.get(Category.INFO);
+        if(!migrated.isEmpty()){
+            out.print(applyFormating(INFO_TITLE, migrated.size()));
+            for(Entry e : migrated) out.printf("    - %s\n", e.parameter);
+            out.println();
+        }
+    }
+
     void printMigrated(FileReport fr, PrintStream out){
         List<Entry> migrated = fr.get(Category.MIGRATED);
         if(!migrated.isEmpty()){
-            out.printf("  MIGRATED (%d)%n  Parameters that have been successfully migrated%n%n", migrated.size());
-            for(Entry e : migrated){
+            out.print(applyFormating(MIGRATED_TITLE, migrated.size()));
+            for(Entry e : migrated) {
                 if(e.newParameter != null){
-                    out.printf("    - %s -> %s%n", e.parameter, e.newParameter);
+                    out.printf("    - %s -> %s\n", e.parameter, e.newParameter);
                 } else {
-                    out.printf("    - %s%n", e.parameter);
+                    out.printf("    - %s\n", e.parameter);
                 }
             }
             out.println();
         }
     }
+
     void printWarnings(FileReport fr, PrintStream out){
         List<Entry> warnings = fr.get(Category.WARNING);
         if(!warnings.isEmpty()){
-            out.printf("  %s (%d)%n  Potentially problematic or ambiguous settings. Review them to ensure the migrated configuration behaves as expected%n%n", Category.WARNING.name(), warnings.size());
+            out.printf(applyFormating(WARNING_TITLE, warnings.size()));
             printPresets(warnings, out);
             List<Entry> freeWarnings = new ArrayList<>();
             for (Entry e : warnings) {
@@ -116,6 +160,7 @@ public class MigrationReport {
             }
         }
     }
+
     void printPresets(List<Entry> entries, PrintStream out){
         for (ReportPreset rp : ReportPreset.values()) {
             List<Entry> presetWarnings = new ArrayList<>();
@@ -134,7 +179,7 @@ public class MigrationReport {
     void printManuals(FileReport fr, PrintStream out){
         List<Entry> manuals = fr.get(Category.MANUAL);
         if(!manuals.isEmpty()){
-            out.printf("  %s (%d)%n  Parameters that could not be automatically migrated and require manual review or adjustment%n%n", Category.MANUAL.name(), manuals.size());
+            out.print(applyFormating(MANUAL_ACTION_TITLE, manuals.size()));
             for(Entry e : manuals){
                 out.printf(DISPLAY_TEMPLATE, e.parameter, e.message);
             }
@@ -156,50 +201,30 @@ public class MigrationReport {
         }
     }
 
-    public static class Entry{
-        private final String parameter;
-        private final String message;
-        private final String newParameter;
-        private final ReportPreset preset;
-        public Entry(String parameter, String message, String newParameter, ReportPreset preset){
-            this.parameter = parameter;
-            this.message = message;
-            this.newParameter = newParameter;
-            this.preset = preset;
-        }
-        public String getParameter() { return parameter; }
-        public String getMessage() { return message; }
-        public String getNewParameter() { return newParameter; }
-        public ReportPreset getPreset() { return preset; }
-
+    public record Entry(String parameter, String message, String newParameter, ReportPreset preset) {
         @Override
         public boolean equals(Object obj) {
             if (this == obj) return true;
-            if (!(obj instanceof Entry)) return false;
-            Entry other = (Entry) obj;
+            if (!(obj instanceof Entry other)) return false;
             return Objects.equals(parameter, other.parameter)
-                && Objects.equals(message, other.message)
-                && Objects.equals(newParameter, other.newParameter)
-                && preset == other.preset;
+                    && Objects.equals(message, other.message)
+                    && Objects.equals(newParameter, other.newParameter)
+                    && preset == other.preset;
         }
-    
-        @Override
-        public int hashCode() {
-            return Objects.hash(parameter, message, newParameter, preset);
-        }
-    
-        @Override
+
+        @Override @NonNull
         public String toString() {
             return "Entry{" +
-                "parameter='" + parameter + '\'' +
-                ", message='" + message + '\'' +
-                ", newParameter='" + newParameter + '\'' +
-                ", preset=" + preset +
-                '}';
+                    "parameter='" + parameter + '\'' +
+                    ", message='" + message + '\'' +
+                    ", newParameter='" + newParameter + '\'' +
+                    ", preset=" + preset +
+                    '}';
         }
     }
 
-    public enum ReportPreset{
+    public enum ReportPreset {
+        INFO("%s"),
         UNKNOWN_KEY("Encountered unknown key '%s' at path '%s'"),
         INVALID_TYPE("Expected type '%s' for '%s', but found '%s'"),
         MISSING_PARAMETER("'%s' missing required parameter '%s'"),
@@ -242,4 +267,61 @@ public class MigrationReport {
         var fr = files.get(file);
         return fr == null ? 0 : fr.get(c).size();
     }
+
+    public static class RoleEntry {
+        @NonNull private final String name;
+        private final Map<Category, List<Issue>> issues;
+        private boolean hasRemoteClusterOrIndex = false;
+        private static final String ISSUE_DISPLAY_TEMPLATE = "      - %s\n        -> %s\n";
+        private static final String TITLE_DISPLAY_TEMPLATE = "      @|yellow %s (%d)|@\n";
+
+        public RoleEntry(@NonNull String name) {
+            this.name = name;
+            this.issues = new LinkedHashMap<>();
+            issues.put(Category.MANUAL, new LinkedList<>());
+            issues.put(Category.WARNING, new LinkedList<>());
+        }
+
+        public void hasRemoteClusterOrIndex() { this.hasRemoteClusterOrIndex = true; }
+        public void addManualAction(String parameter, String message) { issues.get(Category.MANUAL).add(new Issue(parameter, message)); }
+        public void addWarning(String parameter, String message) { issues.get(Category.WARNING).add(new Issue(parameter, message)); }
+        public @NonNull String getName() { return this.name; }
+        public boolean noIssues() {
+            return issues.get(Category.WARNING).isEmpty() && issues.get(Category.MANUAL).isEmpty() && !hasRemoteClusterOrIndex;
+        }
+        public boolean successful() { return !hasRemoteClusterOrIndex; }
+
+        public void printEntry(PrintStream out) {
+            if (hasRemoteClusterOrIndex) {
+                out.printf(applyFormating("    @|bold %s:|@\n      - Remote indices and clusters are not supported in Search Guard. The role can not be migrated.\n\n", name));
+                return;
+            }
+            var warnings = issues.get(Category.WARNING);
+            var manualActions = issues.get(Category.MANUAL);
+            var issueCount = warnings.size() + manualActions.size();
+            out.print(applyFormating("    @|bold %s (%d):|@\n", name, issueCount));
+            if (!warnings.isEmpty()) {
+                out.print(applyFormating(TITLE_DISPLAY_TEMPLATE, "WARNINGS", warnings.size()));
+                for (var warning : warnings) {
+                    out.printf(ISSUE_DISPLAY_TEMPLATE, warning.parameter, warning.message);
+                }
+                out.println();
+            }
+            if (!manualActions.isEmpty()) {
+                out.print(applyFormating(TITLE_DISPLAY_TEMPLATE, "MANUAL ACTION REQUIRED", manualActions.size()));
+                for (var manualAction : manualActions) {
+                    out.printf(ISSUE_DISPLAY_TEMPLATE, manualAction.parameter, manualAction.message);
+                }
+                out.println();
+            }
+        }
+    }
+
+    private static String applyFormating(String format, Object... args) {
+        return Ansi.AUTO.string(String.format(format, args));
+    }
+
+    public record Issue(String parameter, String message) { }
+
+    public record RoleEntries(List<RoleEntry> successful, List<RoleEntry> withIssues, List<RoleEntry> unsuccessful) { }
 }

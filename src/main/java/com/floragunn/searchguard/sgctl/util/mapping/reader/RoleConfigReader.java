@@ -5,6 +5,7 @@ import com.floragunn.codova.documents.DocumentParseException;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
+import com.floragunn.searchguard.sgctl.util.mapping.writer.UserConfigWriter;
 import org.jspecify.annotations.NonNull;
 
 import java.io.File;
@@ -49,8 +50,6 @@ public class RoleConfigReader {
     }
 
     private void readRoles(LinkedHashMap<?, ?> mapReader) {
-        report.addWarning(FILE_NAME, "metadata", "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard.");
-        report.addWarning(FILE_NAME, "transient-metadata", "The key 'transient-metadata' is ignored for migration because it is transient.");
         for (var entry : mapReader.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
                 report.addInvalidType(FILE_NAME, "origin", String.class, entry.getKey());
