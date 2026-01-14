@@ -5,11 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.searchguard.sgctl.config.migrate.FrontendAuthMigrator;
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
 import com.floragunn.searchguard.sgctl.config.migrate.Migrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgFrontendAuthC;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.util.Optional;
@@ -169,7 +170,7 @@ public class FrontendAuthMigratorTest {
         try (var in = getClass().getResourceAsStream(path)) {
             assertNotNull(in, "Resource not found: " + path);
             var node = DocNode.wrap(DocReader.yaml().read(in));
-            return XPackElasticsearchConfig.parse(node, Parser.Context.get());
+            return TraceableDocNode.parse(node, new Source.Config(path), XPackElasticsearchConfig::parse);
         }
     }
 
@@ -177,7 +178,7 @@ public class FrontendAuthMigratorTest {
         try (var in = getClass().getResourceAsStream(path)) {
             assertNotNull(in, "Resource not found: " + path);
             var node = DocNode.wrap(DocReader.yaml().read(in));
-            return Kibana.parse(node, Parser.Context.get());
+            return TraceableDocNode.parse(node, new Source.Config(path), Kibana::parse);
         }
     }
 
