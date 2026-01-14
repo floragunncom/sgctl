@@ -1,16 +1,15 @@
 package com.floragunn.searchguard.sgctl.config.xpack;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocumentParseException;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.fluent.collections.ImmutableList;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import java.io.IOException;
 import java.util.List;
 import org.jspecify.annotations.NullMarked;
@@ -26,10 +25,15 @@ public class KibanaTest {
     }
   }
 
+  private Kibana parseConfig(DocNode node) throws ConfigValidationException {
+    var src = new Source.Config("kibana.yml");
+    return TraceableDocNode.parse(node, src, Kibana::parse);
+  }
+
   @Test
   public void testParseBasic() throws IOException, ConfigValidationException {
     var node = read("/xpack_migrate/kibana/basic.yml");
-    var config = Kibana.parse(node, Parser.Context.get());
+    var config = parseConfig(node);
 
     assertNotNull(config);
 

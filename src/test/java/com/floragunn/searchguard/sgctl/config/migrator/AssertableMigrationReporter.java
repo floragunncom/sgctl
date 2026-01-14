@@ -1,7 +1,7 @@
 package com.floragunn.searchguard.sgctl.config.migrator;
 
 import com.floragunn.searchguard.sgctl.config.migrate.MigrationReporter;
-import com.floragunn.searchguard.sgctl.config.trace.Traceable;
+import com.floragunn.searchguard.sgctl.config.trace.BaseTraceable;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,47 +12,47 @@ public class AssertableMigrationReporter implements MigrationReporter {
   private final MigrationReporter delegate =
       MigrationReporter.of("sgctl migrate-security report", "Search Guard");
 
-  private final Map<Traceable<?>, List<String>> critical = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> problem = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> criticalSecret = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> problemSecret = new LinkedHashMap<>();
-  private final Map<Traceable<?>, List<String>> inconvertibleSecret = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> critical = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> problem = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> criticalSecret = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> problemSecret = new LinkedHashMap<>();
+  private final Map<BaseTraceable<?>, List<String>> inconvertibleSecret = new LinkedHashMap<>();
   private final List<String> problemMessages = new ArrayList<>();
   private final List<String> criticalMessages = new ArrayList<>();
 
   @Override
-  public void critical(Traceable<?> subject, String message) {
+  public void critical(BaseTraceable<?> subject, String message) {
     delegate.critical(subject, message);
     add(critical, subject, message);
   }
 
   @Override
-  public void criticalSecret(Traceable<?> subject, String message) {
+  public void criticalSecret(BaseTraceable<?> subject, String message) {
     delegate.criticalSecret(subject, message);
     add(criticalSecret, subject, message);
   }
 
   @Override
-  public void problem(Traceable<?> subject, String message) {
+  public void problem(BaseTraceable<?> subject, String message) {
     delegate.problem(subject, message);
     add(problem, subject, message);
   }
 
   @Override
-  public void problemSecret(Traceable<?> subject, String message) {
+  public void problemSecret(BaseTraceable<?> subject, String message) {
     delegate.problemSecret(subject, message);
     add(problemSecret, subject, message);
   }
 
   @Override
-  public void inconvertible(Traceable<?> subject, String message) {
+  public void inconvertible(BaseTraceable<?> subject, String message) {
     delegate.inconvertible(subject, message);
     add(inconvertible, subject, message);
   }
 
   @Override
-  public void inconvertibleSecret(Traceable<?> subject, String message) {
+  public void inconvertibleSecret(BaseTraceable<?> subject, String message) {
     delegate.inconvertibleSecret(subject, message);
     add(inconvertibleSecret, subject, message);
   }
@@ -80,7 +80,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   private void add(
-      Map<? super Traceable<?>, List<String>> map, Traceable<?> subject, String message) {
+      Map<? super BaseTraceable<?>, List<String>> map, BaseTraceable<?> subject, String message) {
     map.computeIfAbsent(subject, v -> new ArrayList<>()).add(message);
   }
 
@@ -90,7 +90,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertCritical(Traceable<?> subject) {
+  public void assertCritical(BaseTraceable<?> subject) {
     if (critical.remove(subject) == null)
       throw new AssertionError("Expected critical problem for traceable: " + subject);
   }
@@ -100,7 +100,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertNoCritical(Traceable<?> subject) {
+  public void assertNoCritical(BaseTraceable<?> subject) {
     if (critical.containsKey(subject))
       throw new AssertionError("Did not expect critical problem for traceable: " + subject);
   }
@@ -112,7 +112,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    * @param subject The traceable to check.
    * @param message The message to check.
    */
-  public void assertCritical(Traceable<?> subject, String message) {
+  public void assertCritical(BaseTraceable<?> subject, String message) {
     List<String> messages = critical.get(subject);
     if (messages == null || !messages.remove(message))
       throw new AssertionError(
@@ -128,7 +128,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertProblem(Traceable<?> subject) {
+  public void assertProblem(BaseTraceable<?> subject) {
     if (problem.remove(subject) == null)
       throw new AssertionError("Expected problem for traceable: " + subject);
   }
@@ -138,7 +138,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertNoProblem(Traceable<?> subject) {
+  public void assertNoProblem(BaseTraceable<?> subject) {
     if (problem.containsKey(subject))
       throw new AssertionError("Did not expect problem for traceable: " + subject);
   }
@@ -150,7 +150,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    * @param subject The traceable to check.
    * @param message The message to check.
    */
-  public void assertProblem(Traceable<?> subject, String message) {
+  public void assertProblem(BaseTraceable<?> subject, String message) {
     List<String> messages = problem.get(subject);
     if (messages == null || !messages.remove(message))
       throw new AssertionError(
@@ -166,7 +166,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertInconvertible(Traceable<?> subject) {
+  public void assertInconvertible(BaseTraceable<?> subject) {
     if (inconvertible.remove(subject) == null)
       throw new AssertionError("Expected inconvertible for traceable: " + subject);
   }
@@ -176,7 +176,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertNoInconvertible(Traceable<?> subject) {
+  public void assertNoInconvertible(BaseTraceable<?> subject) {
     if (inconvertible.containsKey(subject))
       throw new AssertionError("Did not expect inconvertible for traceable: " + subject);
   }
@@ -188,7 +188,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    * @param subject The traceable to check.
    * @param message The message to check.
    */
-  public void assertInconvertible(Traceable<?> subject, String message) {
+  public void assertInconvertible(BaseTraceable<?> subject, String message) {
     List<String> messages = inconvertible.get(subject);
     if (messages == null || !messages.remove(message))
       throw new AssertionError(
@@ -204,7 +204,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertCriticalSecret(Traceable<?> subject) {
+  public void assertCriticalSecret(BaseTraceable<?> subject) {
     if (criticalSecret.remove(subject) == null)
       throw new AssertionError("Expected critical secret problem for traceable: " + subject);
   }
@@ -214,7 +214,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertNoCriticalSecret(Traceable<?> subject) {
+  public void assertNoCriticalSecret(BaseTraceable<?> subject) {
     if (criticalSecret.containsKey(subject))
       throw new AssertionError("Did not expect critical secret problem for traceable: " + subject);
   }
@@ -227,7 +227,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    * @param subject The traceable to check.
    * @param message The message to check.
    */
-  public void assertCriticalSecret(Traceable<?> subject, String message) {
+  public void assertCriticalSecret(BaseTraceable<?> subject, String message) {
     List<String> messages = criticalSecret.get(subject);
     if (messages == null || !messages.remove(message))
       throw new AssertionError(
@@ -243,7 +243,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertProblemSecret(Traceable<?> subject) {
+  public void assertProblemSecret(BaseTraceable<?> subject) {
     if (problemSecret.remove(subject) == null)
       throw new AssertionError("Expected secret problem for traceable: " + subject);
   }
@@ -253,7 +253,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertNoProblemSecret(Traceable<?> subject) {
+  public void assertNoProblemSecret(BaseTraceable<?> subject) {
     if (problemSecret.containsKey(subject))
       throw new AssertionError("Did not expect secret problem for traceable: " + subject);
   }
@@ -265,7 +265,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    * @param subject The traceable to check.
    * @param message The message to check.
    */
-  public void assertProblemSecret(Traceable<?> subject, String message) {
+  public void assertProblemSecret(BaseTraceable<?> subject, String message) {
     List<String> messages = problemSecret.get(subject);
     if (messages == null || !messages.remove(message))
       throw new AssertionError(
@@ -281,7 +281,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertInconvertibleSecret(Traceable<?> subject) {
+  public void assertInconvertibleSecret(BaseTraceable<?> subject) {
     if (inconvertibleSecret.remove(subject) == null)
       throw new AssertionError("Expected inconvertible secret for traceable: " + subject);
   }
@@ -291,7 +291,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    *
    * @param subject The traceable to check.
    */
-  public void assertNoInconvertibleSecret(Traceable<?> subject) {
+  public void assertNoInconvertibleSecret(BaseTraceable<?> subject) {
     if (inconvertibleSecret.containsKey(subject))
       throw new AssertionError("Did not expect inconvertible secret for traceable: " + subject);
   }
@@ -304,7 +304,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
    * @param subject The traceable to check.
    * @param message The message to check.
    */
-  public void assertInconvertibleSecret(Traceable<?> subject, String message) {
+  public void assertInconvertibleSecret(BaseTraceable<?> subject, String message) {
     List<String> messages = inconvertibleSecret.get(subject);
     if (messages == null || !messages.remove(message))
       throw new AssertionError(
@@ -415,7 +415,7 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   private boolean removeMessageFromTraceableByPath(
-      Map<Traceable<?>, List<String>> map, String path, String message) {
+      Map<BaseTraceable<?>, List<String>> map, String path, String message) {
     for (var entry : map.entrySet()) {
       if (entry.getKey().getSource().fullPathString().equals(path)) {
         if (entry.getValue().remove(message)) {

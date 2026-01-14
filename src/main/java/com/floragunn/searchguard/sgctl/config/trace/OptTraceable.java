@@ -2,14 +2,23 @@ package com.floragunn.searchguard.sgctl.config.trace;
 
 import com.floragunn.codova.validation.ValidationErrors;
 import java.util.Optional;
+import java.util.function.Function;
 import org.jspecify.annotations.Nullable;
 
-public interface OptTraceable<T> extends Traceable<Optional<T>> {
+public interface OptTraceable<T> extends BaseTraceable<Optional<T>> {
 
   @SuppressWarnings("OptionalGetWithoutIsPresent")
   default T getValue() {
     return get().get();
   }
+
+  default boolean isPresent() {
+    return get().isPresent();
+  }
+
+  <U> OptTraceable<U> map(Function<? super T, ? extends U> mapper);
+
+  <U> OptTraceable<U> flatMap(Function<? super T, ? extends OptTraceable<? extends U>> mapper);
 
   Traceable<T> orElse(T other);
 

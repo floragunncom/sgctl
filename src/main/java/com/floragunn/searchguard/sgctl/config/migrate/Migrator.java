@@ -8,6 +8,7 @@ import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
+import com.floragunn.searchguard.sgctl.config.xpack.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,8 +53,7 @@ public class Migrator {
 
     for (final SubMigrator subMigrator : subMigrators) {
       logger.debug("Running migration with {}", subMigrator.getClass().getSimpleName());
-      final List<NamedConfig<?>> migratedSubConfigs =
-          legacySubMigrate(subMigrator, context, logger, reporter);
+      final List<NamedConfig<?>> migratedSubConfigs = subMigrator.migrate(context, reporter);
       logger.debug("SubMigrator returned {} config files", migratedSubConfigs.size());
 
       for (NamedConfig<?> migratedSubConfig : migratedSubConfigs) {
@@ -79,16 +79,6 @@ public class Migrator {
     } else {
       return new MigrationResult.Success(
           outputMigratedConfigsBuilder.build(), reporter.generateReport());
-    }
-  }
-
-  private List<NamedConfig<?>> legacySubMigrate(
-      SubMigrator sm, IMigrationContext ctx, Logger logger, MigrationReporter reporter)
-      throws SgctlException {
-    try {
-      return sm.migrate(ctx, logger);
-    } catch (MigrationNotImplementedException e) {
-      return sm.migrate(ctx, reporter);
     }
   }
 

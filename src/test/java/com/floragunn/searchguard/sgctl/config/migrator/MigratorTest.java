@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.*;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.trace.BaseTraceable;
 import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
@@ -13,6 +14,7 @@ import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
+import com.floragunn.searchguard.sgctl.config.xpack.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -63,9 +65,8 @@ class MigratorTest {
     }
 
     @Override
-    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger) {
-      logger.debug("TestMigratorUsers migrate start");
-
+    public List<NamedConfig<?>> migrate(
+        Migrator.IMigrationContext context, MigrationReporter reporter) {
       final SgInternalUsersConfig sgInternalUsersConfig = new SgInternalUsersConfig();
       final List<NamedConfig<?>> namedConfigs = List.of(sgInternalUsersConfig);
       return namedConfigs;
@@ -99,9 +100,8 @@ class MigratorTest {
     }
 
     @Override
-    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger) {
-      logger.debug("TestMigratorCombined migrate start");
-
+    public List<NamedConfig<?>> migrate(
+        Migrator.IMigrationContext context, MigrationReporter reporter) {
       final SgInternalUsersConfig sgInternalUsersConfig = new SgInternalUsersConfig();
       final SgKibanaConfig sgKibanaConfig = new SgKibanaConfig();
       final List<NamedConfig<?>> namedConfigs = List.of(sgInternalUsersConfig, sgKibanaConfig);
@@ -109,20 +109,10 @@ class MigratorTest {
     }
   }
 
-  static class FailingTestMigrator implements SubMigrator {
-
-    @Override
-    public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
-        throws SgctlException {
-      logger.debug("FailingTestMigrator migrate start");
-      throw new SgctlException("Failed to migrate because of ...");
-    }
-  }
-
   static class ReportingTestMigrator implements SubMigrator {
 
-    Traceable<?> dummyTraceable1 = OptTraceable.empty(new Source.Config("dummyTraceable1"));
-    Traceable<?> dummyTraceable2 = OptTraceable.empty(new Source.Config("dummyTraceable2"));
+    BaseTraceable<?> dummyTraceable1 = OptTraceable.empty(new Source.Config("dummyTraceable1"));
+    BaseTraceable<?> dummyTraceable2 = OptTraceable.empty(new Source.Config("dummyTraceable2"));
 
     @Override
     public List<NamedConfig<?>> migrate(
@@ -332,21 +322,6 @@ class MigratorTest {
     final var settingValue = convertedConfig1AsMap.get("setting");
     assertNotNull(settingValue);
     assertEquals("null", settingValue);
-  }
-
-  @Test
-  public void testFailingMigration() {
-    var registry = MigratorRegistry.getInstance();
-    // Register sub-migrators
-    registry.registerSubMigrator(new FailingTestMigrator());
-    // Finalize to prevent error
-    registry.finalizeSubMigrators();
-
-    final Migrator migrator = new Migrator();
-
-    // Do the migration
-    NullMigrationContext context = new NullMigrationContext();
-    assertThrows(SgctlException.class, () -> migrator.migrate(context));
   }
 
   @AfterEach

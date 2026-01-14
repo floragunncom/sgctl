@@ -2,45 +2,71 @@ package com.floragunn.searchguard.sgctl.config.migrate;
 
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalUsers;
-import com.floragunn.searchguard.sgctl.config.xpack.Users;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import org.slf4j.Logger;
 
 public class UserMigrator implements SubMigrator {
 
-  public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
-      throws SgctlException {
-    logger.info("Migrating Users"); // needed ?
-    Optional<Users> xpackUsers = context.getUsers();
+  @Override
+  public List<NamedConfig<?>> migrate(
+      Migrator.IMigrationContext context, MigrationReporter reporter) {
+
+    var xpackUsers = context.getUsers();
     if (xpackUsers.isEmpty()) {
-      logger.warn("users.json is empty");
+      reporter.problem("users.json is empty");
       return List.of();
     }
 
     var builder =
-        new ImmutableList.Builder<SgInternalUsers.User>(xpackUsers.get().mappings().size());
+        new ImmutableList.Builder<SgInternalUsers.User>(xpackUsers.get().users().get().size());
 
-    for (Map.Entry<String, Users.User> entry : xpackUsers.get().mappings().entrySet()) {
+    for (var entry : xpackUsers.get().users().get().entrySet()) {
 
-      // convert ImmutableMap<String, Object> from xpack to ImmutableMap<String, String> for search
-      // guard
-      ImmutableMap<String, String> sgMetaData =
-          entry.getValue().metadata() != null
-              ? entry.getValue().metadata().map(key -> key, value -> String.valueOf(value))
+      var user = entry.getValue().get();
+
+      // skip if disabled
+      if (!user.enabled().get()) {
+        continue;
+      }
+      // convert ImmutableMap<String, Traceable<String>> from xpack to ImmutableMap<String, String>
+      // for searchguard
+      ImmutableMap<String, String> xPackMetaData =
+          !user.metadata().get().isEmpty()
+              ? user.metadata().get().map(key -> key, Traceable::get)
               : ImmutableMap.empty();
+
+      var metadataBuilder =
+          new ImmutableMap.Builder<String, String>(
+              xPackMetaData.size() + 3); // 3 potenzielle extra metadaten
+
+      for (var metadataEntry : xPackMetaData.entrySet()) {
+        metadataBuilder.put(metadataEntry.getKey(), metadataEntry.getValue());
+      }
+
+      if (user.fullName().get().isPresent()) {
+        metadataBuilder.put("full_name", user.fullName().getValue());
+      }
+
+      if (user.email().get().isPresent()) {
+        metadataBuilder.put("email", user.email().getValue());
+      }
+
+      if (user.profileUid().get().isPresent()) {
+        metadataBuilder.put("profileUid", user.profileUid().getValue());
+      }
+
+      ImmutableMap<String, String> sgMetaData = metadataBuilder.build();
 
       builder.add(
           new SgInternalUsers.User(
-              entry.getValue().username(), "", entry.getValue().roles(), sgMetaData));
+              user.username().get(), "", user.roles().get().map(Traceable::get), sgMetaData));
     }
 
-    logger.warn(
-        "Passwords are empty for all migrated users. Each user must reset their password or a admin nmust set them manually.");
+    reporter.problem(
+        "Passwords are empty for all migrated users. Each user must reset their password or an admin must set them manually.");
+
     return List.of(new SgInternalUsers(builder.build()));
   }
 }

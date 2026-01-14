@@ -1,9 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.xpack;
 
 import com.floragunn.codova.documents.DocNode;
-import com.floragunn.codova.documents.Parser;
-import com.floragunn.codova.validation.ConfigValidationException;
-import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
 import com.floragunn.searchguard.sgctl.config.trace.*;
@@ -48,11 +45,10 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         TraceableAttribute.Required tAttr) {
       var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart());
       return tAttr.asMapOf(
-          
-              (TraceableDocNode realmTDoc) -> {
-                var name = Traceable.of(realmTDoc.getSource(), realmTDoc.getSource().pathPart());
-                return Realm.parse(type, name, realmTDoc);
-              });
+          (TraceableDocNode realmTDoc) -> {
+            var name = Traceable.of(realmTDoc.getSource(), realmTDoc.getSource().pathPart());
+            return Realm.parse(type, name, realmTDoc);
+          });
     }
 
     public static AuthcConfig parse(TraceableDocNode tDoc) {
@@ -71,6 +67,19 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
     Traceable<Integer> order();
 
     Traceable<Boolean> enabled();
+
+    public enum LoadBalanceType {
+      FAILOVER,
+      DNS_FAILOVER,
+      ROUND_ROBIN,
+      DNS_ROUND_ROBIN
+    }
+
+    public enum SearchScope {
+      SUB_TREE,
+      ONE_LEVEL,
+      BASE
+    }
 
     record NativeRealm(
         Traceable<String> type,
@@ -102,19 +111,24 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Integer> order,
         Traceable<Boolean> enabled,
         Traceable<ImmutableList<Traceable<String>>> url,
+        Traceable<LoadBalanceType> loadBalanceType,
+        Traceable<String> loadBalanceCacheTtl,
         OptTraceable<String> bindDn,
-        OptTraceable<String> bindPassword,
-        OptTraceable<String> secureBindPassword,
+        Traceable<String> bindPassword,
+        Traceable<String> secureBindPassword,
         OptTraceable<String> userDnTemplates,
         Traceable<ImmutableList<Traceable<String>>> authorizationRealms,
         Traceable<String> userGroupAttr,
         Traceable<String> userFullNameAttr,
         Traceable<String> userEmailAttr,
         OptTraceable<String> userSearchBaseDn,
-        Traceable<Scope> userSearchScope,
+        Traceable<SearchScope> userSearchScope,
         Traceable<String> userSearchFilter,
+        Traceable<Boolean> userSearchPoolEnabled,
+        Traceable<Integer> userSearchPoolSize,
+        Traceable<Integer> userSearchPoolInitialSize,
         OptTraceable<String> groupSearchBaseDn,
-        Traceable<Scope> groupSearchScope,
+        Traceable<SearchScope> groupSearchScope,
         OptTraceable<String> groupSearchFilter,
         Traceable<Boolean> unmappedGroupsAsRoles,
         OptTraceable<String> sslKey,
@@ -126,11 +140,6 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         OptTraceable<String> sslKeystoreSecurePassword,
         OptTraceable<String> sslKeystoreSecureKeyPassword)
         implements Realm {
-      public enum Scope {
-        SUB_TREE,
-        ONE_LEVEL,
-        BASE
-      }
 
       public LdapRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -146,8 +155,19 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> enabled,
         Traceable<String> domainName,
         OptTraceable<ImmutableList<Traceable<String>>> url,
+        Traceable<LoadBalanceType> loadBalanceType,
+        Traceable<String> loadBalanceCacheTtl,
         OptTraceable<String> bindDn,
+        Traceable<String> bindPassword,
+        Traceable<String> secureBindPassword,
         OptTraceable<String> userSearchBaseDn,
+        Traceable<SearchScope> userSearchScope,
+        Traceable<String> userSearchFilter,
+        Traceable<Boolean> userSearchPoolEnabled,
+        Traceable<Integer> userSearchPoolSize,
+        Traceable<Integer> userSearchPoolInitialSize,
+        OptTraceable<String> groupSearchBaseDn,
+        Traceable<SearchScope> groupSearchScope,
         Traceable<Boolean> unmappedGroupsAsRoles)
         implements Realm {
       public ActiveDirectoryRealm {
@@ -271,9 +291,12 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<Boolean> enabled,
         TraceableDocNode tDoc) {
       var url = tDoc.get("url").asListOfStrings(ImmutableList.empty());
+      var loadBalanceType =
+          tDoc.get("load_balance.type").asEnum(LoadBalanceType.class, LoadBalanceType.FAILOVER);
+      var loadBalanceCacheTtl = tDoc.get("load_balance.cache_ttl").asString("1h");
       var bindDn = tDoc.get("bind_dn").asString();
-      var bindPassword = tDoc.get("bind_password").asString();
-      var secureBindPassword = tDoc.get("secure_bind_password").asString();
+      var bindPassword = tDoc.get("bind_password").asString().orElse("");
+      var secureBindPassword = tDoc.get("secure_bind_password").asString().orElse("");
       // authorization realms can be a string or list; normalize to a list
       // TODO: authorization_realms can be a List or just a String. Only the List case is handled
       // here.
@@ -285,13 +308,18 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
       var userEmailAttr = tDoc.get("user_email_attribute").asString("mail");
 
       var userSearchScope =
-          tDoc.get("user_search.scope").asEnum(LdapRealm.Scope.class, LdapRealm.Scope.SUB_TREE);
+          tDoc.get("user_search.scope").asEnum(SearchScope.class, SearchScope.SUB_TREE);
       var userSearchBaseDn = tDoc.get("user_search.base_dn").asString();
-      var userSearchFilter = tDoc.get("user_search.filter").asString("(uid={0})");
+      var userSearchFilter = tDoc.get("user_search.filter").asString("(uid={{0}})");
+
+      var userSearchPoolEnabled =
+          tDoc.get("user_search.pool.enabled").asBoolean(true); // TODO: only true if bind_dn is set
+      var userSearchPoolInitialSize = tDoc.get("user_search.pool.initial_size").asInt(0);
+      var userSearchPoolSize = tDoc.get("user_search.pool.size").asInt(20);
 
       var groupSearchBaseDn = tDoc.get("group_search.base_dn").asString();
       var groupSearchScope =
-          tDoc.get("group_search.scope").asEnum(LdapRealm.Scope.class, LdapRealm.Scope.SUB_TREE);
+          tDoc.get("group_search.scope").asEnum(SearchScope.class, SearchScope.SUB_TREE);
       var groupSearchFilter = tDoc.get("group_search.filter").asString();
 
       var unmappedGroupsAsRoles = tDoc.get("unmapped_groups_as_roles").asBoolean(false);
@@ -312,6 +340,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           order,
           enabled,
           url,
+          loadBalanceType,
+          loadBalanceCacheTtl,
           bindDn,
           bindPassword,
           secureBindPassword,
@@ -323,6 +353,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           userSearchBaseDn,
           userSearchScope,
           userSearchFilter,
+          userSearchPoolEnabled,
+          userSearchPoolSize,
+          userSearchPoolInitialSize,
           groupSearchBaseDn,
           groupSearchScope,
           groupSearchFilter,
@@ -449,8 +482,24 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         TraceableDocNode tDoc) {
       var domainName = tDoc.get("domain_name").required().asString();
       var url = tDoc.get("url").asListOfStrings();
+      var loadBalanceType =
+          tDoc.get("load_balance.type").asEnum(LoadBalanceType.class, LoadBalanceType.FAILOVER);
+      var loadBalanceCacheTtl = tDoc.get("load_balance.cache_ttl").asString("1h");
       var bindDn = tDoc.get("bind_dn").asString();
+      var bindPassword = tDoc.get("bind_password").asString("");
+      var secureBindPassword = tDoc.get("secure_bind_password").asString("");
       var userSearchBaseDn = tDoc.get("user_search.base_dn").asString();
+      var userSearchScope =
+          tDoc.get("user_search.scope").asEnum(SearchScope.class, SearchScope.SUB_TREE);
+      var userSearchFilter =
+          tDoc.get("user_search.filter")
+              .asString("(&(objectClass=user)(|(sAMAccountName={{0}})(userPrincipalName={{0}})))");
+      var userSearchPoolEnabled = tDoc.get("user_search.pool.enabled").asBoolean(true);
+      var userSearchPoolSize = tDoc.get("user_search.pool.size").asInt(20);
+      var userSearchPoolInitialSize = tDoc.get("user_search.pool.initial_size").asInt(0);
+      var groupSearchBaseDn = tDoc.get("group_search.base_dn").asString();
+      var groupSearchScope =
+          tDoc.get("group_search.scope").asEnum(SearchScope.class, SearchScope.SUB_TREE);
       var unmappedGroupsAsRoles = tDoc.get("unmapped_groups_as_roles").asBoolean(false);
 
       return new ActiveDirectoryRealm(
@@ -460,8 +509,19 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           enabled,
           domainName,
           url,
+          loadBalanceType,
+          loadBalanceCacheTtl,
           bindDn,
+          bindPassword,
+          secureBindPassword,
           userSearchBaseDn,
+          userSearchScope,
+          userSearchFilter,
+          userSearchPoolEnabled,
+          userSearchPoolSize,
+          userSearchPoolInitialSize,
+          groupSearchBaseDn,
+          groupSearchScope,
           unmappedGroupsAsRoles);
     }
   }
@@ -470,19 +530,11 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
    * Parses X-Pack elasticsearch.yml security configuration. Expects the full elasticsearch.yml
    * content, extracts xpack.security.* section.
    *
-   * @param doc The complete elasticsearch.yml as DocNode
-   * @param _context Parser context
+   * @param tDoc The complete elasticsearch.yml as TraceableDocNode
    * @return Parsed XPackElasticsearchConfig
-   * @throws ConfigValidationException If validation fails
    */
-  public static XPackElasticsearchConfig parse(DocNode doc, Parser.Context _context)
-      throws ConfigValidationException {
-    var errors = new ValidationErrors();
-    var tDoc = TraceableDocNode.of(doc, new Source.Config("elasticsearch.yml"), errors);
-    var security = tDoc.get("xpack.security").required().as(SecurityConfig::parse);
-
-    errors.throwExceptionForPresentErrors();
-
-    return new XPackElasticsearchConfig(security);
+  public static XPackElasticsearchConfig parse(TraceableDocNode tDoc) {
+    return new XPackElasticsearchConfig(
+        tDoc.get("xpack.security").required().as(SecurityConfig::parse));
   }
 }

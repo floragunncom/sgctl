@@ -3,13 +3,16 @@ package com.floragunn.searchguard.sgctl.commands;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.documents.DocReader;
 import com.floragunn.codova.documents.DocWriter;
-import com.floragunn.codova.documents.Parser;
 import com.floragunn.codova.validation.ConfigValidationException;
+import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.migrate.*;
-import com.floragunn.searchguard.sgctl.config.migrate.auth.AuthMigrator;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
+import com.floragunn.searchguard.sgctl.config.trace.Source;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNodeParser;
 import com.floragunn.searchguard.sgctl.config.xpack.*;
+import com.floragunn.searchguard.sgctl.util.StringUtils;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -18,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 import picocli.CommandLine;
 
 @CommandLine.Command(
@@ -28,7 +32,7 @@ public class XPackMigrate implements Callable<Integer> {
   public static final String HELP_MESSAGE =
       """
       This migration tool expects the following files in the input directory (--input-dir):
-      - role_mapping.json, from the .security index via GET /_security/role_mapping
+      - role_mappings.json, from the .security index via GET /_security/role_mapping
       - roles.json, from the .security index via GET /_security/role
       - users.json, from the .security index via GET /_security/user
       - elasticsearch.yml, from the Elasticsearch config directory
@@ -60,10 +64,9 @@ public class XPackMigrate implements Callable<Integer> {
       defaultValue = "false")
   boolean overwrite;
 
-  private static final Map<String, Parser<Object, Parser.Context>> configParsers =
+  private static final Map<String, TraceableDocNodeParser<Object>> configParsers =
       Map.of(
-          // TODO: Add parsing functions here <filename>,Record::parse
-          "role_mapping.json", RoleMappings::parse,
+          "role_mappings.json", RoleMappings::parse,
           "roles.json", Roles::parse,
           "users.json", Users::parse,
           "elasticsearch.yml", XPackElasticsearchConfig::parse,
@@ -79,7 +82,7 @@ public class XPackMigrate implements Callable<Integer> {
     System.out.println("Welcome to the Search Guard X-pack security migration tool.\n\n");
     try {
       // deserialize
-      final var xPackConfigs = parseConfigs(); // TODO: gracefully handle ConfigValidationException
+      final var xPackConfigs = parseConfigs();
       System.out.println(xPackConfigs);
       // migrate
       final Migrator migrator = new Migrator();
@@ -101,8 +104,7 @@ public class XPackMigrate implements Callable<Integer> {
         Optional.ofNullable((Roles) xPackConfigs.get("roles.json")),
         Optional.ofNullable((Users) xPackConfigs.get("users.json")),
         Optional.ofNullable((XPackElasticsearchConfig) xPackConfigs.get("elasticsearch.yml")),
-        Optional.ofNullable((Kibana) xPackConfigs.get("kibana.yml"))
-        );
+        Optional.ofNullable((Kibana) xPackConfigs.get("kibana.yml")));
   }
 
   private void registerSubMigrators() {
@@ -115,9 +117,10 @@ public class XPackMigrate implements Callable<Integer> {
     registry.finalizeSubMigrators(); // Never forget
   }
 
-  private Map<String, Object> parseConfigs()
-      throws SgctlException, IOException, ConfigValidationException {
+  private Map<String, Object> parseConfigs() throws SgctlException, IOException {
     final Map<String, Object> configs = new HashMap<>();
+    final Map<String, ValidationErrors> errors = new HashMap<>();
+
     for (final var entry : configParsers.entrySet()) {
       final var configFileName = entry.getKey();
       final var parserFunction = entry.getValue();
@@ -129,20 +132,39 @@ public class XPackMigrate implements Callable<Integer> {
       if (Files.isDirectory(configPath)) {
         throw new SgctlException("Config is a directory, but should be a file: " + configFileName);
       }
-      // Read to Object
-      final DocNode config;
-      if (configFileName.endsWith(".yaml") || configFileName.endsWith(".yml")) {
-        config = DocNode.wrap(DocReader.yaml().read(configPath.toFile()));
-      } else if (configFileName.endsWith(".json")) {
-        config = DocNode.wrap(DocReader.json().read(configPath.toFile()));
-      } else {
-        throw new SgctlException("Invalid config file extension: " + configFileName);
-      }
+      try {
+        // Read to Object
+        final DocNode config;
+        if (configFileName.endsWith(".yaml") || configFileName.endsWith(".yml")) {
+          config = DocNode.wrap(DocReader.yaml().read(configPath.toFile()));
+        } else if (configFileName.endsWith(".json")) {
+          config = DocNode.wrap(DocReader.json().read(configPath.toFile()));
+        } else {
+          throw new SgctlException("Invalid config file extension: " + configFileName);
+        }
 
-      // Parse config
-      final var parsed = parserFunction.parse(config, Parser.Context.get());
-      configs.put(configFileName, parsed);
+        // Parse config
+        var parsed =
+            TraceableDocNode.parse(config, new Source.Config(configFileName), parserFunction);
+        configs.put(configFileName, parsed);
+      } catch (ConfigValidationException e) {
+        // accumulate all errors and report them together below
+        errors.put(configFileName, e.getValidationErrors());
+      }
     }
+
+    if (!errors.isEmpty()) {
+      var prettyError =
+          errors.entrySet().stream()
+              .map(
+                  e -> {
+                    var prettySingleError = StringUtils.indentLines(e.getValue().toString(), 2);
+                    return "\t" + e.getKey() + ":\n" + prettySingleError;
+                  })
+              .collect(Collectors.joining("\n"));
+      throw new SgctlException("Failed to parse config(s) (migration aborted):\n" + prettyError);
+    }
+
     return configs;
   }
 
@@ -164,14 +186,14 @@ public class XPackMigrate implements Callable<Integer> {
     }
   }
 
-  private void writeReport(String report) throws IOException {
+  private void writeReport(String report) throws IOException, SgctlException {
     if (!Files.exists(outputDir)) {
       Files.createDirectories(outputDir);
     }
 
     var reportFile = outputDir.resolve("report.md");
     if (Files.exists(reportFile) && !overwrite) {
-      throw new IOException(
+      throw new SgctlException(
           "Refusing to overwrite existing report file: " + reportFile.toAbsolutePath());
     }
 

@@ -2,15 +2,15 @@ package com.floragunn.searchguard.sgctl.config.migrate;
 
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgInternalRoles;
+import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import org.slf4j.Logger;
 
 /**
  * Implements the migrate method that Turns X-Pack roles into Searchguard roles by renaming parts of
@@ -26,16 +26,14 @@ public class RolesMigrator implements SubMigrator {
    * Method that Reads out Roles and converts the X-Pack privileges into SG action groups
    *
    * @param context Contains all the parsed XPack configs
-   * @param logger Logger for logging
+   * @param reporter MigrationReporter for the migration report
    * @return List<SgInternalRole>
-   * @throws SgctlException
    */
-  public List<NamedConfig<?>> migrate(Migrator.IMigrationContext context, Logger logger)
-      throws SgctlException {
-    logger.info("Migrating Roles");
+  public List<NamedConfig<?>> migrate(
+      Migrator.IMigrationContext context, MigrationReporter reporter) {
     Optional<Roles> xpackRoles = context.getRoles();
     if (xpackRoles.isEmpty()) {
-      logger.warn("roles.json is empty");
+      reporter.problem("roles.json is empty");
       return List.of();
     }
     var internalRolesBuilder =
@@ -45,56 +43,65 @@ public class RolesMigrator implements SubMigrator {
     // index -> index group
     //          allowed action
 
-    for (Map.Entry<String, Roles.Role> entry : xpackRoles.get().roles().entrySet()) {
-      var clusterBuilder = new ImmutableList.Builder<String>(entry.getValue().cluster().size());
+    for (Map.Entry<String, OptTraceable<Roles.Role>> entry : xpackRoles.get().roles().entrySet()) {
 
-      for (String cluster : entry.getValue().cluster()) {
+      var clusterBuilder =
+          new ImmutableList.Builder<String>(entry.getValue().getValue().cluster().get().size());
 
-        if (clusterPrivileges.containsKey(cluster)) {
-          clusterBuilder.add(clusterPrivileges.get(cluster));
+      for (Traceable<String> cluster : entry.getValue().getValue().cluster().get()) {
+
+        if (clusterPrivileges.containsKey(cluster.get())) {
+          clusterBuilder.add(clusterPrivileges.get(cluster.get()));
         } else {
-          logger.warn(
+          reporter.inconvertible(
+              cluster,
               "Could not migrate cluster privilege " + cluster + " for role " + entry.getKey());
         }
       }
 
       var indicesBuilder =
           new ImmutableList.Builder<SgInternalRoles.Role.Permission>(
-              entry.getValue().indices().size());
+              entry.getValue().getValue().indices().get().size());
 
-      for (Roles.Index index : entry.getValue().indices()) {
-        var actionsBuilder = new ImmutableList.Builder<String>(index.privileges().size());
+      for (Traceable<Roles.Index> index : entry.getValue().getValue().indices().get()) {
+        var actionsBuilder =
+            new ImmutableList.Builder<String>(index.get().privileges().get().size());
 
-        for (String privilege : index.privileges()) {
-          if (indicesPrivileges.containsKey(privilege)) {
-            actionsBuilder.add(indicesPrivileges.get(privilege));
+        for (Traceable<String> privilege : index.get().privileges().get()) {
+          if (indicesPrivileges.containsKey(privilege.get())) {
+            actionsBuilder.add(indicesPrivileges.get(privilege.get()));
           } else {
-            logger.warn(
+            reporter.inconvertible(
+                privilege,
                 "Could not migrate index privilege " + privilege + " for role " + entry.getKey());
           }
         }
 
+        // Convert name list of index from list of traceable strings to list of strings
+        var indicesNamesBuilder =
+            new ImmutableList.Builder<String>(index.get().names().get().size());
+        for (Traceable<String> name : index.get().names().get())
+          indicesNamesBuilder.add(name.get());
+
         SgInternalRoles.Role.Permission permission =
-            new SgInternalRoles.Role.Permission(index.names(), actionsBuilder.build());
+            new SgInternalRoles.Role.Permission(
+                indicesNamesBuilder.build(), actionsBuilder.build());
         indicesBuilder.add(permission);
       }
-
-      var aliasBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      logger.warn("Alias permissions left empty.");
-      var dataStreamBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      logger.warn("Data stream permissions left empty.");
-      var tenantBuilder = new ImmutableList.Builder<SgInternalRoles.Role.Permission>(0);
-      logger.warn("Tenant permissions left empty.");
 
       internalRolesBuilder.put(
           entry.getKey(),
           new SgInternalRoles.Role(
               clusterBuilder.build(),
               indicesBuilder.build(),
-              aliasBuilder.build(),
-              dataStreamBuilder.build(),
-              tenantBuilder.build()));
+              ImmutableList.empty(),
+              ImmutableList.empty(),
+              ImmutableList.empty()));
     }
+
+    reporter.problem("Alias permissions left empty.");
+    reporter.problem("Data stream permissions left empty.");
+    reporter.problem("Tenant permissions left empty.");
 
     return List.of(new SgInternalRoles(internalRolesBuilder.build()));
   }

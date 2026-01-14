@@ -45,6 +45,10 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
      * @param metadataURL Metadata URL for the identity provider.
      * @param idpEntityId Entity id for the identity provider.
      * @param spEntityId Entity id for the service provider.
+     * @param subjectKey SAML attribute used for the username (maps from X-Pack
+     *     attributes.principal).
+     * @param rolesKey SAML attribute used for roles/groups (maps from X-Pack attributes.groups).
+     * @param kibanaUrl The Kibana URL, typically derived from sp.acs.
      */
     public record Saml(
         Optional<String> label,
@@ -52,7 +56,10 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         Boolean isDefault,
         String metadataURL,
         String idpEntityId,
-        String spEntityId)
+        String spEntityId,
+        Optional<String> subjectKey,
+        Optional<String> rolesKey,
+        Optional<String> kibanaUrl)
         implements AuthDomain<Saml> {
 
       public Saml {
@@ -60,6 +67,9 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         Objects.requireNonNull(metadataURL, "metadataURL must not be null");
         Objects.requireNonNull(idpEntityId, "idpEntityId must not be null");
         Objects.requireNonNull(spEntityId, "spEntityId must not be null");
+        Objects.requireNonNull(subjectKey, "subjectKey must not be null");
+        Objects.requireNonNull(rolesKey, "rolesKey must not be null");
+        Objects.requireNonNull(kibanaUrl, "kibanaUrl must not be null");
       }
 
       @Override
@@ -69,6 +79,14 @@ public record SgFrontendAuthC(ImmutableList<AuthDomain<?>> authDomains)
         builder.put("saml.idp.metadata_url", metadataURL);
         builder.put("saml.idp.entity_id", idpEntityId);
         builder.put("saml.sp.entity_id", spEntityId);
+        subjectKey.ifPresent(
+            key -> builder.put("user_mapping.user_name.from", "$.saml_response['" + key + "']"));
+        rolesKey.ifPresent(
+            key ->
+                builder.put(
+                    "user_mapping.roles.from_comma_separated_string",
+                    "$.saml_response['" + key + "']"));
+        kibanaUrl.ifPresent(url -> builder.put("kibana_url", url));
         builder.put("label", label.orElse("SAML Login"));
         id.ifPresent(id -> builder.put("id", id));
         if (isDefault) builder.put("auto_select", true);

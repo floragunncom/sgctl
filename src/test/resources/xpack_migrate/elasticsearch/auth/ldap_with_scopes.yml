@@ -16,7 +16,7 @@ xpack:
             user_search:
               base_dn: "ou=users,dc=example,dc=com"
               scope: sub_tree
-              filter: "(mail={0})"
+              filter: "(mail={{0}})"
             group_search:
               base_dn: "ou=groups,dc=example,dc=com"
               scope: one_level
