@@ -39,7 +39,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             }
 
             if (templates != null && !templates.isEmpty()) {
-                report.addManualAction(FILE_NAME, mappingName + "role_templates", "X-Pack role_templates are not automatically migrated.");
+                report.addManualAction(FILE_NAME, mappingName + "->role_templates", "X-Pack role_templates are not automatically migrated.");
                 continue;
             }
 
@@ -81,7 +81,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
                     try {
                         result.add(LuceneRegexParser.toJavaRegex(s));
                     } catch (Exception e) {
-                        report.addManualAction(FILE_NAME, path, "An error occurred while trying to convert a Lucene regex to a Java regex: " + e.getMessage());
+                        report.addManualAction(FILE_NAME, itemPath, "An error occurred while trying to convert a Lucene regex to a Java regex: " + e.getMessage());
                     }
                 } else {
                     report.addInvalidType(FILE_NAME, itemPath, String.class, o);
@@ -110,14 +110,6 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
                collectUsernames(anyRules.get(i), mappingName, roleName, originPath + ".any[" + i + "]", usernames);
             }
         }
-
-        if (rules.getAll() != null) {
-            report.addManualAction(FILE_NAME, roleName + "->" + originPath + ".all", "XPack rule uses all which cannot be migrated automatically.");
-        }
-
-        if (rules.getExcept() != null) {
-            report.addManualAction(FILE_NAME, roleName + "->" + originPath + ".except", "XPack rule uses except which cannot be migrated automatically.");
-        }
     }
 
     private void collectBackendRoles(RoleMapping.Rules rules, String mappingName, String roleName, String originPath,  List<String> backendRoles) {
@@ -132,7 +124,7 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             }
 
             if (field.containsKey("realm.name")) {
-                report.addManualAction(FILE_NAME, roleName + "rules.field.realm.name",
+                report.addManualAction(FILE_NAME, mappingName + "->" + roleName + "->" + originPath + ".field.realm.name",
                         "Realm-based role mappings cannot be migrated automatically.");
             }
         }
@@ -144,11 +136,11 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
             }
         }
 
-        if (rules.getAll() != null) {
-            report.addManualAction(FILE_NAME, roleName + "->rules.all", "XPack rule uses all which cannot be migrated.");
+        if (rules.getAll() != null && !rules.getAll().isEmpty()) {
+            report.addManualAction(FILE_NAME, mappingName + "->" + roleName + "->rules.all", "XPack rule uses all which cannot be migrated.");
         }
         if (rules.getExcept() != null) {
-            report.addManualAction(FILE_NAME, roleName + "->rules.except", "XPack rule uses except which cannot be migrated.");
+            report.addManualAction(FILE_NAME, mappingName + "->" + roleName + "->rules.except", "XPack rule uses except which cannot be migrated.");
         }
 
     }
@@ -239,13 +231,5 @@ public class RoleMappingWriter implements Document<RoleMappingWriter>{
 
             return contents;
         }
-    }
-
-    static void print(Object line) {
-        System.out.println(line);
-    }
-
-    static void printErr(Object line) {
-        System.err.println(line);
     }
 }
