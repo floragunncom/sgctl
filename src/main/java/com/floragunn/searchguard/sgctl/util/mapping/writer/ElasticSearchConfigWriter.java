@@ -23,7 +23,7 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private static final String DEFAULT_TRUSTSTORE_PASSWORD = "changeit";
     private static final String DEFAULT_KEYSTORE_PASSWORD = "changeit";
     private static final String PLACEHOLDER = "changeit";
-    private static final List EMPTY_LIST= new ArrayList<>();
+    private static final List<Object> EMPTY_LIST= new ArrayList<>();
     private final IntermediateRepresentationElasticSearchYml ir;
     private final Map<String, Object> tlsTransportMap;
     private final Map<String, Object> tlsHTTPMap;
@@ -94,7 +94,6 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
 
     private <T> T logDefaultIfUsed(String fullFieldName, T value, T defaultValue) {
         if (value == null) {
-            System.out.println(fullFieldName);
             MigrationReport.shared.addWarning(FILE_NAME, fullFieldName, " is not found. Default is used: " + defaultValue);
             return defaultValue;
         } else {
