@@ -29,6 +29,7 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private final Map<String, Object> tlsHTTPMap;
     private final Map<String, Object> defaultsMap;
     final static String FILE_NAME = "generated elasticsearch.yml";
+    final static MigrationReport report = MigrationReport.shared;
 
     private static final Map<String, String> OLD_PARAMETER_NAMES = Map.ofEntries(
             Map.entry("searchguard.ssl.transport.enabled", "xpack.security.transport.ssl.enabled"),
@@ -61,6 +62,7 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
         tlsTransportMap = tlsMapWriter("transport", ir.getSslTls().getTransport());
         tlsHTTPMap = tlsMapWriter("http", ir.getSslTls().getHttp());
         defaultsMap = defaultSearchGuardConfig();
+        report.addInfo(FILE_NAME, "Used default for generated elasticsearch.yml");
     }
 
     @Override
