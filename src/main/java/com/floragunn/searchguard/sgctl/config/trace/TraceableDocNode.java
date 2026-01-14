@@ -7,8 +7,13 @@ import com.floragunn.fluent.collections.ImmutableSet;
 
 public interface TraceableDocNode {
 
+  static TraceableDocNode of(
+      DocNode doc, Source source, ValidationErrors errors, boolean isSecret) {
+    return new TraceableDocNodeImpl(doc, errors, source, isSecret);
+  }
+
   static TraceableDocNode of(DocNode doc, Source source, ValidationErrors errors) {
-    return new TraceableDocNodeImpl(doc, errors, source);
+    return of(doc, source, errors, false);
   }
 
   static TraceableDocNode of(DocNode doc, Source source) {

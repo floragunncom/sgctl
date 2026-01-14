@@ -17,8 +17,7 @@ public class XPackElasticsearchConfigTest {
 
   @Test
   public void testParseBasicRealms() throws IOException, ConfigValidationException {
-    var node = read("/xpack_migrate/elasticsearch/basic_realms.yml");
-    var config = parseConfig(node);
+    var config = readConfig("/xpack_migrate/elasticsearch/basic_realms.yml");
 
     assertNotNull(config);
     var security = config.security().get();
@@ -242,6 +241,81 @@ public class XPackElasticsearchConfigTest {
     assertTrue(ldapRealm.groupSearchBaseDn().get().isEmpty());
     assertEquals(Realm.SearchScope.SUB_TREE, ldapRealm.groupSearchScope().get()); // Default
     assertTrue(ldapRealm.groupSearchFilter().get().isEmpty());
+  }
+
+  @Test
+  public void testSecretFieldsAreMarkedAsSecret() throws IOException, ConfigValidationException {
+    var config = readConfig("/xpack_migrate/elasticsearch/secret_fields.yml");
+
+    // Verify LDAP realm secrets
+    var ldap1 =
+        (Realm.LdapRealm)
+            config
+                .security()
+                .get()
+                .authc()
+                .get()
+                .orElseThrow()
+                .realms()
+                .get()
+                .get("ldap")
+                .get()
+                .get("ldap1")
+                .get();
+    assertTrue(ldap1.bindPassword().isSecret(), "LDAP bind_password should be secret");
+    assertTrue(ldap1.secureBindPassword().isSecret(), "LDAP secure_bind_password should be secret");
+    assertTrue(
+        ldap1.sslKeystoreSecurePassword().isSecret(),
+        "LDAP ssl.keystore.secure_password should be secret");
+    assertTrue(
+        ldap1.sslKeystoreSecureKeyPassword().isSecret(),
+        "LDAP ssl.keystore.secure_key_password should be secret");
+
+    // Verify Active Directory realm secrets
+    var ad1 =
+        (Realm.ActiveDirectoryRealm)
+            config
+                .security()
+                .get()
+                .authc()
+                .get()
+                .orElseThrow()
+                .realms()
+                .get()
+                .get("active_directory")
+                .get()
+                .get("ad1")
+                .get();
+    assertTrue(ad1.bindPassword().isSecret(), "AD bind_password should be secret");
+    assertTrue(ad1.secureBindPassword().isSecret(), "AD secure_bind_password should be secret");
+
+    // Verify SAML realm keystore secrets
+    var saml1 =
+        (Realm.SAMLRealm)
+            config
+                .security()
+                .get()
+                .authc()
+                .get()
+                .orElseThrow()
+                .realms()
+                .get()
+                .get("saml")
+                .get()
+                .get("saml1")
+                .get();
+    var signingKeystore = saml1.signingKeystore().get().orElseThrow();
+    assertTrue(
+        signingKeystore.securePassword().isSecret(),
+        "SAML signing keystore secure_password should be secret");
+    assertTrue(
+        signingKeystore.secureKeyPassword().isSecret(),
+        "SAML signing keystore secure_key_password should be secret");
+  }
+
+  private XPackElasticsearchConfig readConfig(String path)
+      throws IOException, ConfigValidationException {
+    return parseConfig(read(path));
   }
 
   private XPackElasticsearchConfig parseConfig(DocNode node) throws ConfigValidationException {

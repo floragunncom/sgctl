@@ -8,22 +8,24 @@ class OptTraceableImpl<T> implements OptTraceable<T> {
 
   private final Source source;
   private final Optional<T> value;
+  private final boolean isSecret;
 
-  public OptTraceableImpl(Source source, Optional<T> value) {
+  public OptTraceableImpl(Source source, Optional<T> value, boolean isSecret) {
     this.source = source;
     this.value = value;
+    this.isSecret = isSecret;
   }
 
   @Override
   public <U> OptTraceableImpl<U> map(Function<? super T, ? extends U> mapper) {
-    return new OptTraceableImpl<>(source, value.map(mapper));
+    return new OptTraceableImpl<>(source, value.map(mapper), isSecret);
   }
 
   @Override
   public <U> OptTraceable<U> flatMap(
       Function<? super T, ? extends OptTraceable<? extends U>> mapper) {
     if (value.isEmpty()) {
-      return new OptTraceableImpl<>(source, Optional.empty());
+      return new OptTraceableImpl<>(source, Optional.empty(), isSecret);
     } else {
       @SuppressWarnings("unchecked")
       var r = (OptTraceable<U>) mapper.apply(value.get());
@@ -38,7 +40,7 @@ class OptTraceableImpl<T> implements OptTraceable<T> {
 
   @Override
   public Traceable<T> orElse(T other) {
-    return new TraceableImpl<>(source, value.orElse(other));
+    return new TraceableImpl<>(source, value.orElse(other), isSecret);
   }
 
   @Override
@@ -47,19 +49,26 @@ class OptTraceableImpl<T> implements OptTraceable<T> {
   }
 
   @Override
+  public boolean isSecret() {
+    return isSecret;
+  }
+
+  @Override
   public boolean equals(Object obj) {
     return obj instanceof OptTraceableImpl<?> other
         && source.equals(other.source)
+        && isSecret == other.isSecret
         && Objects.equals(value, other.value);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(source, value);
+    return Objects.hash(source, value, isSecret);
   }
 
   @Override
   public String toString() {
+    if (isSecret) return "***";
     return value.map(String::valueOf).orElse("");
   }
 }

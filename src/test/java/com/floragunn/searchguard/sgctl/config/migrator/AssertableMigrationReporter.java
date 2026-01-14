@@ -15,9 +15,6 @@ public class AssertableMigrationReporter implements MigrationReporter {
   private final Map<BaseTraceable<?>, List<String>> critical = new LinkedHashMap<>();
   private final Map<BaseTraceable<?>, List<String>> problem = new LinkedHashMap<>();
   private final Map<BaseTraceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
-  private final Map<BaseTraceable<?>, List<String>> criticalSecret = new LinkedHashMap<>();
-  private final Map<BaseTraceable<?>, List<String>> problemSecret = new LinkedHashMap<>();
-  private final Map<BaseTraceable<?>, List<String>> inconvertibleSecret = new LinkedHashMap<>();
   private final List<String> problemMessages = new ArrayList<>();
   private final List<String> criticalMessages = new ArrayList<>();
 
@@ -28,33 +25,15 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   @Override
-  public void criticalSecret(BaseTraceable<?> subject, String message) {
-    delegate.criticalSecret(subject, message);
-    add(criticalSecret, subject, message);
-  }
-
-  @Override
   public void problem(BaseTraceable<?> subject, String message) {
     delegate.problem(subject, message);
     add(problem, subject, message);
   }
 
   @Override
-  public void problemSecret(BaseTraceable<?> subject, String message) {
-    delegate.problemSecret(subject, message);
-    add(problemSecret, subject, message);
-  }
-
-  @Override
   public void inconvertible(BaseTraceable<?> subject, String message) {
     delegate.inconvertible(subject, message);
     add(inconvertible, subject, message);
-  }
-
-  @Override
-  public void inconvertibleSecret(BaseTraceable<?> subject, String message) {
-    delegate.inconvertibleSecret(subject, message);
-    add(inconvertibleSecret, subject, message);
   }
 
   @Override
@@ -199,122 +178,6 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   /**
-   * Asserts that a critical secret problem was reported for the given traceable. Then removes it
-   * from the list of tracked critical secret problems.
-   *
-   * @param subject The traceable to check.
-   */
-  public void assertCriticalSecret(BaseTraceable<?> subject) {
-    if (criticalSecret.remove(subject) == null)
-      throw new AssertionError("Expected critical secret problem for traceable: " + subject);
-  }
-
-  /**
-   * Asserts that there is no critical secret problem reported for the given traceable.
-   *
-   * @param subject The traceable to check.
-   */
-  public void assertNoCriticalSecret(BaseTraceable<?> subject) {
-    if (criticalSecret.containsKey(subject))
-      throw new AssertionError("Did not expect critical secret problem for traceable: " + subject);
-  }
-
-  /**
-   * Asserts that a critical secret problem with the given message was reported for the given
-   * traceable. Then removes the subject message combination from the list of tracked critical
-   * secret problems.
-   *
-   * @param subject The traceable to check.
-   * @param message The message to check.
-   */
-  public void assertCriticalSecret(BaseTraceable<?> subject, String message) {
-    List<String> messages = criticalSecret.get(subject);
-    if (messages == null || !messages.remove(message))
-      throw new AssertionError(
-          "Expected critical secret message '" + message + "' for traceable: " + subject);
-    if (messages.isEmpty()) {
-      criticalSecret.remove(subject);
-    }
-  }
-
-  /**
-   * Asserts that a secret problem was reported for the given traceable. Then removes it from the
-   * list of tracked secret problems.
-   *
-   * @param subject The traceable to check.
-   */
-  public void assertProblemSecret(BaseTraceable<?> subject) {
-    if (problemSecret.remove(subject) == null)
-      throw new AssertionError("Expected secret problem for traceable: " + subject);
-  }
-
-  /**
-   * Asserts that there is no secret problem reported for the given traceable.
-   *
-   * @param subject The traceable to check.
-   */
-  public void assertNoProblemSecret(BaseTraceable<?> subject) {
-    if (problemSecret.containsKey(subject))
-      throw new AssertionError("Did not expect secret problem for traceable: " + subject);
-  }
-
-  /**
-   * Asserts that a secret problem with the given message was reported for the given traceable. Then
-   * removes the subject message combination from the list of tracked secret problems.
-   *
-   * @param subject The traceable to check.
-   * @param message The message to check.
-   */
-  public void assertProblemSecret(BaseTraceable<?> subject, String message) {
-    List<String> messages = problemSecret.get(subject);
-    if (messages == null || !messages.remove(message))
-      throw new AssertionError(
-          "Expected secret problem message '" + message + "' for traceable: " + subject);
-    if (messages.isEmpty()) {
-      problemSecret.remove(subject);
-    }
-  }
-
-  /**
-   * Asserts that an inconvertible secret was reported for the given traceable. Then removes it from
-   * the list of tracked inconvertible secrets.
-   *
-   * @param subject The traceable to check.
-   */
-  public void assertInconvertibleSecret(BaseTraceable<?> subject) {
-    if (inconvertibleSecret.remove(subject) == null)
-      throw new AssertionError("Expected inconvertible secret for traceable: " + subject);
-  }
-
-  /**
-   * Asserts that there is no inconvertible secret reported for the given traceable.
-   *
-   * @param subject The traceable to check.
-   */
-  public void assertNoInconvertibleSecret(BaseTraceable<?> subject) {
-    if (inconvertibleSecret.containsKey(subject))
-      throw new AssertionError("Did not expect inconvertible secret for traceable: " + subject);
-  }
-
-  /**
-   * Asserts that an inconvertible secret with the given message was reported for the given
-   * traceable. Then removes the subject message combination from the list of tracked inconvertible
-   * secrets.
-   *
-   * @param subject The traceable to check.
-   * @param message The message to check.
-   */
-  public void assertInconvertibleSecret(BaseTraceable<?> subject, String message) {
-    List<String> messages = inconvertibleSecret.get(subject);
-    if (messages == null || !messages.remove(message))
-      throw new AssertionError(
-          "Expected inconvertible secret message '" + message + "' for traceable: " + subject);
-    if (messages.isEmpty()) {
-      inconvertibleSecret.remove(subject);
-    }
-  }
-
-  /**
    * Asserts that a critical message was reported. Then removes it from the list of tracked critical
    * problems.
    *
@@ -350,20 +213,6 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   /**
-   * Asserts that a secret problem with the given message was reported for a traceable at the given
-   * path. Then removes the message from the list of tracked secret problems.
-   *
-   * @param path The config path to search for (e.g. "elasticsearch.yml:
-   *     xpack.security.authc.realms.ldap.ldap1.bind_password").
-   * @param message The message to check.
-   */
-  public void assertProblemSecret(String path, String message) {
-    if (!removeMessageFromTraceableByPath(problemSecret, path, message))
-      throw new AssertionError(
-          "Expected secret problem message '" + message + "' for path: " + path);
-  }
-
-  /**
    * Asserts that a critical problem with the given message was reported for a traceable at the
    * given path. Then removes the message from the list of tracked critical problems.
    *
@@ -373,19 +222,6 @@ public class AssertableMigrationReporter implements MigrationReporter {
   public void assertCritical(String path, String message) {
     if (!removeMessageFromTraceableByPath(critical, path, message))
       throw new AssertionError("Expected critical message '" + message + "' for path: " + path);
-  }
-
-  /**
-   * Asserts that a critical secret problem with the given message was reported for a traceable at
-   * the given path. Then removes the message from the list of tracked critical secret problems.
-   *
-   * @param path The config path to search for.
-   * @param message The message to check.
-   */
-  public void assertCriticalSecret(String path, String message) {
-    if (!removeMessageFromTraceableByPath(criticalSecret, path, message))
-      throw new AssertionError(
-          "Expected critical secret message '" + message + "' for path: " + path);
   }
 
   /**
@@ -399,19 +235,6 @@ public class AssertableMigrationReporter implements MigrationReporter {
     if (!removeMessageFromTraceableByPath(inconvertible, path, message))
       throw new AssertionError(
           "Expected inconvertible message '" + message + "' for path: " + path);
-  }
-
-  /**
-   * Asserts that an inconvertible secret with the given message was reported for a traceable at the
-   * given path. Then removes the message from the list of tracked inconvertible secrets.
-   *
-   * @param path The config path to search for.
-   * @param message The message to check.
-   */
-  public void assertInconvertibleSecret(String path, String message) {
-    if (!removeMessageFromTraceableByPath(inconvertibleSecret, path, message))
-      throw new AssertionError(
-          "Expected inconvertible secret message '" + message + "' for path: " + path);
   }
 
   private boolean removeMessageFromTraceableByPath(
@@ -432,12 +255,8 @@ public class AssertableMigrationReporter implements MigrationReporter {
   /** Asserts that no more problems that weren't already checked via asserts were reported. */
   public void assertNoMoreProblems() {
     if (!problem.isEmpty()) throw new AssertionError("Unexpected problems: " + problem);
-    if (!problemSecret.isEmpty())
-      throw new AssertionError("Unexpected secret problems: " + problemSecret);
     if (!inconvertible.isEmpty())
       throw new AssertionError("Unexpected inconvertibles: " + inconvertible);
-    if (!inconvertibleSecret.isEmpty())
-      throw new AssertionError("Unexpected inconvertible secrets: " + inconvertibleSecret);
     if (!problemMessages.isEmpty())
       throw new AssertionError("Unexpected generic messages: " + problemMessages);
   }

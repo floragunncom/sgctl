@@ -4,5 +4,7 @@ public interface BaseTraceable<T> {
 
   Source getSource();
 
+  boolean isSecret();
+
   T get();
 }

@@ -15,29 +15,12 @@ public interface MigrationReporter {
   void critical(BaseTraceable<?> subject, String message);
 
   /**
-   * Reports a critical problem with a {@link BaseTraceable}. Critical problems will cause migration
-   * to fail, and no config files will be written. The value will be censored in the report.
-   *
-   * @param subject The {@link BaseTraceable} that is the subject of this problem.
-   * @param message An explanation of the problem.
-   */
-  void criticalSecret(BaseTraceable<?> subject, String message);
-
-  /**
    * Reports a genic problem with a {@link BaseTraceable}.
    *
    * @param subject The {@link BaseTraceable} that is the subject of this problem.
    * @param message An explanation of the problem.
    */
   void problem(BaseTraceable<?> subject, String message);
-
-  /**
-   * Reports a genic problem with a {@link BaseTraceable}. The value will be censored in the report.
-   *
-   * @param subject The {@link BaseTraceable} that is the subject of this problem.
-   * @param message An explanation of the problem.
-   */
-  void problemSecret(BaseTraceable<?> subject, String message);
 
   /**
    * Reports a {@link BaseTraceable} as inconvertible, meaning that an equivalent concept does not
@@ -47,16 +30,6 @@ public interface MigrationReporter {
    * @param message Additional information, e.g. the action that was taken to resolve this problem
    */
   void inconvertible(BaseTraceable<?> subject, String message);
-
-  /**
-   * Reports a {@link BaseTraceable} as inconvertible, meaning that an equivalent concept does not
-   * exist in the target domain and as such cannot be converted. The value will be censored in the
-   * report.
-   *
-   * @param subject The {@link BaseTraceable} that is inconvertible.
-   * @param message Additional information, e.g. the action that was taken to resolve this problem
-   */
-  void inconvertibleSecret(BaseTraceable<?> subject, String message);
 
   /**
    * Adds a critical message to the report. The migration cannot complete successfully if any

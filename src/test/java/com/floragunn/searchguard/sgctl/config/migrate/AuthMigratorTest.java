@@ -94,7 +94,7 @@ class AuthMigratorTest {
     assertMigrationOutput(
         "ldap_both_passwords",
         reporter -> {
-          reporter.assertProblemSecret(
+          reporter.assertProblem(
               "elasticsearch.yml: xpack.security.authc.realms.ldap.ldap1.bind_password",
               "Both bind_password and secure_bind_password are set; using secure_bind_password");
         });

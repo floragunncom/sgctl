@@ -48,14 +48,13 @@ public class AuthMigrator implements SubMigrator {
     for (var realm : sortedRealms) {
       if (realm.get() instanceof Realm.NativeRealm || realm.get() instanceof Realm.FileRealm) {
         authcDomains.add(new SgAuthC.AuthDomain.Internal());
-      } else if (realm.get() instanceof Realm.LdapRealm ldapRealm) {
-        authcDomains.add(migrateLdapRealm(Traceable.of(realm.getSource(), ldapRealm), reporter));
-      } else if (realm.get() instanceof Realm.ActiveDirectoryRealm adRealm) {
+      } else if (realm.get() instanceof Realm.LdapRealm) {
+        authcDomains.add(migrateLdapRealm(realm.map(r -> (Realm.LdapRealm) r), reporter));
+      } else if (realm.get() instanceof Realm.ActiveDirectoryRealm) {
         authcDomains.add(
-            migrateActiveDirectoryRealm(Traceable.of(realm.getSource(), adRealm), reporter));
-      } else if (realm.get() instanceof Realm.SAMLRealm samlRealm) {
-        frontendAuthcDomains.add(
-            migrateSamlRealm(Traceable.of(realm.getSource(), samlRealm), reporter));
+            migrateActiveDirectoryRealm(realm.map(r -> (Realm.ActiveDirectoryRealm) r), reporter));
+      } else if (realm.get() instanceof Realm.SAMLRealm) {
+        frontendAuthcDomains.add(migrateSamlRealm(realm.map(r -> (Realm.SAMLRealm) r), reporter));
       } else {
         reporter.critical(realm, "Unrecognized realm type");
         return List.of();
@@ -199,7 +198,7 @@ public class AuthMigrator implements SubMigrator {
     if (!bindPassword.get().isBlank() && secureBindPassword.get().isBlank())
       return Optional.of(bindPassword.get());
     if (!bindPassword.get().isBlank() && !secureBindPassword.get().isBlank()) {
-      reporter.problemSecret(
+      reporter.problem(
           bindPassword,
           "Both bind_password and secure_bind_password are set; using secure_bind_password");
       return Optional.of(secureBindPassword.get());

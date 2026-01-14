@@ -6,8 +6,6 @@ import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.codova.validation.errors.MissingAttribute;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import java.util.*;
-import org.jspecify.annotations.Nullable;
 
 abstract class TraceableAttributeImpl implements TraceableAttribute {
 
@@ -15,17 +13,19 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
   protected final DocNode node;
   protected final ValidationErrors errors;
 
-  protected @Nullable String expected;
+  protected boolean isSecret;
 
-  public TraceableAttributeImpl(Source source, DocNode node, ValidationErrors errors) {
+  public TraceableAttributeImpl(
+      Source source, DocNode node, ValidationErrors errors, boolean isSecret) {
     this.source = source;
     this.node = node;
     this.errors = errors;
+    this.isSecret = isSecret;
   }
 
   @Override
-  public void expected(String message) {
-    this.expected = message;
+  public boolean isSecret() {
+    return isSecret;
   }
 
   @Override
@@ -40,7 +40,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
       var element = list.get(i);
       var elementSource = new Source.ListEntry(source, i);
       try {
-        builder.add(Traceable.of(elementSource, parser.parse(element)));
+        builder.add(Traceable.of(elementSource, parser.parse(element), isSecret));
       } catch (ConfigValidationException e) {
         errors.add(source.pathPart() + "." + i, e);
         builder.add(Traceable.validationErrors(e.getValidationErrors()));
@@ -57,9 +57,9 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
       var elementSource = new Source.ListEntry(source, i);
 
       var subErrors = new ValidationErrors();
-      var result = parser.parse(TraceableDocNode.of(element, elementSource, subErrors));
+      var result = parser.parse(TraceableDocNode.of(element, elementSource, subErrors, isSecret));
       errors.add(source.pathPart() + "." + i, subErrors);
-      builder.add(Traceable.of(elementSource, result));
+      builder.add(Traceable.of(elementSource, result, isSecret));
     }
     return builder.build();
   }
@@ -72,7 +72,8 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
       var elementSource = new Source.ListEntry(source, i);
 
       var subErrors = new ValidationErrors();
-      var attribute = new TraceableAttributeImpl.RequiredImpl(elementSource, element, subErrors);
+      var attribute =
+          new TraceableAttributeImpl.RequiredImpl(elementSource, element, subErrors, isSecret);
       var result = parser.parse(attribute);
       errors.add(source.pathPart() + "." + i, subErrors);
       builder.add(result);
@@ -80,97 +81,15 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
     return builder.build();
   }
 
-  /**
-   * Expands one level of flattened dotted keys.<K>
-   *
-   * <p>Turns flattened:
-   *
-   * <pre>
-   * foo.foo.enabled: true
-   * foo.bar.enabled: false
-   * foo:
-   *  baz.enable: true
-   * bar: "test"
-   * </pre>
-   *
-   * Into:
-   *
-   * <pre>
-   * foo:
-   *  foo.enabled: true
-   *  bar.enabled: false
-   *  baz.enable: true
-   * bar: "test"
-   * </pre>
-   *
-   * @param node the node to be expanded
-   * @return An expanded input map, with one layer of flattening removed
-   */
-  private static ImmutableMap<String, DocNode> expandOnce(DocNode node) {
-    Map<String, Object> top = node.toNormalizedMap();
-
-    // Collect top-level plain vs dotted entries
-    Map<String, Object> plainValues = new HashMap<>();
-    Map<String, Map<String, Object>> buckets = new HashMap<>();
-    for (Map.Entry<String, Object> e : top.entrySet()) {
-      String key = e.getKey();
-      Object value = e.getValue();
-
-      int idx = key.indexOf('.');
-      if (idx >= 0) {
-        String head = key.substring(0, idx);
-        String tail = key.substring(idx + 1);
-
-        Map<String, Object> child = buckets.computeIfAbsent(head, k -> new HashMap<>());
-        assert !child.containsKey(tail); // sanity check
-        child.put(tail, value);
-      } else {
-        plainValues.put(key, value);
-      }
-    }
-
-    Set<String> keys = new java.util.HashSet<>();
-    keys.addAll(plainValues.keySet());
-    keys.addAll(buckets.keySet());
-
-    var builder = new ImmutableMap.Builder<String, DocNode>(keys.size());
-    for (String k : keys) {
-      Object plain = plainValues.get(k);
-      Map<String, Object> bucket = buckets.get(k);
-
-      if (plain == null && bucket != null) {
-        // only dotted -> new node from bucket
-        builder.put(k, DocNode.wrap(bucket));
-      } else if (plain != null && bucket == null) {
-        // only plain -> wrap plain
-        builder.put(k, DocNode.wrap(plain));
-      } else {
-        // both -> merge only if plain is map-like
-        if (plain instanceof Map) {
-          @SuppressWarnings("unchecked")
-          var tmp = (Map<String, Object>) plain;
-          var plainAsMap = new HashMap<>(tmp);
-          plainAsMap.putAll(bucket);
-          builder.put(k, DocNode.wrap(plainAsMap));
-        } else {
-          builder.put(k, DocNode.wrap(plain));
-        }
-      }
-    }
-
-    return builder.build();
-  }
-
   protected <T> ImmutableMap<String, Traceable<T>> parseMap(DocNodeParser<T> parser) {
-    var expandedNode = DocNode.wrap(expandOnce(node));
     var builder = new ImmutableMap.Builder<String, Traceable<T>>();
-    for (var entry : expandedNode.toMapOfNodes().entrySet()) {
+    for (var entry : node.toMapOfNodes().entrySet()) {
       var key = entry.getKey();
       var element = entry.getValue();
       var elementSource = new Source.Attribute(source, key);
 
       try {
-        builder.put(key, Traceable.of(elementSource, parser.parse(element)));
+        builder.put(key, Traceable.of(elementSource, parser.parse(element), isSecret));
       } catch (ConfigValidationException e) {
         errors.add(source.pathPart() + "." + key, e);
         builder.put(key, Traceable.validationErrors(e.getValidationErrors()));
@@ -180,29 +99,28 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
   }
 
   protected <T> ImmutableMap<String, Traceable<T>> parseMap(TraceableDocNodeParser<T> parser) {
-    var expandedNode = DocNode.wrap(expandOnce(node));
     var builder = new ImmutableMap.Builder<String, Traceable<T>>();
-    for (var entry : expandedNode.toMapOfNodes().entrySet()) {
+    for (var entry : node.toMapOfNodes().entrySet()) {
       var key = entry.getKey();
       var element = entry.getValue();
       var elementSource = new Source.Attribute(source, key);
       var subErrors = new ValidationErrors();
-      var result = parser.parse(TraceableDocNode.of(element, elementSource, subErrors));
+      var result = parser.parse(TraceableDocNode.of(element, elementSource, subErrors, isSecret));
       errors.add(source.pathPart() + "." + key, subErrors);
-      builder.put(key, Traceable.of(elementSource, result));
+      builder.put(key, Traceable.of(elementSource, result, isSecret));
     }
     return builder.build();
   }
 
   protected <T> ImmutableMap<String, Traceable<T>> parseMap(TraceableAttributeParser<T> parser) {
-    var expandedNode = DocNode.wrap(expandOnce(node));
     var builder = new ImmutableMap.Builder<String, Traceable<T>>();
-    for (var entry : expandedNode.toMapOfNodes().entrySet()) {
+    for (var entry : node.toMapOfNodes().entrySet()) {
       var key = entry.getKey();
       var element = entry.getValue();
       var elementSource = new Source.Attribute(source, key);
       var subErrors = new ValidationErrors();
-      var attribute = new TraceableAttributeImpl.RequiredImpl(elementSource, element, subErrors);
+      var attribute =
+          new TraceableAttributeImpl.RequiredImpl(elementSource, element, subErrors, isSecret);
       var result = parser.parse(attribute);
       errors.add(source.pathPart() + "." + key, subErrors);
       builder.put(key, result);
@@ -213,16 +131,16 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
   static final class OptionalImpl extends TraceableAttributeImpl
       implements TraceableAttribute.Optional {
 
-    public OptionalImpl(Source source, DocNode node, ValidationErrors errors) {
-      super(source, node, errors);
+    public OptionalImpl(Source source, DocNode node, ValidationErrors errors, boolean isSecret) {
+      super(source, node, errors, isSecret);
     }
 
     @Override
     public <T> OptTraceable<T> as(DocNodeParser<T> parser) {
-      if (node.isNull() || node.isEmpty()) return OptTraceable.empty(source);
+      if (node.isNull() || node.isEmpty()) return OptTraceable.empty(source, isSecret);
 
       try {
-        return OptTraceable.of(source, parser.parse(node));
+        return OptTraceable.of(source, parser.parse(node), isSecret);
       } catch (ConfigValidationException e) {
         errors.add(source.pathPart(), e);
         return OptTraceable.validationErrors(e.getValidationErrors());
@@ -231,80 +149,88 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
 
     @Override
     public <T> OptTraceable<T> as(TraceableDocNodeParser<T> parser) {
-      if (node.isNull() || node.isEmpty()) return OptTraceable.empty(source);
+      if (node.isNull() || node.isEmpty()) return OptTraceable.empty(source, isSecret);
 
       var subErrors = new ValidationErrors();
-      var result = parser.parse(TraceableDocNode.of(node, source, subErrors));
+      var result = parser.parse(TraceableDocNode.of(node, source, subErrors, isSecret));
       errors.add(source.pathPart(), subErrors);
-      return OptTraceable.of(source, result);
+      return OptTraceable.of(source, result, isSecret);
     }
 
     @Override
     public <T> OptTraceable<T> as(TraceableAttributeParser<T> parser) {
-      if (node.isNull() || node.isEmpty()) return OptTraceable.empty(source);
+      if (node.isNull() || node.isEmpty()) return OptTraceable.empty(source, isSecret);
 
       var subErrors = new ValidationErrors();
-      var result = parser.parse(new TraceableAttributeImpl.RequiredImpl(source, node, subErrors));
+      var result =
+          parser.parse(new TraceableAttributeImpl.RequiredImpl(source, node, subErrors, isSecret));
       errors.add(source.pathPart(), subErrors);
-      return OptTraceable.of(result);
+      return OptTraceable.of(result, isSecret);
     }
 
     @Override
     public TraceableDocNode asTraceableDocNode() {
-      return TraceableDocNode.of(node, source, new ValidationErrors(errors, source.pathPart()));
+      return TraceableDocNode.of(
+          node, source, new ValidationErrors(errors, source.pathPart()), isSecret);
     }
 
     @Override
     public <T> OptTraceable<ImmutableList<Traceable<T>>> asListOf(DocNodeParser<T> parser) {
-      if (node.isNull()) return OptTraceable.empty(source);
-      return OptTraceable.of(source, parseList(parser));
+      if (node.isNull()) return OptTraceable.empty(source, isSecret);
+      return OptTraceable.of(source, parseList(parser), isSecret);
     }
 
     @Override
     public <T> OptTraceable<ImmutableList<Traceable<T>>> asListOf(
         TraceableDocNodeParser<T> parser) {
-      if (node.isNull()) return OptTraceable.empty(source);
-      return OptTraceable.of(source, parseList(parser));
+      if (node.isNull()) return OptTraceable.empty(source, isSecret);
+      return OptTraceable.of(source, parseList(parser), isSecret);
     }
 
     @Override
     public <T> OptTraceable<ImmutableList<Traceable<T>>> asListOf(
         TraceableAttributeParser<T> parser) {
-      if (node.isNull()) return OptTraceable.empty(source);
-      return OptTraceable.of(source, parseList(parser));
+      if (node.isNull()) return OptTraceable.empty(source, isSecret);
+      return OptTraceable.of(source, parseList(parser), isSecret);
     }
 
     @Override
     public <T> OptTraceable<ImmutableMap<String, Traceable<T>>> asMapOf(
         TraceableDocNodeParser<T> parser) {
-      if (node.isNull()) return OptTraceable.empty(source);
-      return OptTraceable.of(source, parseMap(parser));
+      if (node.isNull()) return OptTraceable.empty(source, isSecret);
+      return OptTraceable.of(source, parseMap(parser), isSecret);
     }
 
     @Override
     public <T> OptTraceable<ImmutableMap<String, Traceable<T>>> asMapOf(
         TraceableAttributeParser<T> parser) {
-      if (node.isNull()) return OptTraceable.empty(source);
-      return OptTraceable.of(source, parseMap(parser));
+      if (node.isNull()) return OptTraceable.empty(source, isSecret);
+      return OptTraceable.of(source, parseMap(parser), isSecret);
     }
 
     @Override
     public <T> OptTraceable<ImmutableMap<String, Traceable<T>>> asMapOf(DocNodeParser<T> parser) {
-      if (node.isNull()) return OptTraceable.empty(source);
-      return OptTraceable.of(source, parseMap(parser));
+      if (node.isNull()) return OptTraceable.empty(source, isSecret);
+      return OptTraceable.of(source, parseMap(parser), isSecret);
     }
 
     @Override
     public Required required() {
-      return new RequiredImpl(source, node, errors);
+      return new RequiredImpl(source, node, errors, isSecret);
+    }
+
+    @Override
+    public Optional secret() {
+      this.isSecret = true;
+      return this;
     }
   }
 
   static final class RequiredImpl extends TraceableAttributeImpl
       implements TraceableAttribute.Required {
 
-    public RequiredImpl(Source source, DocNode node, ValidationErrors errors) {
-      super(source, node, errors);
+    public RequiredImpl(Source source, DocNode node, ValidationErrors errors, boolean isSecret) {
+      super(source, node, errors, isSecret);
     }
 
     @Override
@@ -316,7 +242,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
       }
 
       try {
-        return Traceable.of(source, parser.parse(node));
+        return Traceable.of(source, parser.parse(node), isSecret);
       } catch (ConfigValidationException e) {
         errors.add(source.pathPart(), e);
         return Traceable.validationErrors(e.getValidationErrors());
@@ -332,9 +258,9 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
       }
 
       var subErrors = new ValidationErrors();
-      var result = parser.parse(TraceableDocNode.of(node, source, subErrors));
+      var result = parser.parse(TraceableDocNode.of(node, source, subErrors, isSecret));
       errors.add(source.pathPart(), subErrors);
-      return Traceable.of(source, result);
+      return Traceable.of(source, result, isSecret);
     }
 
     @Override
@@ -346,7 +272,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
       }
 
       var subErrors = new ValidationErrors();
-      var attribute = TraceableDocNode.of(node, source, subErrors).asAttribute();
+      var attribute = TraceableDocNode.of(node, source, subErrors, isSecret).asAttribute();
       var result = parser.parse(attribute);
       errors.add(source.pathPart(), subErrors);
       return result;
@@ -358,7 +284,8 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         var error = new MissingAttribute(source.pathPart(), node);
         errors.add(error);
       }
-      return TraceableDocNode.of(node, source, new ValidationErrors(errors, source.pathPart()));
+      return TraceableDocNode.of(
+          node, source, new ValidationErrors(errors, source.pathPart()), isSecret);
     }
 
     @Override
@@ -368,7 +295,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         errors.add(error);
         return Traceable.validationErrors(new ValidationErrors(error));
       }
-      return Traceable.of(source, parseList(parser));
+      return Traceable.of(source, parseList(parser), isSecret);
     }
 
     @Override
@@ -379,7 +306,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         return Traceable.validationErrors(new ValidationErrors(error));
       }
 
-      return Traceable.of(source, parseList(parser));
+      return Traceable.of(source, parseList(parser), isSecret);
     }
 
     @Override
@@ -390,7 +317,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         return Traceable.validationErrors(new ValidationErrors(error));
       }
 
-      return Traceable.of(source, parseList(parser));
+      return Traceable.of(source, parseList(parser), isSecret);
     }
 
     @Override
@@ -400,7 +327,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         errors.add(error);
         return Traceable.validationErrors(new ValidationErrors(error));
       }
-      return Traceable.of(source, parseMap(parser));
+      return Traceable.of(source, parseMap(parser), isSecret);
     }
 
     @Override
@@ -411,7 +338,7 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         errors.add(error);
         return Traceable.validationErrors(new ValidationErrors(error));
       }
-      return Traceable.of(source, parseMap(parser));
+      return Traceable.of(source, parseMap(parser), isSecret);
     }
 
     @Override
@@ -422,7 +349,13 @@ abstract class TraceableAttributeImpl implements TraceableAttribute {
         errors.add(error);
         return Traceable.validationErrors(new ValidationErrors(error));
       }
-      return Traceable.of(source, parseMap(parser));
+      return Traceable.of(source, parseMap(parser), isSecret);
+    }
+
+    @Override
+    public Required secret() {
+      this.isSecret = true;
+      return this;
     }
   }
 }

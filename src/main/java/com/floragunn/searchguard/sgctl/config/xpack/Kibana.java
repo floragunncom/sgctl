@@ -125,12 +125,15 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
 
     private static Traceable<ImmutableMap<String, Traceable<Provider>>> parseProviderType(
         TraceableAttribute.Required tAttr) {
-      var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart());
+      var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart(), tAttr.isSecret());
       return tAttr.asMapOf(
           (TraceableDocNodeParser<Provider>)
               (providerTDoc) -> {
                 var name =
-                    Traceable.of(providerTDoc.getSource(), providerTDoc.getSource().pathPart());
+                    Traceable.of(
+                        providerTDoc.getSource(),
+                        providerTDoc.getSource().pathPart(),
+                        providerTDoc.asAttribute().isSecret());
                 return Provider.parse(type, name, providerTDoc);
               });
     }
@@ -261,7 +264,10 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
         if (type.equals("basic") || type.equals("token")) {
           // Force true for basic and token provider, according to xpac docs
           showInSelector =
-              Traceable.of(new Source.Attribute(tDoc.getSource(), "showInSelector"), true);
+              Traceable.of(
+                  new Source.Attribute(tDoc.getSource(), "showInSelector"),
+                  true,
+                  tDoc.asAttribute().isSecret());
         } else {
           showInSelector = tDoc.get("showInSelector").asBoolean(true);
         }

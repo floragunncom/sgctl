@@ -19,6 +19,11 @@ class ErroneousOptTraceable<T> implements OptTraceable<T> {
   }
 
   @Override
+  public boolean isSecret() {
+    return false;
+  }
+
+  @Override
   public Optional<T> get() {
     throw new UnhandledConfigValidationException(new ConfigValidationException(errors));
   }

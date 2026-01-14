@@ -140,28 +140,16 @@ public class MigrationReporterTest {
   }
 
   @Test
-  public void testCriticalSecretRemembered() {
-    var reporter = MigrationReporter.searchGuard();
-    reporter.problem("Non-critical problem");
-    assertFalse(reporter.hasCriticalProblems());
-
-    var cfgSrc = new Source.Config("test.yml");
-    var secret = Traceable.of(new Source.Attribute(cfgSrc, "password"), "supersecret");
-    reporter.criticalSecret(secret, "Password is too weak");
-    assertTrue(reporter.hasCriticalProblems());
-  }
-
-  @Test
   public void testSecretValuesCensored() {
     var reporter = MigrationReporter.searchGuard();
     var cfgSrc = new Source.Config("test.yml");
-    var secret = Traceable.of(new Source.Attribute(cfgSrc, "password"), "supersecret");
-    reporter.criticalSecret(secret, "Password is too weak");
-    reporter.problemSecret(
-        Traceable.of(new Source.Attribute(cfgSrc, "api_key"), "secret-api-key-123"),
+    var secret = Traceable.of(new Source.Attribute(cfgSrc, "password"), "supersecret", true);
+    reporter.critical(secret, "Password is too weak");
+    reporter.problem(
+        Traceable.of(new Source.Attribute(cfgSrc, "api_key"), "secret-api-key-123", true),
         "API key format is deprecated");
-    reporter.inconvertibleSecret(
-        Traceable.of(new Source.Attribute(cfgSrc, "token"), "jwt-token-value"),
+    reporter.inconvertible(
+        Traceable.of(new Source.Attribute(cfgSrc, "token"), "jwt-token-value", true),
         "Token format not supported");
 
     var expected =
@@ -189,10 +177,10 @@ public class MigrationReporterTest {
     var reporter = MigrationReporter.searchGuard();
     var cfgSrc = new Source.Config("test.yml");
     var normalValue = Traceable.of(new Source.Attribute(cfgSrc, "username"), "admin");
-    var secretValue = Traceable.of(new Source.Attribute(cfgSrc, "password"), "supersecret");
+    var secretValue = Traceable.of(new Source.Attribute(cfgSrc, "password"), "supersecret", true);
 
     reporter.critical(normalValue, "Username is reserved");
-    reporter.criticalSecret(secretValue, "Password is too weak");
+    reporter.critical(secretValue, "Password is too weak");
 
     var expected =
         """
@@ -217,21 +205,23 @@ public class MigrationReporterTest {
     // Critical: one normal, one secret
     reporter.critical(
         Traceable.of(new Source.Attribute(cfgSrc, "setting1"), "value1"), "Normal critical");
-    reporter.criticalSecret(
-        Traceable.of(new Source.Attribute(cfgSrc, "secret1"), "secret-value1"), "Secret critical");
+    reporter.critical(
+        Traceable.of(new Source.Attribute(cfgSrc, "secret1"), "secret-value1", true),
+        "Secret critical");
 
     // Inconvertible: one normal, one secret
     reporter.inconvertible(
         Traceable.of(new Source.Attribute(cfgSrc, "setting2"), "value2"), "Normal inconvertible");
-    reporter.inconvertibleSecret(
-        Traceable.of(new Source.Attribute(cfgSrc, "secret2"), "secret-value2"),
+    reporter.inconvertible(
+        Traceable.of(new Source.Attribute(cfgSrc, "secret2"), "secret-value2", true),
         "Secret inconvertible");
 
     // Problem: one normal, one secret
     reporter.problem(
         Traceable.of(new Source.Attribute(cfgSrc, "setting3"), "value3"), "Normal problem");
-    reporter.problemSecret(
-        Traceable.of(new Source.Attribute(cfgSrc, "secret3"), "secret-value3"), "Secret problem");
+    reporter.problem(
+        Traceable.of(new Source.Attribute(cfgSrc, "secret3"), "secret-value3", true),
+        "Secret problem");
 
     var expected =
         """

@@ -3,7 +3,10 @@ package com.floragunn.searchguard.sgctl.config.xpack;
 import com.floragunn.codova.documents.DocNode;
 import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.fluent.collections.ImmutableMap;
-import com.floragunn.searchguard.sgctl.config.trace.*;
+import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
+import com.floragunn.searchguard.sgctl.config.trace.Traceable;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableAttribute;
+import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import java.util.Objects;
 import org.jspecify.annotations.NullMarked;
 
@@ -43,10 +46,14 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
 
     private static Traceable<ImmutableMap<String, Traceable<Realm>>> parseRealmType(
         TraceableAttribute.Required tAttr) {
-      var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart());
+      var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart(), tAttr.isSecret());
       return tAttr.asMapOf(
           (TraceableDocNode realmTDoc) -> {
-            var name = Traceable.of(realmTDoc.getSource(), realmTDoc.getSource().pathPart());
+            var name =
+                Traceable.of(
+                    realmTDoc.getSource(),
+                    realmTDoc.getSource().pathPart(),
+                    realmTDoc.asAttribute().isSecret());
             return Realm.parse(type, name, realmTDoc);
           });
     }
@@ -239,8 +246,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           var path = tDoc.get("path").asString();
           var type = tDoc.get("type").asEnum(KeystoreType.class, KeystoreType.jks);
           var alias = tDoc.get("alias").asString();
-          var securePassword = tDoc.get("secure_password").asString();
-          var secureKeyPassword = tDoc.get("secure_key_password").asString();
+          var securePassword = tDoc.get("secure_password").secret().asString();
+          var secureKeyPassword = tDoc.get("secure_key_password").secret().asString();
           return new Keystore(path, type, alias, securePassword, secureKeyPassword);
         }
       }
@@ -295,8 +302,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           tDoc.get("load_balance.type").asEnum(LoadBalanceType.class, LoadBalanceType.FAILOVER);
       var loadBalanceCacheTtl = tDoc.get("load_balance.cache_ttl").asString("1h");
       var bindDn = tDoc.get("bind_dn").asString();
-      var bindPassword = tDoc.get("bind_password").asString().orElse("");
-      var secureBindPassword = tDoc.get("secure_bind_password").asString().orElse("");
+      var bindPassword = tDoc.get("bind_password").secret().asString().orElse("");
+      var secureBindPassword = tDoc.get("secure_bind_password").secret().asString().orElse("");
       // authorization realms can be a string or list; normalize to a list
       // TODO: authorization_realms can be a List or just a String. Only the List case is handled
       // here.
@@ -331,8 +338,9 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
 
       var sslKeystorePath = tDoc.get("ssl.keystore.path").asString();
       var sslKeystoreType = tDoc.get("ssl.keystore.type").asString();
-      var sslKeystoreSecurePassword = tDoc.get("ssl.keystore.secure_password").asString();
-      var sslKeystoreSecureKeyPassword = tDoc.get("ssl.keystore.secure_key_password").asString();
+      var sslKeystoreSecurePassword = tDoc.get("ssl.keystore.secure_password").secret().asString();
+      var sslKeystoreSecureKeyPassword =
+          tDoc.get("ssl.keystore.secure_key_password").secret().asString();
 
       return new LdapRealm(
           type,
@@ -486,8 +494,8 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           tDoc.get("load_balance.type").asEnum(LoadBalanceType.class, LoadBalanceType.FAILOVER);
       var loadBalanceCacheTtl = tDoc.get("load_balance.cache_ttl").asString("1h");
       var bindDn = tDoc.get("bind_dn").asString();
-      var bindPassword = tDoc.get("bind_password").asString("");
-      var secureBindPassword = tDoc.get("secure_bind_password").asString("");
+      var bindPassword = tDoc.get("bind_password").secret().asString("");
+      var secureBindPassword = tDoc.get("secure_bind_password").secret().asString("");
       var userSearchBaseDn = tDoc.get("user_search.base_dn").asString();
       var userSearchScope =
           tDoc.get("user_search.scope").asEnum(SearchScope.class, SearchScope.SUB_TREE);
