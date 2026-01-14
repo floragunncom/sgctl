@@ -2175,9 +2175,9 @@ public class MigrateConfig implements Callable<Integer> {
     }
 
     static class SgAuthc implements Document<SgAuthc> {
-        List<NewAuthDomain> authDomains;
-        String internalProxies = null;
-        String remoteIpHeader = null;
+        private List<NewAuthDomain> authDomains;
+        private String internalProxies = null;
+        private String remoteIpHeader = null;
 
         @Override
         public Object toBasicObject() {
