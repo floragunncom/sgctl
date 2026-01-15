@@ -1,7 +1,6 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
 import com.floragunn.codova.documents.*;
-import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
@@ -118,10 +117,10 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     private List<SGRole.SGIndex> toSGIndices(Role role) {
         List<SGRole.SGIndex> sgIndices = new ArrayList<>();
         for (var index : role.getIndices()) {
-            var indexPatterns = toSGIndexPattern(index.getNames(), role);
-            var indexPermissions = toSGIndexPrivileges(index.getPrivileges(), role);
-            var fls = toSGFLS(index, role);
-            var dls = toSGDLS(index, role);
+            var indexPatterns = toSGIndexPattern(index.getNames());
+            var indexPermissions = toSGIndexPrivileges(index.getPrivileges());
+            var fls = toSGFLS(index);
+            var dls = toSGDLS(index);
             var sgIndex = new SGRole.SGIndex(indexPatterns, indexPermissions, dls, fls);
             sgIndices.add(sgIndex);
         }
@@ -135,10 +134,9 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      * Errors during conversion are recorded as manual migration actions.
      *
      * @param indices the list of index name patterns
-     * @param role    the originating role (used for reporting)
      * @return A list of converted index patterns
      */
-    private ArrayList<String> toSGIndexPattern(List<String> indices, Role role) {
+    private ArrayList<String> toSGIndexPattern(List<String> indices) {
         var sgIndices = new ArrayList<String>(indices.size());
         for (var index : indices) {
             try {
@@ -157,10 +155,9 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      * where supported.
      *
      * @param index the index definition containing field security rules
-     * @param role  the originating role (used for reporting)
      * @return A list of FLS field patterns
      */
-    private List<String> toSGFLS(Role.Index index, Role role) {
+    private List<String> toSGFLS(Role.Index index) {
         if (index.getFieldSecurity() == null) return Collections.emptyList();
         var grants = index.getFieldSecurity().getGrant();
         var fls = grants == null ? new ArrayList<String>() : new ArrayList<>(grants);
@@ -345,10 +342,9 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      * JSON query string.
      *
      * @param index the index definition containing the query
-     * @param role  the originating role (used for reporting)
      * @return The converted DLS query, or {@code null} if conversion failed
      */
-    private String toSGDLS(Role.Index index, Role role) {
+    private String toSGDLS(Role.Index index) {
         var query = index.getQuery();
         if (query == null) return null;
         try {
@@ -436,10 +432,9 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      * Unsupported privileges may result in custom action groups or manual migration warnings.
      *
      * @param privileges the list of index privileges
-     * @param role       the originating role (used for reporting)
      * @return a list of Search Guard index permission identifiers
      */
-    private List<String> toSGIndexPrivileges(List<String> privileges, Role role) {
+    private List<String> toSGIndexPrivileges(List<String> privileges) {
         var sgPrivileges = new ArrayList<String>();
 
         for (var privilege : privileges) {

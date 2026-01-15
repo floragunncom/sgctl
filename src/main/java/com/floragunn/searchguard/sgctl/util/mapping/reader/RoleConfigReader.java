@@ -82,6 +82,7 @@ public class RoleConfigReader {
      * @param mapReader the root JSON object containing role definitions
      */
     private void readRoles(LinkedHashMap<?, ?> mapReader) {
+        report.addInfo(FILE_NAME, "The keys 'metadata' and 'transient_metadata' are ignored for migration.");
         for (var entry : mapReader.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
                 report.addInvalidType(FILE_NAME, "origin", String.class, entry.getKey());
