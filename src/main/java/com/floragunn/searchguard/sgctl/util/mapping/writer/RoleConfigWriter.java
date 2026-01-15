@@ -1,7 +1,6 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
 import com.floragunn.codova.documents.*;
-import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
@@ -9,7 +8,6 @@ import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWrit
 import com.floragunn.searchguard.sgctl.util.mapping.writer.ActionGroupConfigWriter.CustomIndexActionGroup;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.RealmTranslator;
 import com.sun.jdi.InvalidTypeException;
-import org.jspecify.annotations.NonNull;
 
 import java.security.InvalidKeyException;
 import java.util.*;
@@ -21,7 +19,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private IntermediateRepresentation ir;
     final private MigrationReport report;
     final private List<SGRole> roles;
-    final private SGAuthcTranslator.SgAuthc sgAuthc;
+    final private SGAuthcWriter.SgAuthc sgAuthc;
     final private ActionGroupConfigWriter agWriter;
     final private Set<String> userMappingAttributes = new HashSet<>();
 
@@ -71,7 +69,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
      * @param sgAuthc  the authentication configuration to which user mappings may be added
      * @param agWriter writer used to create custom action groups when no direct equivalent exists
      */
-    public RoleConfigWriter(IntermediateRepresentation ir, SGAuthcTranslator.SgAuthc sgAuthc, ActionGroupConfigWriter agWriter) {
+    public RoleConfigWriter(IntermediateRepresentation ir, SGAuthcWriter.SgAuthc sgAuthc, ActionGroupConfigWriter agWriter) {
         this.ir = ir;
         this.report = MigrationReport.shared;
         this.roles = new ArrayList<>();
