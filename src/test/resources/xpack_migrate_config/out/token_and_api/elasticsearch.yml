@@ -1,4 +1,4 @@
-# NOT FINAL
+
 xpack.security.enabled: false
 
 searchguard.ssl.transport.keystore_filepath: certs/transport.p12

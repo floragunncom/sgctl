@@ -1,4 +1,4 @@
-#NOT FINAL
+
 cluster.name: auditcluster
 node.name: audit-node-1
 

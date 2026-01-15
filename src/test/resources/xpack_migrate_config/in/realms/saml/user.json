@@ -48,8 +48,8 @@
       "type": "saml"
     },
     "lookup_realm": {
-      "name": "saml1",
-      "type": "saml"
+      "name": "native1",
+      "type": "native"
     },
     "metadata": {
       "saml_nameid": "bob@example.com",

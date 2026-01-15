@@ -4,7 +4,6 @@
     "roles": ["admin_role_test"],
     "rules": {
       "any": [
-        { "field": { "realm.name": "saml1" } },
         { "field": { "groups": "admin" } }
       ]
     },
@@ -13,10 +12,9 @@
 
   "saml-analytics": {
     "enabled": true,
-    "roles": ["dev_read_only"],
+    "roles": ["dev_readonly"],
     "rules": {
       "any": [
-        { "field": { "realm.name": "saml1" } },
         { "field": { "groups": "analytics" } }
       ]
     },
