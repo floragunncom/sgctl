@@ -90,7 +90,9 @@ public class MigrationReport {
             printWarnings(fr, out);
             printManuals(fr, out);
         }
-        out.println(applyFormating("@|bold File - " + RoleConfigWriter.FILE_NAME + ":|@\n"));
+        if (!(roleEntries.unsuccessful.isEmpty() && roleEntries.withIssues.isEmpty() && roleEntries.successful.isEmpty())) {
+            out.println(applyFormating("@|bold File - " + RoleConfigWriter.FILE_NAME + ":|@\n"));
+        }
         if (!roleEntries.successful.isEmpty()) {
             out.println(applyFormating("  @|bold,green SUCCESSFULLY MIGRATED (" + roleEntries.successful.size() + "):|@"));
             for (var entry : roleEntries.successful) out.println("    - " + entry.getName());

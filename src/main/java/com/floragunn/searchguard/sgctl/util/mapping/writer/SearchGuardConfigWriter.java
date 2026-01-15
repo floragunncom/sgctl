@@ -32,10 +32,22 @@ public class SearchGuardConfigWriter {
         sgAuthc = sgTranslator.getConfig();
         sgFrontendAuthc = sgTranslator.getFrontEndConfig();
         elasticSearchConfig = new ElasticSearchConfigWriter(ir.getElasticSearchYml());
-        userConfig = new UserConfigWriter(ir);
-        actionGroupConfig = new ActionGroupConfigWriter();
-        roleConfig = new RoleConfigWriter(ir, sgAuthc, actionGroupConfig);
-        mappingWriter = new RoleMappingWriter(ir);
+        if (ir.getUsers().isEmpty()) {
+            userConfig = null;
+        } else {
+            userConfig = new UserConfigWriter(ir);
+        }
+        if (ir.getRoles().isEmpty()) {
+            actionGroupConfig = null;
+        } else {
+            actionGroupConfig = new ActionGroupConfigWriter();
+            roleConfig = new RoleConfigWriter(ir, sgAuthc, actionGroupConfig);
+        }
+        if (ir.getRoleMappings().isEmpty()) {
+            mappingWriter = null;
+        } else {
+            mappingWriter = new RoleMappingWriter(ir);
+        }
         this.ir = ir;
     }
 
@@ -49,6 +61,7 @@ public class SearchGuardConfigWriter {
      * @throws IOException if write fails
      */
     private void writeFile(File directory, String fileName, Document<?> content, DocWriter writer) throws IOException {
+        if (content == null) return;
         Files.write(new File(directory.getPath(), fileName).toPath(), writer.writeAsString(content).getBytes());
     }
 
@@ -59,6 +72,7 @@ public class SearchGuardConfigWriter {
      * @param writer writer to translate content
      */
     private void printFile(String fileName, Document<?> content, DocWriter writer) {
+        if (content == null) return;
         printHeader(fileName);
         print(writer.writeAsString(content));
         printFooter();
