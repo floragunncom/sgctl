@@ -105,7 +105,7 @@ public class MigrateSecurity implements Callable<Integer> {
             }
         }
         if (elasticsearch == null) {
-            System.err.println("Required file elasticsearch.yml not found.");
+            System.err.println("Required file 'elasticsearch.yml' not found. Use the --help option to see a usage description.");
             return false;
         }
         return true;
