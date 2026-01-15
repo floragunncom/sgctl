@@ -16,7 +16,7 @@ import java.util.concurrent.Callable;
 @Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
 public class MigrateSecurity implements Callable<Integer> {
 
-    @Parameters(description = "Path to the directory containing elasticsearch.yml and possibly other X-Pack configuration files.")
+    @Parameters(description = "Path to the directory containing elasticsearch.yml and optionally the files role.json, user.json and role_mapping.json.")
     File inputDir;
 
     @Option(names = { "-o", "--output-dir" }, description = "Directory where to write new configuration files.")

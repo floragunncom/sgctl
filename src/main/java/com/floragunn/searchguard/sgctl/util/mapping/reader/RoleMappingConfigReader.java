@@ -50,6 +50,8 @@ public class RoleMappingConfigReader {
     }
 
     private void readRoleMappings(LinkedHashMap<?, ?> mapReader) {
+        report.addInfo(FILE_NAME,
+                "The 'metadata' key is ignored for all role mappings because it has no equivalent in Search Guard.");
         for (var entry : mapReader.entrySet()) {
             var rawKey = entry.getKey();
 
@@ -133,8 +135,6 @@ public class RoleMappingConfigReader {
                             var metadata = new RoleMapping.Metadata();
                             metadata.setEntries(safe);
                             roleMapping.setMetadata(metadata);
-                            report.addWarning(FILE_NAME, path,
-                                    "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard.");
                         } else {
                             report.addInvalidType(FILE_NAME, path, Map.class, value);
                         }
