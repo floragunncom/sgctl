@@ -151,7 +151,6 @@ public class Role {
         @NonNull private List<String> privileges;
         private FieldSecurity fieldSecurity;
         private String query;
-        // TODO: Add query property
         private Boolean allowRestrictedIndices;
         protected boolean frozen;
 
