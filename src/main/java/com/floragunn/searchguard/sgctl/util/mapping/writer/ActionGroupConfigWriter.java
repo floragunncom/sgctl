@@ -14,6 +14,8 @@ public class ActionGroupConfigWriter implements Document<ActionGroupConfigWriter
 
     static final String FILE_NAME = "sg_action_groups.yml";
 
+
+
     void addActionGroup(CustomActionGroup actionGroup) {
         this.actionGroups.add(actionGroup.toActionGroup());
     }

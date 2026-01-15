@@ -8,19 +8,15 @@ import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.Rea
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Writes Search Guard configuration files from the intermediate representation.
  */
 public class SearchGuardConfigWriter {
-    SGAuthcWriter.SgAuthc sgAuthc;
-    SGAuthcWriter.SgAuthc sgFrontendAuthc;
-    ElasticSearchConfigWriter elasticSearchConfig;
-    UserConfigWriter userConfig;
-    ActionGroupConfigWriter actionGroupConfig;
-    RoleConfigWriter roleConfig;
-    RoleMappingWriter mappingWriter;
     IntermediateRepresentation ir;
+    Map<String, Document<?>> writers;
 
     /**
      * Creates a Search Guard configuration writer and initializes all sub-writers
@@ -28,14 +24,18 @@ public class SearchGuardConfigWriter {
      * @param ir the intermediate representation produced by the migration process
      */
     public SearchGuardConfigWriter(IntermediateRepresentation ir) {
+        writers = new HashMap<>();
         var sgTranslator = new SGAuthcWriter(ir.getElasticSearchYml());
-        sgAuthc = sgTranslator.getConfig();
-        sgFrontendAuthc = sgTranslator.getFrontEndConfig();
-        elasticSearchConfig = new ElasticSearchConfigWriter(ir.getElasticSearchYml());
-        userConfig = new UserConfigWriter(ir);
-        actionGroupConfig = new ActionGroupConfigWriter();
-        roleConfig = new RoleConfigWriter(ir, sgAuthc, actionGroupConfig);
-        mappingWriter = new RoleMappingWriter(ir);
+        var sgAuthc = sgTranslator.getConfig();
+        var sgFrontendAuthc = sgTranslator.getFrontEndConfig();
+        writers.put(sgAuthc.fileName, sgAuthc);
+        writers.put(sgFrontendAuthc.fileName, sgFrontendAuthc);
+        writers.put(ElasticSearchConfigWriter.FILE_NAME, new ElasticSearchConfigWriter(ir.getElasticSearchYml()));
+        writers.put(UserConfigWriter.FILE_NAME, new UserConfigWriter(ir));
+        var actionGroupConfig = new ActionGroupConfigWriter();
+        writers.put(ActionGroupConfigWriter.FILE_NAME, actionGroupConfig);
+        writers.put(RoleConfigWriter.FILE_NAME, new RoleConfigWriter(ir, sgAuthc, actionGroupConfig));
+        writers.put(RoleMappingWriter.FILE_NAME, new RoleMappingWriter(ir));
         this.ir = ir;
     }
 
@@ -45,27 +45,25 @@ public class SearchGuardConfigWriter {
      * @param directory output dir
      * @param fileName file name
      * @param content content to write
-     * @param writer writer that writes the content
      * @throws IOException if write fails
      */
-    private void writeFile(File directory, String fileName, Document<?> content, DocWriter writer) throws IOException {
-        Files.write(new File(directory.getPath(), fileName).toPath(), writer.writeAsString(content).getBytes());
+    private void writeFile(File directory, String fileName, String content) throws IOException {
+        Files.writeString(new File(directory.getPath(), fileName).toPath(), content);
     }
 
     /**
      * Prints a file with a header
      * @param fileName File Header
      * @param content Content of the file
-     * @param writer writer to translate content
      */
-    private void printFile(String fileName, Document<?> content, DocWriter writer) {
+    private void printFile(String fileName, String content) {
         printHeader(fileName);
-        print(writer.writeAsString(content));
+        print(content);
         printFooter();
     }
 
     /**
-     * Writes all generated Search Guard configuration files to the given directory.
+     * Writes all generated Search Guard configuration files to the given directory or prints them if no directory was specified.
      * <p>
      * Each configuration section is serialized as YAML and written to its
      * corresponding file name (e.g. roles, users, action groups, authc).
@@ -74,39 +72,17 @@ public class SearchGuardConfigWriter {
      * @throws IOException if writing any file fails
      */
     public void outputContent(File directory) throws IOException {
-        if (directory == null) {
-            outputContent();
-            return;
+        final var docWriter = DocWriter.yaml();
+        for (Map.Entry<String, Document<?>> writer : writers.entrySet()) {
+            String fileHeader = writer.getKey();
+            String content = docWriter.writeAsString(writer.getValue());
+
+            if (directory == null || !directory.exists()) {
+                printFile(fileHeader, content);
+            } else {
+                writeFile(directory, fileHeader, content);
+            }
         }
-        final var writer = DocWriter.yaml();
-        writeFile(directory, RealmTranslator.SG_AUTHC_FILE_NAME, sgAuthc, writer);
-        writeFile(directory, RealmTranslator.SG_FRONTEND_AUTHC_FILE_NAME, sgFrontendAuthc, writer);
-        writeFile(directory, ElasticSearchConfigWriter.FILE_NAME, elasticSearchConfig, writer);
-        writeFile(directory, UserConfigWriter.FILE_NAME, userConfig, writer);
-        writeFile(directory, RoleConfigWriter.FILE_NAME, roleConfig, writer);
-        writeFile(directory, ActionGroupConfigWriter.FILE_NAME, actionGroupConfig, writer);
-        writeFile(directory, RoleMappingWriter.FILE_NAME, mappingWriter, writer);
-    }
-
-    /**
-     * Prints all generated Search Guard configuration files to standard output.
-     */
-    public void outputContent() {
-        var writer = DocWriter.yaml();
-
-        printFile(RealmTranslator.SG_AUTHC_FILE_NAME, sgAuthc, writer);
-
-        printFile(RealmTranslator.SG_FRONTEND_AUTHC_FILE_NAME, sgFrontendAuthc, writer);
-
-        printFile(ElasticSearchConfigWriter.FILE_NAME, elasticSearchConfig, writer);
-
-        printFile(UserConfigWriter.FILE_NAME, userConfig, writer);
-
-        printFile(RoleConfigWriter.FILE_NAME, roleConfig, writer);
-
-        printFile(ActionGroupConfigWriter.FILE_NAME, actionGroupConfig, writer);
-
-        printFile(RoleMappingWriter.FILE_NAME, mappingWriter, writer);
     }
 
     static private void printHeader(String filename) {

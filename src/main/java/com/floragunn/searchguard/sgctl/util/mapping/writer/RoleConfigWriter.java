@@ -24,6 +24,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
     final private Set<String> userMappingAttributes = new HashSet<>();
 
     static final String FILE_NAME = "sg_roles.yml";
+
     private static final Set<String> noEquivalentClusterActionGroupKeys = Set.of(
             "cancel_task", "create_snapshot", "cross_cluster_replication", "cross_cluster_search", "grant_api_key", "manage", "manage_api_key",
             "manage_autoscaling", "manage_ccr", "manage_data_frame_transforms", "manage_data_stream_global_retention", "manage_enrich", "manage_inference",

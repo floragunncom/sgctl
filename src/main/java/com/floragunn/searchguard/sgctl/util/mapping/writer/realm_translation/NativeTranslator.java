@@ -6,11 +6,7 @@ import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
 public class NativeTranslator extends RealmTranslator{
     @Override
     public NewAuthDomain translate(RealmIR ir) {
-        return new NewAuthDomain(
-                "basic",
-                "internal_users_db",
-                config,
-                null
-        );
+        realmNotImplementedReport(ir);
+        return null;
     }
 }
