@@ -1,12 +1,10 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
-import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.testsupport.QuietTestBase;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.security.Role;
 
-import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.RealmTranslator;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -49,7 +47,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         ir.addRole(role);
 
         ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcTranslator.SgAuthc(new ArrayList<>(), null, null), agWriter);
+        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(new ArrayList<>(), null, null), agWriter);
 
         @SuppressWarnings("unchecked")
         Map<String, ActionGroupConfigWriter.ActionGroup> actionGroups =
@@ -97,7 +95,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         ir.addRole(role);
 
         ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcTranslator.SgAuthc(new ArrayList<>(), null, null), agWriter);
+        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(new ArrayList<>(), null, null), agWriter);
 
         @SuppressWarnings("unchecked")
         Map<String, RoleConfigWriter.SGRole> roles =
@@ -126,7 +124,7 @@ class RoleConfigWriterTest extends QuietTestBase {
             ir.addRole(role);
 
             ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-            new RoleConfigWriter(ir, new SGAuthcTranslator.SgAuthc(new ArrayList<>(), null, null), agWriter);
+            new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(new ArrayList<>(), null, null), agWriter);
 
             assertTrue(report.getRoleEntries().withIssues().stream().anyMatch(roleEntry -> roleEntry.getIssues().get(MigrationReport.Category.MANUAL).stream().anyMatch(entry -> entry.parameter().equals("/a~b/"))));
         } finally {

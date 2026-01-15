@@ -1,7 +1,6 @@
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
 import com.floragunn.codova.documents.Document;
-import com.floragunn.searchguard.sgctl.commands.MigrateConfig;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.IntermediateRepresentationElasticSearchYml;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.elasticSearchYml.RealmIR;
@@ -10,7 +9,7 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.*;
 
-public class SGAuthcTranslator {
+public class SGAuthcWriter {
     private final Map<String, RealmTranslator> realmMapping = new HashMap<>();
     private final SgAuthc config;
     private final SgAuthc frontEndConfig;
@@ -23,7 +22,7 @@ public class SGAuthcTranslator {
         return frontEndConfig;
     }
 
-    public SGAuthcTranslator(IntermediateRepresentationElasticSearchYml ir) {
+    public SGAuthcWriter(IntermediateRepresentationElasticSearchYml ir) {
         config = new SgAuthc(new ArrayList<>(), null, null);
         frontEndConfig = new SgAuthc(new ArrayList<>(), null, null);
 

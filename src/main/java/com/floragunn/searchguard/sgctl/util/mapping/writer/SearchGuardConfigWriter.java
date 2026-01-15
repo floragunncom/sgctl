@@ -13,8 +13,8 @@ import java.nio.file.Files;
  * Writes Search Guard configuration files from the intermediate representation.
  */
 public class SearchGuardConfigWriter {
-    SGAuthcTranslator.SgAuthc sgAuthc;
-    SGAuthcTranslator.SgAuthc sgFrontendAuthc;
+    SGAuthcWriter.SgAuthc sgAuthc;
+    SGAuthcWriter.SgAuthc sgFrontendAuthc;
     ElasticSearchConfigWriter elasticSearchConfig;
     UserConfigWriter userConfig;
     ActionGroupConfigWriter actionGroupConfig;
@@ -28,7 +28,7 @@ public class SearchGuardConfigWriter {
      * @param ir the intermediate representation produced by the migration process
      */
     public SearchGuardConfigWriter(IntermediateRepresentation ir) {
-        var sgTranslator = new SGAuthcTranslator(ir.getElasticSearchYml());
+        var sgTranslator = new SGAuthcWriter(ir.getElasticSearchYml());
         sgAuthc = sgTranslator.getConfig();
         sgFrontendAuthc = sgTranslator.getFrontEndConfig();
         elasticSearchConfig = new ElasticSearchConfigWriter(ir.getElasticSearchYml());
