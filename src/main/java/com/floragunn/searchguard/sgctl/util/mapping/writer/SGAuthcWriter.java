@@ -13,6 +13,9 @@ public class SGAuthcWriter {
     private final Map<String, RealmTranslator> realmMapping = new HashMap<>();
     private final SgAuthc config;
     private final SgAuthc frontEndConfig;
+    public static final String SG_AUTHC_FILE_NAME = "sg_authc.yml";
+    public static final String SG_FRONTEND_AUTHC_FILE_NAME = "sg_frontend_authc.yml";
+
 
     public SgAuthc getConfig() {
         return config;
@@ -24,7 +27,7 @@ public class SGAuthcWriter {
 
     public SGAuthcWriter(IntermediateRepresentationElasticSearchYml ir) {
         config = new SgAuthc(new ArrayList<>(), null, null);
-        frontEndConfig = new SgAuthc(new ArrayList<>(), null, null);
+        frontEndConfig = new SgAuthc(SG_FRONTEND_AUTHC_FILE_NAME, new ArrayList<>(), null, null);
 
         realmMapping.put("ldap", new LdapTranslator());
         realmMapping.put("file", new FileTranslator());
@@ -50,12 +53,12 @@ public class SGAuthcWriter {
             String type = realm.getType().toLowerCase().trim();
 
             if (!realm.isEnabled()) {
-                MigrationReport.shared.addIgnoredKey(RealmTranslator.SG_AUTHC_FILE_NAME, type, "authdomains");
+                MigrationReport.shared.addIgnoredKey(SG_AUTHC_FILE_NAME, type, "authdomains");
                 return;
             }
             RealmTranslator translator = realmMapping.get(type);
             if (translator == null) {
-                RealmTranslator.realmNotImplementedReport(realmName, realm);
+                RealmTranslator.unknownRealmReport(realm);
                 return;
             }
             RealmTranslator.NewAuthDomain newDomain = translator.translate(realm);
@@ -63,16 +66,34 @@ public class SGAuthcWriter {
             if (newDomain != null) {
                 if (translator.getIsFrontEnd()) {
                     frontEndConfig.authDomains.add(newDomain);
-                    MigrationReport.shared.addMigrated(RealmTranslator.SG_FRONTEND_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_frontend_authc.yml");
+                    MigrationReport.shared.addMigrated(SG_FRONTEND_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_frontend_authc.yml");
                 } else {
                     config.authDomains.add(newDomain);
-                    MigrationReport.shared.addMigrated(RealmTranslator.SG_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_authc.yml");
+                    MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_authc.yml");
                 }
             }
         });
     }
 
-    public record SgAuthc(List<RealmTranslator.NewAuthDomain> authDomains, String internalProxies, String remoteIpHeader) implements Document<SgAuthc> {
+    public static class SgAuthc implements Document<SgAuthc> {
+        String fileName;
+
+        List<RealmTranslator.NewAuthDomain> authDomains;
+        String internalProxies;
+        String remoteIpHeader;
+        public SgAuthc(String fileName, List<RealmTranslator.NewAuthDomain> authDomains, String internalProxies, String remoteIpHeader) {
+            this.fileName = fileName;
+            this.authDomains = authDomains;
+            this.internalProxies = internalProxies;
+            this.remoteIpHeader = remoteIpHeader;
+        }
+
+        public SgAuthc(List<RealmTranslator.NewAuthDomain> authDomains, String internalProxies, String remoteIpHeader) {
+            this.fileName = SG_AUTHC_FILE_NAME;
+            this.authDomains = authDomains;
+            this.internalProxies = internalProxies;
+            this.remoteIpHeader = remoteIpHeader;
+        }
 
         @Override
         public Object toBasicObject() {
@@ -98,5 +119,8 @@ public class SGAuthcWriter {
             return result;
         }
 
+        public Collection<RealmTranslator.NewAuthDomain> authDomains() {
+            return this.authDomains;
+        }
     }
 }
