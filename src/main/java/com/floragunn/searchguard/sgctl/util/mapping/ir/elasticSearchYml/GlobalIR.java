@@ -48,9 +48,7 @@ public class GlobalIR {
             }
         }
 
-        if (keyKnown) {
-            MigrationReport.shared.addMigrated(FILE_NAME, keyPrefix + optionName);
-        } else {
+        if (!keyKnown) {
             MigrationReport.shared.addUnknownKey(FILE_NAME, keyPrefix + optionName, configFile.getPath());
         }
     }
