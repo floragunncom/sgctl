@@ -20,6 +20,7 @@ package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
 import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.RealmTranslator;
 
@@ -113,7 +114,7 @@ public class SearchGuardConfigWriter {
                 try {
                     writeFile(directory, fileHeader, content);
                 } catch (IOException e) {
-                    System.err.println("An error occurred while trying to write a file to: " + directory.getAbsolutePath() + "\nError: " + e.getMessage());
+                    MigrationReport.shared.addWarning(fileHeader, "File Write", e.getMessage());
                 }
             }
         }
