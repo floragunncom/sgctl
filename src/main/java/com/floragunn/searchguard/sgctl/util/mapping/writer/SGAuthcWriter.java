@@ -44,8 +44,8 @@ public class SGAuthcWriter {
     }
 
     public SGAuthcWriter(IntermediateRepresentationElasticSearchYml ir) {
-        config = new SgAuthc(new ArrayList<>(), null, null);
-        frontEndConfig = new SgAuthc(SG_FRONTEND_AUTHC_FILE_NAME, new ArrayList<>(), null, null);
+        config = new SgAuthc();
+        frontEndConfig = new SgAuthc(SG_FRONTEND_AUTHC_FILE_NAME);
 
         realmMapping.put("ldap", new LdapTranslator());
         realmMapping.put("file", new FileTranslator());
@@ -99,18 +99,19 @@ public class SGAuthcWriter {
         List<RealmTranslator.NewAuthDomain> authDomains;
         String internalProxies;
         String remoteIpHeader;
-        public SgAuthc(String fileName, List<RealmTranslator.NewAuthDomain> authDomains, String internalProxies, String remoteIpHeader) {
+
+        public SgAuthc(String fileName) {
             this.fileName = fileName;
-            this.authDomains = authDomains;
-            this.internalProxies = internalProxies;
-            this.remoteIpHeader = remoteIpHeader;
+            this.authDomains = new ArrayList<>();
+            this.internalProxies = null;
+            this.remoteIpHeader = null;
         }
 
-        public SgAuthc(List<RealmTranslator.NewAuthDomain> authDomains, String internalProxies, String remoteIpHeader) {
+        public SgAuthc() {
             this.fileName = SG_AUTHC_FILE_NAME;
-            this.authDomains = authDomains;
-            this.internalProxies = internalProxies;
-            this.remoteIpHeader = remoteIpHeader;
+            this.authDomains = new ArrayList<>();
+            this.internalProxies = null;
+            this.remoteIpHeader = null;
         }
 
         @Override
@@ -135,6 +136,14 @@ public class SGAuthcWriter {
             }
 
             return result;
+        }
+
+        public boolean isEmpty() {
+            return (
+                    (authDomains == null || authDomains.isEmpty()) &&
+                    (remoteIpHeader == null || remoteIpHeader.isEmpty()) &&
+                    (internalProxies == null || internalProxies.isEmpty())
+            );
         }
 
         public Collection<RealmTranslator.NewAuthDomain> authDomains() {
