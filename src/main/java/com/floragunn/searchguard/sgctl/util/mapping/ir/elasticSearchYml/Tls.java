@@ -440,9 +440,7 @@ public class Tls {
             return;
         }
 
-        if (keyKnown) {
-            MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + optionName);
-        } else {
+        if (!keyKnown) {
             MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + optionName, keyPrefix + optionName);
         }
     }

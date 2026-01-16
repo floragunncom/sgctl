@@ -73,7 +73,6 @@ public class SslTlsIR {
                 merged.addAll(newList);
                 return Collections.unmodifiableList(merged);
             });
-            report.addMigrated(FILE_NAME, keyPrefix + optionName);
             return;
         }
 

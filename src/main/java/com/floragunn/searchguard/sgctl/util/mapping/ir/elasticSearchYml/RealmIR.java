@@ -206,8 +206,6 @@ public class RealmIR {
 
             if (!keyKnown) {
                 MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
-            } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
 
@@ -255,8 +253,6 @@ public class RealmIR {
 
             if (!keyKnown) {
                 MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
-            } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -300,8 +296,6 @@ public class RealmIR {
 
             if (!keyKnown) {
                 MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
-            } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -354,8 +348,6 @@ public class RealmIR {
 
             if (!keyKnown) {
                 MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
-            } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -432,8 +424,6 @@ public class RealmIR {
 
             if (!keyKnown) {
                 MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
-            } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -509,8 +499,6 @@ public class RealmIR {
 
             if (!keyKnown) {
                 MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
-            } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -560,8 +548,6 @@ public class RealmIR {
 
             if (!keyKnown) {
                 MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
-            } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
     }
@@ -640,8 +626,6 @@ public class RealmIR {
 
             if (!keyKnown) {
                 MigrationReport.shared.addUnknownKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
-            } else {
-                MigrationReport.shared.addMigrated(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute);
             }
         }
 
