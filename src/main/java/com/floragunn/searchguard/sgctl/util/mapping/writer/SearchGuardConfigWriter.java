@@ -22,13 +22,11 @@ import com.floragunn.codova.documents.DocWriter;
 import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
-import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.RealmTranslator;
 
-import javax.imageio.IIOException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -44,29 +42,29 @@ public class SearchGuardConfigWriter {
      * @param ir the intermediate representation produced by the migration process
      */
     public SearchGuardConfigWriter(IntermediateRepresentation ir) {
-        writers = new HashMap<>();
+        writers = new LinkedHashMap<>();
 
         var sgTranslator = new SGAuthcWriter(ir.getElasticSearchYml());
         var sgAuthc = sgTranslator.getConfig();
         var sgFrontendAuthc = sgTranslator.getFrontEndConfig();
 
         writers.put(ElasticSearchConfigWriter.FILE_NAME, new ElasticSearchConfigWriter(ir.getElasticSearchYml()));
-        if (!ir.getUsers().isEmpty()) {
-            writers.put(UserConfigWriter.FILE_NAME, new UserConfigWriter(ir));
-        }
-        if (!ir.getRoles().isEmpty()) {
-            var actionGroupConfig = new ActionGroupConfigWriter();
-            writers.put(ActionGroupConfigWriter.FILE_NAME, actionGroupConfig);
-            writers.put(RoleConfigWriter.FILE_NAME, new RoleConfigWriter(ir, sgAuthc, actionGroupConfig));
-        }
-        if (!ir.getRoleMappings().isEmpty()) {
-            writers.put(RoleMappingWriter.FILE_NAME, new RoleMappingWriter(ir));
-        }
         if (!sgAuthc.isEmpty()) {
             writers.put(sgAuthc.fileName, sgAuthc);
         }
         if (!sgFrontendAuthc.isEmpty()) {
             writers.put(sgFrontendAuthc.fileName, sgFrontendAuthc);
+        }
+        if (!ir.getUsers().isEmpty()) {
+            writers.put(UserConfigWriter.FILE_NAME, new UserConfigWriter(ir));
+        }
+        if (!ir.getRoles().isEmpty()) {
+            var actionGroupConfig = new ActionGroupConfigWriter();
+            writers.put(RoleConfigWriter.FILE_NAME, new RoleConfigWriter(ir, sgAuthc, actionGroupConfig));
+            writers.put(ActionGroupConfigWriter.FILE_NAME, actionGroupConfig);
+        }
+        if (!ir.getRoleMappings().isEmpty()) {
+            writers.put(RoleMappingWriter.FILE_NAME, new RoleMappingWriter(ir));
         }
         this.ir = ir;
     }
