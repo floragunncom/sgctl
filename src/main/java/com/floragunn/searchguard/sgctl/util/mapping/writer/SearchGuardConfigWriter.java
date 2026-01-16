@@ -23,6 +23,7 @@ import com.floragunn.codova.documents.Document;
 import com.floragunn.searchguard.sgctl.util.mapping.ir.IntermediateRepresentation;
 import com.floragunn.searchguard.sgctl.util.mapping.writer.realm_translation.RealmTranslator;
 
+import javax.imageio.IIOException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -43,17 +44,29 @@ public class SearchGuardConfigWriter {
      */
     public SearchGuardConfigWriter(IntermediateRepresentation ir) {
         writers = new HashMap<>();
+
         var sgTranslator = new SGAuthcWriter(ir.getElasticSearchYml());
         var sgAuthc = sgTranslator.getConfig();
         var sgFrontendAuthc = sgTranslator.getFrontEndConfig();
-        writers.put(sgAuthc.fileName, sgAuthc);
-        writers.put(sgFrontendAuthc.fileName, sgFrontendAuthc);
+
         writers.put(ElasticSearchConfigWriter.FILE_NAME, new ElasticSearchConfigWriter(ir.getElasticSearchYml()));
-        writers.put(UserConfigWriter.FILE_NAME, new UserConfigWriter(ir));
-        var actionGroupConfig = new ActionGroupConfigWriter();
-        writers.put(ActionGroupConfigWriter.FILE_NAME, actionGroupConfig);
-        writers.put(RoleConfigWriter.FILE_NAME, new RoleConfigWriter(ir, sgAuthc, actionGroupConfig));
-        writers.put(RoleMappingWriter.FILE_NAME, new RoleMappingWriter(ir));
+        if (!ir.getUsers().isEmpty()) {
+            writers.put(UserConfigWriter.FILE_NAME, new UserConfigWriter(ir));
+        }
+        if (!ir.getRoles().isEmpty()) {
+            var actionGroupConfig = new ActionGroupConfigWriter();
+            writers.put(ActionGroupConfigWriter.FILE_NAME, actionGroupConfig);
+            writers.put(RoleConfigWriter.FILE_NAME, new RoleConfigWriter(ir, sgAuthc, actionGroupConfig));
+        }
+        if (!ir.getRoleMappings().isEmpty()) {
+            writers.put(RoleMappingWriter.FILE_NAME, new RoleMappingWriter(ir));
+        }
+        if (!sgAuthc.isEmpty()) {
+            writers.put(sgAuthc.fileName, sgAuthc);
+        }
+        if (!sgFrontendAuthc.isEmpty()) {
+            writers.put(sgFrontendAuthc.fileName, sgFrontendAuthc);
+        }
         this.ir = ir;
     }
 
@@ -87,18 +100,21 @@ public class SearchGuardConfigWriter {
      * corresponding file name (e.g. roles, users, action groups, authc).
      *
      * @param directory the target directory for the generated configuration files
-     * @throws IOException if writing any file fails
      */
-    public void outputContent(File directory) throws IOException {
+    public void outputContent(File directory) {
         final var docWriter = DocWriter.yaml();
         for (Map.Entry<String, Document<?>> writer : writers.entrySet()) {
             String fileHeader = writer.getKey();
             String content = docWriter.writeAsString(writer.getValue());
 
-            if (directory == null || !directory.exists()) {
-                printFile(fileHeader, content);
-            } else {
-                writeFile(directory, fileHeader, content);
+            printFile(fileHeader, content);
+            // if there is an output dir write the files in there
+            if (!(directory == null) && directory.exists()) {
+                try {
+                    writeFile(directory, fileHeader, content);
+                } catch (IOException e) {
+                    System.err.println("An error occurred while trying to write a file to: " + directory.getAbsolutePath() + "\nError: " + e.getMessage());
+                }
             }
         }
     }

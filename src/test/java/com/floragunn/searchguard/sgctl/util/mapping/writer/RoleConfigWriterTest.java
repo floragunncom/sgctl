@@ -65,7 +65,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         ir.addRole(role);
 
         ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(new ArrayList<>(), null, null), agWriter);
+        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(), agWriter);
 
         @SuppressWarnings("unchecked")
         Map<String, ActionGroupConfigWriter.ActionGroup> actionGroups =
@@ -113,7 +113,7 @@ class RoleConfigWriterTest extends QuietTestBase {
         ir.addRole(role);
 
         ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(new ArrayList<>(), null, null), agWriter);
+        RoleConfigWriter writer = new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(), agWriter);
 
         @SuppressWarnings("unchecked")
         Map<String, RoleConfigWriter.SGRole> roles =
@@ -142,7 +142,7 @@ class RoleConfigWriterTest extends QuietTestBase {
             ir.addRole(role);
 
             ActionGroupConfigWriter agWriter = new ActionGroupConfigWriter();
-            new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(new ArrayList<>(), null, null), agWriter);
+            new RoleConfigWriter(ir, new SGAuthcWriter.SgAuthc(), agWriter);
 
             assertTrue(report.getRoleEntries().withIssues().stream().anyMatch(roleEntry -> roleEntry.getIssues().get(MigrationReport.Category.MANUAL).stream().anyMatch(entry -> entry.parameter().equals("/a~b/"))));
         } finally {
