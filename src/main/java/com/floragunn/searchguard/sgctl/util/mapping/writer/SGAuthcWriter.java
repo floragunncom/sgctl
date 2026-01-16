@@ -1,3 +1,21 @@
+/*
+ * Copyright 2025-2026 floragunn GmbH
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ */
+
+
 package com.floragunn.searchguard.sgctl.util.mapping.writer;
 
 import com.floragunn.codova.documents.Document;
@@ -13,6 +31,9 @@ public class SGAuthcWriter {
     private final Map<String, RealmTranslator> realmMapping = new HashMap<>();
     private final SgAuthc config;
     private final SgAuthc frontEndConfig;
+    public static final String SG_AUTHC_FILE_NAME = "sg_authc.yml";
+    public static final String SG_FRONTEND_AUTHC_FILE_NAME = "sg_frontend_authc.yml";
+
 
     public SgAuthc getConfig() {
         return config;
@@ -23,8 +44,8 @@ public class SGAuthcWriter {
     }
 
     public SGAuthcWriter(IntermediateRepresentationElasticSearchYml ir) {
-        config = new SgAuthc(new ArrayList<>(), null, null);
-        frontEndConfig = new SgAuthc(new ArrayList<>(), null, null);
+        config = new SgAuthc();
+        frontEndConfig = new SgAuthc(SG_FRONTEND_AUTHC_FILE_NAME);
 
         realmMapping.put("ldap", new LdapTranslator());
         realmMapping.put("file", new FileTranslator());
@@ -50,12 +71,12 @@ public class SGAuthcWriter {
             String type = realm.getType().toLowerCase().trim();
 
             if (!realm.isEnabled()) {
-                MigrationReport.shared.addIgnoredKey(RealmTranslator.SG_AUTHC_FILE_NAME, type, "authdomains");
+                MigrationReport.shared.addIgnoredKey(SG_AUTHC_FILE_NAME, type, "authdomains");
                 return;
             }
             RealmTranslator translator = realmMapping.get(type);
             if (translator == null) {
-                RealmTranslator.realmNotImplementedReport(realmName, realm);
+                RealmTranslator.unknownRealmReport(realm);
                 return;
             }
             RealmTranslator.NewAuthDomain newDomain = translator.translate(realm);
@@ -63,16 +84,35 @@ public class SGAuthcWriter {
             if (newDomain != null) {
                 if (translator.getIsFrontEnd()) {
                     frontEndConfig.authDomains.add(newDomain);
-                    MigrationReport.shared.addMigrated(RealmTranslator.SG_FRONTEND_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_frontend_authc.yml");
+                    MigrationReport.shared.addMigrated(SG_FRONTEND_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_frontend_authc.yml");
                 } else {
                     config.authDomains.add(newDomain);
-                    MigrationReport.shared.addMigrated(RealmTranslator.SG_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_authc.yml");
+                    MigrationReport.shared.addMigrated(SG_AUTHC_FILE_NAME, realmName, "Realm migrated to sg_authc.yml");
                 }
             }
         });
     }
 
-    public record SgAuthc(List<RealmTranslator.NewAuthDomain> authDomains, String internalProxies, String remoteIpHeader) implements Document<SgAuthc> {
+    public static class SgAuthc implements Document<SgAuthc> {
+        String fileName;
+
+        List<RealmTranslator.NewAuthDomain> authDomains;
+        String internalProxies;
+        String remoteIpHeader;
+
+        public SgAuthc(String fileName) {
+            this.fileName = fileName;
+            this.authDomains = new ArrayList<>();
+            this.internalProxies = null;
+            this.remoteIpHeader = null;
+        }
+
+        public SgAuthc() {
+            this.fileName = SG_AUTHC_FILE_NAME;
+            this.authDomains = new ArrayList<>();
+            this.internalProxies = null;
+            this.remoteIpHeader = null;
+        }
 
         @Override
         public Object toBasicObject() {
@@ -98,5 +138,16 @@ public class SGAuthcWriter {
             return result;
         }
 
+        public boolean isEmpty() {
+            return (
+                    (authDomains == null || authDomains.isEmpty()) &&
+                    (remoteIpHeader == null || remoteIpHeader.isEmpty()) &&
+                    (internalProxies == null || internalProxies.isEmpty())
+            );
+        }
+
+        public Collection<RealmTranslator.NewAuthDomain> authDomains() {
+            return this.authDomains;
+        }
     }
 }
