@@ -124,7 +124,6 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
         }
     }
 
-    //TODO: Wait for change of Migrationreport for changeit, not explicit defaults are ignored
     private static Map<String,Object> defaultSearchGuardConfig() {
         var contents = new LinkedHashMap<String,Object>();
         contents.put("searchguard.ssl.http.crl.validate", false);
