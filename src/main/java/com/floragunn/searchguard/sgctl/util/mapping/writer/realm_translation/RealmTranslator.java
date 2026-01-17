@@ -31,8 +31,8 @@ public abstract class RealmTranslator {
     protected boolean isFrontEnd = false;
     protected final Map <String, Object> config = new HashMap<>();
 
-    protected void realmNotImplementedReport(RealmIR realm) {
-        MigrationReport.shared.addManualAction(isFrontEnd ? SG_FRONTEND_AUTHC_FILE_NAME : SG_AUTHC_FILE_NAME, realm.getName(), String.format("Realm migration for type %s not yet implemented.", realm.getType()));
+    protected void realmNotSupported(RealmIR realm) {
+        MigrationReport.shared.addManualAction(isFrontEnd ? SG_FRONTEND_AUTHC_FILE_NAME : SG_AUTHC_FILE_NAME, realm.getName(), String.format("Realm migration for type %s is not Supported.", realm.getType()));
     }
 
     public static void unknownRealmReport(RealmIR realm) {
