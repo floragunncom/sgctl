@@ -35,7 +35,20 @@ import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigRea
 import static com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader.toStringList;
 
 /**
- * Reads X-Pack roles from role.json into the intermediate representation.
+ * Reads and parses the {@code role.json} configuration file and converts its contents
+ * into {@link Role} objects within the {@link IntermediateRepresentation}.
+ * <p>
+ * The reader performs structural validation while parsing and reports:
+ * <ul>
+ *   <li>Unknown keys</li>
+ *   <li>Invalid value types</li>
+ *   <li>Missing required parameters</li>
+ *   <li>Unsupported or deprecated configuration entries</li>
+ * </ul>
+ * All issues encountered during parsing are recorded in the shared {@link MigrationReport}
+ * rather than throwing hard failures, allowing partial migrations to proceed.
+ * <p>
+ * Parsing is triggered eagerly during construction.
  */
 public class RoleConfigReader {
     private final File roleFile;
@@ -44,6 +57,12 @@ public class RoleConfigReader {
 
     static final String FILE_NAME = "role.json";
 
+    /**
+     * Creates a new {@code RoleConfigReader} and immediately parses the provided role file.
+     *
+     * @param roleFile the {@code role.json} file to read; may be {@code null}
+     * @param ir the intermediate representation to populate with parsed roles
+     */
     public RoleConfigReader(File roleFile, IntermediateRepresentation ir) {
         this.roleFile = roleFile;
         this.ir = ir;
@@ -54,7 +73,13 @@ public class RoleConfigReader {
             report.addWarning(FILE_NAME, "origin", e.getMessage());
         }
     }
-
+    /**
+     * Reads the root JSON document from the role configuration file and validates
+     * that it is a map of role names to role definitions.
+     *
+     * @throws DocumentParseException if the JSON document cannot be parsed
+     * @throws IOException if the role file cannot be read
+     */
     private void readRoleFile() throws DocumentParseException, IOException {
         if (roleFile == null) return;
         var reader = DocReader.json().read(roleFile);
@@ -66,9 +91,17 @@ public class RoleConfigReader {
         readRoles(mapReader);
     }
 
+    /**
+     * Iterates over all role definitions found in the root JSON object.
+     * <p>
+     * Each entry key is treated as the role name, and the value must be a map
+     * describing the role's properties.
+     *
+     * @param mapReader the root JSON object containing role definitions
+     */
     private void readRoles(LinkedHashMap<?, ?> mapReader) {
-        report.addWarning(FILE_NAME, "metadata", "The key 'metadata' is ignored for migration because it has no equivalent in Search Guard.");
-        report.addWarning(FILE_NAME, "transient-metadata", "The key 'transient-metadata' is ignored for migration because it is transient.");
+        report.addInfo(FILE_NAME,
+                "The 'metadata' and 'transient_metadata' keys are ignored for all roles because they have no equivalent in Search Guard.");
         for (var entry : mapReader.entrySet()) {
             if (!(entry.getKey() instanceof String key)) {
                 report.addInvalidType(FILE_NAME, "origin", String.class, entry.getKey());
@@ -84,6 +117,15 @@ public class RoleConfigReader {
         }
     }
 
+    /**
+     * Parses a single role definition and adds the resulting {@link Role}
+     * to the intermediate representation.
+     * <p>
+     * Unknown keys and invalid value types are reported but do not abort parsing.
+     *
+     * @param roleMap the map describing the role configuration
+     * @param roleName the name of the role being parsed
+     */
     private void readRole(LinkedHashMap<?, ?> roleMap, @NonNull String roleName) {
         var role = new Role(roleName);
         for (var entry : roleMap.entrySet()) {
@@ -149,6 +191,13 @@ public class RoleConfigReader {
         ir.addRole(role);
     }
 
+    /**
+     * Parses a remote cluster permission entry for a role.
+     *
+     * @param map the JSON map describing the remote cluster configuration
+     * @param origin the configuration path used for error reporting
+     * @return a populated {@link Role.RemoteCluster} instance
+     */
     private Role.RemoteCluster readRemoteCluster(LinkedHashMap<?, ?> map, String origin) {
         var remoteCluster = new Role.RemoteCluster();
         for (var entry : map.entrySet()) {
@@ -173,6 +222,21 @@ public class RoleConfigReader {
         return remoteCluster;
     }
 
+    /**
+     * Parses an application privilege entry for a role.
+     * <p>
+     * Required fields:
+     * <ul>
+     *   <li>{@code application}</li>
+     *   <li>{@code privileges}</li>
+     *   <li>{@code resources}</li>
+     * </ul>
+     *
+     * @param applicationMap the JSON map describing the application entry
+     * @param origin the configuration path used for error reporting
+     * @return a {@link Role.Application} instance, or {@code null} if required
+     *         parameters are missing
+     */
     private Role.Application readApplication(LinkedHashMap<?, ?> applicationMap, String origin) {
         String name = null;
         List<String> privileges = null;
@@ -218,10 +282,34 @@ public class RoleConfigReader {
         return new Role.Application(name, privileges, resources);
     }
 
+    /**
+     * Parses a remote index permission entry.
+     *
+     * @param indexMap the JSON map describing the remote index configuration
+     * @param origin the configuration path used for error reporting
+     * @return a {@link Role.RemoteIndex} instance, or {@code null} if invalid
+     */
     private Role.RemoteIndex readRemoteIndex(LinkedHashMap<?, ?> indexMap, String origin) {
         return readIndex(indexMap, true, origin, Role.RemoteIndex.class);
     }
 
+    /**
+     * Parses an index permission entry, handling both local and remote indices.
+     * <p>
+     * Required fields:
+     * <ul>
+     *   <li>{@code names}</li>
+     *   <li>{@code privileges}</li>
+     *   <li>{@code clusters} (remote indices only)</li>
+     * </ul>
+     *
+     * @param <T> the concrete index type
+     * @param indexMap the JSON map describing the index configuration
+     * @param isRemote whether this index applies to remote clusters
+     * @param origin the configuration path used for error reporting
+     * @param type the concrete index class to instantiate
+     * @return a populated index instance, or {@code null} if required fields are missing
+     */
     private <T extends Role.Index> T readIndex(LinkedHashMap<?, ?> indexMap, boolean isRemote, String origin, Class<T> type) {
         List<String> cluster = null;
         List<String> names = null;
@@ -305,6 +393,19 @@ public class RoleConfigReader {
         return type.cast(new Role.Index(names, privileges, fieldSecurity, query, allowRestricted));
     }
 
+    /**
+     * Parses field-level security configuration for an index.
+     * <p>
+     * Supported keys:
+     * <ul>
+     *   <li>{@code grant}</li>
+     *   <li>{@code except}</li>
+     * </ul>
+     *
+     * @param fieldMap the JSON map describing field security rules
+     * @param origin the configuration path used for error reporting
+     * @return a populated {@link Role.FieldSecurity} instance
+     */
     private Role.FieldSecurity readFieldSecurity(LinkedHashMap<?, ?> fieldMap, String origin) {
         origin = origin + "->field_security";
         var fieldSecurity = new Role.FieldSecurity();

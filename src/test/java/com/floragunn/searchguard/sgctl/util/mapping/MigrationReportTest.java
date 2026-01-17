@@ -31,6 +31,7 @@ import java.util.List;
 
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 /**
@@ -71,9 +72,9 @@ class MigrationReportTest {
         var entries = report.getEntries("file1", MigrationReport.Category.WARNING);
         assertEquals(1, entries.size());
         var entry = entries.get(0);
-        assertEquals("key1", entry.getParameter());
-        assertEquals("Encountered unknown key 'key1' at path 'path1'", entry.getMessage());
-        assertEquals(MigrationReport.ReportPreset.UNKNOWN_KEY, entry.getPreset());
+        assertEquals("key1", entry.parameter());
+        assertEquals("Encountered unknown key 'key1' at path 'path1'", entry.message());
+        assertEquals(MigrationReport.ReportPreset.UNKNOWN_KEY, entry.preset());
     }
 
     /**
@@ -86,12 +87,12 @@ class MigrationReportTest {
 
         var entries = report.getEntries("file1", MigrationReport.Category.WARNING);
         assertEquals(2, entries.size());
-        assertEquals("path1", entries.get(0).getParameter());
-        assertEquals("Expected type 'java.lang.String' for 'path1', but found 'java.lang.Integer'", entries.get(0).getMessage());
-        assertEquals("pathNull", entries.get(1).getParameter());
-        assertEquals("Expected type 'java.lang.String' for 'pathNull', but found 'null'", entries.get(1).getMessage());
-        assertEquals(MigrationReport.ReportPreset.INVALID_TYPE, entries.get(0).getPreset());
-        assertEquals(MigrationReport.ReportPreset.INVALID_TYPE, entries.get(1).getPreset());
+        assertEquals("path1", entries.get(0).parameter());
+        assertEquals("Expected type 'java.lang.String' for 'path1', but found 'java.lang.Integer'", entries.get(0).message());
+        assertEquals("pathNull", entries.get(1).parameter());
+        assertEquals("Expected type 'java.lang.String' for 'pathNull', but found 'null'", entries.get(1).message());
+        assertEquals(MigrationReport.ReportPreset.INVALID_TYPE, entries.get(0).preset());
+        assertEquals(MigrationReport.ReportPreset.INVALID_TYPE, entries.get(1).preset());
     }
 
     /**
@@ -104,9 +105,9 @@ class MigrationReportTest {
         var entries = report.getEntries("file1", MigrationReport.Category.MANUAL);
         assertEquals(1, entries.size());
         var entry = entries.get(0);
-        assertEquals("param1", entry.getParameter());
-        assertEquals("'path1' missing required parameter 'param1'", entry.getMessage());
-        assertEquals(MigrationReport.ReportPreset.MISSING_PARAMETER, entry.getPreset());
+        assertEquals("param1", entry.parameter());
+        assertEquals("'path1' missing required parameter 'param1'", entry.message());
+        assertEquals(MigrationReport.ReportPreset.MISSING_PARAMETER, entry.preset());
     }
 
     /**
@@ -119,9 +120,9 @@ class MigrationReportTest {
         var entries = report.getEntries("file1", MigrationReport.Category.WARNING);
         assertEquals(1, entries.size());
         var entry = entries.get(0);
-        assertEquals("key1", entry.getParameter());
-        assertEquals("Key 'key1' at path 'path1' is ignored for migration", entry.getMessage());
-        assertEquals(MigrationReport.ReportPreset.IGNORED_KEY, entry.getPreset());
+        assertEquals("key1", entry.parameter());
+        assertEquals("Key 'key1' at path 'path1' is ignored for migration", entry.message());
+        assertEquals(MigrationReport.ReportPreset.IGNORED_KEY, entry.preset());
     }
 
     /**
@@ -135,13 +136,13 @@ class MigrationReportTest {
         var entries = report.getEntries("file1", MigrationReport.Category.MIGRATED);
         assertEquals(2, entries.size());
         var withNew = entries.get(0);
-        assertEquals("oldParam", withNew.getParameter());
-        assertEquals("newParam", withNew.getNewParameter());
-        assertNull(withNew.getMessage());
+        assertEquals("oldParam", withNew.parameter());
+        assertEquals("newParam", withNew.newParameter());
+        assertNull(withNew.message());
         var withoutNew = entries.get(1);
-        assertEquals("onlyOld", withoutNew.getParameter());
-        assertNull(withoutNew.getNewParameter());
-        assertNull(withoutNew.getMessage());
+        assertEquals("onlyOld", withoutNew.parameter());
+        assertNull(withoutNew.newParameter());
+        assertNull(withoutNew.message());
     }
 
     /**
@@ -155,13 +156,13 @@ class MigrationReportTest {
         var warnings = report.getEntries("file1", MigrationReport.Category.WARNING);
         var manuals = report.getEntries("file1", MigrationReport.Category.MANUAL);
         assertEquals(1, warnings.size());
-        assertEquals("param1", warnings.get(0).getParameter());
-        assertEquals("Check this", warnings.get(0).getMessage());
-        assertNull(warnings.get(0).getPreset());
+        assertEquals("param1", warnings.get(0).parameter());
+        assertEquals("Check this", warnings.get(0).message());
+        assertNull(warnings.get(0).preset());
         assertEquals(1, manuals.size());
-        assertEquals("param2", manuals.get(0).getParameter());
-        assertEquals("Do manually", manuals.get(0).getMessage());
-        assertNull(manuals.get(0).getPreset());
+        assertEquals("param2", manuals.get(0).parameter());
+        assertEquals("Do manually", manuals.get(0).message());
+        assertNull(manuals.get(0).preset());
     }
 
     /**
@@ -195,8 +196,8 @@ class MigrationReportTest {
         String output = output();
         assertTrue(output.contains("---------- Migration Report ----------"));
         assertTrue(output.contains("MIGRATED (1)"));
-        assertTrue(output.contains("WARNING (1)"));
-        assertTrue(output.contains("MANUAL (1)"));
+        assertTrue(output.contains("WARNINGS (1)"));
+        assertTrue(output.contains("MANUAL ACTION REQUIRED (1)"));
         assertTrue(output.contains("old -> new"));
         assertTrue(output.contains("Check"));
         assertTrue(output.contains("Do manually"));

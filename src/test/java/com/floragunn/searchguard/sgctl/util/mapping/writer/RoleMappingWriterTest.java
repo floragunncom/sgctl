@@ -159,7 +159,7 @@ class RoleMappingWriterTest extends QuietTestBase {
 
             assertTrue(report.getEntries("sg_roles_mapping.yml", MigrationReport.Category.MANUAL)
                     .stream()
-                    .anyMatch(entry -> "mapping-invalid->rules.field.username".equals(entry.getParameter())));
+                    .anyMatch(entry -> "mapping-invalid->rules.field.username".equals(entry.parameter())));
         } finally {
             report.clear();
         }

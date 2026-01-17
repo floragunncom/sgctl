@@ -35,7 +35,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
     final private MigrationReport report;
     final private List<SGInternalUser> users;
 
-    static final String FILE_NAME = "sg_internal_users.yml";
+    public static final String FILE_NAME = "sg_internal_users.yml";
 
     /**
      * Creates a writer that converts users from the intermediate representation
@@ -58,8 +58,9 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
      * Password hashes cannot be migrated and must be set manually.
      */
     private void createSGInternalUser() {
+        report.addManualAction(FILE_NAME, "'username'->hash",
+                "Password hashes can not be exported from X-Pack. The hash has to be set manually for every role.");
         for (var user : ir.getUsers()) {
-            // TODO: Add handling for enabled
             if (!user.getEnabled()) {
                 report.addWarning(FILE_NAME,
                         user.getUsername() + "->enabled",
@@ -77,11 +78,7 @@ public class UserConfigWriter implements Document<UserConfigWriter> {
                 attributes.put("profile_uid", user.getProfileUID());
             }
             users.add(new SGInternalUser(user.getUsername(), "", attributes, user.getRoles()));
-            report.addManualAction(
-                    FILE_NAME,
-                    user.getUsername() + "->hash",
-                    "Password hashes can not be exported from X-Pack. The hash has to be set manually at the field marked with 'change it'"
-            );
+            report.addMigrated(FILE_NAME, user.getUsername());
         }
     }
 

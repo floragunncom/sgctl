@@ -171,7 +171,7 @@ class XPackConfigReaderTest extends TestBase {
 
         assertTrue(report.getEntries("user.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "origin".equals(entry.getParameter())));
+                .anyMatch(entry -> "origin".equals(entry.parameter())));
     }
 
     /**
@@ -201,7 +201,7 @@ class XPackConfigReaderTest extends TestBase {
 
         assertTrue(report.getEntries("user.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "user1".equals(entry.getParameter())));
+                .anyMatch(entry -> "user1".equals(entry.parameter())));
     }
 
     /**

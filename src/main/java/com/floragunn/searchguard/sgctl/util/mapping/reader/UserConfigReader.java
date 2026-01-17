@@ -99,7 +99,8 @@ public class UserConfigReader {
                 case "username":
                     if (value instanceof String username) {
                         if (!name.equals(username)) {
-                            report.addWarning(FILE_NAME, origin, "The key of the user does not match the username attribute. Key: '" + name + "' username: '" + username + "'");
+                            report.addWarning(FILE_NAME, origin,
+                                    "The key of the user does not match the username attribute. Key: '" + name + "' username: '" + username + "'. The user will not be migrated.");
                             return;
                         }
                     } else {
@@ -144,7 +145,8 @@ public class UserConfigReader {
                         if (ir.getRoles().contains(new Role(role))) {
                             checkedRoles.add(role);
                         } else {
-                            report.addWarning(FILE_NAME, origin, "The role '" + role + "' does not exist in the role.json file.");
+                            report.addWarning(FILE_NAME, origin,
+                                    "The role '" + role + "' does not exist in the role.json file. This might lead to issues with the migration.");
                         }
                     });
                     roles = checkedRoles;

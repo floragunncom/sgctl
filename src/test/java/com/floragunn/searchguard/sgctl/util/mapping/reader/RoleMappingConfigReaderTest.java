@@ -56,7 +56,7 @@ class RoleMappingConfigReaderTest {
 
         assertTrue(report.getEntries("role_mapping.json", MigrationReport.Category.MANUAL)
                 .stream()
-                .anyMatch(entry -> "roles / role_templates".equals(entry.getParameter())));
+                .anyMatch(entry -> "roles / role_templates".equals(entry.parameter())));
     }
 
     /**
@@ -80,6 +80,6 @@ class RoleMappingConfigReaderTest {
 
         assertTrue(report.getEntries("role_mapping.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "mapping1".equals(entry.getParameter())));
+                .anyMatch(entry -> "mapping1".equals(entry.parameter())));
     }
 }

@@ -56,7 +56,7 @@ class UserConfigReaderTest {
 
         assertTrue(report.getEntries("user.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "user1".equals(entry.getParameter())));
+                .anyMatch(entry -> "user1".equals(entry.parameter())));
     }
 
     /**
@@ -80,7 +80,7 @@ class UserConfigReaderTest {
 
         assertTrue(report.getEntries("user.json", MigrationReport.Category.WARNING)
                 .stream()
-                .anyMatch(entry -> "extra".equals(entry.getParameter())));
+                .anyMatch(entry -> "extra".equals(entry.parameter())));
     }
 
     /**
@@ -104,9 +104,9 @@ class UserConfigReaderTest {
 
         assertTrue(report.getEntries("user.json", MigrationReport.Category.MANUAL)
                 .stream()
-                .anyMatch(entry -> "enabled".equals(entry.getParameter())));
+                .anyMatch(entry -> "enabled".equals(entry.parameter())));
         assertTrue(report.getEntries("user.json", MigrationReport.Category.MANUAL)
                 .stream()
-                .anyMatch(entry -> "roles".equals(entry.getParameter())));
+                .anyMatch(entry -> "roles".equals(entry.parameter())));
     }
 }

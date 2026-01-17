@@ -45,6 +45,7 @@ public final class ElasticsearchYamlReader {
         }
         try {
             Map<String, Object> map = read();
+            ir.setParsedElasticsearchYAML(map);
             flattenedMap = flattenMap(map);
             toIR(flattenedMap);
         } catch (com.floragunn.codova.documents.DocumentParseException | java.io.IOException e) {

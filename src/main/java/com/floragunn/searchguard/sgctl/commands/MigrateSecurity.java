@@ -34,7 +34,7 @@ import java.util.concurrent.Callable;
 @Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
 public class MigrateSecurity implements Callable<Integer> {
 
-    @Parameters(description = "Path to the directory containing elasticsearch.yml and possibly other X-Pack configuration files.")
+    @Parameters(description = "Path to the directory containing elasticsearch.yml and optionally the files role.json, user.json and role_mapping.json.")
     File inputDir;
 
     @Option(names = { "-o", "--output-dir" }, description = "Directory where to write new configuration files.")
@@ -110,19 +110,16 @@ public class MigrateSecurity implements Callable<Integer> {
             for (File file : files) {
                 String name = file.getName();
 
-                if ("elasticsearch.yml".equals(name)) {
-                    elasticsearch = file;
-                } else if ("user.json".equals(name)) {
-                    user = file;
-                } else if ("role.json".equals(name)) {
-                    role = file;
-                } else if ("role_mapping.json".equals(name)) {
-                    roleMapping = file;
+                switch (name) {
+                    case "elasticsearch.yml" -> elasticsearch = file;
+                    case "user.json" -> user = file;
+                    case "role.json" -> role = file;
+                    case "role_mapping.json" -> roleMapping = file;
                 }
             }
         }
         if (elasticsearch == null) {
-            System.err.println("Required file elasticsearch.yml not found.");
+            System.err.println("Required file 'elasticsearch.yml' not found. Use the --help option to see a usage description.");
             return false;
         }
         return true;

@@ -218,6 +218,6 @@ class TlsTest {
         assertTrue(tls.getCertificateAuthorities().isEmpty());
         assertTrue(report.getEntries("elasticsearch.yml", MigrationReport.Category.MANUAL)
                 .stream()
-                .anyMatch(entry -> (KEY_PREFIX + "certificate_authorities").equals(entry.getParameter())));
+                .anyMatch(entry -> (KEY_PREFIX + "certificate_authorities").equals(entry.parameter())));
     }
 }

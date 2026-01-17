@@ -36,7 +36,7 @@ public class IntermediateRepresentation {
     private final List<User> usersView = Collections.unmodifiableList(users);
     private final List<Role> roles = new ArrayList<>();
     private final List<Role> rolesView = Collections.unmodifiableList(roles);
-    private final List<RoleMapping> roleMappings = new ArrayList<RoleMapping>();
+    private final List<RoleMapping> roleMappings = new ArrayList<>();
     private final List<RoleMapping> roleMappingsView = Collections.unmodifiableList(roleMappings);
     private final IntermediateRepresentationElasticSearchYml elasticSearchYml = new IntermediateRepresentationElasticSearchYml();
     private boolean frozen;

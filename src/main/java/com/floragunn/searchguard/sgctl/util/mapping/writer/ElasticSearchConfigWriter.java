@@ -40,18 +40,28 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private static final String DEFAULT_KEYSTORE_KEYPASSWORD = "changeit";
     private static final String DEFAULT_TRUSTSTORE_PASSWORD = "changeit";
     private static final String DEFAULT_KEYSTORE_PASSWORD = "changeit";
+    private static final String PLACEHOLDER = "changeit";
     private final IntermediateRepresentationElasticSearchYml ir;
-
+    private final Map<String, Object> tlsTransportMap;
+    private final Map<String, Object> tlsHTTPMap;
+    private final Map<String, Object> defaultsMap;
     final static String FILE_NAME = "elasticsearch.yml";
 
     public ElasticSearchConfigWriter(IntermediateRepresentationElasticSearchYml ir) {
         this.ir = ir;
+        tlsTransportMap = tlsMapWriter("transport", ir.getSslTls().getTransport());
+        tlsHTTPMap = tlsMapWriter("http", ir.getSslTls().getHttp());
+        defaultsMap = defaultSearchGuardConfig();
     }
 
     @Override
     public Object toBasicObject() {
-        var contents = new LinkedHashMap<>(tlsMapWriter("transport", ir.getSslTls().getTransport()));
-        contents.putAll(tlsMapWriter("http", ir.getSslTls().getHttp()));
+        var contents = new LinkedHashMap<String, Object>();
+        if (ir.getParsedElasticsearchYAML() != null) contents.putAll(ir.getParsedElasticsearchYAML());
+        contents.putAll(tlsHTTPMap);
+        contents.putAll(defaultsMap);
+        contents.putAll(defaultSearchGuardConfig());
+        contents.put("xpack.security.enabled", false);
         return contents;
     }
 
@@ -76,6 +86,41 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
         contents.put(prefix + type + ".truststore_password", transportTruststorePassword);
         contents.put(prefix + type + ".enabled_ciphers", tls.getCiphers());
         contents.put(prefix + type + ".enabled_protocols", tls.getSupportedProtocols());
+        return contents;
+    }
+
+    //TODO: Wait for change of Migrationreport for chageit, not explicit defaults are ignored, warnings and security risks are ignored
+    private static Map<String,Object> defaultSearchGuardConfig() {
+        var contents = new LinkedHashMap<String,Object>();
+        contents.put("searchguard.ssl.http.crl.validate", false);
+        contents.put("searchguard.ssl.http.crl.file_path", null);
+        contents.put("searchguard.ssl.http.crl.prefer_crlfile_over_ocsp", false);
+        contents.put("searchguard.ssl.http.crl.check_only_end_entities", true);
+        contents.put("searchguard.ssl.http.crl.disable_ocsp", false);
+        contents.put("searchguard.ssl.http.crl.disable_crldp", false);
+        contents.put("searchguard.ssl.http.crl.validation_date", -1);
+
+        //TODO: Licence needed for it to be true
+        contents.put("searchguard.enterprise_modules_enabled", true);
+
+        contents.put("searchguard.nodes_dn", PLACEHOLDER);
+        contents.put("searchguard.authcz.admin_dn", PLACEHOLDER);
+
+        //TODO: Check if empty list or string
+        contents.put("searchguard.restapi.roles_enabled", PLACEHOLDER);
+
+        contents.put("searchguard.audit.enable_rest", true);
+        contents.put("searchguard.audit.enable_transport", false);
+        contents.put("searchguard.audit.resolve_bulk_requests", false);
+
+        //TODO: make constants
+        contents.put("searchguard.audit.threadpool.size", 10);
+        contents.put("searchguard.audit.threadpool.max_queue_len", 100000);
+
+        contents.put("searchguard.audit.enable_request_details", false);
+        contents.put("searchguard.audit.ignore_users", PLACEHOLDER);
+
+        contents.put("searchguard.audit.config.index", "auditlog6");
         return contents;
     }
 }

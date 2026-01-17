@@ -388,7 +388,7 @@ class ElasticsearchYamlReaderTest extends TestBase {
      * @return true when an entry exists
      */
     private boolean hasReportEntry(MigrationReport report, String file, MigrationReport.Category category, String parameter) {
-        return report.getEntries(file, category).stream().anyMatch(e -> parameter.equals(e.getParameter()));
+        return report.getEntries(file, category).stream().anyMatch(e -> parameter.equals(e.parameter()));
     }
 
     /**
