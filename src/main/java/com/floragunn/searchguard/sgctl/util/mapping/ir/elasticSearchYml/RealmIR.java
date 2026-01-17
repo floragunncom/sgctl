@@ -261,9 +261,13 @@ public class RealmIR {
 
         private String cacheTtl;
         private int cacheMaxUsers;
+        private String cacheHashALgo;
+        private boolean authenticationEnabled;
 
         public String getCacheTtl() { return cacheTtl; }
         public int getCacheMaxUsers() { return cacheMaxUsers; }
+        public boolean getAuthenticationEnabled() { return authenticationEnabled; }
+        public String getCacheHashALgo() { return cacheHashALgo; }
 
         NativeRealmIR(String name) {
             super("native", name);
@@ -276,12 +280,14 @@ public class RealmIR {
             if (IntermediateRepresentationElasticSearchYml.isType(value, Boolean.class)) {
                 switch (attribute) {
                     case "enabled": this.enabled = (Boolean) value; break;
+                    case "authentication.enabled": this.authenticationEnabled = (Boolean) value; break;
                     default: keyKnown = false; break;
                 }
             } else if (IntermediateRepresentationElasticSearchYml.isType(value, String.class)) {
                 switch (attribute) {
                     case "type": this.type = (String) value; break;
                     case "cache.ttl": this.cacheTtl = (String) value; break;
+                    case "cache.hash_algo": this.cacheHashALgo = (String) value; break;
                     default: keyKnown = false; break;
                 }
             } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
@@ -434,6 +440,7 @@ public class RealmIR {
         private String rpClientId;
         private String rpResponseType;
         private String rpPostLogoutRedirectUri;
+        private String rpRedirectUri;
 
         // OP settings
         private String opIssuer;
@@ -458,6 +465,7 @@ public class RealmIR {
         public String getClaimName() { return claimName; }
         public String getClaimMail() { return claimMail; }
         public String getClaimGroups() { return claimGroups; }
+        public String getRpRedirectUri() { return rpRedirectUri; }
 
         OidcRealmIR(String name) {
             super("oidc", name);
@@ -486,6 +494,8 @@ public class RealmIR {
                     case "claims.name": this.claimName = (String) value; break;
                     case "claims.mail": this.claimMail = (String) value; break;
                     case "claims.groups": this.claimGroups = (String) value; break;
+                    case "rp.client_secret": MigrationReport.shared.addIgnoredKey(THIS_FILE, keyPrefix + attribute, keyPrefix + attribute); break;
+                    case "rp.redirect_uri": this.rpRedirectUri = (String) value; break;
                     default: keyKnown = false; break;
                 }
             } else if (IntermediateRepresentationElasticSearchYml.isType(value, Integer.class)) {
