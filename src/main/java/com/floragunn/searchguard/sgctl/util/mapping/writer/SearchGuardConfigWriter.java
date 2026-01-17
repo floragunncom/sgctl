@@ -49,9 +49,7 @@ public class SearchGuardConfigWriter {
         var sgFrontendAuthc = sgTranslator.getFrontEndConfig();
 
         writers.put(ElasticSearchConfigWriter.FILE_NAME, new ElasticSearchConfigWriter(ir.getElasticSearchYml()));
-        if (!sgAuthc.isEmpty()) {
-            writers.put(sgAuthc.fileName, sgAuthc);
-        }
+        writers.put(sgAuthc.fileName, sgAuthc);
         if (!sgFrontendAuthc.isEmpty()) {
             writers.put(sgFrontendAuthc.fileName, sgFrontendAuthc);
         }
