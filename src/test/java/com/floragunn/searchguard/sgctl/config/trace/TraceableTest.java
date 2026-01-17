@@ -174,21 +174,20 @@ public class TraceableTest {
   }
 
   @Test
-  public void testTraceableDocNodeMergeDotSeparatedWithNormalYamlComplex()
-      throws ConfigValidationException {
+  public void testTraceableDocNodeExpansion() throws ConfigValidationException {
     var yaml =
         """
-                root.outer.inner.enabled: true
-                root.outer:
-                  inner:
-                    value: 3
-                  inner2.enabled: false
-                  inner2:
-                    value: 3
-                root:
-                  outer:
-                    list: []
-                """;
+        root.outer.inner.enabled: true
+        root.outer:
+          inner:
+            value: 3
+          inner2.enabled: false
+          inner2:
+            value: 3
+        root:
+          outer:
+            list: []
+        """;
     var node = DocNode.wrap(DocReader.yaml().read(yaml));
     var tDoc = TraceableDocNode.of(node, Source.NONE);
     var outer = tDoc.get("root.outer").required().as(Outer::parse);
@@ -200,6 +199,66 @@ public class TraceableTest {
     assertFalse(outer.get().inner2().getValue().enabled().get());
     assertEquals(3, outer.get().inner2().getValue().value().getValue());
     assertEquals(List.of(), outer.get().list().get());
+  }
+
+  @Test
+  public void testTraceableDocNodeExpansionFailureKeyThenMap() throws ConfigValidationException {
+    var yaml =
+        """
+        a.b: 0
+        a:
+          b:
+            c: 0
+        """;
+
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var td = TraceableDocNode.of(node, Source.NONE);
+
+    assertThrows(ConfigValidationException.class, td::throwExceptionForPresentErrors);
+  }
+
+  @Test
+  public void testTraceableDocNodeExpansionFailureMapThenKey() throws ConfigValidationException {
+    var yaml =
+        """
+        a:
+          b:
+            c: 0
+        a.b: 0
+        """;
+
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var td = TraceableDocNode.of(node, Source.NONE);
+
+    assertThrows(ConfigValidationException.class, td::throwExceptionForPresentErrors);
+  }
+
+  @Test
+  public void testTraceableDocNodeExpansionFailureKeyThenKey() throws ConfigValidationException {
+    var yaml =
+        """
+        a: 1
+        a.b: 1
+        """;
+
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var td = TraceableDocNode.of(node, Source.NONE);
+
+    assertThrows(ConfigValidationException.class, td::throwExceptionForPresentErrors);
+  }
+
+  @Test
+  public void testTraceableDocNodeExpansionFailureKeyThenKey2() throws ConfigValidationException {
+    var yaml =
+        """
+        a.b: 1
+        a: 1
+        """;
+
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var td = TraceableDocNode.of(node, Source.NONE);
+
+    assertThrows(ConfigValidationException.class, td::throwExceptionForPresentErrors);
   }
 
   @Test
