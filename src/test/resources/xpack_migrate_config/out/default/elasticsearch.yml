@@ -1,1 +1,2 @@
 xpack.security.enabled: false
+searchguard.ssl.fips_mode: false

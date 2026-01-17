@@ -2,16 +2,14 @@
 xpack.security.enabled: true
 xpack.security.autoconfiguration.enabled: true
 xpack.security.enrollment.enabled: false
-xpack.security.hide_settings: ""
 xpack.security.fips_mode.enabled: false
-xpack.security.fips_mode.required_providers: []
 
 # Password hashing settings
 xpack.security.authc.password_hashing.algorithm: bcrypt
 
 # Anonymous access settings
 xpack.security.authc.anonymous.username: _es_anonymous_user
-xpack.security.authc.anonymous.roles: []
+xpack.security.authc.anonymous.roles: [monitoring_user]
 xpack.security.authc.anonymous.authz_exception: true
 
 # Automata settings
@@ -36,12 +34,7 @@ xpack.security.authc.api_key.cache.max_keys: 10000
 xpack.security.authc.api_key.cache.hash_algo: ssha256
 xpack.security.authc.api_key.delete.retention_period: 7d
 xpack.security.authc.api_key.delete.interval: 24h
-xpack.security.authc.api_key.delete.timeout:
+xpack.security.authc.api_key.delete.timeout: 30s
 xpack.security.authc.api_key.hashing.algorithm: ssha256
 
-# Security domain settings
-xpack.security.authc.domains: {}
-
-# Realm settings
-xpack.security.authc.realms: {}
 

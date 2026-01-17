@@ -4,7 +4,7 @@ auth_domains:
   - order: 0
 
   - type: anonymous
-  - order: SOMEBIGNUMBER  # not sure if necessary
+  - order: 1  # not sure if necessary
 
     user_mapping:
       user_name:
