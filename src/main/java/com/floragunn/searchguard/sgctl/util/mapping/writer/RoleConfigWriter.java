@@ -206,7 +206,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             return;
         }
 
-        final var frontendType = "basic/internal_user_db";
+        final var frontendType = "basic/internal_users_db";
         var contents = new LinkedHashMap<String, String>();
         for (var attribute : userMappingAttributes) {
             contents.put(attribute, "user_entry.attributes." + attribute);
@@ -559,10 +559,10 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
                 contents.put("index_patterns", indexPatterns);
                 contents.put("allowed_actions", allowedActions);
                 if (dls != null) {
-                    contents.put("_dls_", dls);
+                    contents.put("dls", dls);
                 }
                 if (fls != null && !fls.isEmpty()) {
-                    contents.put("_fls_", fls);
+                    contents.put("fls", fls);
                 }
                 return contents;
             }
