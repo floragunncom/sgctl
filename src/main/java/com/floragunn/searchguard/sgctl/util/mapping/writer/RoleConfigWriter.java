@@ -206,7 +206,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             return;
         }
 
-        final var frontendType = "basic/internal_user_db";
+        final var frontendType = "basic/internal_users_db";
         var contents = new LinkedHashMap<String, String>();
         for (var attribute : userMappingAttributes) {
             contents.put(attribute, "user_entry.attributes." + attribute);
