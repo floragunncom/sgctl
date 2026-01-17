@@ -46,7 +46,8 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
     private final Map<String, Object> tlsTransportMap;
     private final Map<String, Object> tlsHTTPMap;
     private final Map<String, Object> defaultsMap;
-    final static String FILE_NAME = "generated elasticsearch.yml";
+    final static String FILE_NAME = "elasticsearch.yml";
+    final static String MR_FILE_NAME = "generated elasticsearch.yml";
     final static MigrationReport report = MigrationReport.shared;
 
     private static final Map<String, String> OLD_PARAMETER_NAMES = Map.ofEntries(
@@ -80,7 +81,7 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
         tlsTransportMap = tlsMapWriter("transport", ir.getSslTls().getTransport());
         tlsHTTPMap = tlsMapWriter("http", ir.getSslTls().getHttp());
         defaultsMap = defaultSearchGuardConfig();
-        report.addInfo(FILE_NAME, "Used default for generated elasticsearch.yml");
+        report.addInfo(MR_FILE_NAME, "Used default for generated elasticsearch.yml");
     }
 
     @Override
@@ -115,10 +116,10 @@ public class ElasticSearchConfigWriter implements Document<ElasticSearchConfigWr
 
     private <T> T logDefaultIfUsed(String fullFieldName, T value, T defaultValue) {
         if (value == null) {
-            MigrationReport.shared.addWarning(FILE_NAME, fullFieldName, " is not found. Default is used: " + defaultValue);
+            MigrationReport.shared.addWarning(MR_FILE_NAME, fullFieldName, " is not found. Default is used: " + defaultValue);
             return defaultValue;
         } else {
-            MigrationReport.shared.addMigrated(FILE_NAME, OLD_PARAMETER_NAMES.get(fullFieldName), fullFieldName);
+            MigrationReport.shared.addMigrated(MR_FILE_NAME, OLD_PARAMETER_NAMES.get(fullFieldName), fullFieldName);
             return value;
         }
     }
