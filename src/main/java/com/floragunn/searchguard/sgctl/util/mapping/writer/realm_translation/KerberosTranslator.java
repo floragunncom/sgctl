@@ -33,6 +33,7 @@ public class KerberosTranslator extends RealmTranslator {
         addOptionalConfigProperty("kerberos.acceptor_keytab", ir.getPrincipal());
         addOptionalConfigProperty("kerberos.acceptor_principal", ir.getKeytabPath());
         addOptionalConfigProperty("kerberos.strip_realm_from_principal", ir.getRemoveRealmName());
+        addOptionalConfigProperty("order", ir.getOrder());
 
         return new NewAuthDomain(
                 ir.getType(),

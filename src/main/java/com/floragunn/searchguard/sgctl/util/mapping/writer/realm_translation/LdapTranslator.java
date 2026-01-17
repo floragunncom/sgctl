@@ -107,7 +107,7 @@ public class LdapTranslator extends RealmTranslator {
         if (ir.getTimeoutLdapRead() != null) {
             MigrationReport.shared.addWarning(SG_AUTHC_FILE_NAME, "Timeout Tcp Read", "Timeout Tcp Read is not supported in Searchguard");
         }
-
+        addOptionalConfigProperty("order", ir.getOrder());
         return new NewAuthDomain(
                 toBasicType(ir.getType()),
                 config

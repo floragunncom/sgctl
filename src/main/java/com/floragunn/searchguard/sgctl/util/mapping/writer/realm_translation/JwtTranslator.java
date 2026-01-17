@@ -45,6 +45,7 @@ public class JwtTranslator extends RealmTranslator{
 
         String groupsClaim = ir.getClaimsGroups() != null ? ir.getClaimsGroups() : "roles";
         addOptionalConfigProperty("user_mapping.roles.from", groupsClaim);
+        addOptionalConfigProperty("order", ir.getOrder());
 
         return new NewAuthDomain(
                 "jwt",

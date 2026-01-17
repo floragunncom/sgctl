@@ -45,6 +45,7 @@ public class OidcTranslator extends RealmTranslator {
         MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "oidc.idp.proxy", needsToBeAddedManually);
         MigrationReport.shared.addManualAction(SG_FRONTEND_AUTHC_FILE_NAME, "oidc.client_secret", needsToBeAddedManually);
 
+        addOptionalConfigProperty("order", ir.getOrder());
 
         return new NewAuthDomain(
                 ir.getType(),

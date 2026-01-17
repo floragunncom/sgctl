@@ -62,6 +62,7 @@ public class PkiTranslator extends RealmTranslator {
         //TODO This has a few things that need to be added to the TLS Config in Elasticsearch.yml
 
         addOptionalConfigProperty("user_mapping.user_name.from", convertXpackUsernamePatternToSearchGuard(ir.getUsernamePattern(), ir.getUsernameAttribute()));
+        addOptionalConfigProperty("order", ir.getOrder());
 
         return new NewAuthDomain(
                 "clientcert",

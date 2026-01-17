@@ -72,6 +72,7 @@ public class SAMLTranslator extends RealmTranslator {
                     : spAcs;
             addOptionalConfigProperty("saml.sp.acs", convertedAcs);
         }
+        addOptionalConfigProperty("order", ir.getOrder());
 
         return new NewAuthDomain(
                 ir.getType(),

@@ -91,11 +91,11 @@ public abstract class RealmTranslator {
                 result.put("type", backendType != null ? (frontendType + "/" + backendType) : frontendType);
 
                 if (frontendConfig != null && !frontendConfig.isEmpty()) {
-                    result.put(frontendType, frontendConfig);
+                    result.putAll(frontendConfig);
                 }
 
                 if (backendConfig != null && !backendConfig.isEmpty()) {
-                    result.put(backendType, backendConfig);
+                    result.putAll(backendConfig);
                 }
 
                 return result;
