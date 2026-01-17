@@ -212,7 +212,7 @@ public class RoleConfigWriter implements Document<RoleConfigWriter> {
             contents.put(attribute, "user_entry.attributes." + attribute);
         }
         var map = new LinkedHashMap<String, Object>();
-        map.put("user_mapping.attributes.from", contents);
+        map.put("internal_users_db.user_mapping.attributes.from", contents);
         sgAuthc.authDomains().add(new RealmTranslator.NewAuthDomain(frontendType, map));
     }
 
