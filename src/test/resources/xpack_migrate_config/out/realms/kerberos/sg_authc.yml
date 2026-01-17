@@ -1,0 +1,5 @@
+# https://docs.search-guard.com/latest/kerberos-spnego
+auth_domains:
+  - type: kerberos
+    kerberos.acceptor_keytab: "es_kerberos.keytab"
+    kerberos.acceptor_principal: "HTTP/es-node1.example.com"

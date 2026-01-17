@@ -1,0 +1,21 @@
+
+
+superuser:
+  users:
+    - "elastic"
+
+apm_system:
+  users:
+    - "apm_system"
+
+remote_monitoring_agent:
+  users:
+    - "remote_monitoring_user"
+
+alice:
+  users:
+    - "alice"
+
+admin_role_test:
+  users:
+    - "bob"

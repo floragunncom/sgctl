@@ -1,0 +1,10 @@
+METADATA_READ_GROUP:
+  type: "index"
+  allowed_actions:
+    - "indices:admin/mappings/get"
+    - "indices:admin/settings/get"
+  
+CLUSTER_MONITOR_WATCHER:
+  type: "cluster"
+  allowed_actions:
+    - "cluster:monitor/xpack/watcher/*"

@@ -1,0 +1,20 @@
+cluster.name: ldap-sec-cluster
+node.name: es-sec-01
+
+
+xpack.security.enabled: false
+
+searchguard.ssl.transport.enabled: true
+searchguard.ssl.transport.keystore_filepath: certs/node-sec01.p12
+searchguard.ssl.transport.keystore_type: PKCS12
+searchguard.ssl.transport.keystore_password: changeit
+searchguard.ssl.transport.truststore_filepath: certs/ca.p12
+searchguard.ssl.transport.truststore_type: PKCS12
+searchguard.ssl.transport.truststore_password: changeit
+searchguard.ssl.transport.client_authentication: REQUIRED
+
+searchguard.ssl.http.enabled: true
+searchguard.ssl.http.keystore_filepath: certs/node-sec01.p12
+searchguard.ssl.http.truststore_filepath: certs/ca.p12
+searchguard.ssl.http.keystore_password: changeit
+searchguard.ssl.http.truststore_password: changeit

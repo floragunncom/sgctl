@@ -1,0 +1,6 @@
+# https://docs.search-guard.com/latest/internal-users-database
+
+kibanaserver:
+  hash: changeit
+  search_guard_roles:
+    - SGS_KIBANA_SERVER

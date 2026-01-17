@@ -1,0 +1,17 @@
+admin:
+  users:
+    - "elastic_admin"                     
+  backend_roles:
+    - "CN=ESAdmins,OU=Groups,DC=corp,DC=local"  
+
+dev_poweruser:
+  backend_roles:
+    - "CN=DevOps,OU=Groups,DC=corp,DC=local"
+
+dev_readonly:
+  backend_roles:
+    - "CN=Developers,OU=Groups,DC=corp,DC=local"
+
+audit_reader:
+  backend_roles:
+    - "CN=SecurityTeam,OU=Groups,DC=corp,DC=local"

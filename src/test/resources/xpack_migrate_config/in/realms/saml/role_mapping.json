@@ -1,0 +1,44 @@
+{
+  "saml-admins": {
+    "enabled": true,
+    "roles": ["admin_role_test"],
+    "rules": {
+      "any": [
+        { "field": { "groups": "admin" } }
+      ]
+    },
+    "metadata": {}
+  },
+
+  "saml-analytics": {
+    "enabled": true,
+    "roles": ["dev_readonly"],
+    "rules": {
+      "any": [
+        { "field": { "groups": "analytics" } }
+      ]
+    },
+    "metadata": {}
+  },
+
+  "saml-users": {
+    "enabled": true,
+    "roles": ["read_only_role_test"],
+    "rules": {
+      "any": [
+        { "field": { "realm.name": "saml1" } }]
+    },
+    "metadata": {}
+  },
+
+  "native-log-readers": {
+    "enabled": true,
+    "roles": ["watcher_user"],
+    "rules": {
+      "any": [
+        { "field": { "realm.name": "native1" } }
+      ]
+    },
+    "metadata": {}
+  }
+}

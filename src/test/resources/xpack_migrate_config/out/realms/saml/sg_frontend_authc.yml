@@ -1,0 +1,15 @@
+authc:
+  auth_domains:
+    order: 0
+    type: saml
+    saml:
+      sp:
+          entity_id: "https://elasticsearch.example.com/"
+          acs: "https://elasticsearch.example.com/api/security/saml/callback"
+          logout: "https://elasticsearch.example.com/logout"
+
+      idp:
+        metadata_file: saml/idp-metadata.xml
+        entity_id: "https://idp.example.com/"
+        signing:
+          certificate: saml/idp-signing.crt

@@ -1,0 +1,10 @@
+# https://docs.search-guard.com/latest/kibana-authentication-openid
+default:
+  auth_domains:
+    - type: oidc
+      oidc.client_id: "my-client-id"
+      oidc.client_secret: "my-client-secret"
+
+      oidc.idp.openid_configuration_url: "https://CONFIG_URL"
+      user_mapping.user_name.from: oidc_id_token.sub
+
