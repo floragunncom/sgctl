@@ -79,11 +79,13 @@ public class XPackMigrate implements Callable<Integer> {
       System.err.println("Error: Input is not a directory: " + inputDir.toAbsolutePath());
       return 1;
     }
-    System.out.println("Welcome to the Search Guard X-pack security migration tool.\n\n");
+    System.out.println("Welcome to the Search Guard X-pack security migration tool.");
     try {
       // deserialize
       final var xPackConfigs = parseConfigs();
-      System.out.println(xPackConfigs);
+      if (!xPackConfigs.isEmpty()) {
+        System.out.println(xPackConfigs);
+      }
       // migrate
       final Migrator migrator = new Migrator();
       final Migrator.MigrationContext context = getMigrationContext(xPackConfigs);
