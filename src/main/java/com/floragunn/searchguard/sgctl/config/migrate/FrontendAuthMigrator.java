@@ -136,7 +136,7 @@ public class FrontendAuthMigrator implements SubMigrator {
     var idpMetadataPath = realm.idpMetadataPath().get();
     var subjectKey = realm.attributesPrincipal().get();
     var rolesKey = realm.attributesGroups().get();
-    var kibanaUrl = realm.spAcs().get();
+    var kibanaUrl = realm.spAcs().get().map(FrontendAuthMigrator::extractKibanaUrlFromAcs);
 
     if (idpEntityId.isEmpty() || spEntityId.isEmpty() || idpMetadataPath.isEmpty()) {
       reporter.problem(
@@ -272,7 +272,7 @@ public class FrontendAuthMigrator implements SubMigrator {
     var idpMetadataPath = samlRealm.idpMetadataPath().get();
     var subjectKey = samlRealm.attributesPrincipal().get();
     var rolesKey = samlRealm.attributesGroups().get();
-    var kibanaUrl = samlRealm.spAcs().get();
+    var kibanaUrl = samlRealm.spAcs().get().map(FrontendAuthMigrator::extractKibanaUrlFromAcs);
 
     if (idpEntityId.isEmpty() || spEntityId.isEmpty() || idpMetadataPath.isEmpty()) {
       reporter.problem(
@@ -374,5 +374,20 @@ public class FrontendAuthMigrator implements SubMigrator {
             label, id, isDefault, clientId, clientSecret, openidConfigUrl);
 
     authDomainsBuilder.add(oidcDomain);
+  }
+
+  /**
+   * Extracts base Kibana URL from ACS endpoint (e.g. ".../api/security/saml/callback" → base URL).
+   */
+  private static String extractKibanaUrlFromAcs(String acsUrl) {
+    try {
+      var uri = java.net.URI.create(acsUrl);
+      var port = uri.getPort();
+      var portPart = (port > 0 && port != 80 && port != 443) ? ":" + port : "";
+      return uri.getScheme() + "://" + uri.getHost() + portPart + "/";
+    } catch (Exception e) {
+      // If parsing fails, return the original URL as-is
+      return acsUrl;
+    }
   }
 }
