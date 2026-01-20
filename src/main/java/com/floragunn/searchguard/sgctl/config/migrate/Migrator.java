@@ -4,6 +4,11 @@ import com.floragunn.fluent.collections.ImmutableList;
 import com.floragunn.searchguard.sgctl.SgctlException;
 import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.xpack.*;
+import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
+import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
+import com.floragunn.searchguard.sgctl.config.xpack.Roles;
+import com.floragunn.searchguard.sgctl.config.xpack.Users;
+import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -70,10 +75,13 @@ public class Migrator {
     }
 
     if (reporter.hasCriticalProblems()) {
-      return new MigrationResult.Failure(reporter.generateReport());
+      return new MigrationResult.Failure(
+          reporter.generateReport(), reporter.generateReportSummary());
     } else {
       return new MigrationResult.Success(
-          outputMigratedConfigsBuilder.build(), reporter.generateReport());
+          outputMigratedConfigsBuilder.build(),
+          reporter.generateReport(),
+          reporter.generateReportSummary());
     }
   }
 
