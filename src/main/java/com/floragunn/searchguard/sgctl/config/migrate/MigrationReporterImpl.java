@@ -86,15 +86,14 @@ class MigrationReporterImpl implements MigrationReporter {
     rootSb.append(" summary:");
 
     StringBuilder sb = new StringBuilder();
-    summarizeTraceables(sb, critical, criticalSecret, "setting(s) caused critical problem(s)");
+    summarizeTraceables(sb, critical, "setting(s) caused critical problem(s)");
     summarizeList(sb, criticalMessages, "other critical problem(s) exist");
     summarizeTraceables(
         sb,
         inconvertible,
-        inconvertibleSecret,
         "setting(s) cannot be converted because no equivalent concept exists in "
             + targetDomainName);
-    summarizeTraceables(sb, problem, problemSecret, "setting(s) caused other problem(s)");
+    summarizeTraceables(sb, problem, "setting(s) caused other problem(s)");
     summarizeList(sb, problemMessages, "other problem(s) exist");
 
     String issuesSummary = sb.toString();
@@ -110,12 +109,11 @@ class MigrationReporterImpl implements MigrationReporter {
   private void summarizeTraceables(
       StringBuilder sb,
       Map<? extends BaseTraceable<?>, ? extends List<String>> traceables,
-      Map<? extends BaseTraceable<?>, ? extends List<String>> secretTraceables,
       String desc) {
-    if (traceables.isEmpty() && secretTraceables.isEmpty()) return;
+    if (traceables.isEmpty()) return;
     sb.append("\n\t* ");
 
-    sb.append(traceables.size() + secretTraceables.size());
+    sb.append(traceables.size());
     sb.append(" ");
     sb.append(desc);
   }
