@@ -54,6 +54,13 @@ public interface MigrationReporter {
   String generateReport();
 
   /**
+   * Generates a small summary of the migration report from all logged problems.
+   *
+   * @return The report summary
+   */
+  String generateReportSummary();
+
+  /**
    * Returns whether any critical problems were reported. Critical problems will cause migration to
    * fail and no config files will be written.
    *

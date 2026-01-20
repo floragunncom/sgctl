@@ -54,6 +54,11 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   @Override
+  public String generateReportSummary() {
+    return delegate.generateReportSummary();
+  }
+
+  @Override
   public boolean hasCriticalProblems() {
     return delegate.hasCriticalProblems();
   }

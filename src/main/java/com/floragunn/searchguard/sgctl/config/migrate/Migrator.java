@@ -9,13 +9,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.jetbrains.annotations.NotNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /** Class for migrating parsed XPack config to SearchGuard configs using {@link SubMigrator}s. */
 public class Migrator {
 
-  private final Logger logger = LoggerFactory.getLogger(Migrator.class);
   private final MigrationReporter reporter;
 
   public Migrator(MigrationReporter reporter) {
@@ -34,7 +31,7 @@ public class Migrator {
    * @return A List of SearchGuard Configs
    */
   public MigrationResult migrate(IMigrationContext context) throws SgctlException {
-    logger.info("Starting migration");
+    System.out.println("Starting migration");
 
     final Map<String, NamedConfig<?>> migratedConfigs = new HashMap<>();
     final List<SubMigrator> subMigrators;
@@ -42,14 +39,12 @@ public class Migrator {
       subMigrators = MigratorRegistry.getInstance().getSubMigrators();
     } catch (IllegalStateException e) {
       // TODO: maybe better handling?
-      logger.warn("Migrator registry has not been finalized!");
+      System.err.println("Migrator registry has not been finalized!");
       throw e;
     }
 
     for (final SubMigrator subMigrator : subMigrators) {
-      logger.debug("Running migration with {}", subMigrator.getClass().getSimpleName());
       final List<NamedConfig<?>> migratedSubConfigs = subMigrator.migrate(context, reporter);
-      logger.debug("SubMigrator returned {} config files", migratedSubConfigs.size());
 
       for (NamedConfig<?> migratedSubConfig : migratedSubConfigs) {
         if (migratedConfigs.containsKey(migratedSubConfig.getFileName())) {
@@ -62,7 +57,7 @@ public class Migrator {
       }
     }
 
-    logger.info("Finished migration with {} files", migratedConfigs.size());
+    System.out.println("Finished migration with " + migratedConfigs.size() + " files");
     var outputMigratedConfigsBuilder = new ImmutableList.Builder<NamedConfig<?>>();
 
     for (NamedConfig<?> migratedConfig : migratedConfigs.values()) {
@@ -70,10 +65,13 @@ public class Migrator {
     }
 
     if (reporter.hasCriticalProblems()) {
-      return new MigrationResult.Failure(reporter.generateReport());
+      return new MigrationResult.Failure(
+          reporter.generateReport(), reporter.generateReportSummary());
     } else {
       return new MigrationResult.Success(
-          outputMigratedConfigsBuilder.build(), reporter.generateReport());
+          outputMigratedConfigsBuilder.build(),
+          reporter.generateReport(),
+          reporter.generateReportSummary());
     }
   }
 
