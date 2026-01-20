@@ -5,7 +5,6 @@ import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap;
 import com.floragunn.searchguard.sgctl.config.searchguard.SgAuthC.AuthDomain.Ldap.*;
-import com.floragunn.searchguard.sgctl.config.searchguard.SgFrontendAuthC;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig.Realm;
 import java.util.*;
@@ -42,8 +41,6 @@ public class AuthMigrator implements SubMigrator {
             .toList();
 
     var authcDomains = new ImmutableList.Builder<SgAuthC.AuthDomain<?>>(sortedRealms.size());
-    var frontendAuthcDomains =
-        new ImmutableList.Builder<SgFrontendAuthC.AuthDomain<?>>(sortedRealms.size());
 
     for (var realm : sortedRealms) {
       if (realm.get() instanceof Realm.NativeRealm || realm.get() instanceof Realm.FileRealm) {
@@ -53,28 +50,25 @@ public class AuthMigrator implements SubMigrator {
       } else if (realm.get() instanceof Realm.ActiveDirectoryRealm adRealm) {
         authcDomains.add(
             migrateActiveDirectoryRealm(Traceable.of(realm.getSource(), adRealm), reporter));
-      } else if (realm.get() instanceof Realm.SAMLRealm samlRealm) {
-        frontendAuthcDomains.add(
-            migrateSamlRealm(Traceable.of(realm.getSource(), samlRealm), reporter));
+      } else if (realm.get() instanceof Realm.SAMLRealm) {
+        // SAML realms are handled by FrontendAuthMigrator - skip here
+        continue;
+      } else if (realm.get() instanceof Realm.GenericRealm genericRealm
+          && "oidc".equals(genericRealm.type().get())) {
+        // OIDC realms are handled by FrontendAuthMigrator - skip here
+        continue;
       } else {
-        reporter.critical(realm, "Unrecognized realm type");
-        return List.of();
+        reporter.problem(realm, "Skipping unrecognized realm type: " + realm.get().type().get());
+        continue;
       }
     }
 
-    var results = new ArrayList<NamedConfig<?>>();
-
     var builtAuthcDomains = authcDomains.build();
-    if (!builtAuthcDomains.isEmpty()) {
-      results.add(new SgAuthC(builtAuthcDomains));
+    if (builtAuthcDomains.isEmpty()) {
+      return List.of();
     }
 
-    var builtFrontendAuthcDomains = frontendAuthcDomains.build();
-    if (!builtFrontendAuthcDomains.isEmpty()) {
-      results.add(new SgFrontendAuthC(builtFrontendAuthcDomains));
-    }
-
-    return results;
+    return List.of(new SgAuthC(builtAuthcDomains));
   }
 
   private SgAuthC.AuthDomain<?> migrateLdapRealm(
@@ -250,103 +244,5 @@ public class AuthMigrator implements SubMigrator {
     return Arrays.stream(domainName.split("\\."))
         .map(component -> "DC=" + component)
         .collect(Collectors.joining(","));
-  }
-
-  /**
-   * Migrates X-Pack SAML realm to Search Guard frontend authc SAML domain.
-   *
-   * <p>Maps the following fields:
-   *
-   * <ul>
-   *   <li>idp.metadata.path → saml.idp.metadata_url
-   *   <li>idp.entity_id → saml.idp.entity_id
-   *   <li>sp.entity_id → saml.sp.entity_id
-   *   <li>attributes.principal → user_mapping.user_name.from
-   *   <li>attributes.groups → user_mapping.roles.from_comma_separated_string
-   *   <li>sp.acs → kibana_url (derived)
-   * </ul>
-   */
-  private SgFrontendAuthC.AuthDomain.Saml migrateSamlRealm(
-      Traceable<Realm.SAMLRealm> realm, MigrationReporter reporter) {
-    var saml = realm.get();
-
-    // idpMetadataPath is required for migration
-    var metadataUrl =
-        saml.idpMetadataPath()
-            .get()
-            .orElseGet(
-                () -> {
-                  reporter.problem(
-                      saml.idpMetadataPath(), "SAML realm missing value - using empty string");
-                  return "";
-                });
-
-    // idpEntityId is required for migration
-    var idpEntityId =
-        saml.idpEntityId()
-            .get()
-            .orElseGet(
-                () -> {
-                  reporter.problem(
-                      saml.idpEntityId(), "SAML realm missing value - using empty string");
-                  return "";
-                });
-
-    // spEntityId is required for migration
-    var spEntityId =
-        saml.spEntityId()
-            .get()
-            .orElseGet(
-                () -> {
-                  reporter.problem(
-                      saml.spEntityId(), "SAML realm missing value - using empty string");
-                  return "";
-                });
-
-    // Extract subject_key from attributes.principal (X-Pack) -> user_mapping.user_name.from (SG)
-    var subjectKey = saml.attributesPrincipal().get();
-
-    // Extract roles_key from attributes.groups (X-Pack) ->
-    // user_mapping.roles.from_comma_separated_string (SG)
-    var rolesKey = saml.attributesGroups().get();
-
-    // Derive kibana_url from sp.acs (the ACS endpoint contains the Kibana URL)
-    // X-Pack sp.acs is typically like "https://kibana.example.com/api/security/saml/callback"
-    // We extract the base URL for Search Guard's kibana_url
-    var kibanaUrl = saml.spAcs().get().map(AuthMigrator::extractKibanaUrlFromAcs);
-
-    // Note: Search Guard requires an 'exchange_key' for JWT token signing.
-    // This must be configured manually in sg_frontend_authc.yml as it is a new secret
-    // not present in X-Pack configuration. Users should generate a secure random string (32+
-    // chars).
-
-    return new SgFrontendAuthC.AuthDomain.Saml(
-        Optional.empty(), // label - use default
-        Optional.of(saml.name().get()), // id - use realm name
-        false, // isDefault
-        metadataUrl,
-        idpEntityId,
-        spEntityId,
-        subjectKey,
-        rolesKey,
-        kibanaUrl);
-  }
-
-  /**
-   * Extracts the Kibana base URL from an ACS endpoint URL.
-   *
-   * <p>X-Pack sp.acs is typically like "https://kibana.example.com:5601/api/security/saml/callback"
-   * This extracts "https://kibana.example.com:5601/" for Search Guard's kibana_url.
-   */
-  static String extractKibanaUrlFromAcs(String acsUrl) {
-    try {
-      var uri = java.net.URI.create(acsUrl);
-      var port = uri.getPort();
-      var portPart = (port > 0 && port != 80 && port != 443) ? ":" + port : "";
-      return uri.getScheme() + "://" + uri.getHost() + portPart + "/";
-    } catch (Exception e) {
-      // If parsing fails, return the original URL as-is
-      return acsUrl;
-    }
   }
 }

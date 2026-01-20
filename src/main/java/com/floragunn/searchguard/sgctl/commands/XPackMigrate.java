@@ -113,6 +113,7 @@ public class XPackMigrate implements Callable<Integer> {
     registry.registerSubMigrator(new AuthMigrator());
     registry.registerSubMigrator(new UserMigrator());
     registry.registerSubMigrator(new RoleMappingsMigrator());
+    registry.registerSubMigrator(new FrontendAuthMigrator());
     registry.finalizeSubMigrators(); // Never forget
   }
 
