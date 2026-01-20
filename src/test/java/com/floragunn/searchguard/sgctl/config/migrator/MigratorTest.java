@@ -8,19 +8,17 @@ import com.floragunn.searchguard.sgctl.config.searchguard.NamedConfig;
 import com.floragunn.searchguard.sgctl.config.trace.BaseTraceable;
 import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
 import com.floragunn.searchguard.sgctl.config.trace.Source;
-import com.floragunn.searchguard.sgctl.config.trace.Traceable;
-import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
+import com.floragunn.searchguard.sgctl.config.xpack.*;
 import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
+import com.floragunn.searchguard.sgctl.config.xpack.RoleMappings;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import com.floragunn.searchguard.sgctl.config.xpack.Users;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import com.floragunn.searchguard.sgctl.config.xpack.*;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
 
 class MigratorTest {
   record NullMigrationContext() implements Migrator.IMigrationContext {
