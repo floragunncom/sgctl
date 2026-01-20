@@ -49,6 +49,11 @@ public class AssertableMigrationReporter implements MigrationReporter {
   }
 
   @Override
+  public void defaultApplied(BaseTraceable<?> subject, String fieldName, String defaultValue) {
+    delegate.defaultApplied(subject, fieldName, defaultValue);
+  }
+
+  @Override
   public String generateReport() {
     return delegate.generateReport();
   }
