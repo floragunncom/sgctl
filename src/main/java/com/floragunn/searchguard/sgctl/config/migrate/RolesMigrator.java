@@ -8,6 +8,7 @@ import com.floragunn.searchguard.sgctl.config.trace.OptTraceable;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.Roles;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -64,17 +65,23 @@ public class RolesMigrator implements SubMigrator {
               entry.getValue().getValue().indices().get().size());
 
       for (Traceable<Roles.Index> index : entry.getValue().getValue().indices().get()) {
-        var actionsBuilder =
-            new ImmutableList.Builder<String>(index.get().privileges().get().size());
+        // Use LinkedHashSet to deduplicate while preserving order
+        var actionsSet = new LinkedHashSet<String>(index.get().privileges().get().size());
 
         for (Traceable<String> privilege : index.get().privileges().get()) {
           if (indicesPrivileges.containsKey(privilege.get())) {
-            actionsBuilder.add(indicesPrivileges.get(privilege.get()));
+            actionsSet.add(indicesPrivileges.get(privilege.get()));
           } else {
             reporter.inconvertible(
                 privilege,
                 "Could not migrate index privilege " + privilege + " for role " + entry.getKey());
           }
+        }
+
+        // Build deduplicated actions list
+        var actionsBuilder = new ImmutableList.Builder<String>(actionsSet.size());
+        for (String action : actionsSet) {
+          actionsBuilder.add(action);
         }
 
         // Convert name list of index from list of traceable strings to list of strings
@@ -131,8 +138,10 @@ public class RolesMigrator implements SubMigrator {
   private static HashMap<String, String> indicesPrivileges() {
     HashMap<String, String> indicesPrivileges = new HashMap<>();
     indicesPrivileges.put("all", "SGS_INDEX_ALL");
-    indicesPrivileges.put("createindex", "SGS_CREATE_INDEX");
     indicesPrivileges.put("create", "SGS_CREATE_INDEX");
+    indicesPrivileges.put("create_doc", "SGS_WRITE");
+    indicesPrivileges.put("create_index", "SGS_CREATE_INDEX");
+    indicesPrivileges.put("createindex", "SGS_CREATE_INDEX");
     indicesPrivileges.put("delete", "SGS_DELETE");
     indicesPrivileges.put("index", "SGS_WRITE");
     indicesPrivileges.put("manage", "SGS_MANAGE");

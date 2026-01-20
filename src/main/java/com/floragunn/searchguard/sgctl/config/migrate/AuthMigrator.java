@@ -95,7 +95,7 @@ public class AuthMigrator implements SubMigrator {
       userSearch =
           Optional.of(
               new UserSearch(
-                  realm.get().userSearchBaseDn().get(),
+                  Optional.of(normalizeDn(realm.get().userSearchBaseDn().getValue())),
                   migrateSearchScope(realm.get().userSearchScope(), reporter),
                   Optional.of(migrateUserSearchFilter(realm.get().userSearchFilter()))));
     } else {
@@ -107,7 +107,7 @@ public class AuthMigrator implements SubMigrator {
       groupSearch =
           Optional.of(
               new GroupSearch(
-                  realm.get().groupSearchBaseDn().getValue(),
+                  normalizeDn(realm.get().groupSearchBaseDn().getValue()),
                   migrateSearchScope(realm.get().groupSearchScope(), reporter),
                   Optional.empty(),
                   Optional.empty()));
@@ -244,5 +244,13 @@ public class AuthMigrator implements SubMigrator {
     return Arrays.stream(domainName.split("\\."))
         .map(component -> "DC=" + component)
         .collect(Collectors.joining(","));
+  }
+
+  /**
+   * Normalizes LDAP DNs by removing spaces after commas. X-Pack allows "ou=users, o=services,
+   * dc=example, dc=com" Search Guard expects "ou=users,o=services,dc=example,dc=com"
+   */
+  private String normalizeDn(String dn) {
+    return dn.replaceAll(",\\s*", ",");
   }
 }
