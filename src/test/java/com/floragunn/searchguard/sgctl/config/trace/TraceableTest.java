@@ -503,4 +503,129 @@ public class TraceableTest {
     assertEquals(Optional.empty(), c.get());
     assertThrows(ConfigValidationException.class, vDoc::throwExceptionForPresentErrors);
   }
+
+  @Test
+  public void testSecretAttribute() throws ConfigValidationException {
+    var yaml =
+        """
+        password: secret
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var toDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var passwordAttr = toDoc.get("password").required().secret().asString();
+    toDoc.throwExceptionForPresentErrors();
+
+    assertTrue(passwordAttr.isSecret());
+    assertEquals("***", passwordAttr.toString());
+  }
+
+  @Test
+  public void testSecretPropagatesIntoSubDocNodes() throws ConfigValidationException {
+    var yaml =
+        """
+        parent:
+          a: secret
+          b: secret
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var tDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var parent = tDoc.get("parent").secret().asTraceableDocNode();
+    var a = parent.get("a").required().asString();
+    var b = parent.get("b").required().asString();
+    tDoc.throwExceptionForPresentErrors();
+
+    assertTrue(a.isSecret());
+    assertTrue(b.isSecret());
+    assertEquals("***", a.toString());
+    assertEquals("***", b.toString());
+  }
+
+  @Test
+  public void testSecretPropagatesIntoListElements() throws ConfigValidationException {
+    var yaml =
+        """
+        list:
+        - secret1
+        - secret2
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var tDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var list = tDoc.get("list").required().secret().asListOfStrings();
+    tDoc.throwExceptionForPresentErrors();
+
+    var elem1 = list.get().get(0);
+    var elem2 = list.get().get(1);
+
+    assertTrue(list.isSecret());
+    assertTrue(elem1.isSecret());
+    assertTrue(elem2.isSecret());
+    assertEquals("***", list.toString());
+    assertEquals("***", elem1.toString());
+    assertEquals("***", elem2.toString());
+  }
+
+  @Test
+  public void testSecretPropagatesIntoMapValues() throws ConfigValidationException {
+    var yaml =
+        """
+        map:
+          a: secret1
+          b: secret2
+        """;
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var tDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var map = tDoc.get("map").required().secret().asMapOfStrings();
+    tDoc.throwExceptionForPresentErrors();
+
+    var valA = map.get().get("a");
+    var valB = map.get().get("b");
+
+    assertTrue(map.isSecret());
+    assertTrue(valA.isSecret());
+    assertTrue(valB.isSecret());
+    assertEquals("***", map.toString());
+    assertEquals("***", valA.toString());
+    assertEquals("***", valB.toString());
+  }
+
+  @Test
+  public void testSecretPropagatesIntoListDefaults() throws ConfigValidationException {
+    var yaml = "not: empty";
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var tDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var list = tDoc.get("list").secret().asListOfStrings(ImmutableList.of("default1", "default2"));
+    tDoc.throwExceptionForPresentErrors();
+
+    var elem1 = list.get().get(0);
+    var elem2 = list.get().get(1);
+
+    assertTrue(list.isSecret());
+    assertTrue(elem1.isSecret());
+    assertTrue(elem2.isSecret());
+    assertEquals("***", list.toString());
+    assertEquals("***", elem1.toString());
+    assertEquals("***", elem2.toString());
+  }
+
+  @Test
+  public void testSecretPropagatesIntoMapDefaults() throws ConfigValidationException {
+    var yaml = "not: empty";
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var tDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var map =
+        tDoc.get("map")
+            .secret()
+            .asMapOfStrings(ImmutableMap.of("key1", "default1", "key2", "default2"));
+    tDoc.throwExceptionForPresentErrors();
+
+    var valA = map.get().get("key1");
+    var valB = map.get().get("key2");
+
+    assertTrue(map.isSecret());
+    assertTrue(valA.isSecret());
+    assertTrue(valB.isSecret());
+    assertEquals("***", map.toString());
+    assertEquals("***", valA.toString());
+    assertEquals("***", valB.toString());
+  }
 }

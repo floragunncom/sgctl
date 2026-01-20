@@ -13,11 +13,14 @@ class TraceableDocNodeImpl implements TraceableDocNode {
   private final DocNode docNode;
   private final ValidationErrors errors;
   private final Source source;
+  private final boolean isSecret;
 
-  public TraceableDocNodeImpl(DocNode docNode, ValidationErrors errors, Source source) {
+  public TraceableDocNodeImpl(
+      DocNode docNode, ValidationErrors errors, Source source, boolean isSecret) {
     this.docNode = expand(docNode, errors);
     this.errors = errors;
     this.source = source;
+    this.isSecret = isSecret;
   }
 
   // <editor-fold desc="explode DocNode">
@@ -96,7 +99,7 @@ class TraceableDocNodeImpl implements TraceableDocNode {
   public TraceableAttribute.Optional get(String attribute) {
     if (docNode.hasNonNull(attribute)) {
       return new TraceableAttributeImpl.OptionalImpl(
-          new Source.Attribute(source, attribute), docNode.getAsNode(attribute), errors);
+          new Source.Attribute(source, attribute), docNode.getAsNode(attribute), errors, isSecret);
     }
 
     DocNode currentNode = docNode;
@@ -106,12 +109,12 @@ class TraceableDocNodeImpl implements TraceableDocNode {
     }
 
     return new TraceableAttributeImpl.OptionalImpl(
-        new Source.Attribute(source, attribute), currentNode, errors);
+        new Source.Attribute(source, attribute), currentNode, errors, isSecret);
   }
 
   @Override
   public TraceableAttribute.Required asAttribute() {
-    return new TraceableAttributeImpl.RequiredImpl(source, docNode, errors);
+    return new TraceableAttributeImpl.RequiredImpl(source, docNode, errors, isSecret);
   }
 
   @Override

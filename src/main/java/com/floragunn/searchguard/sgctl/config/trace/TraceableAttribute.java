@@ -8,9 +8,11 @@ public interface TraceableAttribute {
 
   Source getSource();
 
-  void expected(String message);
+  boolean isSecret();
 
   TraceableDocNode asTraceableDocNode();
+
+  TraceableAttribute secret();
 
   interface Optional extends TraceableAttribute {
 
@@ -154,17 +156,17 @@ public interface TraceableAttribute {
 
     default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
         DocNodeParser<T> parser, ImmutableList<T> defaultValue) {
-      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue, isSecret()));
     }
 
     default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
         TraceableDocNodeParser<T> parser, ImmutableList<T> defaultValue) {
-      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue, isSecret()));
     }
 
     default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
         TraceableAttributeParser<T> parser, ImmutableList<T> defaultValue) {
-      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue, isSecret()));
     }
 
     default Traceable<ImmutableList<Traceable<String>>> asListOfStrings(String... defaultValue) {
@@ -193,17 +195,17 @@ public interface TraceableAttribute {
 
     default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
         DocNodeParser<T> parser, T... defaultValue) {
-      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+      return asListOf(parser).orElse(Traceable.ofList(getSource(), isSecret(), defaultValue));
     }
 
     default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
         TraceableDocNodeParser<T> parser, T... defaultValue) {
-      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+      return asListOf(parser).orElse(Traceable.ofList(getSource(), isSecret(), defaultValue));
     }
 
     default <T> Traceable<ImmutableList<Traceable<T>>> asListOf(
         TraceableAttributeParser<T> parser, T... defaultValue) {
-      return asListOf(parser).orElse(Traceable.ofList(getSource(), defaultValue));
+      return asListOf(parser).orElse(Traceable.ofList(getSource(), isSecret(), defaultValue));
     }
 
     <T> OptTraceable<ImmutableMap<String, Traceable<T>>> asMapOf(DocNodeParser<T> parser);
@@ -235,17 +237,17 @@ public interface TraceableAttribute {
 
     default <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(
         DocNodeParser<T> parser, ImmutableMap<String, T> defaultValue) {
-      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue));
+      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue, isSecret()));
     }
 
     default <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(
         TraceableDocNodeParser<T> parser, ImmutableMap<String, T> defaultValue) {
-      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue));
+      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue, isSecret()));
     }
 
     default <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(
         TraceableAttributeParser<T> parser, ImmutableMap<String, T> defaultValue) {
-      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue));
+      return asMapOf(parser).orElse(Traceable.ofMap(getSource(), defaultValue, isSecret()));
     }
 
     default Traceable<ImmutableMap<String, Traceable<String>>> asMapOfStrings(
@@ -274,6 +276,9 @@ public interface TraceableAttribute {
     }
 
     Required required();
+
+    @Override
+    Optional secret();
   }
 
   interface Required extends TraceableAttribute {
@@ -371,5 +376,8 @@ public interface TraceableAttribute {
     <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(TraceableDocNodeParser<T> parser);
 
     <T> Traceable<ImmutableMap<String, Traceable<T>>> asMapOf(TraceableAttributeParser<T> parser);
+
+    @Override
+    Required secret();
   }
 }

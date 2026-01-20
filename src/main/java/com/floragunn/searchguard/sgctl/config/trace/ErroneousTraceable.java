@@ -18,6 +18,11 @@ class ErroneousTraceable<T> implements Traceable<T> {
   }
 
   @Override
+  public boolean isSecret() {
+    return false;
+  }
+
+  @Override
   public T get() {
     throw new UnhandledConfigValidationException(new ConfigValidationException(errors));
   }

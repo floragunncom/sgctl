@@ -7,10 +7,12 @@ class TraceableImpl<T> implements Traceable<T> {
 
   private final Source source;
   private final T value;
+  private final boolean isSecret;
 
-  public TraceableImpl(Source source, T value) {
+  public TraceableImpl(Source source, T value, boolean isSecret) {
     this.source = source;
     this.value = value;
+    this.isSecret = isSecret;
   }
 
   @Override
@@ -20,7 +22,7 @@ class TraceableImpl<T> implements Traceable<T> {
 
   @Override
   public <R> Traceable<R> map(Function<? super T, ? extends R> mapper) {
-    return new TraceableImpl<>(source, mapper.apply(value));
+    return new TraceableImpl<>(source, mapper.apply(value), isSecret);
   }
 
   @Override
@@ -34,19 +36,26 @@ class TraceableImpl<T> implements Traceable<T> {
   }
 
   @Override
+  public boolean isSecret() {
+    return isSecret;
+  }
+
+  @Override
   public boolean equals(Object obj) {
     return obj instanceof TraceableImpl<?> other
         && source.equals(other.source)
+        && isSecret == other.isSecret
         && Objects.equals(value, other.value);
   }
 
   @Override
   public int hashCode() {
-    return Objects.hash(source, value);
+    return Objects.hash(source, value, isSecret);
   }
 
   @Override
   public String toString() {
+    if (isSecret) return "***";
     return String.valueOf(value);
   }
 }

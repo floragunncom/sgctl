@@ -47,7 +47,7 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
       var loginAssistanceMessage = tDoc.get("loginAssistanceMessage").asString();
       var loginHelp = tDoc.get("loginHelp").asString();
       var cookieName = tDoc.get("cookieName").asString();
-      var encryptionKey = tDoc.get("encryptionKey").asString();
+      var encryptionKey = tDoc.get("encryptionKey").secret().asString();
       var secureCookies = tDoc.get("secureCookies").asBoolean(false);
       var sameSiteCookies = tDoc.get("sameSiteCookies").asEnum(SameSiteCookies.class);
       var session = tDoc.get("session").as(Session::parse, Session.EMPTY);
@@ -125,12 +125,15 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
 
     private static Traceable<ImmutableMap<String, Traceable<Provider>>> parseProviderType(
         TraceableAttribute.Required tAttr) {
-      var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart());
+      var type = Traceable.of(tAttr.getSource(), tAttr.getSource().pathPart(), tAttr.isSecret());
       return tAttr.asMapOf(
           (TraceableDocNodeParser<Provider>)
               (providerTDoc) -> {
                 var name =
-                    Traceable.of(providerTDoc.getSource(), providerTDoc.getSource().pathPart());
+                    Traceable.of(
+                        providerTDoc.getSource(),
+                        providerTDoc.getSource().pathPart(),
+                        providerTDoc.asAttribute().isSecret());
                 return Provider.parse(type, name, providerTDoc);
               });
     }
@@ -229,7 +232,7 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
 
         private static AnonymousProvider parse(CommonProviderData common, TraceableDocNode tDoc) {
           var username = tDoc.get("credentials.username").required().asString();
-          var password = tDoc.get("credentials.password").required().asString();
+          var password = tDoc.get("credentials.password").required().secret().asString();
           return new AnonymousProvider(common, username, password);
         }
 
@@ -261,7 +264,10 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
         if (type.equals("basic") || type.equals("token")) {
           // Force true for basic and token provider, according to xpac docs
           showInSelector =
-              Traceable.of(new Source.Attribute(tDoc.getSource(), "showInSelector"), true);
+              Traceable.of(
+                  new Source.Attribute(tDoc.getSource(), "showInSelector"),
+                  true,
+                  tDoc.asAttribute().isSecret());
         } else {
           showInSelector = tDoc.get("showInSelector").asBoolean(true);
         }

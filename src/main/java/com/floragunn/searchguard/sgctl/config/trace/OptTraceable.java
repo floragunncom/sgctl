@@ -22,20 +22,40 @@ public interface OptTraceable<T> extends BaseTraceable<Optional<T>> {
 
   Traceable<T> orElse(T other);
 
+  static <T> OptTraceable<T> of(Source source, Optional<T> value, boolean isSecret) {
+    return new OptTraceableImpl<>(source, value, isSecret);
+  }
+
+  static <T> OptTraceable<T> of(Source source, T value, boolean isSecret) {
+    return of(source, Optional.of(value), isSecret);
+  }
+
+  static <T> OptTraceable<T> of(Traceable<T> traceable, boolean isSecret) {
+    return of(traceable.getSource(), traceable.get(), isSecret);
+  }
+
+  static <T> OptTraceable<T> ofNullable(Source source, @Nullable T value, boolean isSecret) {
+    return of(source, Optional.ofNullable(value), isSecret);
+  }
+
+  static <T> OptTraceable<T> empty(Source source, boolean isSecret) {
+    return of(source, Optional.empty(), isSecret);
+  }
+
   static <T> OptTraceable<T> of(Source source, Optional<T> value) {
-    return new OptTraceableImpl<>(source, value);
+    return of(source, value, false);
   }
 
   static <T> OptTraceable<T> of(Source source, T value) {
-    return of(source, Optional.of(value));
+    return of(source, value, false);
   }
 
   static <T> OptTraceable<T> of(Traceable<T> traceable) {
-    return of(traceable.getSource(), traceable.get());
+    return of(traceable, false);
   }
 
   static <T> OptTraceable<T> ofNullable(Source source, @Nullable T value) {
-    return of(source, Optional.ofNullable(value));
+    return ofNullable(source, value, false);
   }
 
   static <T> OptTraceable<T> empty(Source source) {
