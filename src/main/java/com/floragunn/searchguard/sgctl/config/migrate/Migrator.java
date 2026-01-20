@@ -57,6 +57,13 @@ public class Migrator {
       }
     }
 
+    // Check for critical problems BEFORE announcing success
+    if (reporter.hasCriticalProblems()) {
+      // Don't print "Finished migration" - the migration failed
+      return new MigrationResult.Failure(
+          reporter.generateReport(), reporter.generateReportSummary());
+    }
+
     System.out.println("Finished migration with " + migratedConfigs.size() + " files");
     var outputMigratedConfigsBuilder = new ImmutableList.Builder<NamedConfig<?>>();
 
@@ -64,15 +71,11 @@ public class Migrator {
       outputMigratedConfigsBuilder.add(migratedConfig);
     }
 
-    if (reporter.hasCriticalProblems()) {
-      return new MigrationResult.Failure(
-          reporter.generateReport(), reporter.generateReportSummary());
-    } else {
-      return new MigrationResult.Success(
-          outputMigratedConfigsBuilder.build(),
-          reporter.generateReport(),
-          reporter.generateReportSummary());
-    }
+    // No critical problems at this point, return Success
+    return new MigrationResult.Success(
+        outputMigratedConfigsBuilder.build(),
+        reporter.generateReport(),
+        reporter.generateReportSummary());
   }
 
   /**

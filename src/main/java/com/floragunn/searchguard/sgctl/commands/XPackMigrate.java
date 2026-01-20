@@ -97,7 +97,14 @@ public class XPackMigrate implements Callable<Integer> {
         checkOverwrite(suc.configs());
         writeConfigs(suc.configs());
       } else {
+        // Migration failed due to critical problems
         checkOverwrite(List.of());
+        System.err.println("\nMigration FAILED due to critical errors:");
+        System.err.println(result.summary());
+        System.err.println(
+            "\nNOTE: The full report is saved to: " + outputDir.resolve("report.md"));
+        writeReport(result.report());
+        return 1; // Exit with error code
       }
       // report
       System.out.println(result.summary());
