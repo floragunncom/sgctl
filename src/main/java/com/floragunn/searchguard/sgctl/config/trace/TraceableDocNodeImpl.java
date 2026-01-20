@@ -15,7 +15,8 @@ class TraceableDocNodeImpl implements TraceableDocNode {
   private final Source source;
   private final boolean isSecret;
 
-  public TraceableDocNodeImpl(DocNode docNode, ValidationErrors errors, Source source) {
+  public TraceableDocNodeImpl(
+      DocNode docNode, ValidationErrors errors, Source source, boolean isSecret) {
     this.docNode = expand(docNode, errors);
     this.errors = errors;
     this.source = source;
