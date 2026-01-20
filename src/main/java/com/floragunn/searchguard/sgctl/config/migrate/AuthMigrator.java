@@ -76,7 +76,29 @@ public class AuthMigrator implements SubMigrator {
 
     reportIfConnectionPoolDisabled(realm.get().userSearchPoolEnabled(), reporter);
 
-    var hosts = ImmutableList.of(realm.get().url().get().stream().map(Traceable::get).toList());
+    // Validate that LDAP URL is present and not empty
+    var urlList = realm.get().url().get();
+    if (urlList.isEmpty()) {
+      reporter.critical(
+          realm,
+          "LDAP realm '"
+              + realm.get().name().get()
+              + "' is missing required field 'url'. "
+              + "LDAP authentication cannot function without a server URL. "
+              + "Please specify the LDAP server URL (e.g., url: \"ldap://localhost:389\") in elasticsearch.yml.");
+      return new Ldap(
+          new IdentityProvider(
+              ImmutableList.empty(),
+              Optional.of(IdentityProvider.ConnectionStrategy.FAILOVER),
+              Optional.empty(),
+              Optional.empty(),
+              Optional.of(0),
+              Optional.of(20)),
+          Optional.empty(),
+          Optional.empty());
+    }
+
+    var hosts = ImmutableList.of(urlList.stream().map(Traceable::get).toList());
     var identityProvider =
         new IdentityProvider(
             hosts,
@@ -126,13 +148,35 @@ public class AuthMigrator implements SubMigrator {
 
     reportIfConnectionPoolDisabled(realm.get().userSearchPoolEnabled(), reporter);
 
+    // Validate that either URL or domainName is present
+    var urlOptional = realm.get().url().get();
+    var domainName = realm.get().domainName().get();
+
+    if (urlOptional.isEmpty() && domainName.isBlank()) {
+      reporter.critical(
+          realm,
+          "Active Directory realm '"
+              + realm.get().name().get()
+              + "' is missing both 'url' and 'domainName'. "
+              + "At least one must be specified for Active Directory authentication. "
+              + "Please specify either url (e.g., url: \"ldap://dc.example.com:389\") "
+              + "or domainName (e.g., domainName: \"example.com\") in elasticsearch.yml.");
+      return new Ldap(
+          new IdentityProvider(
+              ImmutableList.empty(),
+              Optional.of(IdentityProvider.ConnectionStrategy.FAILOVER),
+              Optional.empty(),
+              Optional.empty(),
+              Optional.of(0),
+              Optional.of(20)),
+          Optional.empty(),
+          Optional.empty());
+    }
+
     var hosts =
-        realm
-            .get()
-            .url()
-            .get()
+        urlOptional
             .map(urls -> ImmutableList.of(urls.stream().map(Traceable::get).toList()))
-            .orElse(ImmutableList.of("ldap://%s:389".formatted(realm.get().domainName().get())));
+            .orElse(ImmutableList.of("ldap://%s:389".formatted(domainName)));
 
     var identityProvider =
         new IdentityProvider(
