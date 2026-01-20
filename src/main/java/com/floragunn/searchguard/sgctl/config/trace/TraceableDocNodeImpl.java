@@ -4,6 +4,7 @@ import com.floragunn.codova.documents.DocNode;
 import com.floragunn.codova.validation.ConfigValidationException;
 import com.floragunn.codova.validation.ValidationErrors;
 import com.floragunn.fluent.collections.ImmutableSet;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,68 +15,78 @@ class TraceableDocNodeImpl implements TraceableDocNode {
   private final Source source;
   private final boolean isSecret;
 
-  public TraceableDocNodeImpl(
-      DocNode docNode, ValidationErrors errors, Source source, boolean isSecret) {
-    this.docNode = exploded(docNode);
+  public TraceableDocNodeImpl(DocNode docNode, ValidationErrors errors, Source source) {
+    this.docNode = expand(docNode, errors);
     this.errors = errors;
     this.source = source;
     this.isSecret = isSecret;
   }
 
   // <editor-fold desc="explode DocNode">
-
-  // TODO: for invalid configs with leaf values colliding with maps, throw a validation error
-  //  instead of class cast exception
-
-  private static DocNode exploded(DocNode input) {
+  private static DocNode expand(DocNode input, ValidationErrors errors) {
     if (!input.isMap()) return input;
-    return DocNode.wrap(exploded(input.toMap()));
+    return DocNode.wrap(expand(input.toMap(), "", errors));
   }
 
   @SuppressWarnings("unchecked")
-  private static Map<String, Object> exploded(Map<String, Object> input) {
+  private static Map<String, Object> expand(
+      Map<String, Object> input, String path, ValidationErrors errors) {
     Map<String, Object> result = new HashMap<>();
+    outer:
     for (var entry : input.entrySet()) {
-      var key = entry.getKey();
-      var value =
-          (entry.getValue() instanceof Map<?, ?> m)
-              ? exploded((Map<String, Object>) m)
-              : entry.getValue();
-
-      var keyParts = key.split("\\.");
-      if (keyParts.length > 1) {
-        var currentMap = result;
-        for (int i = 0; i < keyParts.length - 1; i++) {
-          var part = keyParts[i];
-          if (!currentMap.containsKey(part)) {
-            currentMap.put(part, new HashMap<String, Object>());
-          }
-          currentMap = (Map<String, Object>) currentMap.get(part);
-        }
-        putOrMergeInto(currentMap, keyParts[keyParts.length - 1], value);
+      String key = entry.getKey();
+      Object value;
+      if (entry.getValue() instanceof Map<?, ?> m) {
+        value = expand((Map<String, Object>) m, path + "." + key, errors);
       } else {
-        putOrMergeInto(result, key, value);
+        value = entry.getValue();
+      }
+
+      String pathPrefix = path.isEmpty() ? "" : path + ".";
+      String[] keyParts = key.split("\\.");
+      if (keyParts.length > 1) {
+        Map<String, Object> currentMap = result;
+        for (int i = 0; i < keyParts.length - 1; i++) {
+          String part = keyParts[i];
+          Object current = currentMap.computeIfAbsent(part, x -> new HashMap<>());
+          if (current instanceof Map<?, ?> m) {
+            currentMap = (Map<String, Object>) m;
+          } else {
+            String conflictPath = pathPrefix + String.join(".", Arrays.copyOf(keyParts, i + 1));
+            errors.add(new InvalidTreeStructureValidationError(conflictPath));
+            break outer;
+          }
+        }
+        putOrMergeInto(currentMap, keyParts[keyParts.length - 1], value, pathPrefix + key, errors);
+      } else {
+        putOrMergeInto(result, key, value, pathPrefix + key, errors);
       }
     }
     return result;
   }
 
-  private static Map<String, Object> merge(Map<String, Object> a, Map<String, Object> b) {
+  private static Map<String, Object> merge(
+      Map<String, Object> a, Map<String, Object> b, String path, ValidationErrors errors) {
     Map<String, Object> result = new HashMap<>(a);
     for (var entry : b.entrySet()) {
-      var key = entry.getKey();
-      var valueB = entry.getValue();
-      putOrMergeInto(result, key, valueB);
+      String key = entry.getKey();
+      Object valueB = entry.getValue();
+      String newPath = path.isEmpty() ? key : path + "." + key;
+      putOrMergeInto(result, key, valueB, newPath, errors);
     }
     return result;
   }
 
   @SuppressWarnings("unchecked")
-  private static void putOrMergeInto(Map<String, Object> target, String key, Object value) {
+  private static void putOrMergeInto(
+      Map<String, Object> target, String key, Object value, String path, ValidationErrors errors) {
     if (target.containsKey(key)) {
-      var existingValue = target.get(key);
+      Object existingValue = target.get(key);
       if (existingValue instanceof Map && value instanceof Map) {
-        value = merge((Map<String, Object>) existingValue, (Map<String, Object>) value);
+        value =
+            merge((Map<String, Object>) existingValue, (Map<String, Object>) value, path, errors);
+      } else {
+        errors.add(new InvalidTreeStructureValidationError(path));
       }
     }
     target.put(key, value);
