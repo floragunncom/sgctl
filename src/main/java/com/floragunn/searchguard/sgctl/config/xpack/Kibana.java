@@ -47,7 +47,7 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
       var loginAssistanceMessage = tDoc.get("loginAssistanceMessage").asString();
       var loginHelp = tDoc.get("loginHelp").asString();
       var cookieName = tDoc.get("cookieName").asString();
-      var encryptionKey = tDoc.get("encryptionKey").asString();
+      var encryptionKey = tDoc.get("encryptionKey").secret().asString();
       var secureCookies = tDoc.get("secureCookies").asBoolean(false);
       var sameSiteCookies = tDoc.get("sameSiteCookies").asEnum(SameSiteCookies.class);
       var session = tDoc.get("session").as(Session::parse, Session.EMPTY);
@@ -232,7 +232,7 @@ public record Kibana(OptTraceable<SecurityConfig> security) {
 
         private static AnonymousProvider parse(CommonProviderData common, TraceableDocNode tDoc) {
           var username = tDoc.get("credentials.username").required().asString();
-          var password = tDoc.get("credentials.password").required().asString();
+          var password = tDoc.get("credentials.password").required().secret().asString();
           return new AnonymousProvider(common, username, password);
         }
 
