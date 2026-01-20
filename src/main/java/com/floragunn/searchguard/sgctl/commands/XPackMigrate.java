@@ -13,13 +13,11 @@ import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNode;
 import com.floragunn.searchguard.sgctl.config.trace.TraceableDocNodeParser;
 import com.floragunn.searchguard.sgctl.config.xpack.*;
 import com.floragunn.searchguard.sgctl.util.StringUtils;
+import com.google.common.collect.Streams;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import picocli.CommandLine;
@@ -83,13 +81,27 @@ public class XPackMigrate implements Callable<Integer> {
     try {
       // deserialize
       final var xPackConfigs = parseConfigs();
-      System.out.println(xPackConfigs);
+      if (xPackConfigs.isEmpty()) {
+        System.err.println(
+            "Error: No X-Pack configuration files found in input directory: "
+                + inputDir.toAbsolutePath());
+        return 1;
+      }
+
       // migrate
       final Migrator migrator = new Migrator();
       final Migrator.MigrationContext context = getMigrationContext(xPackConfigs);
       final MigrationResult result = migrator.migrate(context);
       // serialize
-      if (result instanceof MigrationResult.Success suc) writeConfigs(suc.configs());
+      if (result instanceof MigrationResult.Success suc) {
+        checkOverwrite(suc.configs());
+        writeConfigs(suc.configs());
+      } else {
+        checkOverwrite(List.of());
+      }
+      // report
+      System.out.println(result.summary());
+      System.out.println("NOTE: The full report is saved to: " + outputDir.resolve("report.md"));
       writeReport(result.report());
     } catch (SgctlException e) {
       System.err.println("Error: " + e.getMessage());
@@ -168,19 +180,31 @@ public class XPackMigrate implements Callable<Integer> {
     return configs;
   }
 
+  private void checkOverwrite(List<NamedConfig<?>> configs) throws SgctlException {
+    final var additionalFileNames = List.of("report.md");
+    final var configFileNames = configs.stream().map(NamedConfig::getFileName);
+    final var fileNames = Streams.concat(configFileNames, additionalFileNames.stream());
+    final var wouldOverwrite =
+        fileNames
+            .filter(Objects::nonNull)
+            .filter(fileName -> Files.exists(outputDir.resolve(fileName)))
+            .toList();
+    if (!overwrite && !wouldOverwrite.isEmpty()) {
+      final String overwriteFileNames = String.join(", ", wouldOverwrite);
+      final String fileWord = (wouldOverwrite.size() == 1) ? "file" : "files";
+      throw new SgctlException(
+          "Refusing to output: Would overwrite existing " + fileWord + ": " + overwriteFileNames);
+    }
+  }
+
   private void writeConfigs(List<NamedConfig<?>> configs) throws IOException, SgctlException {
     if (!Files.exists(outputDir)) {
       Files.createDirectory(outputDir);
     }
 
     for (final var config : configs) {
-      final String configFileName = config.getFileName();
       final Object configObj = config.toBasicObject();
       final Path configPath = outputDir.resolve(config.getFileName());
-
-      if (Files.exists(configPath) && !overwrite) {
-        throw new SgctlException("Refusing to overwrite existing config file: " + configFileName);
-      }
 
       DocWriter.yaml().write(configPath.toFile(), configObj);
     }
@@ -192,11 +216,6 @@ public class XPackMigrate implements Callable<Integer> {
     }
 
     var reportFile = outputDir.resolve("report.md");
-    if (Files.exists(reportFile) && !overwrite) {
-      throw new SgctlException(
-          "Refusing to overwrite existing report file: " + reportFile.toAbsolutePath());
-    }
-
     Files.writeString(reportFile, report);
   }
 }

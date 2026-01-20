@@ -75,10 +75,13 @@ public class Migrator {
     }
 
     if (reporter.hasCriticalProblems()) {
-      return new MigrationResult.Failure(reporter.generateReport());
+      return new MigrationResult.Failure(
+          reporter.generateReport(), reporter.generateReportSummary());
     } else {
       return new MigrationResult.Success(
-          outputMigratedConfigsBuilder.build(), reporter.generateReport());
+          outputMigratedConfigsBuilder.build(),
+          reporter.generateReport(),
+          reporter.generateReportSummary());
     }
   }
 
