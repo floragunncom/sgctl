@@ -228,7 +228,7 @@ public class AuthMigrator implements SubMigrator {
   }
 
   private Filter.Raw migrateUserSearchFilter(Traceable<String> filter) {
-    return new Filter.Raw(filter.get().replace("{{0}}", "${user.name}"));
+    return new Filter.Raw(filter.get().replace("{0}", "${user.name}"));
   }
 
   private Optional<String> takeBindOrSecureBindPassword(

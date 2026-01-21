@@ -16,4 +16,4 @@ xpack:
             bind_password: "secret"
             user_search:
               base_dn: "ou=users,dc=example,dc=com"
-              filter: "(uid={{0}})"
+              filter: "(uid={0})"

@@ -317,7 +317,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
       var userSearchScope =
           tDoc.get("user_search.scope").asEnum(SearchScope.class, SearchScope.SUB_TREE);
       var userSearchBaseDn = tDoc.get("user_search.base_dn").asString();
-      var userSearchFilter = tDoc.get("user_search.filter").asString("(uid={{0}})");
+      var userSearchFilter = tDoc.get("user_search.filter").asString("(uid={0})");
 
       var userSearchPoolEnabled =
           tDoc.get("user_search.pool.enabled").asBoolean(true); // TODO: only true if bind_dn is set
@@ -501,7 +501,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
           tDoc.get("user_search.scope").asEnum(SearchScope.class, SearchScope.SUB_TREE);
       var userSearchFilter =
           tDoc.get("user_search.filter")
-              .asString("(&(objectClass=user)(|(sAMAccountName={{0}})(userPrincipalName={{0}})))");
+              .asString("(&(objectClass=user)(|(sAMAccountName={0})(userPrincipalName={0})))");
       var userSearchPoolEnabled = tDoc.get("user_search.pool.enabled").asBoolean(true);
       var userSearchPoolSize = tDoc.get("user_search.pool.size").asInt(20);
       var userSearchPoolInitialSize = tDoc.get("user_search.pool.initial_size").asInt(0);
