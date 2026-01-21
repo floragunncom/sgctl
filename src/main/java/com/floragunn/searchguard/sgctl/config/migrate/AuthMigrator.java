@@ -43,10 +43,8 @@ public class AuthMigrator implements SubMigrator {
     var authcDomains = new ImmutableList.Builder<SgAuthC.AuthDomain<?>>(sortedRealms.size());
 
     for (var realm : sortedRealms) {
-      // Report if enabled field was missing (default was applied)
-      if (!realm.get().enabled().isPresent()) {
-        reporter.defaultApplied(realm, "enabled", "true");
-      }
+      // skip disabled realms
+      if (!realm.get().enabled().get()) continue;
 
       if (realm.get() instanceof Realm.NativeRealm || realm.get() instanceof Realm.FileRealm) {
         authcDomains.add(new SgAuthC.AuthDomain.Internal());
