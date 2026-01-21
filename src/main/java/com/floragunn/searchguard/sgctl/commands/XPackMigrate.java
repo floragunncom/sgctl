@@ -89,12 +89,6 @@ public class XPackMigrate implements Callable<Integer> {
         System.err.println("\n✗ Migration FAILED - No configuration files found");
         System.err.println(
             "  • No X-Pack configuration files found in: " + inputDir.toAbsolutePath());
-        System.err.println("\n  Please ensure the input directory contains:");
-        System.err.println("    - elasticsearch.yml");
-        System.err.println("    - roles.json");
-        System.err.println("    - users.json");
-        System.err.println("    - role_mappings.json");
-        System.err.println("    - kibana.yml (optional)");
         return 1;
       }
 
