@@ -97,14 +97,12 @@ class MigrationReporterImpl implements MigrationReporter {
     rootSb.append("\n─── Migration Report Summary\n");
 
     StringBuilder sb = new StringBuilder();
-    summarizeTraceables(sb, critical, "critical problem(s)");
-    summarizeList(sb, criticalMessages, "other critical problem(s)");
-    summarizeTraceables(
+    summarizeCount(sb, critical.size() + criticalMessages.size(), "critical problem(s) exist");
+    summarizeCount(
         sb,
-        inconvertible,
+        inconvertible.size(),
         "setting(s) cannot be converted (no equivalent in " + targetDomainName + ")");
-    summarizeTraceables(sb, problem, "other problem(s)");
-    summarizeList(sb, problemMessages, "other problem(s)");
+    summarizeCount(sb, problem.size() + problemMessages.size(), "other problem(s) exist");
     summarizeDefaultsApplied(sb);
 
     String issuesSummary = sb.toString();
@@ -115,18 +113,6 @@ class MigrationReporterImpl implements MigrationReporter {
     }
 
     return rootSb.toString();
-  }
-
-  private void summarizeTraceables(
-      StringBuilder sb,
-      Map<? extends BaseTraceable<?>, ? extends List<String>> traceables,
-      String desc) {
-    if (traceables.isEmpty()) return;
-    sb.append("  • ");
-    sb.append(traceables.size());
-    sb.append(" ");
-    sb.append(desc);
-    sb.append("\n");
   }
 
   private void reportTraceables(
@@ -160,11 +146,11 @@ class MigrationReporterImpl implements MigrationReporter {
     }
   }
 
-  private void summarizeList(StringBuilder sb, List<? extends String> messages, String desc) {
-    if (messages.isEmpty()) return;
+  private void summarizeCount(StringBuilder sb, int count, String desc) {
+    if (count == 0) return;
 
     sb.append("  • ");
-    sb.append(messages.size());
+    sb.append(count);
     sb.append(" ");
     sb.append(desc);
     sb.append("\n");
