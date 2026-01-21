@@ -95,17 +95,16 @@ public class FrontendAuthMigrator implements SubMigrator {
     for (var realmTrace : sortedRealms) {
       var realm = realmTrace.get();
 
-      if (!realm.enabled().get()) {
+      if (!realm.enabled().orElse(true).get()) {
         continue;
       }
 
       boolean isDefault = !hasDefault;
 
       if (realm instanceof XPackElasticsearchConfig.Realm.LdapRealm) {
-        reporter.problem(realmTrace, "LDAP realm has no frontend auth equivalent - skipping");
+        // LDAP realms use basic auth - handled by AuthMigrator, not frontend auth
       } else if (realm instanceof XPackElasticsearchConfig.Realm.ActiveDirectoryRealm) {
-        reporter.problem(
-            realmTrace, "ActiveDirectory realm has no frontend auth equivalent - skipping");
+        // AD realms use basic auth - handled by AuthMigrator, not frontend auth
       } else if (realm instanceof XPackElasticsearchConfig.Realm.SAMLRealm samlRealm) {
         migrateSAMLRealmToFrontend(realmTrace, samlRealm, isDefault, authDomainsBuilder, reporter);
         if (isDefault) hasDefault = true;

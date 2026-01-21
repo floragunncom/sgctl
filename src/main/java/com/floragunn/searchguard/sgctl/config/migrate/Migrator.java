@@ -31,7 +31,7 @@ public class Migrator {
    * @return A List of SearchGuard Configs
    */
   public MigrationResult migrate(IMigrationContext context) throws SgctlException {
-    System.out.println("Starting migration");
+    System.out.println("─── Migration");
 
     final Map<String, NamedConfig<?>> migratedConfigs = new HashMap<>();
     final List<SubMigrator> subMigrators;
@@ -64,7 +64,7 @@ public class Migrator {
           reporter.generateReport(), reporter.generateReportSummary());
     }
 
-    System.out.println("Finished migration with " + migratedConfigs.size() + " files");
+    System.out.println("✓ Migration completed - " + migratedConfigs.size() + " file(s) generated");
     var outputMigratedConfigsBuilder = new ImmutableList.Builder<NamedConfig<?>>();
 
     for (NamedConfig<?> migratedConfig : migratedConfigs.values()) {

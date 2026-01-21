@@ -34,7 +34,7 @@ public class XPackElasticsearchConfigTest {
     assertEquals("native", native1.type().get());
     assertEquals("native1", native1.name().get());
     assertEquals(0, native1.order().get());
-    assertTrue(native1.enabled().get());
+    assertTrue(native1.enabled().get().orElse(true));
 
     // Verify file realm
     var file1 = realms.get("file").get().get("file1").get();
@@ -43,7 +43,7 @@ public class XPackElasticsearchConfigTest {
     assertEquals("file", file1.type().get());
     assertEquals("file1", file1.name().get());
     assertEquals(1, file1.order().get());
-    assertTrue(file1.enabled().get());
+    assertTrue(file1.enabled().get().orElse(true));
 
     // Verify LDAP
     var ldap1 = realms.get("ldap").get().get("ldap1").get();
@@ -52,7 +52,7 @@ public class XPackElasticsearchConfigTest {
     assertEquals("ldap", ldap1.type().get());
     assertEquals("ldap1", ldap1.name().get());
     assertEquals(2, ldap1.order().get());
-    assertTrue(ldap1.enabled().get());
+    assertTrue(ldap1.enabled().get().orElse(true));
 
     var ldapRealm = (Realm.LdapRealm) ldap1;
     assertEquals(1, ldapRealm.url().get().size());
@@ -71,7 +71,7 @@ public class XPackElasticsearchConfigTest {
     assertEquals("active_directory", ad1.type().get());
     assertEquals("ad1", ad1.name().get());
     assertEquals(3, ad1.order().get());
-    assertTrue(ad1.enabled().get());
+    assertTrue(ad1.enabled().get().orElse(true));
 
     var adRealm = (Realm.ActiveDirectoryRealm) ad1;
     assertEquals("example.com", adRealm.domainName().get());
@@ -135,7 +135,7 @@ public class XPackElasticsearchConfigTest {
             .get("native1")
             .get();
     assertNotNull(native1);
-    assertFalse(native1.enabled().get());
+    assertFalse(native1.enabled().get().orElse(false));
   }
 
   @Test

@@ -43,10 +43,8 @@ public class AuthMigrator implements SubMigrator {
     var authcDomains = new ImmutableList.Builder<SgAuthC.AuthDomain<?>>(sortedRealms.size());
 
     for (var realm : sortedRealms) {
-      // Report defaults for optional fields
-      if (realm.get().enabled().get() == true) {
-        // enabled defaults to true if not specified
-        // We report this so the user knows the default was applied
+      // Report if enabled field was missing (default was applied)
+      if (!realm.get().enabled().isPresent()) {
         reporter.defaultApplied(realm, "enabled", "true");
       }
 

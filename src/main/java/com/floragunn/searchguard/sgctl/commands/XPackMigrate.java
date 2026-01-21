@@ -77,14 +77,24 @@ public class XPackMigrate implements Callable<Integer> {
       System.err.println("Error: Input is not a directory: " + inputDir.toAbsolutePath());
       return 1;
     }
-    System.out.println("Welcome to the Search Guard X-pack security migration tool.\n\n");
+    System.out.println();
+    System.out.println("╔══════════════════════════════════════════════════════════════════════╗");
+    System.out.println("║  Search Guard X-Pack Security Configuration Migration Tool           ║");
+    System.out.println("╚══════════════════════════════════════════════════════════════════════╝");
+    System.out.println();
     try {
       // deserialize
       final var xPackConfigs = parseConfigs();
       if (xPackConfigs.isEmpty()) {
+        System.err.println("\n✗ Migration FAILED - No configuration files found");
         System.err.println(
-            "Error: No X-Pack configuration files found in input directory: "
-                + inputDir.toAbsolutePath());
+            "  • No X-Pack configuration files found in: " + inputDir.toAbsolutePath());
+        System.err.println("\n  Please ensure the input directory contains:");
+        System.err.println("    - elasticsearch.yml");
+        System.err.println("    - roles.json");
+        System.err.println("    - users.json");
+        System.err.println("    - role_mappings.json");
+        System.err.println("    - kibana.yml (optional)");
         return 1;
       }
 
@@ -99,16 +109,15 @@ public class XPackMigrate implements Callable<Integer> {
       } else {
         // Migration failed due to critical problems
         checkOverwrite(List.of());
-        System.err.println("\nMigration FAILED due to critical errors:");
+        System.err.println("\n✗ Migration FAILED - Critical errors");
         System.err.println(result.summary());
-        System.err.println(
-            "\nNOTE: The full report is saved to: " + outputDir.resolve("report.md"));
+        System.err.println("Full report: " + outputDir.resolve("report.md"));
         writeReport(result.report());
         return 1; // Exit with error code
       }
       // report
       System.out.println(result.summary());
-      System.out.println("NOTE: The full report is saved to: " + outputDir.resolve("report.md"));
+      System.out.println("Full report: " + outputDir.resolve("report.md"));
       writeReport(result.report());
     } catch (SgctlException e) {
       System.err.println("Error: " + e.getMessage());

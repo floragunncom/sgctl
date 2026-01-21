@@ -73,7 +73,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
 
     Traceable<Integer> order();
 
-    Traceable<Boolean> enabled();
+    OptTraceable<Boolean> enabled();
 
     public enum LoadBalanceType {
       FAILOVER,
@@ -92,7 +92,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled)
+        OptTraceable<Boolean> enabled)
         implements Realm {
       public NativeRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -104,7 +104,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled)
+        OptTraceable<Boolean> enabled)
         implements Realm {
       public FileRealm {
         Objects.requireNonNull(type, "type must not be null");
@@ -116,7 +116,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled,
+        OptTraceable<Boolean> enabled,
         Traceable<ImmutableList<Traceable<String>>> url,
         Traceable<LoadBalanceType> loadBalanceType,
         Traceable<String> loadBalanceCacheTtl,
@@ -159,7 +159,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled,
+        OptTraceable<Boolean> enabled,
         Traceable<String> domainName,
         OptTraceable<ImmutableList<Traceable<String>>> url,
         Traceable<LoadBalanceType> loadBalanceType,
@@ -187,7 +187,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled,
+        OptTraceable<Boolean> enabled,
         OptTraceable<String> idpEntityId,
         OptTraceable<String> idpMetadataPath,
         Traceable<Boolean> idpMetadataHttpFailOnError,
@@ -263,7 +263,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled,
+        OptTraceable<Boolean> enabled,
         Traceable<DocNode> rawConfig)
         implements Realm {
       public GenericRealm {
@@ -275,7 +275,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
 
     static Realm parse(Traceable<String> tType, Traceable<String> name, TraceableDocNode tDoc) {
       var order = tDoc.get("order").required().asInt();
-      var enabled = tDoc.get("enabled").asBoolean(true);
+      var enabled = tDoc.get("enabled").asBoolean();
 
       var type = tType.get(); // Is ok, because created
       return switch (type) {
@@ -295,7 +295,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled,
+        OptTraceable<Boolean> enabled,
         TraceableDocNode tDoc) {
       var url = tDoc.get("url").asListOfStrings(ImmutableList.empty());
       var loadBalanceType =
@@ -382,7 +382,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled,
+        OptTraceable<Boolean> enabled,
         TraceableDocNode tDoc) {
       var idpEntityId = tDoc.get("idp.entity_id").asString();
       var idpMetadataPath = tDoc.get("idp.metadata.path").asString();
@@ -486,7 +486,7 @@ public record XPackElasticsearchConfig(Traceable<SecurityConfig> security) {
         Traceable<String> type,
         Traceable<String> name,
         Traceable<Integer> order,
-        Traceable<Boolean> enabled,
+        OptTraceable<Boolean> enabled,
         TraceableDocNode tDoc) {
       var domainName = tDoc.get("domain_name").required().asString();
       var url = tDoc.get("url").asListOfStrings();

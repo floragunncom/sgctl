@@ -94,24 +94,22 @@ class MigrationReporterImpl implements MigrationReporter {
   @Override
   public String generateReportSummary() {
     var rootSb = new StringBuilder();
-    rootSb.append(migrationTitle);
-    rootSb.append(" summary:");
+    rootSb.append("\n─── Migration Report Summary\n");
 
     StringBuilder sb = new StringBuilder();
-    summarizeTraceables(sb, critical, "setting(s) caused critical problem(s)");
-    summarizeList(sb, criticalMessages, "other critical problem(s) exist");
+    summarizeTraceables(sb, critical, "critical problem(s)");
+    summarizeList(sb, criticalMessages, "other critical problem(s)");
     summarizeTraceables(
         sb,
         inconvertible,
-        "setting(s) cannot be converted because no equivalent concept exists in "
-            + targetDomainName);
-    summarizeTraceables(sb, problem, "setting(s) caused other problem(s)");
-    summarizeList(sb, problemMessages, "other problem(s) exist");
+        "setting(s) cannot be converted (no equivalent in " + targetDomainName + ")");
+    summarizeTraceables(sb, problem, "other problem(s)");
+    summarizeList(sb, problemMessages, "other problem(s)");
     summarizeDefaultsApplied(sb);
 
     String issuesSummary = sb.toString();
     if (issuesSummary.isEmpty()) {
-      rootSb.append("\n\tNo issues were found.");
+      rootSb.append("✓ No issues found\n");
     } else {
       rootSb.append(issuesSummary);
     }
@@ -124,11 +122,11 @@ class MigrationReporterImpl implements MigrationReporter {
       Map<? extends BaseTraceable<?>, ? extends List<String>> traceables,
       String desc) {
     if (traceables.isEmpty()) return;
-    sb.append("\n\t* ");
-
+    sb.append("  • ");
     sb.append(traceables.size());
     sb.append(" ");
     sb.append(desc);
+    sb.append("\n");
   }
 
   private void reportTraceables(
@@ -165,11 +163,11 @@ class MigrationReporterImpl implements MigrationReporter {
   private void summarizeList(StringBuilder sb, List<? extends String> messages, String desc) {
     if (messages.isEmpty()) return;
 
-    sb.append("\n\t* ");
-
+    sb.append("  • ");
     sb.append(messages.size());
     sb.append(" ");
     sb.append(desc);
+    sb.append("\n");
   }
 
   private void reportList(StringBuilder sb, List<? extends String> messages, String desc) {
@@ -219,8 +217,9 @@ class MigrationReporterImpl implements MigrationReporter {
   private void summarizeDefaultsApplied(StringBuilder sb) {
     if (defaultsApplied.isEmpty()) return;
 
-    sb.append("\n\t* ");
+    sb.append("  • ");
     sb.append(defaultsApplied.size());
-    sb.append(" default value(s) applied for optional field(s) - please review");
+    sb.append(" default value(s) applied (see report.md for details)");
+    sb.append("\n");
   }
 }
