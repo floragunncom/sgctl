@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
+import com.floragunn.searchguard.sgctl.util.StringUtils;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
@@ -68,7 +69,6 @@ class OptTraceableImpl<T> implements OptTraceable<T> {
 
   @Override
   public String toString() {
-    if (isSecret) return "***";
-    return value.map(String::valueOf).orElse("");
+    return StringUtils.shorten(isSecret ? "***" : value.map(String::valueOf).orElse(""), 100);
   }
 }

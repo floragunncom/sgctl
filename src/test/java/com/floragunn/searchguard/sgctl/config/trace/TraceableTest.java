@@ -628,4 +628,37 @@ public class TraceableTest {
     assertEquals("***", valA.toString());
     assertEquals("***", valB.toString());
   }
+
+  @Test
+  public void testTraceableToStringShortened() throws ConfigValidationException {
+    var yaml =
+        """
+        root:
+          outer:
+            inner:
+              enabled: true
+              value: 3
+            list:
+            - user:
+                enabled: false
+                name: "user1"
+            - user:
+                name: "user2"
+            additional:
+              test: "lol"
+       """;
+
+    var node = DocNode.wrap(DocReader.yaml().read(yaml));
+    var vDoc = TraceableDocNode.of(node, new Source.Config("test.yml"));
+    var outer = vDoc.get("root.outer").required().as(Outer::parse);
+    var outerOpt = vDoc.get("root.outer").as(Outer::parse);
+
+    vDoc.throwExceptionForPresentErrors();
+
+    var expected =
+        "Outer[inner=Inner[enabled=true, value=3], inner2=, list=[User[enabled=false, name=user1], User[en...";
+
+    assertEquals(expected, outer.toString());
+    assertEquals(expected, outerOpt.toString());
+  }
 }

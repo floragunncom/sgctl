@@ -1,5 +1,6 @@
 package com.floragunn.searchguard.sgctl.config.trace;
 
+import com.floragunn.searchguard.sgctl.util.StringUtils;
 import java.util.Objects;
 import java.util.function.Function;
 
@@ -55,7 +56,6 @@ class TraceableImpl<T> implements Traceable<T> {
 
   @Override
   public String toString() {
-    if (isSecret) return "***";
-    return String.valueOf(value);
+    return StringUtils.shorten(isSecret ? "***" : String.valueOf(value), 100);
   }
 }

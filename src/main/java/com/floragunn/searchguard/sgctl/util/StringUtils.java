@@ -8,4 +8,9 @@ public class StringUtils {
     var indent = "\t".repeat(indentLevel);
     return s.lines().map(line -> indent + line).collect(Collectors.joining("\n"));
   }
+
+  public static String shorten(String s, int maxLength) {
+    if (s.length() <= maxLength) return s;
+    return s.substring(0, maxLength - 3) + "...";
+  }
 }
