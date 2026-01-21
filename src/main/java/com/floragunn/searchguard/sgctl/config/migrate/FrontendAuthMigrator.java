@@ -6,10 +6,7 @@ import com.floragunn.searchguard.sgctl.config.searchguard.SgFrontendAuthC;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -179,10 +176,10 @@ public class FrontendAuthMigrator implements SubMigrator {
       var providers = providerTypeEntry.getValue().get();
 
       for (var providerEntry : providers.entrySet()) {
-        var providerName = providerEntry.getKey();
-        var provider = providerEntry.getValue().get();
+        var provider = providerEntry.getValue();
+        var providerRaw = provider.get();
 
-        var common = provider.common();
+        var common = providerRaw.common();
         if (!common.enabled().get()) {
           continue;
         }
@@ -195,20 +192,20 @@ public class FrontendAuthMigrator implements SubMigrator {
             authDomainsBuilder.add(new SgFrontendAuthC.AuthDomain.Basic());
           }
           case "saml" -> {
-            if (provider instanceof Kibana.AuthCConfig.Provider.SamlProvider samlProvider) {
+            if (providerRaw instanceof Kibana.AuthCConfig.Provider.SamlProvider samlProvider) {
               migrateSamlProvider(
                   samlProvider, isDefault, authDomainsBuilder, elasticsearchOpt, reporter);
             }
           }
           case "oidc" -> {
-            if (provider instanceof Kibana.AuthCConfig.Provider.OidcProvider oidcProvider) {
+            if (providerRaw instanceof Kibana.AuthCConfig.Provider.OidcProvider oidcProvider) {
               migrateOidcProvider(
                   oidcProvider, isDefault, authDomainsBuilder, elasticsearchOpt, reporter);
             }
           }
           default -> {
             reporter.problem(
-                "Skipping unsupported provider type: %s.%s".formatted(providerType, providerName));
+                provider, "Skipping unsupported provider type: %s".formatted(providerType));
           }
         }
       }
@@ -227,8 +224,8 @@ public class FrontendAuthMigrator implements SubMigrator {
 
     if (elasticsearchOpt.isEmpty()) {
       reporter.problem(
-          "Cannot migrate SAML provider %s: Elasticsearch config not available for realm lookup"
-              .formatted(common.name().get()));
+          common.name(),
+          "Cannot migrate SAML provider: Elasticsearch config not available for realm lookup");
       return;
     }
 
@@ -237,8 +234,7 @@ public class FrontendAuthMigrator implements SubMigrator {
 
     if (realmMapOpt.isEmpty()) {
       reporter.problem(
-          "Cannot migrate SAML provider %s: Elasticsearch authc config not available"
-              .formatted(common.name().get()));
+          common.name(), "Cannot migrate SAML provider: Elasticsearch authc config not available");
       return;
     }
 
@@ -261,8 +257,7 @@ public class FrontendAuthMigrator implements SubMigrator {
 
     if (realm == null || !(realm instanceof XPackElasticsearchConfig.Realm.SAMLRealm samlRealm)) {
       reporter.problem(
-          "Cannot migrate SAML provider %s: realm %s not found or not a SAMLRealm"
-              .formatted(common.name().get(), realmName));
+          samlProvider.realm(), "Cannot migrate SAML provider: realm not found or not a SAMLRealm");
       return;
     }
 
@@ -275,6 +270,7 @@ public class FrontendAuthMigrator implements SubMigrator {
 
     if (idpEntityId.isEmpty() || spEntityId.isEmpty() || idpMetadataPath.isEmpty()) {
       reporter.problem(
+          samlRealm.name(),
           "Cannot migrate SAML provider %s: missing required fields (idp_entity_id, sp_entity_id, or idp.metadata.path)"
               .formatted(common.name().get()));
       return;
@@ -310,8 +306,8 @@ public class FrontendAuthMigrator implements SubMigrator {
 
     if (elasticsearchOpt.isEmpty()) {
       reporter.problem(
-          "Cannot migrate OIDC provider %s: Elasticsearch config not available for realm lookup"
-              .formatted(common.name().get()));
+          oidcProvider.common().name(),
+          "Cannot migrate OIDC provider: Elasticsearch config not available for realm lookup");
       return;
     }
 
@@ -320,8 +316,8 @@ public class FrontendAuthMigrator implements SubMigrator {
 
     if (realmMapOpt.isEmpty()) {
       reporter.problem(
-          "Cannot migrate OIDC provider %s: Elasticsearch authc config not available"
-              .formatted(common.name().get()));
+          oidcProvider.common().name(),
+          "Cannot migrate OIDC provider %s: Elasticsearch authc config not available");
       return;
     }
 
@@ -345,8 +341,8 @@ public class FrontendAuthMigrator implements SubMigrator {
     if (realm == null
         || !(realm instanceof XPackElasticsearchConfig.Realm.GenericRealm genericRealm)) {
       reporter.problem(
-          "Cannot migrate OIDC provider %s: realm %s not found or not a GenericRealm"
-              .formatted(common.name().get(), realmName));
+          oidcProvider.realm(),
+          "Cannot migrate OIDC provider: realm not found or not a GenericRealm");
       return;
     }
 
@@ -360,6 +356,7 @@ public class FrontendAuthMigrator implements SubMigrator {
 
     if (clientId == null || clientSecret == null || openidConfigUrl == null) {
       reporter.problem(
+          genericRealm.rawConfig(),
           "Cannot migrate OIDC provider %s: missing required fields (client_id, client_secret, or issuer)"
               .formatted(common.name().get()));
       return;
