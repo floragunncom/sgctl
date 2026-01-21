@@ -9,15 +9,12 @@ import java.util.Map;
 /** For generating the migration report. */
 class MigrationReporterImpl implements MigrationReporter {
 
-  private record DefaultValue(String fieldName, String defaultValue) {}
-
   private final String migrationTitle;
   private final String targetDomainName;
 
   private final Map<BaseTraceable<?>, List<String>> problem = new LinkedHashMap<>();
   private final Map<BaseTraceable<?>, List<String>> inconvertible = new LinkedHashMap<>();
   private final Map<BaseTraceable<?>, List<String>> critical = new LinkedHashMap<>();
-  private final Map<BaseTraceable<?>, List<DefaultValue>> defaultsApplied = new LinkedHashMap<>();
   private final List<String> problemMessages = new ArrayList<>();
   private final List<String> criticalMessages = new ArrayList<>();
 
@@ -44,13 +41,6 @@ class MigrationReporterImpl implements MigrationReporter {
   @Override
   public void problem(String message) {
     problemMessages.add(message);
-  }
-
-  @Override
-  public void defaultApplied(BaseTraceable<?> subject, String fieldName, String defaultValue) {
-    defaultsApplied
-        .computeIfAbsent(subject, v -> new ArrayList<>())
-        .add(new DefaultValue(fieldName, defaultValue));
   }
 
   @Override
@@ -86,8 +76,6 @@ class MigrationReporterImpl implements MigrationReporter {
     reportTraceables(sb, problem, "setting(s) caused other problem(s)");
     reportList(sb, problemMessages, "other problem(s)");
 
-    reportDefaultsApplied(sb);
-
     return sb.toString();
   }
 
@@ -103,7 +91,6 @@ class MigrationReporterImpl implements MigrationReporter {
         inconvertible.size(),
         "setting(s) cannot be converted (no equivalent in " + targetDomainName + ")");
     summarizeCount(sb, problem.size() + problemMessages.size(), "other problem(s) exist");
-    summarizeDefaultsApplied(sb);
 
     String issuesSummary = sb.toString();
     if (issuesSummary.isEmpty()) {
@@ -171,41 +158,5 @@ class MigrationReporterImpl implements MigrationReporter {
       sb.append(message);
       sb.append("\n");
     }
-  }
-
-  private void reportDefaultsApplied(StringBuilder sb) {
-    if (defaultsApplied.isEmpty()) return;
-
-    sb.append("\n");
-    sb.append(defaultsApplied.size());
-    sb.append(" default value(s) were applied for optional/missing field(s):\n");
-
-    for (var entry : defaultsApplied.entrySet()) {
-      var traceable = entry.getKey();
-      var defaults = entry.getValue();
-
-      sb.append("* ");
-      sb.append(entry.getKey().getSource().fullPathString());
-      sb.append(": ");
-      sb.append(traceable);
-      sb.append("\n");
-
-      for (var defaultValue : defaults) {
-        sb.append("  * Applied default value for '");
-        sb.append(defaultValue.fieldName());
-        sb.append("': ");
-        sb.append(defaultValue.defaultValue());
-        sb.append("\n");
-      }
-    }
-  }
-
-  private void summarizeDefaultsApplied(StringBuilder sb) {
-    if (defaultsApplied.isEmpty()) return;
-
-    sb.append("  • ");
-    sb.append(defaultsApplied.size());
-    sb.append(" default value(s) applied (see report.md for details)");
-    sb.append("\n");
   }
 }

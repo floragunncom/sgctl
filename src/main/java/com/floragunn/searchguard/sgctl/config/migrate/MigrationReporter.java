@@ -47,16 +47,6 @@ public interface MigrationReporter {
   void problem(String message);
 
   /**
-   * Reports that a default value was applied for an optional/missing field. This is informational
-   * only and does not cause migration to fail.
-   *
-   * @param subject The {@link BaseTraceable} that is the subject of this default application.
-   * @param fieldName The name of the field that received a default value.
-   * @param defaultValue The default value that was applied.
-   */
-  void defaultApplied(BaseTraceable<?> subject, String fieldName, String defaultValue);
-
-  /**
    * Generates the migration report from all logged problems.
    *
    * @return The report

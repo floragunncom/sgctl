@@ -6,7 +6,10 @@ import com.floragunn.searchguard.sgctl.config.searchguard.SgFrontendAuthC;
 import com.floragunn.searchguard.sgctl.config.trace.Traceable;
 import com.floragunn.searchguard.sgctl.config.xpack.Kibana;
 import com.floragunn.searchguard.sgctl.config.xpack.XPackElasticsearchConfig;
-import java.util.*;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import org.jspecify.annotations.NullMarked;
 
 /**
@@ -92,7 +95,7 @@ public class FrontendAuthMigrator implements SubMigrator {
     for (var realmTrace : sortedRealms) {
       var realm = realmTrace.get();
 
-      if (!realm.enabled().orElse(true).get()) {
+      if (!realm.enabled().get()) {
         continue;
       }
 
