@@ -53,6 +53,21 @@ You can also specify the directory to upload all Search Guard configuration file
 ./sgctl.sh update-config sg-config
 ```
 
+### Migrating from X-Pack
+
+If you want to automatically migrate X-Pack configurations to Search Guard configurations, you can use the `migrate-security` command:
+
+```shell
+./sgctl.sh migrate-security -i path/to/xpack/configs -o output/directory
+```
+
+The command will migrate the input configurations and generate a migration report (report.md) with additional information.
+For a detailed list of supported configuration files and features run:
+
+```shell
+./sgctl.sh migrate-security --help
+```
+
 ### Migrating legacy Search Guard Configuration
 
 If you want to automatically migrate your legacy Search Guard configuration, you can use the `migrate-config` command:

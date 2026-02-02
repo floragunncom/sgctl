@@ -1,4 +1,7 @@
 /target/
+/.m2/
+/bin/
+.factorypath
 ### Intellij ###
 .idea/
 *.iml
@@ -9,6 +12,12 @@
 .settings
 unittest.log
 
+### VS Code ###
+.vscode/
+
 
 #gitlab-ci-local
 .gitlab-ci-local/
+
+test_xpack
+test_searchguard

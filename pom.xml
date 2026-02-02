@@ -8,8 +8,8 @@
 	the specific language governing permissions and limitations under the License. -->
 
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.floragunn</groupId>
@@ -63,16 +63,16 @@
 				<updatePolicy>always</updatePolicy>
 			</snapshots>
 		</repository>
-        <repository>
-            <id>util-release</id>
-            <url>https://maven.search-guard.com:443/util</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
+		<repository>
+			<id>util-release</id>
+			<url>https://maven.search-guard.com:443/util</url>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+		</repository>
 		<repository>
 			<releases>
 				<enabled>true</enabled>
@@ -312,13 +312,13 @@
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
 		</dependency>
-		
+
 		<dependency>
 			<groupId>com.floragunn</groupId>
 			<artifactId>search-guard-flx-ssl</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
-		</dependency>		
+		</dependency>
 
 		<dependency>
 			<groupId>com.floragunn</groupId>
@@ -348,8 +348,8 @@
 			<artifactId>dlic-search-guard-flx-fe-multi-tenancy</artifactId>
 			<scope>test</scope>
 			<version>${sg.test-version}</version>
-		</dependency>		
-	
+		</dependency>
+
 		<dependency>
 			<groupId>commons-io</groupId>
 			<artifactId>commons-io</artifactId>
@@ -413,6 +413,12 @@
 			<artifactId>byte-buddy-agent</artifactId>
 			<version>1.18.4</version>
 			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.jetbrains</groupId>
+			<artifactId>annotations</artifactId>
+			<version>13.0</version>
+			<scope>compile</scope>
 		</dependency>
 	</dependencies>
 

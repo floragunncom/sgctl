@@ -1,0 +1,35 @@
+{
+  "john_doe": {
+    "username": "john_doe",
+    "roles": ["admin", "monitoring"],
+    "full_name": "John Doe",
+    "email": "john.doe@example.com",
+    "metadata": {
+      "department": "IT",
+      "employee_id": "A1234"
+    },
+    "enabled": true
+  },
+  "jane_smith": {
+    "username": "jane_smith",
+    "roles": ["kibana_admin", "other_role2"],
+    "full_name": "Jane Smith",
+    "email": "jane.smith@example.com",
+    "metadata": {
+      "department": "Marketing",
+      "employee_id": "B8891"
+    },
+    "enabled": true
+  },
+  "paused_user": {
+    "username": "paused_user",
+    "roles": ["viewer"],
+    "full_name": "Paul Inactive",
+    "email": "paul.inactive@example.com",
+    "metadata": {
+      "department": "Support",
+      "note": "Account disabled due to inactivity"
+    },
+    "enabled": false
+  }
+}
