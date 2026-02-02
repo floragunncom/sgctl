@@ -1,0 +1,13 @@
+
+admin:
+  hash: "ANYHASH"
+  search_guard_roles:
+    - sg_all_access
+  backend_roles: []
+  attributes: {}
+
+_es_anonymous_user:
+  hash: ""         
+  search_guard_roles: []
+  backend_roles: []
+  attributes: {}

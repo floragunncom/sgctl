@@ -1,0 +1,21 @@
+admin_role_test:
+  users:
+    - "bob"                     
+  backend_roles:
+    - "CN=ESAdmins,OU=Groups,DC=corp,DC=local"  
+
+watcher_user:
+  backend_roles:
+    - "CN=DevOps,OU=Groups,DC=corp,DC=local"
+
+dev_readonly:
+  users:
+    - "carol"
+  backend_roles:
+    - "CN=Developers,OU=Groups,DC=corp,DC=local"
+
+read_only_role_test:
+  users:
+    - "alice"
+  backend_roles:
+    - "CN=SecurityTeam,OU=Groups,DC=corp,DC=local"

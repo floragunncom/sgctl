@@ -38,8 +38,15 @@ import picocli.CommandLine.Command;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+/**
+ * Command to add a user directly to a local {@code sg_internal_users.yml} file.
+ */
 @Command(name = "add-user-local", description = "Adds a new user to a local sg_internal_users.yml file")
 public class AddUserLocal implements Callable<Integer> {
+
+    /** Creates a new add-user-local command. */
+    public AddUserLocal() {
+    }
 
     @Parameters(index = "0", arity = "1", description = "User name")
     private String userName;
@@ -120,9 +127,11 @@ public class AddUserLocal implements Callable<Integer> {
         } 
     }
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     private static String hash(char[] clearTextPassword) {
         final byte[] salt = new byte[16];
-        new SecureRandom().nextBytes(salt);
+        SECURE_RANDOM.nextBytes(salt);
         final String hash = OpenBSDBCrypt.generate((Objects.requireNonNull(clearTextPassword)), salt, 12);
         Arrays.fill(salt, (byte) 0);
         Arrays.fill(clearTextPassword, '\0');

@@ -1,0 +1,11 @@
+# see https://docs.search-guard.com/latest/anonymous%20authentication and https://docs.search-guard.com/latest/authentication-authorization-configuration
+auth_domains:
+  - type: basic/internal_users_db
+  - order: 0
+
+  - type: anonymous
+  - order: 1  # not sure if necessary
+
+    user_mapping:
+      user_name:
+        static: "_es_anonymous_user"

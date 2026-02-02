@@ -1,0 +1,16 @@
+
+xpack.security.enabled: true
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.certificate: /etc/elasticsearch/certs/http.crt
+xpack.security.http.ssl.key: /etc/elasticsearch/certs/http.key
+xpack.security.http.ssl.certificate_authorities: [ "/etc/elasticsearch/certs/http-ca.crt" ]
+
+xpack.security.authc.realms.jwt.jwt1:
+  order: 0
+  token_type: id_token
+  client_authentication.type: shared_secret
+  allowed_issuer: "https://EXAMPLE/jwt/"
+  allowed_audiences: [ "my-elasticsearch-client-id" ]
+  allowed_signature_algorithms: [ RS256, HS256 ]
+  pkc_jwkset_path: "https://EXAMPLE/jwt/jwkset.json"
+  claims.principal: sub

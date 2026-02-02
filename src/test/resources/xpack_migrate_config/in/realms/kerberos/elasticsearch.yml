@@ -1,0 +1,5 @@
+# https://www.elastic.co/docs/deploy-manage/users-roles/cluster-or-deployment-auth/kerberos
+xpack.security.authc.realms.kerberos.krb1:
+  order: 0
+  keytab.path: "es_kerberos.keytab"
+  remove_realm_name: false  

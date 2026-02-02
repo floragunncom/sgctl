@@ -1,0 +1,23 @@
+{
+"alice":{
+    "username":"alice",
+    "roles":["read_only_role_test"],
+    "full_name":"Alice Example",
+    "email":"alice@example.com",
+    "metadata":{},
+    "enabled":true},
+"bob":{
+    "username":"bob",
+    "roles":["admin_role_test"],
+    "full_name":"Bob Admin",
+    "email":null,
+    "metadata":{},
+    "enabled":true},
+"carol":{
+    "username":"carol",
+    "roles":["dev_readonly"],
+    "full_name":"Carol dev",
+    "email":null,
+    "metadata":{},
+    "enabled":true}
+}

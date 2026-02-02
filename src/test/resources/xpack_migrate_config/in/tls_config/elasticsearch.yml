@@ -1,0 +1,20 @@
+
+xpack.security.enabled: true
+
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+
+xpack.security.transport.ssl.keystore.path: certs/node-1.p12
+xpack.security.transport.ssl.keystore.password: changeit
+
+xpack.security.transport.ssl.truststore.path: certs/ca.p12
+xpack.security.transport.ssl.truststore.password: changeit
+
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.verification_mode: full
+xpack.security.http.ssl.client_authentication: none
+
+xpack.security.http.ssl.certificate: certs/node-1.crt
+xpack.security.http.ssl.key: certs/node-1.key
+xpack.security.http.ssl.certificate_authorities: [ "certs/ca.crt" ]
+xpack.security.http.ssl.supported_protocols: [ "TLSv1.3", "TLSv1.2" ]

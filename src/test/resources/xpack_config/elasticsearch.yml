@@ -1,0 +1,262 @@
+# ======================== Elasticsearch Configuration =========================
+#
+# NOTE: Elasticsearch comes with reasonable defaults for most settings.
+#       Before you set out to tweak and tune the configuration, make sure you
+#       understand what are you trying to accomplish and the consequences.
+#
+# The primary way of configuring a node is via this file. This template lists
+# the most important settings you may want to configure for a production cluster.
+#
+# Please consult the documentation for further information on configuration options:
+# https://www.elastic.co/guide/en/elasticsearch/reference/index.html
+#
+# ---------------------------------- Cluster -----------------------------------
+#
+# Use a descriptive name for your cluster:
+#
+cluster.name: my-application
+#
+# ------------------------------------ Node ------------------------------------
+#
+# Use a descriptive name for the node:
+#
+node.name: node-1
+#
+# Add custom attributes to the node:
+#
+node.attr.rack: r1
+#
+# ----------------------------------- Paths ------------------------------------
+#
+# Path to directory where to store the data (separate multiple locations by comma):
+#
+path.data: /path/to/data
+#
+# Path to log files:
+#
+path.logs: /path/to/logs
+#
+# ----------------------------------- Memory -----------------------------------
+#
+# Lock the memory on startup:
+#
+bootstrap.memory_lock: true
+#
+# Make sure that the heap size is set to about half the memory available
+# on the system and that the owner of the process is allowed to use this
+# limit.
+#
+# Elasticsearch performs poorly when the system is swapping the memory.
+#
+# ---------------------------------- Network -----------------------------------
+#
+# By default Elasticsearch is only accessible on localhost. Set a different
+# address here to expose this node on the network:
+#
+network.host: 192.168.0.1
+#
+# By default Elasticsearch listens for HTTP traffic on the first free port it
+# finds starting at 9200. Set a specific HTTP port here:
+#
+http.port: 9200
+#
+# For more information, consult the network module documentation.
+#
+# --------------------------------- Discovery ----------------------------------
+#
+# Pass an initial list of hosts to perform discovery when this node is started:
+# The default list of hosts is ["127.0.0.1", "[::1]"]
+#
+discovery.seed_hosts: ["host1", "host2"]
+#
+# Bootstrap the cluster using an initial set of master-eligible nodes:
+#
+cluster.initial_master_nodes: ["node-1", "node-2"]
+#
+# For more information, consult the discovery and cluster formation module documentation.
+#
+# ---------------------------------- Various -----------------------------------
+#
+# Allow wildcard deletion of indices:
+#
+action.destructive_requires_name: false
+
+#----------------------- BEGIN SECURITY AUTO CONFIGURATION -----------------------
+#
+# The following settings, TLS certificates, and keys have been automatically      
+# generated to configure Elasticsearch security features on 31-10-2025 13:22:27
+#
+# --------------------------------------------------------------------------------
+
+# # # Enable security features
+# xpack.security.enabled: true
+
+# xpack.security.enrollment.enabled: true
+
+# # # Enable encryption for HTTP API client connections, such as Kibana, Logstash, and Agents
+# xpack.security.http.ssl:
+#   enabled: true
+#   keystore.path: certs/http.p12
+
+# # Enable encryption and mutual authentication between cluster nodes
+# xpack.security.transport.ssl:
+#   enabled: true
+#   verification_mode: certificate
+#   keystore.path: certs/transport.p12
+#   truststore.path: certs/transport.p12
+# # Create a new cluster with the current node only
+# # Additional nodes can still join the cluster later
+# cluster.initial_master_nodes: ["DESKTOP-5OJM88T"]
+
+# # Allow HTTP API connections from anywhere
+# # Connections are encrypted and require user authentication
+# http.host: 0.0.0.0
+
+# # Allow other nodes to join the cluster from anywhere
+# # Connections are encrypted and mutually authenticated
+# #transport.host: 0.0.0.0
+
+# #----------------------- END SECURITY AUTO CONFIGURATION -------------------------
+
+# xpack.security.authc.realms:
+
+#   native.native1:
+#     order: 0
+
+#   file.file1:
+#     order: 1
+
+#   ldap.ldap1:
+#     order: 2
+#     url: "ldaps://ldap.example.com:636"
+#     bind_dn: "cn=admin,dc=example,dc=com"
+#     secure_bind_password: "my-password"   # This appears as *** if stored in keystore
+#     user_search.base_dn: "ou=users,dc=example,dc=com"
+#     group_search.base_dn: "ou=groups,dc=example,dc=com"
+
+#   saml.saml1:
+#     order: 3
+#     idp.entity_id: "https://idp.example.com/metadata"
+#     idp.metadata_path: "/etc/elasticsearch/saml/idp.xml"
+#     sp.entity_id: "https://es.example.com/"
+#     sp.acs: "https://es.example.com/_security/saml/acs"
+#     sp.logout: "https://es.example.com/logout"
+#     attributes.principal: "nameid"
+
+
+# ================= TLS / SSL Settings =================
+
+# Transport TLS
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.verification_mode: certificate
+xpack.security.transport.ssl.keystore.path: certs/transport.p12
+xpack.security.transport.ssl.keystore.password: changeit
+xpack.security.transport.ssl.truststore.path: certs/transport.p12
+xpack.security.transport.ssl.truststore.password: changeit
+xpack.security.transport.ssl.cipher_suites:
+  - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+  - TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
+xpack.security.transport.ssl.supported_protocols:
+  - TLSv1.2
+  - TLSv1.3
+
+# HTTP TLS
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.keystore.path: certs/http.p12
+xpack.security.http.ssl.keystore.password: changeit
+xpack.security.http.ssl.truststore.path: certs/http.p12
+xpack.security.http.ssl.truststore.password: changeit
+xpack.security.http.ssl.verification_mode: certificate
+xpack.security.http.ssl.cipher_suites:
+  - TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384
+xpack.security.http.ssl.supported_protocols:
+  - TLSv1.2
+
+# ================= IP Filtering =================
+xpack.security.transport.filter.allow: ["10.0.0.0/8", "192.168.1.0/24"]
+xpack.security.transport.filter.deny: ["0.0.0.0/0"]
+
+xpack.security.remote_cluster.filter.allow: ["10.0.0.0/8"]
+xpack.security.remote_cluster.filter.deny: ["0.0.0.0/0"]
+
+# ================= Authentication / Realms =================
+xpack.security.authc.realms:
+  
+  # ----- LDAP Realm -----
+  ldap.myldap:
+    type: ldap
+    order: 0
+    enabled: true
+    url: "ldap://ldap.example.com:389"
+    bindDn: "cn=admin,dc=example,dc=com"
+    user_search.base_dn: "ou=users,dc=example,dc=com"
+    user_search.filter: "(objectClass=person)"
+    group_search.base_dn: "ou=groups,dc=example,dc=com"
+
+  # ----- File Realm -----
+  file.myfile:
+    type: file
+    order: 1
+    enabled: true
+    files.users: "config/users"
+    files.users_roles: "config/roles"
+
+  # ----- Native Realm -----
+  native.mynative:
+    type: native
+    order: 2
+    enabled: true
+    cache.ttl: "10m"
+    cache.max_users: 100
+
+  # ----- SAML Realm -----
+  saml.mysaml:
+    type: saml
+    order: 3
+    enabled: true
+    idp.metadata.path: "saml/idp-metadata.xml"
+    sp.entity_id: "https://es.example.com/sp"
+    sp.acs: "https://es.example.com/_xpack/security/saml/acs"
+    attributes.principal: "nameid"
+
+  # ----- PKI Realm -----
+  pki.mypki:
+    type: pki
+    order: 4
+    enabled: true
+    username_pattern: ".*"
+    username_attribute: "CN"
+    delegation.enabled: false
+    truststore.path: certs/pki-truststore.jks
+    truststore.type: "jks"
+    truststore.password: "changeit"
+    certificate_authorities: ["certs/root-ca.pem", "certs/intermediate-ca.pem"]
+
+  # ----- OIDC Realm -----
+  oidc.myoidc:
+    type: oidc
+    order: 5
+    enabled: true
+    rp.client_id: "es-client-id"
+    rp.client_secret: "es-secret"
+    rp.response_type: "code"
+    rp.redirect_uri: "https://es.example.com/_xpack/security/oidc/callback"
+    rp.post_logout_redirect_uri: "https://es.example.com/logout"
+    op.issuer: "https://oidc.example.com/"
+    op.authorization_endpoint: "https://oidc.example.com/auth"
+    op.token_endpoint: "https://oidc.example.com/token"
+    op.jwkset_path: "https://oidc.example.com/jwks.json"
+    claims.principal: "sub"
+    claims.name: "name"
+    claims.mail: "email"
+    claims.groups: "groups"
+
+  # ----- Kerberos Realm -----
+  kerberos.mykerb:
+    type: kerberos
+    order: 6
+    enabled: true
+    keytab.path: "config/krb5.keytab"
+    principal: "HTTP/es.example.com@EXAMPLE.COM"
+    krb.debug: false
+    remove_realm_name: true

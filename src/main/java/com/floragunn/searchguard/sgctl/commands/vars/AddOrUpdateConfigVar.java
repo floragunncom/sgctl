@@ -41,7 +41,14 @@ import com.google.common.io.Files;
 import picocli.CommandLine.Option;
 import picocli.CommandLine.Parameters;
 
+/**
+ * Base command logic for adding or updating configuration variables.
+ */
 public abstract class AddOrUpdateConfigVar extends ConnectingCommand implements Callable<Integer> {
+
+    /** Default constructor. */
+    protected AddOrUpdateConfigVar() {
+    }
 
     @Parameters(index = "0", description = "Name of the variable")
     private String name;
@@ -114,6 +121,14 @@ public abstract class AddOrUpdateConfigVar extends ConnectingCommand implements 
         }
     }
 
+    /**
+     * Headers to send to the config-var endpoint (e.g. conditional requests).
+     */
+    /**
+     * Headers to send to the config-var endpoint (e.g. conditional requests).
+     *
+     * @return HTTP headers to include
+     */
     protected abstract Header[] getHeaders();
 
 }

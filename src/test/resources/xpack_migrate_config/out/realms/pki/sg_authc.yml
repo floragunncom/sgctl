@@ -1,0 +1,5 @@
+# https://docs.search-guard.com/latest/client-certificate-auth
+auth_domains:
+  - type: clientcert
+    user_mapping.user_name.from: clientcert.subject.emailAddress
+

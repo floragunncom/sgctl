@@ -1,0 +1,9 @@
+{
+  "role1": {
+    "cluster": ["monitor"],
+    "indices": {
+      "names": ["logs-*"],
+      "privileges": ["read"]
+    }
+  }
+}

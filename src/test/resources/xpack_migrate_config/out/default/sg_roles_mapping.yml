@@ -1,0 +1,11 @@
+sg_all_access:
+  users:
+    - "admin"
+  backend_roles: []
+  hosts: []
+
+sg_anonymous_no_access:
+  users:
+    - "_es_anonymous_user"
+  backend_roles: []
+  hosts: []

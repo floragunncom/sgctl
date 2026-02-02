@@ -1,0 +1,28 @@
+
+xpack.security.enabled: true
+
+xpack.security.http.ssl.enabled: true
+xpack.security.http.ssl.key: certs/http.key
+xpack.security.http.ssl.certificate: certs/http.crt
+xpack.security.http.ssl.certificate_authorities: [ "certs/ca.crt" ]
+
+xpack.security.authc.realms.saml.saml1:
+
+  order: 0
+
+  sp.entity_id: "https://elasticsearch.example.com/"
+  sp.acs: "https://elasticsearch.example.com/api/security/saml/callback"
+  sp.logout: "https://elasticsearch.example.com/logout"
+
+  idp.entity_id: "https://idp.example.com/"
+  idp.metadata.path: "saml/idp-metadata.xml"
+
+  attributes.principal: "nameid"
+  attributes.groups: "roles"
+  signing.certificate: "saml/idp-signing.crt"
+
+xpack.security.authc.token.enabled: true
+xpack.security.transport.ssl.enabled: true
+xpack.security.transport.ssl.client_authentication: required
+xpack.security.transport.ssl.keystore.path: certs/node-sec01.p12
+xpack.security.transport.ssl.truststore.path: certs/ca.p12

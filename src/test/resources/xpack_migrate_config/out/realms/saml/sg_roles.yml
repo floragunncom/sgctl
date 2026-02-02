@@ -1,0 +1,43 @@
+read_only_role_test:
+  cluster_permissions:
+    - SGS_CLUSTER_MONITOR
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - SGS_READ
+
+admin_role_test:
+  cluster_permissions:
+    - SGS_UNLIMITED
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - SGS_UNLIMITED
+
+dev_readonly:
+  cluster_permissions:
+    - SGS_CLUSTER_MONITOR
+
+  index_permissions:
+    - index_patterns:
+        - "metrics-*"
+      allowed_actions:
+        - SGS_READ
+        - "METADATA_READ_GROUP"
+
+watcher_user:
+  cluster_permissions:
+    - "CLUSTER_MONITOR_WATCHER"
+
+  index_permissions:
+    - index_patterns:
+        - ".watches"
+      allowed_actions:
+        - SGS_READ
+
+    - index_patterns:
+        - ".watcher-history-*"
+      allowed_actions:
+        - SGS_READ"

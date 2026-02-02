@@ -1,0 +1,23 @@
+auth_domains:
+    - type: basic/saml
+      enabled: true
+      order: 0
+      http_enabled: true
+      transport_enabled: false
+
+      saml:
+        idp:
+          metadata_file: saml/idp-metadata.xml
+          entity_id: "https://idp.example.com/"
+
+        sp:
+          entity_id: "https://elasticsearch.example.com/"
+          acs: "https://elasticsearch.example.com/_searchguard/api/saml/acs"
+          logout: "https://elasticsearch.example.com/logout"
+
+        user_name_attribute: "nameid"
+        roles_attribute: "roles"
+
+    - type: basic/internal_users_db
+      enabled: true
+      order: 1

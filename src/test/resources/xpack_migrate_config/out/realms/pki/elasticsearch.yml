@@ -1,0 +1,16 @@
+# https://docs.search-guard.com/latest/configuring-tls
+xpack.security.enabled: false
+
+searchguard.ssl.http.enabled: true
+searchguard.ssl.http.pemcert_filepath: /etc/elasticsearch/certs/http.crt
+searchguard.ssl.http.pemkey_filepath: /etc/elasticsearch/certs/http.key
+searchguard.ssl.http.pemtrustedcas_filepath: /etc/elasticsearch/certs/ca.crt
+searchguard.ssl.http.clientauth_mode: REQUIRE
+
+searchguard.ssl.transport.enabled: true
+searchguard.ssl.transport.keystore_type: PKCS12
+searchguard.ssl.transport.keystore_filepath: certs/elastic-certificates.p12
+searchguard.ssl.transport.keystore_password: "<keystore-password>"
+searchguard.ssl.transport.truststore_type: PKCS12
+searchguard.ssl.transport.truststore_filepath: certs/elastic-certificates.p12
+searchguard.ssl.transport.truststore_password: "<truststore-password>"

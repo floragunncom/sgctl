@@ -1,0 +1,60 @@
+{
+  "elastic": {
+    "username": "elastic",
+    "roles": ["admin_role_test"],
+    "full_name": "Elastic Superuser",
+    "email": null,
+    "enabled": true,
+    "authentication_realm": {
+      "name": "reserved",
+      "type": "reserved"
+    },
+    "lookup_realm": {
+      "name": "reserved",
+      "type": "reserved"
+    },
+    "metadata": {},
+    "authentication_type": "realm"
+  },
+
+  "alice": {
+    "username": "alice",
+    "roles": ["read_only_role_test"],
+    "full_name": "Alice Example",
+    "email": "alice@example.com",
+    "enabled": true,
+    "authentication_realm": {
+      "name": "native1",
+      "type": "native"
+    },
+    "lookup_realm": {
+      "name": "native1",
+      "type": "native"
+    },
+    "metadata": {
+      "department": "engineering"
+    },
+    "authentication_type": "realm"
+  },
+
+  "bob": {
+    "username": "bob",
+    "roles": ["watcher_user"],
+    "full_name": "Bob Example",
+    "email": "bob@example.com",
+    "enabled": true,
+    "authentication_realm": {
+      "name": "saml1",
+      "type": "saml"
+    },
+    "lookup_realm": {
+      "name": "native1",
+      "type": "native"
+    },
+    "metadata": {
+      "saml_nameid": "bob@example.com",
+      "saml_groups": ["users", "analytics"]
+    },
+    "authentication_type": "realm"
+  }
+}

@@ -1,0 +1,127 @@
+/*
+ * Copyright 2025-2026 floragunn GmbH
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+
+package com.floragunn.searchguard.sgctl.commands;
+
+import com.floragunn.searchguard.sgctl.util.mapping.MigrationReport;
+import com.floragunn.searchguard.sgctl.util.mapping.reader.XPackConfigReader;
+import com.floragunn.searchguard.sgctl.util.mapping.writer.SearchGuardConfigWriter;
+import picocli.CommandLine.Parameters;
+import picocli.CommandLine.Option;
+import picocli.CommandLine.Command;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.imageio.IIOException;
+import java.io.File;
+import java.util.concurrent.Callable;
+//names of files: user.json, role.json, role_mapping.json
+@Command(name = "migrate-security",mixinStandardHelpOptions = true, description = "Converts X-Pack configuration to Search Guard configuration files with a given input.")
+public class MigrateSecurity implements Callable<Integer> {
+
+    @Parameters(description = "Path to the directory containing elasticsearch.yml and optionally the files role.json, user.json and role_mapping.json.")
+    File inputDir;
+
+    @Option(names = { "-o", "--output-dir" }, description = "Directory where to write new configuration files.")
+    File outputDir;
+
+    private File elasticsearch = null;
+    private File user = null;
+    private File role = null;
+    private File roleMapping = null;
+    private static final Logger log = LoggerFactory.getLogger(MigrateSecurity.class);
+
+    @Override
+    public Integer call() throws Exception {
+        if(!checkInputDirAndLoadConfig() || !checkOutputDir()){
+            return 1;
+        }
+        var reader = new XPackConfigReader(elasticsearch, user, role, roleMapping);
+        var ir = reader.generateIR();
+        var writer = new SearchGuardConfigWriter(ir);
+        writer.outputContent(outputDir);
+        MigrationReport.shared.printReport();
+        return 0;
+    }
+
+    public boolean checkOutputDir() {
+        if(outputDir == null) {
+            return true;
+        }
+        if(!outputDir.exists()) {
+            log.error("Output path does not exist: {}", outputDir.getAbsolutePath());
+            return false;
+        }
+        if(!outputDir.isDirectory()) {
+            log.error("Output path is not a directory: {}", outputDir.getAbsolutePath());
+            return false;
+        }
+        if(!outputDir.canWrite()) {
+            log.error("Output directory is not writeable. Check permissions: {}", outputDir.getAbsolutePath());
+            return false;
+        }
+        return true;
+    }
+
+
+    public boolean checkInputDirAndLoadConfig() {
+
+        if (inputDir == null) {
+            System.err.println("Basic Usage of migrate-security: ./sgctl.sh migrate-security <Input Directory> ");
+            return false;
+        }
+
+        if (!inputDir.exists()) {
+            System.err.println("Input path does not exist: " + inputDir.getAbsolutePath());
+            return false;
+        }
+
+        if (!inputDir.isDirectory()) {
+            System.err.println("Input path is not a directory: " + inputDir.getAbsolutePath());
+            return false;
+        }
+
+        if (!inputDir.canRead()) {
+            System.err.println("Input directory is not readable. Check permissions: " + inputDir.getAbsolutePath());
+            return false;
+        }
+
+        var files = inputDir.listFiles();
+
+        if (files == null) {
+            System.err.println("Found unexpected null-value while listing files in input directory (I/O error).");
+            return false;
+        }else{
+            for (File file : files) {
+                String name = file.getName();
+
+                switch (name) {
+                    case "elasticsearch.yml" -> elasticsearch = file;
+                    case "user.json" -> user = file;
+                    case "role.json" -> role = file;
+                    case "role_mapping.json" -> roleMapping = file;
+                }
+            }
+        }
+        if (elasticsearch == null) {
+            System.err.println("Required file 'elasticsearch.yml' not found. Use the --help option to see a usage description.");
+            return false;
+        }
+        return true;
+    }
+}

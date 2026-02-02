@@ -1,0 +1,30 @@
+
+xpack.security.enabled: false
+
+searchguard.ssl.transport.enabled: true
+searchguard.ssl.transport.keystore_filepath: certs/node-1.p12
+searchguard.ssl.transport.keystore_password: changeit
+searchguard.ssl.transport.truststore_filepath: certs/ca.p12
+searchguard.ssl.transport.truststore_password: changeit
+searchguard.ssl.transport.enforce_hostname_verification: false
+searchguard.ssl.transport.resolve_hostname: false
+searchguard.ssl.transport.enabled_protocols:
+  - "TLSv1.3"
+  - "TLSv1.2"
+
+searchguard.ssl.http.enabled: true
+searchguard.ssl.http.pemcert_filepath: certs/node-1.crt
+searchguard.ssl.http.pemkey_filepath: certs/node-1.key
+searchguard.ssl.http.pemtrustedcas_filepath: certs/ca.crt
+searchguard.ssl.http.clientauth_mode: "NONE"
+searchguard.ssl.http.enabled_protocols:
+  - "TLSv1.3"
+  - "TLSv1.2"
+
+
+# see https://search-guard.com/blog/elasticsearch-x-pack-to-search-guard-part-1-tls-setup/
+searchguard.nodes_dn:
+  - "CN=node-1.example.com,OU=IT,O=YourOrg,L=YourCity,C=YourCountry"
+
+searchguard.authcz.admin_dn:
+  - "CN=admin,OU=IT,O=YourOrg,L=YourCity,C=YourCountry"

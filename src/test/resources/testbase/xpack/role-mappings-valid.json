@@ -1,0 +1,16 @@
+{
+  "mapping1": {
+    "enabled": true,
+    "roles": ["admin"],
+    "users": ["test-user"],
+    "run_as": ["other-user"],
+    "rules": {
+      "field": {
+        "username": "*"
+      }
+    },
+    "metadata": {
+      "note": "simple mapping for sgctl tests"
+    }
+  }
+}

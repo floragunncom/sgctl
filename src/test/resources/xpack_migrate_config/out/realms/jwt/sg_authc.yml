@@ -1,0 +1,7 @@
+# https://docs.search-guard.com/latest/authentication-authorization-configuration
+auth_domains:
+  - type: jwt
+    jwt.jwks_endpoint.url: "https://EXAMPLE/jwt/jwkset.json"
+    jwt.required_issuer: "https://EXAMPLE/jwt/"
+    jwt.required_audience: "my-elasticsearch-client-id"
+    user_mapping.user_name.from: jwt.sub

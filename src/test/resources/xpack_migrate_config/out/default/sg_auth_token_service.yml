@@ -1,0 +1,9 @@
+# https://docs.search-guard.com/latest/search-guard-auth-tokens
+enabled: true
+jwt_signing_key_hs512: "NO_XPACK_EQUIVALENT_HERE"
+
+max_validity: "20m"
+
+token_cache:
+  expire_after_write: "1d"
+  max_size: 10000

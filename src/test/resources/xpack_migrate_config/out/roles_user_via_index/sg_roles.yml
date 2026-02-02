@@ -1,0 +1,235 @@
+
+viewer:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - "~(([.]|ilm-history-).*)"
+      allowed_actions:
+        - "METADATA_READ_GROUP"
+        - SGS_READ
+
+    - index_patterns:
+        - ".slo-observability.*"
+      allowed_actions:
+        - "METADATA_READ_GROUP"
+        - SGS_READ
+
+    - index_patterns:
+        - ".siem-signals*"
+        - ".lists-*"
+        - ".items-*"
+        - ".reindexed-v8-siem-signals*"
+        - ".reindexed-v8-lists-*"
+        - ".reindexed-v8-items-*"
+        - ".entities.v1.latest.security_*"
+        - ".entities.*.history.*"
+        - ".asset-criticality.asset-criticality-*"
+      allowed_actions:
+        - "METADATA_READ_GROUP"
+        - SGS_READ
+
+    - index_patterns:
+        - ".alerts*"
+        - ".preview.alerts*"
+        - ".adhoc.alerts*"
+      allowed_actions:
+        - "METADATA_READ_GROUP"
+        - SGS_READ
+
+    - index_patterns:
+        - "profiling-*"
+        - ".profiling-*"
+      allowed_actions:
+        - "METADATA_READ_GROUP"
+        - SGS_READ
+
+machine_learning_admin:
+  cluster_permissions: 
+    - "ML_CLUSTER"
+  index_permissions:
+    - index_patterns:
+        - ".ml-anomalies*"
+        - ".ml-notifications*"
+        - ".ml-state*"
+        - ".ml-meta*"
+        - ".ml-stats-*"
+      allowed_actions:
+        - "METADATA_READ_GROUP"
+        - SGS_READ
+
+    - index_patterns:
+        - ".ml-annotations*"
+      allowed_actions:
+        - "METADATA_READ_GROUP"
+        - SGS_READ
+        - SGS_WRITE
+
+monitoring_user:
+  cluster_permissions:
+   - "CLUSTER_MONITOR"
+
+  index_permissions:
+    - index_patterns:
+        - ".monitoring-*"
+      allowed_actions:
+        - "INDEX_READ_WITH_CROSS_CLUSTER"
+        - SGS_READ
+
+    - index_patterns:
+        - "/metrics-(beats|elasticsearch|enterprisesearch|kibana|logstash).*/"
+      allowed_actions:
+        - "INDEX_READ_WITH_CROSS_CLUSTER"
+        - SGS_READ
+
+    - index_patterns:
+        - "metricbeat-*"
+      allowed_actions:
+        - "INDEX_READ_WITH_CROSS_CLUSTER"
+        - SGS_READ
+
+inference_admin:
+  cluster_permissions:
+    - "CLUSTER_MANAGE_INFERENCE"
+  index_permissions: []
+
+rollup_admin:
+  cluster_permissions:
+    - "CLUSTER_MANAGE_ROLLUP"
+  index_permissions: []
+
+transport_client:
+  cluster_permissions:
+    - "CLUSTER_TRANSPORT_CLIENT"
+  index_permissions: []
+
+kibana_admin:
+  cluster_permissions: []
+  
+  tenant_permissions:
+    - tenant_patterns:
+        - "global_tenant"
+      allowed_actions:
+        - "kibana_all_write"
+
+watcher_user:
+  cluster_permissions:
+    - "CLUSTER_MONITOR_WATCHER"
+
+  index_permissions:
+    - index_patterns:
+        - ".watches"
+      allowed_actions:
+        - "SGS_READ"
+
+    - index_patterns:
+        - ".watcher-history-*"
+      allowed_actions:
+        - "SGS_READ"
+
+reporting_user:
+  cluster_permissions: []
+
+  index_permissions: []
+
+  tenant_permissions:
+    - tenant_patterns:
+        - "global_tenant"
+      allowed_actions:
+        - "KIBANA_REPORTING_USER"
+      
+snapshot_user:
+  cluster_permissions:
+    - "CLUSTER_CREATE_SNAPSHOT"
+
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - "METADATA_READ_GROUP"
+
+transform_user:
+  cluster_permissions:
+    - "CLUSTER_MONITOR_TRANSFORM"
+
+  index_permissions:
+    - index_patterns:
+        - ".transform-notifications-*"
+        - ".data-frame-notifications-*"
+        - ".transform-notifications-read"
+      allowed_actions:
+        - "READ_INDEX_GROUP"
+
+remote_monitoring_agent:
+  cluster_permissions:
+    - CLUSTER_MANAGE_TEMPLATES_PIPELINES
+    - CLUSTER_MANAGE_ILM
+    - CLUSTER_MANAGE_WATCHER
+    - CLUSTER_MONITOR_BASIC
+
+  index_permissions:
+    - index_patterns:
+        - ".monitoring-*"
+      allowed_actions:
+        - SGS_INDICES_ALL
+
+    - index_patterns:
+        - "metricbeat-*"
+      allowed_actions:
+        - INDEX_WRITE_AND_MANAGE
+
+beats_admin:
+  cluster_permissions: []
+  index_permissions:
+    - index_patterns:
+        - ".management-beats"
+      allowed_actions:
+        - SGS_INDICES_ALL
+
+apm_system:
+  cluster_permissions:
+    - CLUSTER_MONITOR_BASIC
+
+  index_permissions:
+    - index_patterns:
+        - ".monitoring-beats-*"
+      allowed_actions:
+        - INDEX_CREATE_ONLY
+
+watcher_admin:
+  cluster_permissions:
+    - CLUSTER_MANAGE_WATCHER
+
+index_permissions:
+    - index_patterns:
+        - ".watches"
+        - ".triggered_watches"
+        - ".watcher-history-*"
+      allowed_actions:
+        - SGS_READ
+
+superuser:
+  cluster_permissions:
+    - "SGS_UNLIMITED"
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - "SGS_UNLIMITED"
+
+read_only_role_test:
+  cluster_permissions:
+    - SGS_CLUSTER_MONITOR
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - SGS_READ
+
+admin_role_test:
+  cluster_permissions:
+    - SGS_UNLIMITED
+  index_permissions:
+    - index_patterns:
+        - "*"
+      allowed_actions:
+        - SGS_UNLIMITED

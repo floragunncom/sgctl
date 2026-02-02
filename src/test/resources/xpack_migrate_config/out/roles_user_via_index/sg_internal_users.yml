@@ -1,0 +1,19 @@
+elastic:
+  hash: changeit
+  
+apm_system:
+  hash: changeit
+
+remote_monitoring_user:
+  hash: changeit
+  
+alice:
+  hash: changeit
+  attributes:
+    full_name: "Alice Example"
+    email: "alice@example.com"
+  
+bob:
+  hash: changeit
+  attributes:
+    full_name: "Bob Admin"
