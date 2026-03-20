@@ -20,7 +20,7 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>9.2.2</elasticsearch.version>
+		<elasticsearch.version>9.3.0</elasticsearch.version>
 		<sg.test-version>main-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
@@ -31,6 +31,16 @@
 	</properties>
 
 	<repositories>
+		<repository>
+			<releases>
+				<enabled>true</enabled>
+			</releases>
+			<snapshots>
+				<enabled>false</enabled>
+			</snapshots>
+			<id>central</id>
+			<url>https://repo.maven.apache.org/maven2</url>
+		</repository>
 		<repository>
 			<id>sonatype-nexus-snapshots</id>
 			<name>Sonatype Nexus Snapshots</name>
