@@ -160,7 +160,7 @@ deploy_docker_image:
   stage: "Deploy Docker Image"
   image: "$SG_DIND_IMAGE"
   services:
-    - docker:20.10.17-dind
+    - "$SG_DIND_IMAGE"
   rules:
     - if: '$CI_COMMIT_TAG =~ /^sgctl-.*/'
       when: on_success
@@ -172,7 +172,6 @@ deploy_docker_image:
   script:
     - |
       cd docker
-      apk update && apk add bash curl 
 
       export SGCTL_RELEASE_VERSION=$(echo $CI_COMMIT_TAG | sed -n 's/^sgctl-\(.*\)/\1/p')  
       echo "SGCTL_RELEASE_VERSION=$SGCTL_RELEASE_VERSION"
