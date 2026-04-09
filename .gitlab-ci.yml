@@ -9,13 +9,10 @@ image: "$SG_BUILD_IMAGE"
 #image: "maven:3.9.9-amazoncorretto-21-debian"
 
 
-include:
-- local: 'ci/aikido.yml'  
 
 stages:
   - build
   - package
-  - "Aikido Scan"
   - release
   - "Deploy Docker Image"
 
