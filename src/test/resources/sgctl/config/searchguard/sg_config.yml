@@ -1,0 +1,293 @@
+
+_sg_meta:
+  type: "config"
+  config_version: 2
+
+sg_config:
+  dynamic:
+    filtered_alias_mode: warn
+    multi_rolespan_enabled: true
+    hosts_resolver_mode: "ip-only"
+    do_not_fail_on_forbidden: true
+    do_not_fail_on_forbidden_empty: false
+    field_anonymization_salt2: "1234567890123456"
+    kibana:
+      multitenancy_enabled: true
+      server_username: kibanaserver
+      index: '.kibana'
+      do_not_fail_on_forbidden: true
+    http:
+      anonymous_auth_enabled: true
+      xff:
+        enabled: true
+        internalProxies: '192\.168\.0\.10|192\.168\.0\.11'
+        remoteIpHeader: 'x-forwarded-for'
+    auth_token_provider:
+      enabled: true
+      name: "sg-legacy-token"
+      users:
+        admin: true
+        read_only: false
+    authc:
+      basic_internal_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 0
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: intern
+      proxy_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 1
+        http_authenticator:
+          type: proxy
+          challenge: false
+          config:
+            user_header: "x-proxy-user"
+            roles_header: "x-proxy-roles"
+            role_separator: ","
+        authentication_backend:
+          type: noop
+      jwt_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 2
+        http_authenticator:
+          type: jwt
+          challenge: false
+          config:
+            signing_key: |-
+              -----BEGIN PUBLIC KEY-----
+              MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA2WDCucZF9dVw9j0T6SpWnoAPYBXWjGRQo6ICx2mB1RS28Dhwfx6/otnuf2o0W2QH5u4467UKT76INzn2KpmwqJJs8QC0xZIecVEsfafY7r5nnoY0bzVwfAS2bu7BIxstcA6ox2FNcnJWGLkxqdb9MXqEIWAG8NBW/l3dKveJ6SvUODWbwXFWvO6OINEu+hUo/ddDvXMh3OLOHPevVNXpRQkEMf9ZG+rz0KdFbwBEdEBDDlZIR37e1n301bgqwYA+l2ZIevO7ZePC0D7ZL2IgmpGntRhMQsxa6bpI+d++0nHD+7XIWeQgMyK6dHwkDi1ORtR9Wp5p6A3jQITl08oFly5iXDIuCqLF9NPP2K0p8pI3FKHLBO06WIMCESzxFubmYIhEpoggzA7FcNW6kX5YWefz5gsV1T0Y2m+4wXUzaAD6nkngDm9u0Zjo1NtxhpSOTbdWKUe80moWS76rXoJWCn4J/8VfajUxoRfTn4ifg1BeZbiE+cz7iTuVy0lZHfH0NIo5h281MkwkrQg/fTtAyyp8+6UkAS4TBOett4hNP8zr+QlxP4giwPjjeeVGO/pDzC9dKhrTuqlWlJDK9EGWcZiV2dApb7PGDyyZrGwigYym3Qt2T5buy61Rq6xe0vUS6C6rliKSODrqcwkPOKUel3M6eBNDXaXiU48O2KVMgq8CAwEAAQ==
+              -----END PUBLIC KEY-----
+            jwt_header: "Authorization"
+            jwt_url_parameter: urltoken
+            roles_key: roles
+            subject_key: username
+        authentication_backend:
+          type: noop
+      clientcert_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 3
+        http_authenticator:
+          type: clientcert
+          challenge: false
+          config:
+            username_attribute: cn
+        authentication_backend:
+          type: noop
+      ldap_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 4
+        http_authenticator:
+          type: basic
+          challenge: false
+        authentication_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: true
+            hosts:
+              - ldap.example.com:636
+            bind_dn: 'ou=dir,dc=example,dc=com'
+            password: secret
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            username_attribute: uid
+            map_ldap_attrs_to_user_attrs:
+              givenName: givenName
+              sn: sn
+      ldap_multibase_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 5
+        http_authenticator:
+          type: basic
+          challenge: true
+        authentication_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            verify_hostnames: true
+            hosts:
+              - multibase.ldap.example.com:636
+            bind_dn: 'ou=dir,dc=example,dc=com'
+            password: secret
+            users:
+              primary-userbase:
+                base: 'ou=people,dc=example,dc=com'
+                search: '(uid={0})'
+              secondary-userbase:
+                base: 'ou=otherpeople,dc=example,dc=com'
+                search: '(initials={0})'
+            usersearch: '(uid={0})'
+            username_attribute: uid
+      openid_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 6
+        http_authenticator:
+          type: openid
+          challenge: false
+          config:
+            jwt_header: "Authorization"
+            jwt_url_parameter: null
+            roles_key: "https://kibana.example.com/roles"
+            subject_key: "https://kibana.example.com/preferred_username"
+            openid_connect_url: https://searchguard-test.eu.auth0.com/.well-known/openid-configuration
+        authentication_backend:
+          type: noop
+      saml_auth_domain:
+        http_enabled: true
+        transport_enabled: true
+        order: 7
+        http_authenticator:
+          type: 'saml'
+          challenge: true
+          config:
+            idp:
+              metadata_url: http://keycloak.example.com:8080/auth/realms/master/protocol/saml/descriptor
+              entity_id: http://keycloak.example.com:8080/auth/realms/master
+            sp:
+              entity_id: es-saml
+            kibana_url: https://kibana.example.com:5601/
+            roles_key: Role
+            jwt:
+              key:
+                kty: oct
+                use: sig
+                k: 'peuvgOLrjzuhXfRUwzU_t0jYQWJf1agRUCevWAUfVKE_SHVAat6lmK22jlz0YIAXd0yAPmRW_oFZ3KekziFheIFhA5VNbCFblnH2wayqd5FoTbhrlNK7nKWtn9O2oWvCoaWiUDrO96eDutlVl40T-FCNjfK4OsBBe8pH0QNvJ6jLHX1V-y89Jbc_zIZiwoNiPm7WWb2he9Elg09RP50OOlR_Pr072a9vsv4cb-CnZzpdySmnOfpHjDliPAuayxLGU1fskCrW4xoMc6723FUzzzXA07cOeGSxGGz-6uFT028g4ts1-gJBbGaP63bn6qFXghSmXZK4QaZKxVYoFC75Sg'
+                alg: HS512
+        authentication_backend:
+          type: noop
+      kerberos_auth_domain:
+        http_enabled: false
+        transport_enabled: false
+        order: 8
+        http_authenticator:
+          type: kerberos
+          challenge: true
+          config:
+            krb_debug: false
+            strip_realm_from_principal: true
+            acceptor_keytab: "/etc/krb5.keytab"
+            acceptor_principal: "HTTP/localhost@EXAMPLE.COM"
+        authentication_backend:
+          type: noop
+      sg_issued_jwt_auth_domain:
+        http_enabled: true
+        transport_enabled: false
+        order: 9
+        http_authenticator:
+          type: sg_auth_token
+          challenge: false
+        authentication_backend:
+          type: sg_auth_token
+      config_update:
+        http_enabled: false
+        transport_enabled: true
+        order: 10
+        http_authenticator:
+          type: clientcert
+          challenge: false
+          config:
+            username_attribute: cn
+        authentication_backend:
+          type: noop
+    authz:
+      roles_from_myldap:
+        http_enabled: true
+        transport_enabled: true
+        authorization_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: true
+            hosts:
+              - ldapauthz.example.com:389
+            bind_dn: 'ou=dir,dc=example,dc=com'
+            password: secret
+            rolebase: 'ou=groups,dc=example,dc=com'
+            rolesearch: '(uniqueMember={0})'
+            userroleattribute: null
+            userrolename: memberOf
+            rolename: cn
+            resolve_nested_roles: true
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            skip_users:
+              - 'cn=Michael Jackson,ou*people,o=TEST'
+              - '/\\S*/'
+      roles_from_myldap_multibase:
+        http_enabled: true
+        transport_enabled: true
+        authorization_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: true
+            hosts:
+              - ldap.example.com:636
+            bind_dn: 'ou=dir,dc=example,dc=com'
+            password: secret
+            roles:
+              normalroles:
+                base: 'ou=groups,dc=example,dc=com'
+                search: '(uniqueMember={0})'
+              other:
+                base: 'ou=othergroups,dc=example,dc=com'
+                search: '(owner={1})'
+              yetanother:
+                base: 'ou=yetanothergroups,dc=example,dc=com'
+                search: '(user={2})'
+            userroleattribute: "myuserroleattribute"
+            userrolename: memberOf
+            rolename: cn
+            resolve_nested_roles: true
+            userbase: 'ou=people,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            username_attribute: uid
+            skip_users:
+              - kibanaserver
+      roles_from_other_ldap:
+        http_enabled: true
+        transport_enabled: true
+        authorization_backend:
+          type: ldap
+          config:
+            enable_ssl: true
+            enable_start_tls: false
+            enable_ssl_client_auth: false
+            verify_hostnames: true
+            hosts:
+              - authz2.example.com:636
+            bind_dn: 'ou=authz2,dc=example,dc=com'
+            password: secret
+            rolebase: 'ou=othergroups2,dc=example,dc=com'
+            rolesearch: '(uniqueMember={0})'
+            rolename: cn
+            resolve_nested_roles: true
+            userbase: 'ou=otherpeople2,dc=example,dc=com'
+            usersearch: '(uid={0})'
+            username_attribute: uid
+      internal_authz:
+        http_enabled: true
+        transport_enabled: true
+        authorization_backend:
+          type: internal
+      custom_authz_domain:
+        http_enabled: true
+        transport_enabled: true
+        authorization_backend:
+          type: internal

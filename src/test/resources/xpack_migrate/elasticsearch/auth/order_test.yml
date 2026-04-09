@@ -1,0 +1,16 @@
+xpack:
+  security:
+    authc:
+      realms:
+        ldap:
+          ldap1:
+            order: 2
+            url: "ldap://ldap.example.com:389"
+            user_search:
+              base_dn: "ou=users,dc=example,dc=com"
+        native:
+          native1:
+            order: 0
+        file:
+          file1:
+            order: 1

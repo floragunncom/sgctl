@@ -1,0 +1,21 @@
+---
+jane_smith:
+  hash: ""
+  opendistro_security_roles:
+  - "kibana_admin"
+  - "other_role2"
+  attributes:
+    email: "jane.smith@example.com"
+    full_name: "Jane Smith"
+    department: "Marketing"
+    employee_id: "B8891"
+john_doe:
+  hash: ""
+  opendistro_security_roles:
+  - "admin"
+  - "monitoring"
+  attributes:
+    email: "john.doe@example.com"
+    full_name: "John Doe"
+    department: "IT"
+    employee_id: "A1234"

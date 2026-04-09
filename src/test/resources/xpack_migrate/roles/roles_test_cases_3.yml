@@ -1,0 +1,10 @@
+---
+test_role3:
+  run_as: [ 'test_role3' ]
+  cluster: [ 'all' ]
+  indices:
+    - names: [ 'events-*' ]
+  privileges: [ 'read', 'typocorection' ]
+  field_security:
+    grant: ['category', '@timestamp', 'message' ]
+  query: '{"match": {"category": "click"}}'
