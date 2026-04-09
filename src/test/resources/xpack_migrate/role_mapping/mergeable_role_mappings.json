@@ -1,0 +1,27 @@
+{
+  "admins": {
+    "enabled": true,
+    "roles": [
+      "monitoring",
+      "user"
+    ],
+    "rules": {
+      "field": {
+        "groups": "cn=admins,dc=example,dc=com"
+      }
+    },
+    "metadata": {}
+  },
+  "users": {
+    "enabled": true,
+    "roles": [
+      "user"
+    ],
+    "rules": {
+      "field": {
+        "groups": "cn=users,dc=example,dc=com"
+      }
+    },
+    "metadata": {}
+  }
+}

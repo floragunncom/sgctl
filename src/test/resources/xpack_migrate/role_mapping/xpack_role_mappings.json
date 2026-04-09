@@ -1,0 +1,78 @@
+{
+  "migratable_mixed": {
+    "enabled": true,
+    "roles": [ "sg_mixed_role" ],
+    "rules": {
+      "any": [
+        { "field": { "username": "hans" } },
+        { "field": { "groups": ["admins", "devs"] } },
+        { "field": { "dn": "cn=boss,dc=corp" } }
+      ]
+    },
+    "metadata": { "comment": "This is a standard mapping" }
+  },
+  "migratable_network": {
+    "enabled": true,
+    "roles": [ "sg_network_role" ],
+    "rules": {
+      "any": [
+        { "field": { "remote_ip": "10.0.0.1" } },
+        { "field": { "host": ["office-pc-1", "vpn-gw"] } }
+      ]
+    },
+    "metadata": {}
+  },
+  "should_be_ignored_disabled": {
+    "enabled": false,
+    "roles": [ "sg_disabled_role" ],
+    "rules": {
+      "field": { "username": "ghost" }
+    },
+    "metadata": {}
+  },
+  "complex_nested_recursion": {
+    "enabled": true,
+    "roles": [ "sg_recursive_role" ],
+    "rules": {
+      "any": [
+        {
+          "any": [
+            { "field": { "username": "nested_user" } }
+          ]
+        },
+        { "field": { "username": "top_level_user" } }
+      ]
+    },
+    "metadata": {}
+  },
+  "security_fail_all": {
+    "enabled": true,
+    "roles": [ "sg_empty_role_1" ],
+    "rules": {
+      "all": [
+        { "field": { "username": "hacker" } },
+        { "field": { "groups": "users" } }
+      ]
+    },
+    "metadata": {}
+  },
+  "security_fail_except": {
+    "enabled": true,
+    "roles": [ "sg_empty_role_2" ],
+    "rules": {
+      "except": { "field": { "username": "bad_guy" } }
+    },
+    "metadata": {}
+  },
+  "info_realm_ignored": {
+    "enabled": true,
+    "roles": [ "sg_realm_role" ],
+    "rules": {
+      "any": [
+        { "field": { "username": "gabi" } },
+        { "field": { "realm.name": "ldap1" } }
+      ]
+    },
+    "metadata": {}
+  }
+}

@@ -1,0 +1,71 @@
+{
+  "complex_role_case": {
+    "complex_role": {
+      "run_as": ["user1"],
+      "cluster": ["monitor"],
+      "global": { "test1": "test2" },
+      "indices": [
+        {
+          "names": ["admin"],
+          "privileges": ["read"],
+          "query": "{\"test\": {}}",
+          "allow_restricted_indices": true
+        }
+      ],
+      "applications": [
+        {
+          "application": "kibana",
+          "privileges": ["read"],
+          "resources": ["*"]
+        }
+      ],
+      "remote_indices": [
+        {
+          "clusters": ["test-cluster1"],
+          "names": ["boss2"],
+          "privileges": ["read"]
+        }
+      ],
+      "remote_cluster": [
+        {
+          "clusters": ["test-cluster2"],
+          "privileges": ["all"]
+        }
+      ],
+      "metadata": {"version": 1},
+      "description": "Beautiful description"
+    }
+  },
+
+  "minimal_role_case": {
+    "minimal_role": {
+      "cluster": ["all"],
+      "indices": [],
+      "applications": [],
+      "metadata": {}
+    }
+  },
+
+  "empty_case": {},
+
+  "missing_required_fields_case": {
+    "broken_role": {
+      "cluster": ["all"],
+      "metadata": {}
+    }
+  },
+
+  "missing_nested_required_field_case": {
+    "broken_nested_role": {
+      "cluster": [],
+      "indices": [],
+      "metadata": {},
+      "applications": [
+        {
+          "application": "kibana",
+          "resources": ["*"]
+        }
+      ]
+    }
+  }
+}

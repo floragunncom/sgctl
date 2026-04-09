@@ -1,0 +1,8 @@
+---
+user:
+  backend_roles:
+  - "cn=users,dc=example,dc=com"
+  - "cn=admins,dc=example,dc=com"
+monitoring:
+  backend_roles:
+  - "cn=admins,dc=example,dc=com"

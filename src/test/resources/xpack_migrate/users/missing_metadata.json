@@ -1,0 +1,9 @@
+{
+  "john_doe": {
+    "username": "john_doe",
+    "roles": ["admin", "monitoring"],
+    "full_name": "John Doe",
+    "email": "john.doe@example.com",
+    "enabled": true
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "john_doe": {
+    "username": "john_doe",
+    "roles": ["admin", "monitoring"],
+    "full_name": "John Doe",
+    "email": "john.doe@example.com",
+    "metadata": {
+      "department": "IT",
+      "employee_id": "A1234"
+    },
+    "enabled": true
+  },
+  "jane_smith": {
+    "username": "jane_smith",
+    "roles": ["kibana_admin", "other_role2"],
+    "full_name": "Jane Smith",
+    "email": "jane.smith@example.com",
+    "metadata": {
+      "department": "Marketing",
+      "employee_id": "B8891"
+    },
+    "enabled": true
+  },
+  "pauls_lee": {
+    "username": "pauls_lee",
+    "roles": ["viewer"],
+    "full_name": "Paul Lee",
+    "email": "paul.lee@example.com",
+    "metadata": {
+      "department": "Support",
+      "employee_id": "C3345"
+    },
+    "enabled": true
+  },
+  "lisa_kim": {
+    "username": "lisa_kim",
+    "roles": ["admin", "kibana_admin"],
+    "full_name": "Lisa Kim",
+    "email": "lisa.kim@example.com",
+    "metadata": {
+      "department": "IT",
+      "employee_id": "D5566"
+    },
+    "enabled": true
+  },
+  "mark_tan": {
+    "username": "mark_tan",
+    "roles": ["developer"],
+    "full_name": "Mark Tan",
+    "email": "mark.tan@example.com",
+    "metadata": {
+      "department": "R&D",
+      "employee_id": "E7788"
+    },
+    "enabled": true
+  }
+}

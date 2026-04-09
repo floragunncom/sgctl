@@ -1,0 +1,23 @@
+# X-Pack elasticsearch.yml with LDAP realm with connection pool disabled
+# Expected: inconvertible reported for pool.enabled setting
+
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        ldap:
+          ldap1:
+            order: 0
+            enabled: true
+            url:
+              - "ldaps://ldap.example.com:636"
+            bind_dn: "cn=admin,dc=example,dc=com"
+            secure_bind_password: "password"
+            user_search:
+              base_dn: "ou=users,dc=example,dc=com"
+              pool:
+                enabled: false
+            group_search:
+              base_dn: "ou=groups,dc=example,dc=com"
+

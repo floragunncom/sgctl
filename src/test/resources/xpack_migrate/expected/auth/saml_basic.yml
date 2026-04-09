@@ -1,0 +1,12 @@
+---
+default:
+  auth_domains:
+  - type: "saml"
+    saml.idp.metadata_url: "https://idp.example.com/metadata.xml"
+    saml.idp.entity_id: "https://idp.example.com"
+    saml.sp.entity_id: "https://kibana.example.com"
+    user_mapping.user_name.from: "$.saml_response['nameid']"
+    user_mapping.roles.from_comma_separated_string: "$.saml_response['groups']"
+    kibana_url: "https://kibana.example.com:5601/"
+    label: "SAML Login"
+    id: "saml1"

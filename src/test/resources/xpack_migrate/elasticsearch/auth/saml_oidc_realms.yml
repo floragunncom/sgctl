@@ -1,0 +1,25 @@
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        saml:
+          saml1:
+            order: 0
+            enabled: true
+            idp:
+              entity_id: "https://idp.saml1.example.com"
+              metadata:
+                path: "/etc/saml/idp-saml1.xml"
+            sp:
+              entity_id: "https://sp.saml1.example.com"
+              acs: "https://sp.saml1.example.com/api/security/saml/callback"
+        oidc:
+          oidc1:
+            order: 1
+            enabled: true
+            rp:
+              client_id: "client-123"
+              client_secret: "secret-xyz"
+            op:
+              issuer: "https://issuer.example.com"

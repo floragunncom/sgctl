@@ -1,0 +1,26 @@
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        saml:
+          saml_primary:
+            order: 1
+            enabled: true
+            idp:
+              entity_id: "https://idp.primary.example.com"
+              metadata:
+                path: "/etc/saml/idp-primary.xml"
+            sp:
+              entity_id: "https://sp.primary.example.com"
+              acs: "https://sp.primary.example.com/api/security/saml/callback"
+          saml_secondary:
+            order: 5
+            enabled: true
+            idp:
+              entity_id: "https://idp.secondary.example.com"
+              metadata:
+                path: "/etc/saml/idp-secondary.xml"
+            sp:
+              entity_id: "https://sp.secondary.example.com"
+              acs: "https://sp.secondary.example.com/api/security/saml/callback"

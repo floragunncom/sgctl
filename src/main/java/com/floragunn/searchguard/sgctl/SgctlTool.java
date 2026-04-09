@@ -19,6 +19,7 @@ package com.floragunn.searchguard.sgctl;
 
 import java.security.Security;
 
+import com.floragunn.searchguard.sgctl.commands.XPackMigrate;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
 
 import com.floragunn.searchguard.sgctl.commands.RestCommand;
@@ -45,7 +46,7 @@ import picocli.CommandLine.Command;
 
 @Command(name = "sgctl", subcommands = { Connect.class, GetConfig.class, UpdateConfig.class, MigrateConfig.class, ComponentState.class,
         ShowLicenses.class, ShowVersion.class, AddUserLocal.class, AddUser.class, UpdateUser.class, DeleteUser.class, AddConfigVar.class,
-        UpdateConfigVar.class, DeleteConfigVar.class, SetCommand.class, UpdateSgLicense.class, RestCommand.class, SpecialCommand.class }, description = "Remote control tool for Search Guard")
+        UpdateConfigVar.class, DeleteConfigVar.class, SetCommand.class, UpdateSgLicense.class, RestCommand.class, SpecialCommand.class, XPackMigrate.class }, description = "Remote control tool for Search Guard")
 public class SgctlTool {
 
     static {
@@ -60,7 +61,11 @@ public class SgctlTool {
     }
 
     public static int exec(String... args) {
-        return new CommandLine(new SgctlTool()).execute(args);
+        var cli = new CommandLine(new SgctlTool());
+        cli.getSubcommands()
+                .get("migrate-security")
+                .getHelpSectionMap()
+                .put(CommandLine.Model.UsageMessageSpec.SECTION_KEY_FOOTER, ignored -> XPackMigrate.HELP_MESSAGE);
+        return cli.execute(args);
     }
-
 }

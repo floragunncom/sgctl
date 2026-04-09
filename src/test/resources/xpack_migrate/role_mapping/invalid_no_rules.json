@@ -1,0 +1,11 @@
+{
+  "admins": {
+    "enabled": true,
+    "roles": [
+      "monitoring",
+      "user"
+    ],
+    "rules": {
+    }
+  }
+}

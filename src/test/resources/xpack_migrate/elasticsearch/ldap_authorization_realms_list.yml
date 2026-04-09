@@ -1,0 +1,15 @@
+xpack:
+  security:
+    enabled: true
+    authc:
+      realms:
+        ldap:
+          ldapList:
+            order: 0
+            enabled: true
+            url:
+              - "ldaps://ldap.example.com:636"
+            bind_dn: "cn=admin,dc=example,dc=com"
+            authorization_realms:
+              - file1
+              - native1
