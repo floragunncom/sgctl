@@ -35,17 +35,12 @@ build:
     - build
   script:
     - mvn -Drevision=b-$CI_COMMIT_REF_SLUG-SNAPSHOT $MAVEN_CLI_OPTS clean install
-    - echo "=== Artifact sizes ===" && du -sh target/sgctl-*.sh target/sgctl-*-shaded.jar target/site/jacoco/ .m2/repository/com/floragunn/ 2>/dev/null || true
-    - echo "=== Top 5 largest files ===" && find target/sgctl-*.sh target/sgctl-*-shaded.jar target/site/jacoco/ .m2/repository/com/floragunn/ -type f 2>/dev/null | xargs du -sh | sort -rh | head -5
-    - echo "=== Top 5 largest directories ===" && find target/site/jacoco/ .m2/repository/com/floragunn/ -type d 2>/dev/null | xargs du -sh | sort -rh | head -5
 
   artifacts:
     when: always
     paths:
-      - "target/sgctl-*.sh"
-      - "target/sgctl-*-shaded.jar"
+      - "target/releases/"
       - "target/site/jacoco/"
-      - ".m2/repository/com/floragunn/*"
     reports:
       junit:
         - "target/surefire-reports/TEST-*.xml"
@@ -101,9 +96,7 @@ build_release:
   artifacts:
     when: always
     paths:
-      - "target/sgctl-*.sh"
-      - "target/sgctl-*-shaded.jar"
-      - ".m2/repository/com/floragunn/*"
+      - "target/releases/"
     reports:
       junit:
         - "target/surefire-reports/TEST-*.xml"
