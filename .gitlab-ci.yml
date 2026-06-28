@@ -42,10 +42,8 @@ build:
   artifacts:
     when: always
     paths:
-      - "target/sgctl-*.sh"
-      - "target/sgctl-*-shaded.jar"
+      - "target/releases/"
       - "target/site/jacoco/"
-      - ".m2/repository/com/floragunn/sgctl/**"
     reports:
       junit:
         - "target/surefire-reports/TEST-*.xml"
@@ -101,9 +99,7 @@ build_release:
   artifacts:
     when: always
     paths:
-      - "target/sgctl-*.sh"
-      - "target/sgctl-*-shaded.jar"
-      - ".m2/repository/com/floragunn/sgctl/**"
+      - "target/releases/"
     reports:
       junit:
         - "target/surefire-reports/TEST-*.xml"
