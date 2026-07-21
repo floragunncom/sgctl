@@ -20,14 +20,14 @@
 
 	<properties>
 		<revision>master-SNAPSHOT</revision>
-		<elasticsearch.version>9.4.2</elasticsearch.version>
+		<elasticsearch.version>9.4.3</elasticsearch.version>
 		<sg.test-version>main-SNAPSHOT</sg.test-version>
 		<maven.compiler.source>17</maven.compiler.source>
 		<maven.compiler.target>17</maven.compiler.target>
 		<maven.compiler.release>17</maven.compiler.release>
 		<license.excludedGroups>.*floragunn.*</license.excludedGroups>
 		<license.excludedScopes>test,provided</license.excludedScopes>
-        <log4j2.version>2.26.0</log4j2.version>
+        <log4j2.version>2.26.1</log4j2.version>
 	</properties>
 
 	<repositories>
@@ -176,19 +176,19 @@
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcprov-jdk18on</artifactId>
-			<version>1.84</version>
+			<version>1.85</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcpg-jdk18on</artifactId>
-			<version>1.84</version>
+			<version>1.85</version>
 		</dependency>
 
 		<dependency>
 			<groupId>org.bouncycastle</groupId>
 			<artifactId>bcpkix-jdk18on</artifactId>
-			<version>1.84</version>
+			<version>1.85</version>
 		</dependency>
 
 		<dependency>
@@ -225,14 +225,14 @@
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>6.1.1</version>
+			<version>6.1.2</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-migrationsupport</artifactId>
-			<version>6.1.1</version>
+			<version>6.1.2</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -414,14 +414,14 @@
 			<!-- replacement for byte-buddy used by mockito -->
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy</artifactId>
-			<version>1.18.10-jdk5</version>
+			<version>1.18.11-jdk5</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<!-- replacement for byte-buddy used by mockito -->
 			<groupId>net.bytebuddy</groupId>
 			<artifactId>byte-buddy-agent</artifactId>
-			<version>1.18.10-jdk5</version>
+			<version>1.18.11-jdk5</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
