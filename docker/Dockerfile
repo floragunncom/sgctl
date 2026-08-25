@@ -24,7 +24,7 @@ RUN mkdir sgctl
 RUN wget -nv https://maven.search-guard.com/search-guard-flx-release/com/floragunn/sgctl/${SGCTL_VERSION}/sgctl-${SGCTL_VERSION}.sh -O sgctl/sgctl.sh
 RUN chmod +x sgctl/sgctl.sh
 
-RUN wget -nv https://maven.search-guard.com//search-guard-tlstool/com/floragunn/search-guard-tlstool/${TLS_TOOL_VERSION}/search-guard-tlstool-${TLS_TOOL_VERSION}.zip
+RUN wget -nv https://maven.search-guard.com/search-guard-tlstool/com/floragunn/search-guard-tlstool/${TLS_TOOL_VERSION}/search-guard-tlstool-${TLS_TOOL_VERSION}.zip
 
 RUN unzip search-guard-tlstool-${TLS_TOOL_VERSION}.zip -d tlstool/
 RUN rm -rf search-guard-tlstool-${TLS_TOOL_VERSION}.zip
