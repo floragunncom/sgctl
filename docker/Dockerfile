@@ -12,7 +12,7 @@ RUN ln -s /usr/bin/dpkg-split /usr/sbin/
 RUN ln -s /usr/bin/dpkg-deb /usr/sbin/
 RUN ln -s /bin/rm /usr/sbin/
 RUN ln -s /bin/tar /usr/sbin/
-RUN RUN apt-get -y -qq update && apt-get -y -qq --no-install-recommends install netcat curl wget ca-certificates unzip openssl bash jq && \
+RUN apt-get -y -qq update && apt-get -y -qq --no-install-recommends install netcat curl wget ca-certificates unzip openssl bash jq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
