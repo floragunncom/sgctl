@@ -1,18 +1,18 @@
 ARG JAVA_VERSION
-FROM eclipse-temurin:${JAVA_VERSION}-jammy
+FROM eclipse-temurin:${JAVA_VERSION}
 
-ARG TLS_TOOL_VERSION=4.0.1
+ARG TLS_TOOL_VERSION=4.0.2
 
-RUN groupadd -g 1000 sg && \
-    adduser --uid 1000 --gid 1000 --home /usr/share/sg sg && \
-    chown -R 1000:0 /usr/share/sg
+RUN groupadd -g 1005 sg && \
+    adduser --uid 1005 --gid 1005 --home /usr/share/sg sg && \
+    chown -R 1005:0 /usr/share/sg
 
 #https://github.com/QuinnJensen/nlan-docker/commit/abd8d824e3d02f3ef184a9dfd96fa0839cca7ee6
 RUN ln -s /usr/bin/dpkg-split /usr/sbin/
 RUN ln -s /usr/bin/dpkg-deb /usr/sbin/
 RUN ln -s /bin/rm /usr/sbin/
 RUN ln -s /bin/tar /usr/sbin/
-RUN apt-get -y -qq update && apt-get -y -qq --no-install-recommends install netcat curl wget ca-certificates unzip openssl bash jq && \
+RUN apt-get -y -qq update && apt-get -y -qq full-upgrade && apt-get -y -qq --no-install-recommends install netcat-traditional curl wget ca-certificates unzip openssl bash jq && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
