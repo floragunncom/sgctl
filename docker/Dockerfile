@@ -3,9 +3,8 @@ FROM eclipse-temurin:${JAVA_VERSION}
 
 ARG TLS_TOOL_VERSION=4.0.2
 
-RUN groupadd -g 1005 sg && \
-    adduser --uid 1005 --gid 1005 --home /usr/share/sg sg && \
-    chown -R 1005:0 /usr/share/sg
+RUN mkdir -p /usr/share/sg && \
+    chown -R 1000:0 /usr/share/sg
 
 #https://github.com/QuinnJensen/nlan-docker/commit/abd8d824e3d02f3ef184a9dfd96fa0839cca7ee6
 RUN ln -s /usr/bin/dpkg-split /usr/sbin/
@@ -19,6 +18,7 @@ RUN apt-get -y -qq update && apt-get -y -qq full-upgrade && apt-get -y -qq --no-
 ARG SGCTL_VERSION
 
 WORKDIR /usr/share/sg
+USER ubuntu
 
 RUN mkdir sgctl
 RUN wget -nv https://maven.search-guard.com/search-guard-flx-release/com/floragunn/sgctl/${SGCTL_VERSION}/sgctl-${SGCTL_VERSION}.sh -O sgctl/sgctl.sh
@@ -28,7 +28,5 @@ RUN wget -nv https://maven.search-guard.com/search-guard-tlstool/com/floragunn/s
 
 RUN unzip search-guard-tlstool-${TLS_TOOL_VERSION}.zip -d tlstool/
 RUN rm -rf search-guard-tlstool-${TLS_TOOL_VERSION}.zip
-
-USER sg
 
 CMD tail -f /dev/null
